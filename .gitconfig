@@ -1,0 +1,60 @@
+[alias]
+    # Shortening aliases
+    co = checkout
+    cob = checkout -b
+    f = fetch -p
+    c = commit
+    p = push
+    ba = branch -a
+    bd = branch -d
+    bD = branch -D
+    dc = diff --cached
+    edit = commit --amend
+    no-edit = commit --amend --no-edit
+
+    # Feature improving aliases
+    st = status -sb
+    a = add -p
+
+    # Complex aliases
+    plog = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
+    tlog = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
+    glog = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+    lg = log --color --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+    rank = shortlog -sn --no-merges
+    bdm = "!git branch --merged | grep -v '*' | xargs -n 1 git branch -d"
+[core]
+    editor = nano
+    whitespace = off
+    excludesfile = /Users/raisedadead/.gitignore
+    autocrlf = false
+    safecrlf = false
+    pager = diff-so-fancy | less --tabs=4 -RFX
+[advice]
+    statusuoption = false
+[push]
+    default = current
+[color]
+    ui = always
+[color "diff"]
+    meta = yellow bold
+    commit = green bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+    whitespace = red reverse
+[color "diff-highlight"]
+    oldNormal = red bold
+    oldHighlight = "red bold 52"
+    newNormal = "green bold"
+    newHighlight = "green bold 22"
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
+[color "status"]
+    added = yellow
+    changed = green
+    untracked = cyan
+[include]
+    path = ~/.gitconfig.local
