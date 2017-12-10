@@ -1,0 +1,7 @@
+##############################
+# dotfile helper
+##############################
+alias list-dot-files="ls -ld .?*"
+alias dot="homeshick"
+alias track="homeshick track dotfiles"
+

@@ -1,7 +1,6 @@
 ##############################
 # Zplug
 ##############################
-
 # Check if zplug is installed
 if [[ ! -d ~/.zplug ]]; then
   git clone https://github.com/zplug/zplug ~/.zplug
@@ -57,7 +56,7 @@ export NVM_DIR="$HOME/.nvm"
 ##############################
 # aliases
 ##############################
-alias dot=homeshick
+source ~/.alias
 
 ##############################
 # homeshick
