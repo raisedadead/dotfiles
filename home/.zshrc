@@ -55,5 +55,18 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 ##############################
+# aliases
+##############################
+alias dot=homeshick
 
-alias git=hub
+##############################
+# homeshick
+#############################
+export HOMESHICK_DIR=/usr/local/opt/homeshick
+source "/usr/local/opt/homeshick/homeshick.sh"
+fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
+
+##############################
+# fzf
+##############################
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
