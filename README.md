@@ -1,22 +1,10 @@
-# raisedadead-dotfiles
+# @raisedadead's .:zap:files
 
+> my dotfiles | fancy stuff in here... but feel free to have a look around
 
-> my dotfiles
+## Related
 
-## Table of Contents
-
-- [Install](#install)
-- [Usage](#usage)
-- [Maintainers](#maintainers)
-- [License](#license)
-
-## Install
-
-## Usage
-
-## Maintainers
-
-[@raisedadead](https://github.com/raisedadead)
+[my Brewfile](https://github.com/raisedadead/Brewfile)
 
 ## License
 
