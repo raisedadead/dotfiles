@@ -1,7 +1,9 @@
 ##############################
-# dotfile helper
+# homeshick helpers
 ##############################
-alias list-dot-files="ls -ld .?*"
+
 alias dot="homeshick"
+
+## track a file default castle
 alias track="homeshick track dotfiles"
 
