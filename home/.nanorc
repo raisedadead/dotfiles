@@ -1,0 +1,26 @@
+#########################################################
+#
+# @raisedadead's config files
+# https://git.raisedadead.com/dotfiles
+#
+# Copyright: Mrugesh Mohapatra <https://raisedadead.com>
+# License: ISC
+#
+# File name: .nanorc
+#
+#########################################################
+
+# smooth scrolling
+set smooth
+# syntax highlight
+include /usr/share/nano/*.nanorc
+# spacing and indentation
+set tabstospaces
+set autoindent
+# turn off defaults
+set nowrap
+set nohelp
+set morespace
+
+#########################################################
+
