@@ -12,8 +12,6 @@
 
 # smooth scrolling
 set smooth
-# syntax highlight
-include /usr/share/nano/*.nanorc
 # spacing and indentation
 set tabstospaces
 set autoindent
@@ -21,6 +19,5 @@ set autoindent
 set nowrap
 set nohelp
 set morespace
-
 #########################################################
 
