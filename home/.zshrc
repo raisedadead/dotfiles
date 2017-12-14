@@ -90,6 +90,5 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 # fzf
 ##############################
 
-[ -f ~/.bin/.fzf.zsh ] && source ~/.bin/.fzf.zsh
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-##############################
