@@ -23,6 +23,9 @@
     lg = log --color --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
     rank = shortlog -sn --no-merges
     bdm = "!git branch --merged | grep -v '*' | xargs -n 1 git branch -d"
+    
+    # maintainer aliases (use with git-extras)
+    grab-pr = "!f() { git pr \"$1\" upstream; }; f"
 [core]
     editor = nano
     whitespace = off
