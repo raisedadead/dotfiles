@@ -2,23 +2,32 @@
 # .bashrc configurations
 #-----------------------------------------------------------
 
-# setup for work
-function _setup_work(){
+# setup for ubuntu and windows
+_setup_ubuntu_windows()
+{
     #-----------------------------
     # Homeshick
     #-----------------------------
     if [[ ! -d $HOME/.homesick ]]; then
-        git clone git://github.com/andsens/homeshick.git $HOME/.homesick/repos/homeshick
-        echo ">>>>>> homeshick was just freshly installed. <<<<<<<"
+        echo
+        echo "Error: homeshick is not found or uninstalled."
+        echo "Follow installation instructions on the repo:"
+        echo "https://git.raisedadead.com/dotfiles"
+        echo "Exiting..."
+        echo
+        return 1
     fi
- 
     source $HOME/.homesick/repos/homeshick/homeshick.sh
     return 0
 }
 
-# setup for home
-function _setup_home(){
+# setup for macOS
+_setup_macos()
+{
+    echo
     echo "Todo: Setup is not implememted yet."
+    echo "Not done a thing... exiting... bye."
+    echo
     return 1
 }
 
@@ -32,10 +41,10 @@ source ~/.bin/utils.sh && TARGET=$( _get_system )
 
 case "$TARGET" in
     macos*)
-        _setup_home
+        _setup_macos
     ;;
     windows* | linux*)
-        _setup_work
+        _setup_ubuntu_windows
     ;;
 esac
 

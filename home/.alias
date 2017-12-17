@@ -1,9 +1,14 @@
-##############################
+#-----------------------------
 # homeshick helpers
-##############################
+#-----------------------------
 
 alias dot="homeshick"
 
-## track a file default castle
+# track a file in default castle
 alias track="homeshick track dotfiles"
+
+#-----------------------------
+# vi
+#-----------------------------
+alias vi=nvim
 
