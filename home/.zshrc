@@ -23,6 +23,10 @@ fi
 ## Essential
 source ~/.zplug/init.zsh
 
+## Node
+zplug "lukechilds/zsh-nvm"
+zplug "lukechilds/zsh-better-npm-completion", defer:2
+
 ## File browsing
 zplug "b4b4r07/enhancd", use:init.sh
 zplug "supercrabtree/k"
@@ -63,14 +67,6 @@ export PATH="/usr/local/bin:/usr/local/sbin:~/bin:$PATH"
 if [ -f $(brew --prefix)/etc/brew-wrap ];then
   source $(brew --prefix)/etc/brew-wrap
 fi
-
-##############################
-# nvm
-##############################
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 ##############################
 # aliases
