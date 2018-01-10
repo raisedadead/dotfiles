@@ -27,7 +27,7 @@
     # maintainer aliases (use with git-extras)
     grab-pr = "!f() { git pr \"$1\" upstream; }; f"
 [core]
-    editor = nano
+	editor = /usr/bin/nano
     whitespace = off
     excludesfile = ~/.gitignore
     autocrlf = false

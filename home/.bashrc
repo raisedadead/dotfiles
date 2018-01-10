@@ -1,9 +1,17 @@
 #-----------------------------------------------------------
-# .bashrc configurations
+#
+# @raisedadead's config files
+# https://git.raisedadead.com/dotfiles
+#
+# Copyright: Mrugesh Mohapatra <https://raisedadead.com>
+# License: ISC
+#
+# File name: .bashrc
+#
 #-----------------------------------------------------------
 
-# setup for ubuntu and windows
-_setup_ubuntu_windows()
+# setup for linux and windows
+_setup_linux_windows()
 {
     #-----------------------------
     # Homeshick
@@ -44,7 +52,7 @@ case "$TARGET" in
         _setup_macos
     ;;
     windows* | linux*)
-        _setup_ubuntu_windows
+        _setup_linux_windows
     ;;
 esac
 
@@ -56,5 +64,15 @@ esac
 # fzf
 #-----------------------------
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+#-----------------------------
+# cloud-9 configs
+#-----------------------------
+[ -f ~/.bashrc.cloud-nine ] && source ~/.bashrc.cloud-nine
+
+#-----------------------------
+# aliases
+#-----------------------------
+[ -f ~/.alias ] && source ~/.alias
 
 #-----------------------------------------------------------
