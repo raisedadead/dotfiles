@@ -1,11 +1,20 @@
+#-----------------------------------------------------------
+#
+# @raisedadead's config files
+# https://git.raisedadead.com/dotfiles
+#
+# Copyright: Mrugesh Mohapatra <https://raisedadead.com>
+# License: ISC
+#
+# File name: .alias
+#
+#-----------------------------------------------------------
+
 #-----------------------------
 # homeshick helpers
 #-----------------------------
 
 alias dot="homeshick"
-
-# track a file in default castle
-alias track="homeshick track dotfiles"
 
 #-----------------------------
 # vi
