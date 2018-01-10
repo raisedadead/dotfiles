@@ -10,46 +10,75 @@
 #
 #-----------------------------------------------------------
 
-## Check if zplug is installed
+#-----------------------------
+# Check if zplug is installed
+#-----------------------------
 if [[ ! -d $HOME/.zplug ]]; then
   git clone https://github.com/zplug/zplug $HOME/.zplug
   source $HOME/.zplug/init.zsh && zplug update --self
 fi
-## Essential
+
+#-----------------------------
+# Essential
+#-----------------------------
 source $HOME/.zplug/init.zsh
 
-## Node
+#-----------------------------
+# Node
+#-----------------------------
 zplug "lukechilds/zsh-nvm"
 zplug "lukechilds/zsh-better-npm-completion", defer:2
 
-## File browsing
+#-----------------------------
+# File browsing
+#-----------------------------
 zplug "b4b4r07/enhancd", use:init.sh
 zplug "supercrabtree/k"
 
-## Git Plugins
-zplug "plugins/git", from:oh-my-zsh
-zplug "caarlos0/git-add-remote"
+#-----------------------------
+# Git Plugins
+#-----------------------------
+# gst, gco, gc -> All the git shortcut goodness
+zplug "plugins/git", from:oh-my-zsh, if:"hash git"
 
-## ZSH completions and search
-zplug "zsh-users/zsh-history-substring-search"
-zplug "zdharma/fast-syntax-highlighting"
-zplug "zsh-users/zsh-completions"
+#-----------------------------
+# ZSH completions and search
+#-----------------------------
+# Load completion library for those sweet [tab] squares
+zplug "lib/completion", from:oh-my-zsh
+# Up -> History search! Who knew it wasn't a built in?
+zplug "lib/key-bindings", from:oh-my-zsh
+# History defaults
+zplug "lib/history", from:oh-my-zsh
+# Adds useful aliases for things dealing with directories
+zplug "lib/directories", from:oh-my-zsh
+
 autoload -U compinit && compinit
 
-## Themes
-zplug "mafredri/zsh-async", from:github
+#-----------------------------
+# ZSH syntax-higlighting
+#-----------------------------
+zplug "zdharma/fast-syntax-highlighting", from:github, defer:3
+
+#-----------------------------
+# Themes
+#-----------------------------
+zplug "mafredri/zsh-async", from:github, defer:0
 zplug "sindresorhus/pure", use:pure.zsh, from:github, as:theme
 zplug "tysonwolker/iterm-tab-colors"
-# zplug 'dracula/zsh', as:theme
+# zplug "dracula/zsh", as:theme
 
-## Install plugins if there are plugins that have not been installed
+#-----------------------------
+# Install plugins if there are plugins that have not been installed
+#-----------------------------
 if ! zplug check --verbose; then
     printf "Install? [y/N]: "
     if read -q; then
         echo; zplug install
     fi
 fi
-
-## Then, source plugins and add commands to $PATH
+#-----------------------------
+# Then, source plugins and add commands to $PATH
+#-----------------------------
 # zplug load --verbose
 zplug load
