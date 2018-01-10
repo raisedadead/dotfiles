@@ -26,6 +26,7 @@ _setup_linux_windows()
         return 1
     fi
     source $HOME/.homesick/repos/homeshick/homeshick.sh
+    source $HOME/.homesick/repos/homeshick/completions/homeshick-completion.bash
     return 0
 }
 
