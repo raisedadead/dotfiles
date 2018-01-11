@@ -26,6 +26,7 @@ source $HOME/.zplug/init.zsh
 #-----------------------------
 # Node
 #-----------------------------
+export NVM_LAZY_LOAD=true
 zplug "lukechilds/zsh-nvm"
 zplug "lukechilds/zsh-better-npm-completion", defer:2
 
