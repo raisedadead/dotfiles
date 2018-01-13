@@ -52,3 +52,9 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 [ -f $HOME/.zshrc.mac-os ] && source $HOME/.zshrc.mac-os
 
 #-----------------------------------------------------------
+
+#-----------------------------------------------------------
+# travis
+#-----------------------------------------------------------
+[ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
+

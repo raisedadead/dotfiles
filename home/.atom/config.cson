@@ -9,6 +9,7 @@
       "dracula-syntax"
     ]
   editor:
+    fontFamily: "IBM Plex Mono"
     showInvisibles: true
   "exception-reporting":
     userId: "a2539911-9839-49a7-9614-870a6b704639"
