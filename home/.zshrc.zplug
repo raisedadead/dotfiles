@@ -41,6 +41,7 @@ zplug "supercrabtree/k"
 #-----------------------------
 # gst, gco, gc -> All the git shortcut goodness
 zplug "plugins/git", from:oh-my-zsh, if:"hash git"
+zplug "paulirish/git-open", as:plugin
 
 #-----------------------------
 # ZSH completions and search

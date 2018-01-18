@@ -25,7 +25,9 @@
     bdm = "!git branch --merged | grep -v '*' | xargs -n 1 git branch -d"
     
     # maintainer aliases (use with git-extras)
-    grab-pr = "!f() { git pr \"$1\" upstream; }; f"
+    snatch-pr = "!f() { git pr \"$1\" upstream; }; f"
+    ru = "!f() { git pull --rebase upstream \"$1\"; }; f"
+
 [core]
 	editor = /usr/bin/nano
     whitespace = off
