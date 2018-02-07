@@ -1,44 +1,43 @@
 [alias]
-    # Shortening aliases
-    co = checkout
-    cob = checkout -b
-    f = fetch -p
-    c = commit
-    p = push
-    ba = branch -a
-    bd = branch -d
-    bD = branch -D
-    dc = diff --cached
-    edit = commit --amend
-    no-edit = commit --amend --no-edit
+    	# Shortening aliases
+    	co = checkout
+    	cob = checkout -b
+    	f = fetch -p
+    	c = commit
+    	p = push
+    	ba = branch -a
+    	bd = branch -d
+    	bD = branch -D
+    	dc = diff --cached
+    	edit = commit --amend
+    	no-edit = commit --amend --no-edit
 
-    # Feature improving aliases
-    st = status -sb
-    a = add -p
+    	# Feature improving aliases
+    	st = status -sb
+    	a = add -p
 
-    # Complex aliases
-    plog = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
-    tlog = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
-    glog = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-    lg = log --color --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-    rank = shortlog -sn --no-merges
-    bdm = "!git branch --merged | grep -v '*' | xargs -n 1 git branch -d"
+    	# Complex aliases
+    	plog = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
+    	tlog = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
+    	glog = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+   	lg = log --color --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+    	rank = shortlog -sn --no-merges
+    	bdm = "!git branch --merged | grep -v '*' | xargs -n 1 git branch -d"
     
-    # maintainer aliases (use with git-extras)
-    snatch-pr = "!f() { git pr \"$1\" upstream; }; f"
-    ru = "!f() { git pull --rebase upstream \"$1\"; }; f"
-
+    	# maintainer aliases (use with git-extras)
+    	snatch-pr = "!f() { git pr \"$1\" upstream; }; f"
+    	harmony = "!f() { git pull --rebase upstream \"$1\"; }; f"
 [core]
 	editor = /usr/bin/nano
-    whitespace = off
-    excludesfile = ~/.gitignore
-    autocrlf = false
-    safecrlf = false
-    pager = diff-so-fancy | less --tabs=4 -RFX
+    	whitespace = off
+    	excludesfile = ~/.gitignore
+    	autocrlf = false
+    	safecrlf = false
+    	pager = diff-so-fancy | less --tabs=4 -RFX
 [advice]
-    statusuoption = false
+    	statusuoption = false
 [push]
-    default = current
+    	default = current
 [color]
 	ui = true
 [color "diff"]
@@ -54,12 +53,17 @@
 	newNormal = green bold
 	newHighlight = green bold 22
 [color "branch"]
-    current = yellow reverse
-    local = yellow
-    remote = green
+	current = yellow reverse
+	local = yellow
+	remote = green
 [color "status"]
-    added = yellow
-    changed = green
-    untracked = cyan
+	added = yellow
+	changed = green
+    	untracked = cyan
 [include]
-    path = ~/.gitconfig.local
+    	path = ~/.gitconfig.local
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
