@@ -21,3 +21,7 @@ alias dot="homeshick"
 #-----------------------------
 alias vi=nvim
 
+#-----------------------------
+# hub.github.com
+#-----------------------------
+alias git=hub
