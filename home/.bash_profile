@@ -10,4 +10,4 @@ fi
 PATH=$PATH:$HOME/.local/bin:$HOME/bin
 
 export PATH
-source $HOME/.nvm/nvm.sh
+[ -d $HOME/.nvm ] && source $HOME/.nvm/nvm.sh

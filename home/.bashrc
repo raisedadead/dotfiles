@@ -67,11 +67,6 @@ esac
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 #-----------------------------
-# cloud-9 configs
-#-----------------------------
-[ -f ~/.bashrc.cloud-nine ] && source ~/.bashrc.cloud-nine
-
-#-----------------------------
 # aliases
 #-----------------------------
 [ -f ~/.alias ] && source ~/.alias
@@ -83,3 +78,8 @@ esac
 #-----------------------------------------------------------
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
 
+#-----------------------------
+# hub
+#-----------------------------
+
+[ -d $HOME/hub ] && export PATH=$PATH:$HOME/hub/bin

@@ -58,3 +58,8 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 #-----------------------------------------------------------
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
 
+#-----------------------------
+# hub
+#-----------------------------
+
+[ -d $HOME/hub ] && export PATH=$PATH:$HOME/hub/bin
