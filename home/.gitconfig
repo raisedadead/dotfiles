@@ -28,7 +28,7 @@
     	snatch-pr = "!f() { git pr \"$1\" upstream; }; f"
     	harmony = "!f() { git pull --rebase upstream \"$1\"; }; f"
 [core]
-	editor = /usr/bin/nano
+	editor = nano
     	whitespace = off
     	excludesfile = ~/.gitignore
     	autocrlf = false
