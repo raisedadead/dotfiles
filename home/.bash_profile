@@ -11,3 +11,5 @@ PATH=$PATH:$HOME/.local/bin:$HOME/bin
 
 export PATH
 [ -d $HOME/.nvm ] && source $HOME/.nvm/nvm.sh
+
+export PATH="/usr/local/opt/node@8/bin:$PATH"

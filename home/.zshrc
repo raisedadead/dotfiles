@@ -24,21 +24,16 @@ if [[ -n $VIMRUNTIME ]]; then
 fi
 
 #-----------------------------
-# Zplug
+# homeshick
 #-----------------------------
-[ -f $HOME/.zshrc.zplug ] && source $HOME/.zshrc.zplug
+source "$HOME/.homesick/repos/homeshick/homeshick.sh"
+fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 
 #-----------------------------
 # aliases
 #-----------------------------
 
 source $HOME/.alias
-
-#-----------------------------
-# homeshick
-#-----------------------------
-source "$HOME/.homesick/repos/homeshick/homeshick.sh"
-fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 
 #-----------------------------
 # fzf
@@ -64,9 +59,9 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 
 [ -d $HOME/hub ] && export PATH=$PATH:$HOME/hub/bin
 
-# tabtab source for serverless package
-# uninstall by removing these lines or running `tabtab uninstall serverless`
-[[ -f /home/raisedadead/DEV/open-api/node_modules/tabtab/.completions/serverless.zsh ]] && . /home/raisedadead/DEV/open-api/node_modules/tabtab/.completions/serverless.zsh
-# tabtab source for sls package
-# uninstall by removing these lines or running `tabtab uninstall sls`
-[[ -f /home/raisedadead/DEV/open-api/node_modules/tabtab/.completions/sls.zsh ]] && . /home/raisedadead/DEV/open-api/node_modules/tabtab/.completions/sls.zsh
+#-----------------------------
+# Zplug
+#-----------------------------
+[ -f $HOME/.zshrc.zplug ] && source $HOME/.zshrc.zplug
+
+#-----------------------------
