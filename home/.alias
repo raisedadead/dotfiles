@@ -10,18 +10,27 @@
 #
 #-----------------------------------------------------------
 
+command_exists () {
+    command -v "$1" &> /dev/null ;
+}
+
 #-----------------------------
 # homeshick helpers
 #-----------------------------
-
-alias dot="homeshick"
+if command_exists homeshick ; then
+    alias dot="homeshick"
+fi
 
 #-----------------------------
 # vi
 #-----------------------------
-alias vi=nvim
+if command_exists nvim ; then
+    alias vi=nvim
+fi
 
 #-----------------------------
 # hub.github.com
 #-----------------------------
-alias git=hub
+if command_exists hub ; then
+    alias git=hub
+fi
