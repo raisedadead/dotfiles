@@ -83,3 +83,7 @@ esac
 #-----------------------------
 
 [ -d $HOME/hub ] && export PATH=$PATH:$HOME/hub/bin
+
+# tabtab source for yarn package
+# uninstall by removing these lines or running `tabtab uninstall yarn`
+[ -f /Users/raisedadead/.config/yarn/global/node_modules/tabtab/.completions/yarn.bash ] && . /Users/raisedadead/.config/yarn/global/node_modules/tabtab/.completions/yarn.bash
