@@ -10,30 +10,24 @@
 #
 #-----------------------------------------------------------
 
-# https://gist.github.com/gubatron/1eb077a1c5fcf510e8e5
-function command_exists {
-  #this should be a very portable way of checking if something is on the path
-  #usage: "if command_exists foo; then echo it exists; fi"
-  type "$1" &> /dev/null
-}
 
 #-----------------------------
 # homeshick helpers
 #-----------------------------
-if command_exists homeshick ; then
-    alias dot="homeshick";
-fi
+alias dot="homeshick";
 
 #-----------------------------
 # vi
 #-----------------------------
-if command_exists nvim ; then
-    alias vi="nvim";
-fi
+alias vi="nvim";
 
 #-----------------------------
 # hub.github.com
 #-----------------------------
-if command_exists hub ; then
-    alias git="hub";
-fi
+alias git="hub";
+
+#-----------------------------
+# docker
+#-----------------------------
+alias dc="docker-compose"
+alias dcrun="docker-compose run --rm"
