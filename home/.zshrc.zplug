@@ -55,6 +55,8 @@ zplug "lib/history", from:oh-my-zsh
 # Adds useful aliases for things dealing with directories
 zplug "lib/directories", from:oh-my-zsh
 
+zplug "plugins/yarn", from:oh-my-zsh
+
 autoload -U compinit && compinit
 
 #-----------------------------

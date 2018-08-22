@@ -24,33 +24,14 @@ if [[ -n $VIMRUNTIME ]]; then
 fi
 
 #-----------------------------
-# homeshick
-#-----------------------------
-source "$HOME/.homesick/repos/homeshick/homeshick.sh"
-fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
-
-#-----------------------------
-# aliases
-#-----------------------------
-
-source $HOME/.alias
-
-#-----------------------------
 # fzf
 #-----------------------------
 
 [ -f $HOME/.fzf.zsh ] && source $HOME/.fzf.zsh
 
-#-----------------------------------------------------------
-# macOS
-#-----------------------------------------------------------
-[ -f $HOME/.zshrc.mac-os ] && source $HOME/.zshrc.mac-os
-
-#-----------------------------------------------------------
-
-#-----------------------------------------------------------
+#-----------------------------
 # travis
-#-----------------------------------------------------------
+#-----------------------------
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
 
 #-----------------------------
@@ -60,8 +41,26 @@ source $HOME/.alias
 [ -d $HOME/hub ] && export PATH=$PATH:$HOME/hub/bin
 
 #-----------------------------
+# homeshick
+#-----------------------------
+source "$HOME/.homesick/repos/homeshick/homeshick.sh"
+fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
+
+#-----------------------------
 # Zplug
 #-----------------------------
 [ -f $HOME/.zshrc.zplug ] && source $HOME/.zshrc.zplug
+
+
+#-----------------------------
+# aliases
+#-----------------------------
+
+source $HOME/.alias
+
+#-----------------------------
+# macOS
+#-----------------------------
+[ -f $HOME/.zshrc.mac-os ] && source $HOME/.zshrc.mac-os
 
 #-----------------------------

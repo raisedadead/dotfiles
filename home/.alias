@@ -25,9 +25,3 @@ alias vi="nvim";
 # hub.github.com
 #-----------------------------
 alias git="hub";
-
-#-----------------------------
-# docker
-#-----------------------------
-alias dc="docker-compose"
-alias dcrun="docker-compose run --rm"
