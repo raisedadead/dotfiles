@@ -64,3 +64,4 @@ source $HOME/.alias
 [ -f $HOME/.zshrc.mac-os ] && source $HOME/.zshrc.mac-os
 
 #-----------------------------
+function gi() { curl -L -s https://www.gitignore.io/api/$@ ;}

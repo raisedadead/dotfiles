@@ -28,6 +28,7 @@
     snatch-pr = "!f() { git pr \"$1\" upstream; }; f"
     harmony = "!f() { git pull --rebase upstream \"$1\"; }; f"
     trash = !mkdir -p .trash && git ls-files --others --exclude-standard | xargs mv -f -t .trash
+    cp = cherry-pick
 [core]
     editor = nano
     whitespace = off
