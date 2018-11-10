@@ -78,3 +78,5 @@
     trustExitCode = true
 [url "git@github.com:"]
     pushInsteadOf = git://github.com/
+[help]
+	autocorrect = 1
