@@ -71,11 +71,9 @@ esac
 #-----------------------------
 [ -f ~/.alias ] && source ~/.alias
 
-#-----------------------------------------------------------
-
-#-----------------------------------------------------------
+#-----------------------------
 # travis
-#-----------------------------------------------------------
+#-----------------------------
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
 
 #-----------------------------
@@ -84,6 +82,9 @@ esac
 
 [ -d $HOME/hub ] && export PATH=$PATH:$HOME/hub/bin
 
+#-----------------------------
+# yarn
+#-----------------------------
 # tabtab source for yarn package
 # uninstall by removing these lines or running `tabtab uninstall yarn`
-[ -f /Users/raisedadead/.config/yarn/global/node_modules/tabtab/.completions/yarn.bash ] && . /Users/raisedadead/.config/yarn/global/node_modules/tabtab/.completions/yarn.bash
+[ -f ~/.config/yarn/global/node_modules/tabtab/.completions/yarn.bash ] && . ~/.config/yarn/global/node_modules/tabtab/.completions/yarn.bash
