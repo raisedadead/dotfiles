@@ -63,4 +63,9 @@ source $HOME/.alias
 #-----------------------------
 [ -f $HOME/.zshrc.mac-os ] && source $HOME/.zshrc.mac-os
 
+#-----------------------------
+# private configs
+#-----------------------------
+[ -f $HOMR/.zshrc.private ] && source $HOME/.zshrc.private
+
 #-----------------------------------------------------------

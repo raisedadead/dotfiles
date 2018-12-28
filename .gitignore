@@ -26,3 +26,5 @@ node_modules
 
 # npm global config (already tracking required info)
 .npmrc
+
+*.private
