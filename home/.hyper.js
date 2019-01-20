@@ -26,7 +26,13 @@ module.exports = {
 
     // font family with optional fallbacks
     fontFamily:
-      'Menlo, "DejaVu Sans Mono", Consolas, "Lucida Console", monospace',
+      '"Sauce Code Pro","Code Pro", Menlo, "DejaVu Sans Mono", Consolas, "Lucida Console", monospace',
+
+    // default font weight: 'normal' or 'bold'
+    fontWeight: 'bold',
+
+    // font weight for bold characters: 'normal' or 'bold'
+    fontWeightBold: 'bold',
 
     // terminal cursor background color and opacity (hex, rgb, hsl, hsv, hwb or cmyk)
     cursorColor: "rgba(248,28,229,0.8)",
@@ -135,7 +141,7 @@ module.exports = {
     "hypercwd",
     "hyper-quit",
     "hyperlinks",
-    "hyper-snazzy"
+    "hyper-snazzy",
   ],
 
   // in development, you can create a directory under

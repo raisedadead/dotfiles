@@ -14,6 +14,9 @@
 # common configs
 #-----------------------------------------------------------
 
+export LC_CTYPE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 umask 022
 limit coredumpsize 0
 bindkey -d
@@ -47,10 +50,14 @@ source "$HOME/.homesick/repos/homeshick/homeshick.sh"
 fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 
 #-----------------------------
+# macOS
+#-----------------------------
+[ -f $HOME/.zshrc.mac-os ] && source $HOME/.zshrc.mac-os
+
+#-----------------------------
 # Zplug
 #-----------------------------
 [ -f $HOME/.zshrc.zplug ] && source $HOME/.zshrc.zplug
-
 
 #-----------------------------
 # aliases
@@ -59,13 +66,9 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 source $HOME/.alias
 
 #-----------------------------
-# macOS
-#-----------------------------
-[ -f $HOME/.zshrc.mac-os ] && source $HOME/.zshrc.mac-os
-
-#-----------------------------
 # private configs
 #-----------------------------
 [ -f $HOMR/.zshrc.private ] && source $HOME/.zshrc.private
 
 #-----------------------------------------------------------
+autoload -U compinit && compinit

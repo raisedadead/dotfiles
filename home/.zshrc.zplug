@@ -6,7 +6,7 @@
 # Copyright: Mrugesh Mohapatra <https://raisedadead.com>
 # License: ISC
 #
-# File name: .zplugrc
+# File name: .zshrc.zplug
 #
 #-----------------------------------------------------------
 
@@ -15,7 +15,7 @@
 #-----------------------------
 if [[ ! -d $HOME/.zplug ]]; then
   git clone https://github.com/zplug/zplug $HOME/.zplug
-  source $HOME/.zplug/init.zsh && zplug update --self
+  source $HOME/.zplug/init.zsh
 fi
 
 #-----------------------------
@@ -56,8 +56,6 @@ zplug "lib/history", from:oh-my-zsh
 zplug "lib/directories", from:oh-my-zsh
 
 zplug "plugins/yarn", from:oh-my-zsh
-
-autoload -U compinit && compinit
 
 #-----------------------------
 # ZSH syntax-higlighting
