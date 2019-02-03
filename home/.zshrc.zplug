@@ -65,10 +65,16 @@ zplug "zdharma/fast-syntax-highlighting", from:github, defer:3
 #-----------------------------
 # Themes
 #-----------------------------
+
+# Dracula theme 
+# zplug "dracula/zsh", as:theme
+
+# Pure theme and its dependancies
 zplug "mafredri/zsh-async", from:github, defer:0
 zplug "sindresorhus/pure", use:pure.zsh, from:github, as:theme
+
+# Tab colors for iTerm2 on macOS
 zplug "tysonwolker/iterm-tab-colors"
-# zplug "dracula/zsh", as:theme
 
 #-----------------------------
 # Install plugins if there are plugins that have not been installed
