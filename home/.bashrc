@@ -34,8 +34,8 @@ _setup_linux_windows()
 _setup_macos()
 {
     echo
-    echo "Todo: Setup is not implememted yet."
-    echo "Not done a thing... exiting... bye."
+    echo "Looked for a bash setup and found none."
+    echo "Did you forget you use ZSH on macOS ?!!"
     echo
     return 1
 }
