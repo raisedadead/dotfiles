@@ -22,11 +22,11 @@ module.exports = {
     updateChannel: "stable",
 
     // default font size in pixels for all tabs
-    fontSize: 14,
+    fontSize: 16,
 
     // font family with optional fallbacks
     fontFamily:
-      '"IBM Plex Mono", Menlo, "DejaVu Sans Mono", Consolas, "Lucida Console", monospace',
+      '"Dank Mono", "IBM Plex Mono", Menlo, "DejaVu Sans Mono", Consolas, "Lucida Console", monospace',
 
     // default font weight: 'normal' or 'bold'
     fontWeight: 'bold',
