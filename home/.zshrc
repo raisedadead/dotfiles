@@ -60,10 +60,11 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 [ -f $HOME/.zshrc.zplug ] && source $HOME/.zshrc.zplug
 
 #-----------------------------
-# aliases
+# aliases and env variables
 #-----------------------------
 
-source $HOME/.alias
+[ -f $HOME/.alias ] && source $HOME/.alias
+[ -f $HOME/.profile ] && source $HOME/.profile
 
 #-----------------------------
 # private configs
