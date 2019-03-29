@@ -26,7 +26,7 @@ module.exports = {
 
     // font family with optional fallbacks
     fontFamily:
-      '"Sauce Code Pro","Code Pro", Menlo, "DejaVu Sans Mono", Consolas, "Lucida Console", monospace',
+      '"IBM Plex Mono", Menlo, "DejaVu Sans Mono", Consolas, "Lucida Console", monospace',
 
     // default font weight: 'normal' or 'bold'
     fontWeight: 'bold',
