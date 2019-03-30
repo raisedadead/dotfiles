@@ -67,6 +67,11 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 [ -f $HOME/.profile ] && source $HOME/.profile
 
 #-----------------------------
+# custom utils and functions
+#-----------------------------
+[ -f $HOME/.bin/functions.sh ] && source $HOME/.bin/functions.sh
+
+#-----------------------------
 # private configs
 #-----------------------------
 [ -f $HOMR/.zshrc.private ] && source $HOME/.zshrc.private
