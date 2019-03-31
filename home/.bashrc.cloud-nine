@@ -1,9 +1,9 @@
 #-----------------------------------------------------------
 #
 # @raisedadead's config files
-# https://git.raisedadead.com/dotfiles
+# https://get.ms/dotfiles
 #
-# Copyright: Mrugesh Mohapatra <https://raisedadead.com>
+# Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
 # File name: .bashrc.cloud-nine
@@ -17,10 +17,10 @@ export PATH=$PATH:$HOME/.local/bin:$HOME/bin
 
 # load nvm
 export NVM_DIR="/home/ec2-user/.nvm"
-[ "$BASH_VERSION" ] && npm() { 
+[ "$BASH_VERSION" ] && npm() {
     # hack: avoid slow npm sanity check in nvm
-    if [ "$*" == "config get prefix" ]; then which node | sed "s/bin\/node//"; 
-    else $(which npm) "$@"; fi 
+    if [ "$*" == "config get prefix" ]; then which node | sed "s/bin\/node//";
+    else $(which npm) "$@"; fi
 }
 # [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 rvm_silence_path_mismatch_check_flag=1 # prevent rvm complaints that nvm is first in PATH

@@ -1,9 +1,9 @@
 #-----------------------------------------------------------
 #
 # @raisedadead's config files
-# https://git.raisedadead.com/dotfiles
+# https://get.ms/dotfiles
 #
-# Copyright: Mrugesh Mohapatra <https://raisedadead.com>
+# Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
 # File name: .bashrc
@@ -20,7 +20,7 @@ _setup_linux_windows()
         echo
         echo "Error: homeshick is not found or uninstalled."
         echo "Follow installation instructions on the repo:"
-        echo "https://git.raisedadead.com/dotfiles"
+        echo "https://get.ms/dotfiles"
         echo "Exiting..."
         echo
         return 1

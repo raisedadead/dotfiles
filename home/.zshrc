@@ -1,9 +1,9 @@
 #-----------------------------------------------------------
 #
 # @raisedadead's config files
-# https://git.raisedadead.com/dotfiles
+# https://get.ms/dotfiles
 #
-# Copyright: Mrugesh Mohapatra <https://raisedadead.com>
+# Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
 # File name: .zshrc
