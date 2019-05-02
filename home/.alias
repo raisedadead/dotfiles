@@ -24,3 +24,10 @@ alias vi="nvim";
 # hub.github.com
 #-----------------------------
 alias git="hub";
+
+#-----------------------------
+# VM lists from Azure and DO
+#-----------------------------
+alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
+alias azvms="az vm list-ip-addresses --output table"
+
