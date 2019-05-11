@@ -34,7 +34,12 @@ My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/
 
 ## Related
 
-[my Brewfile](https://github.com/raisedadead/Brewfile)
+- Other castles:
+  - <https://github.com/raisedadead/dotfiles-private>
+  - <https://github.com/raisedadead/dotfiles-mac-os>
+
+- Brewfile
+  - <https://github.com/raisedadead/Brewfile>
 
 ## License
 
