@@ -85,6 +85,7 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 # Autocomplete settings
 #-----------------------------
 
-autoload -U compinit && compinit
+autoload -Uz compinit
+compinit
 
 #-----------------------------------------------------------
