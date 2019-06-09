@@ -77,11 +77,6 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 [ -f $HOME/.zshrc.private ] && source $HOME/.zshrc.private
 
 #-----------------------------
-# startup directory
-#-----------------------------
-[ -d $HOME/DEV ] && cd $HOME/DEV
-
-#-----------------------------
 # Autocomplete settings
 #-----------------------------
 
