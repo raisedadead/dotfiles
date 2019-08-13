@@ -24,6 +24,7 @@ alias vi="nvim";
 # hub.github.com
 #-----------------------------
 alias git="hub";
+alias gti="git";
 
 #-----------------------------
 # VM lists from Azure and DO
