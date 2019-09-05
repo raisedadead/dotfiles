@@ -69,8 +69,8 @@ zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 # Dracula theme
 # zplug "dracula/zsh", as:theme
 # Pure theme and its dependancies
-zplug "mafredri/zsh-async", from:github, defer:0
-zplug "sindresorhus/pure", use:pure.zsh, from:github, as:theme
+#zplug "mafredri/zsh-async", from:github, defer:0
+#zplug "sindresorhus/pure", use:pure.zsh, from:github, as:theme
 
 #-----------------------------
 # Get any macOS specific plugins
