@@ -20,6 +20,8 @@ alias dot="homeshick";
 #-----------------------------
 alias git="hub";
 alias gti="git";
+alias got="git";
+alias gut="git";
 
 #-----------------------------
 # VM lists from Azure and DO
