@@ -42,7 +42,6 @@ zplug "supercrabtree/k"
 #-----------------------------
 # gst, gco, gc -> All the git shortcut goodness
 zplug "plugins/git", from:oh-my-zsh, if:"hash git"
-zplug "paulirish/git-open", as:plugin
 
 #-----------------------------
 # ZSH completions and search
@@ -62,15 +61,6 @@ zplug "lib/directories", from:oh-my-zsh
 zplug "zdharma/fast-syntax-highlighting", from:github, defer:2
 zplug "zsh-users/zsh-autosuggestions", from:github, defer:3
 zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
-
-#-----------------------------
-# Themes
-#-----------------------------
-# Dracula theme
-# zplug "dracula/zsh", as:theme
-# Pure theme and its dependancies
-#zplug "mafredri/zsh-async", from:github, defer:0
-#zplug "sindresorhus/pure", use:pure.zsh, from:github, as:theme
 
 #-----------------------------
 # Get any macOS specific plugins
