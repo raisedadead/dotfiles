@@ -29,7 +29,7 @@ source $HOME/.zplug/init.zsh
 # export NVM_LAZY_LOAD=true
 zplug "lukechilds/zsh-nvm"
 zplug "lukechilds/zsh-better-npm-completion", defer:1
-zplug "plugins/yarn", from:oh-my-zsh
+zplug "plugins/yarn", from:oh-my-zsh, defer:3
 
 #-----------------------------
 # File browsing
