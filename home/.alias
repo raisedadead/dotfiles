@@ -29,3 +29,8 @@ alias gut="git";
 alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
 alias azvms="az vm list-ip-addresses --output table"
 
+#-----------------------------
+# NVM Update to latest LTS
+#-----------------------------
+alias update-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
+
