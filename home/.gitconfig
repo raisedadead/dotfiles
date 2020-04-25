@@ -30,7 +30,7 @@
     trash = !mkdir -p .trash && git ls-files --others --exclude-standard | xargs mv -f -t .trash
     cp = cherry-pick
 [core]
-    editor = vi
+    editor = vim
     whitespace = off
     excludesfile = ~/.gitignore
     autocrlf = false
