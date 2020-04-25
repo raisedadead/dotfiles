@@ -60,7 +60,6 @@ fpath=($HOME/.homesick/repos/homeshick/completions $fpath)
 
 [ -f $HOME/.alias ] && source $HOME/.alias
 [ -f $HOME/.profile ] && source $HOME/.profile
-eval $(thefuck --alias)
 
 #-----------------------------
 # custom utils and functions
