@@ -35,3 +35,6 @@ function rollback-no-of-days () {
         echo "Please pass an argument as a number (as in days ago)."
     fi
 }
+
+precmd () {print -Pn "\e]0;%~\a"};
+
