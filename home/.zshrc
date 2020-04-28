@@ -87,9 +87,10 @@ compinit
 
 export PATH=“$HOME/.gem/ruby/2.6.0/bin:$PATH”
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-export VISUAL=vi
+export VISUAL=nvim
 export EDITOR="$VISUAL"
 
 # Uncomment for profiling load time
 # zprof >> ~/.zsh-load-log.txt
 #-----------------------------------------------------------
+
