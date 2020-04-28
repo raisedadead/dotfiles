@@ -14,6 +14,9 @@
 # common configs
 #-----------------------------------------------------------
 
+# Uncomment for profiling load time
+# zmodload zsh/zprof
+
 export LC_CTYPE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
@@ -87,13 +90,6 @@ export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 export VISUAL=vi
 export EDITOR="$VISUAL"
 
-#-----------------------------
-# NVM
-#-----------------------------
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
+# Uncomment for profiling load time
+# zprof >> ~/.zsh-load-log.txt
 #-----------------------------------------------------------
-

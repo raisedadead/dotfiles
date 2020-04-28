@@ -27,7 +27,7 @@ source $HOME/.zplug/init.zsh
 # Node
 #-----------------------------
 # export NVM_LAZY_LOAD=true
-zplug "lukechilds/zsh-nvm"
+zplug "lukechilds/zsh-nvm", defer:1
 zplug "lukechilds/zsh-better-npm-completion", defer:1
 zplug "plugins/yarn", from:oh-my-zsh, defer:3
 
