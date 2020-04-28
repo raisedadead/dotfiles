@@ -25,12 +25,10 @@
     find-ext = "!f() { git ls-tree -r HEAD --name-only | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -u ;}; f"
 
     # maintainer aliases (use with git-extras)
-    snatch-pr = "!f() { git pr \"$1\" upstream; }; f"
     harmony = "!f() { git pull --rebase upstream \"$1\"; }; f"
     trash = !mkdir -p .trash && git ls-files --others --exclude-standard | xargs mv -f -t .trash
     cp = cherry-pick
 [core]
-    editor = vim
     whitespace = off
     excludesfile = ~/.gitignore
     autocrlf = false

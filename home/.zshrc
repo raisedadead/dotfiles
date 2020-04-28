@@ -84,7 +84,8 @@ compinit
 
 export PATH=“$HOME/.gem/ruby/2.6.0/bin:$PATH”
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-export EDITOR='vim'
+export VISUAL=vi
+export EDITOR="$VISUAL"
 
 #-----------------------------
 # NVM
