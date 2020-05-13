@@ -97,3 +97,9 @@ if $(type bat > /dev/null 2>&1) && $(type fd > /dev/null 2>&1) && $(type fzf > /
   alias v='vi $(pbv)'
 fi
 
+
+#-----------------------------
+# update brew packages
+#-----------------------------
+alias letupdatebrew="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
+
