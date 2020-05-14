@@ -101,5 +101,5 @@ fi
 #-----------------------------
 # update brew packages
 #-----------------------------
-alias letupdatebrew="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
+alias letsupdatebrew="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
 
