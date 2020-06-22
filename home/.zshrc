@@ -97,6 +97,12 @@ export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 
+
+#-----------------------------
+# VIM Mode in ZSH
+#-----------------------------
+# bindkey -v
+
 # Uncomment for profiling load time
 # zprof >> ~/.zsh-load-log.txt
 #-----------------------------------------------------------
