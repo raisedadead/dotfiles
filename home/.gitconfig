@@ -77,7 +77,3 @@
     pushInsteadOf = git://github.com/
 [help]
     autocorrect = 1
-[pull]
-	ff = only
-[branch]
-	autoSetupMerge = always
