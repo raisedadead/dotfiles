@@ -90,7 +90,16 @@ fi
 
 
 #-----------------------------
-# update brew packages
+# update packages
 #-----------------------------
 alias letsupdatebrew="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
+alias letsupdatexcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
+
+#-----------------------------
+# terrafrom
+#-----------------------------
+
+if type terraform > /dev/null 2>&1; then
+  alias tf="terraform"
+fi
 

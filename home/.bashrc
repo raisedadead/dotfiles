@@ -95,3 +95,5 @@ export NVM_DIR="$HOME/.nvm"
 
 #-----------------------------------------------------------
 
+
+complete -C /usr/local/bin/terraform terraform
