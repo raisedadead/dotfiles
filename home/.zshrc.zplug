@@ -13,15 +13,15 @@
 #-----------------------------
 # Check if zplug is installed
 #-----------------------------
-if [[ ! -d $HOME/.zplug ]]; then
-  git clone https://github.com/zplug/zplug $HOME/.zplug
-  source $HOME/.zplug/init.zsh
+if [[ ! -d ~/.zplug ]]; then
+  git clone https://github.com/zplug/zplug ~/.zplug
+  source ~/.zplug/init.zsh
 fi
 
 #-----------------------------
 # Essential
 #-----------------------------
-source $HOME/.zplug/init.zsh
+source ~/.zplug/init.zsh
 
 #-----------------------------
 # Node
@@ -74,7 +74,7 @@ zplug "softmoth/zsh-vim-mode", from:github, as:plugin, use:'zsh-vim-mode.plugin.
 #-----------------------------
 # Get any macOS specific plugins
 #-----------------------------
-[ -f $HOME/.zshrc.zplug.mac-os ] && source $HOME/.zshrc.zplug.mac-os
+[ -f ~/.zshrc.zplug.mac-os ] && source ~/.zshrc.zplug.mac-os
 
 #-----------------------------
 # Install plugins if there are plugins that have not been installed

@@ -2,7 +2,7 @@
 
 > my dotfiles | fancy stuff in here... feel free to have a look around.
 
-My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/homeshick). 
+My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/homeshick).
 
 `homeshick` is a  git based dotfiles synchronizer utility. dotfiles are splitup into repositories (a.k.a castles). This repository is my primary castle. It has all the common and most used configs. Other castles are either private (emails, etc.) or are platform specific.
 
@@ -11,8 +11,8 @@ My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/
 1. Quick install [`homeshick`](https://github.com/andsens/homeshick) and source it:
 
    ```bash
-   git clone git://github.com/andsens/homeshick.git $HOME/.homesick/repos/homeshick
-   source "$HOME/.homesick/repos/homeshick/homeshick.sh"
+   git clone git://github.com/andsens/homeshick.git ~/.homesick/repos/homeshick
+   source "~/.homesick/repos/homeshick/homeshick.sh"
    ```
 
 2. Get the castle that you need. This one is mine:
@@ -20,7 +20,7 @@ My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/
    ```bash
    homeshick clone git@github.com:raisedadead/dotfiles.git
    ```
-   
+
 3. Rinse and repeat for others:
 
    ```bash

@@ -16,7 +16,7 @@ _setup_linux_windows()
     #-----------------------------
     # Homeshick
     #-----------------------------
-    if [[ ! -d $HOME/.homesick ]]; then
+    if [[ ! -d ~/.homesick ]]; then
         echo
         echo "Error: homeshick is not found or uninstalled."
         echo "Follow installation instructions on the repo:"
@@ -25,8 +25,8 @@ _setup_linux_windows()
         echo
         return 1
     fi
-    source $HOME/.homesick/repos/homeshick/homeshick.sh
-    source $HOME/.homesick/repos/homeshick/completions/homeshick-completion.bash
+    source ~/.homesick/repos/homeshick/homeshick.sh
+    source ~/.homesick/repos/homeshick/completions/homeshick-completion.bash
     return 0
 }
 
@@ -75,21 +75,21 @@ esac
 # hub
 #-----------------------------
 
-[ -d $HOME/hub ] && export PATH=$PATH:$HOME/hub/bin
+[ -d ~/hub ] && export PATH=$PATH:~/hub/bin
 
 #-----------------------------
 # Path settings
 #-----------------------------
 
-export PATH="$HOME/.gem/ruby/2.6.0/bin:$PATH"
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-export PATH="$PATH:$HOME/.local/bin:$HOME/bin"
+export PATH="~/.gem/ruby/2.6.0/bin:$PATH"
+export PATH="~/.yarn/bin:~/.config/yarn/global/node_modules/.bin:$PATH"
+export PATH="$PATH:~/.local/bin:~/bin"
 
 #-----------------------------
 # NVM
 #-----------------------------
 
-export NVM_DIR="$HOME/.nvm"
+export NVM_DIR="~/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
