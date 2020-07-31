@@ -91,8 +91,8 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 # Path and variable settings
 #-----------------------------
 
-export PATH="~/.gem/ruby/2.6.0/bin:$PATH"
-export PATH="~/.yarn/bin:~/.config/yarn/global/node_modules/.bin:$PATH"
+# export PATH="~/.gem/ruby/2.6.0/bin:$PATH"
+# export PATH="~/.yarn/bin:~/.config/yarn/global/node_modules/.bin:$PATH"
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 

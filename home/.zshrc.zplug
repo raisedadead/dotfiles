@@ -32,7 +32,7 @@ export NVM_AUTO_USE=true
 zplug "lukechilds/zsh-nvm"
 
 zplug "lukechilds/zsh-better-npm-completion", defer:2
-zplug "plugins/yarn", from:oh-my-zsh, defer:3
+# zplug "plugins/yarn", from:oh-my-zsh, defer:3
 
 #-----------------------------
 # File browsing
