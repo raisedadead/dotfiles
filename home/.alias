@@ -30,11 +30,6 @@ alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
 alias azvms="az vm list-ip-addresses --output table"
 
 #-----------------------------
-# NVM Update to latest LTS
-#-----------------------------
-alias update-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
-
-#-----------------------------
 # thefuck - mistyped commands
 #-----------------------------
 
@@ -92,8 +87,9 @@ fi
 #-----------------------------
 # update packages
 #-----------------------------
-alias letsupdatebrew="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
-alias letsupdatexcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
+alias letsupdate-brew="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
+alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
+alias letsupdate-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
 
 #-----------------------------
 # terrafrom

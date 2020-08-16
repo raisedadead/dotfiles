@@ -96,6 +96,14 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 
+
+#-----------------------------
+# Pyenv intialization
+#-----------------------------
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+fi
+
 #-----------------------------
 # Autocomplete settings
 #-----------------------------
@@ -106,3 +114,4 @@ compinit
 # Uncomment for profiling load time
 # zprof >> ~/.zsh-load-log.txt
 #-----------------------------------------------------------
+
