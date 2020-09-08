@@ -4,16 +4,46 @@
 
 My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/homeshick).
 
-`homeshick` is a  git based dotfiles synchronizer utility. dotfiles are splitup into repositories (a.k.a castles). This repository is my primary castle. It has all the common and most used configs. Other castles are either private (emails, etc.) or are platform specific.
+`homeshick` is a  git based dotfiles synchronizer utility. dotfiles are splitup into repositories called "castles". This repository is my primary castle. It has all the common and most used configs. Other castles are either private (emails, etc.) or are platform specific.
+
+Be mindful of the spelling, "homesick" vs "home**sh**ick". The former is the original tool implemented in ruby, and later in shell script.
+
+In practice, you should be able to use the files as is, by getting them from the `/home` directory in this repository.
+
+## Prerequisite
+
+If you are the same person as I am, make sure that the initial system setup checklist has been completed and tools and packages have been installed.
+
+### System Setup Checklist:
+
+Follow the system setup checklist (used after installing Operating System or spining a VM)
+
+<https://get.ms/setup>
+
+### Packages and tools:
+
+Check and get additional tools and packages for the system.
+
+- Brewfile for Homebrew on Linux
+
+  <https://github.com/raisedadead/Brewfile-linux>
+
+- Brewfile for Homebrew on macOS
+
+  <https://github.com/raisedadead/Brewfile>
+
+  I manage my `Brewfile` on macOS with a Brewfile manager called [Brew-file](https://github.com/rcmdnk/homebrew-file). It handles installing casks and applications from the App Store with `mas-cli`. Additionally it neatly wraps the `brew` command to keep the Brewfile updated and synchronized.
 
 ## Installation
 
-1. Quick install [`homeshick`](https://github.com/andsens/homeshick) and source it:
+1. Install [`homeshick`](https://github.com/andsens/homeshick) and source it:
 
    ```bash
-   git clone git://github.com/andsens/homeshick.git ~/.homesick/repos/homeshick
+   git clone https://github.com/andsens/homeshick.git $HOME/.homesick/repos/homeshick
    source "~/.homesick/repos/homeshick/homeshick.sh"
    ```
+
+   Later we would be able to use our alias `dot` for `homeshick`, once we have loaded the first castle.
 
 2. Get the castle that you need. This one is mine:
 
@@ -23,23 +53,21 @@ My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/
 
 3. Rinse and repeat for others:
 
+   Private Castle (<https://github.com/raisedadead/dotfiles-private>):
+
    ```bash
    homeshick clone git@github.com:raisedadead/dotfiles-private.git
    ```
 
+   Ubuntu 20.04 on WSL / Pop!_OS:
+
+   \**TBD*\*
+
+   macOS Castle (<https://github.com/raisedadead/dotfiles-mac-os>):
+
    ```bash
    homeshick clone git@github.com:raisedadead/dotfiles-mac-os.git
    ```
-
-
-## Related
-
-- Other castles:
-  - <https://github.com/raisedadead/dotfiles-private>
-  - <https://github.com/raisedadead/dotfiles-mac-os>
-
-- Brewfile
-  - <https://github.com/raisedadead/Brewfile>
 
 ## License
 
