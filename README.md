@@ -59,14 +59,16 @@ Check and get additional tools and packages for the system.
    homeshick clone git@github.com:raisedadead/dotfiles-private.git
    ```
 
-   Ubuntu 20.04 on WSL / Pop!_OS:
-
-   \**TBD*\*
-
-   macOS Castle (<https://github.com/raisedadead/dotfiles-mac-os>):
+   Ubuntu 20.04 on WSL / Pop!_OS Castle (<https://github.com/raisedadead/dotfiles-linux>):
 
    ```bash
-   homeshick clone git@github.com:raisedadead/dotfiles-mac-os.git
+   homeshick clone git@github.com:raisedadead/dotfiles-linux.git
+   ```
+
+   macOS Castle (<https://github.com/raisedadead/dotfiles-macos>):
+
+   ```bash
+   homeshick clone git@github.com:raisedadead/dotfiles-macos.git
    ```
 
 ## License
