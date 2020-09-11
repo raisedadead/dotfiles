@@ -105,6 +105,20 @@ if command -v pyenv 1>/dev/null 2>&1; then
 fi
 
 #-----------------------------
+# Brew Completions for zsh
+#-----------------------------
+if type brew &>/dev/null; then
+  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+fi
+
+#-----------------------------
+# Starship Prompt for zsh
+#-----------------------------
+if type starship &>/dev/null; then
+  eval "$(starship init zsh)"
+fi
+
+#-----------------------------
 # Autocomplete settings
 #-----------------------------
 
