@@ -26,7 +26,7 @@ Check and get additional tools and packages for the system.
 
 - Brewfile for Homebrew on Linux
 
-  <https://github.com/raisedadead/Brewfile-linux>
+  <https://github.com/raisedadead/dotfiles-linux/blob/master/home/Brewfile>
 
 - Brewfile for Homebrew on macOS
 
