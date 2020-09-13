@@ -74,8 +74,13 @@ esac
 #-----------------------------
 # hub
 #-----------------------------
-
 [ -d ~/hub ] && export PATH=$PATH:~/hub/bin
+
+
+#-----------------------------
+# linuxbrew
+#-----------------------------
+[ -d /home/linuxbrew ] && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 
 #-----------------------------
 # Path settings

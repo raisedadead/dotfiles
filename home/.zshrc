@@ -55,10 +55,16 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 [ -d ~/hub ] && export PATH=$PATH:~/hub/bin
 
 #-----------------------------
+# linuxbrew
+#-----------------------------
+[ -d /home/linuxbrew ] && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+
+#-----------------------------
 # homeshick
 #-----------------------------
 source ~/.homesick/repos/homeshick/homeshick.sh
 fpath=(~/.homesick/repos/homeshick/completions $fpath)
+
 
 #-----------------------------
 # macOS
