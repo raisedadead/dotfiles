@@ -40,7 +40,7 @@ Check and get additional tools and packages for the system.
 
    ```bash
    git clone https://github.com/andsens/homeshick.git $HOME/.homesick/repos/homeshick
-   source "~/.homesick/repos/homeshick/homeshick.sh"
+   source ~/.homesick/repos/homeshick/homeshick.sh
    ```
 
    Later we would be able to use our alias `dot` for `homeshick`, once we have loaded the first castle.
