@@ -99,3 +99,10 @@ if type terraform > /dev/null 2>&1; then
   alias tf="terraform"
 fi
 
+#-----------------------------
+# npm
+#-----------------------------
+# you should use npx, this is a fallback for local execution
+alias npm-x='PATH=$(npm bin):$PATH'
+
+
