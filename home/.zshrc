@@ -101,7 +101,6 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 # export PATH="~/.yarn/bin:~/.config/yarn/global/node_modules/.bin:$PATH"
 export VISUAL=nvim
 export EDITOR="$VISUAL"
-[ -d ~/DEV ] && cd ~/DEV
 
 #-----------------------------
 # Pyenv intialization

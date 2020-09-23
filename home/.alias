@@ -87,7 +87,7 @@ fi
 #-----------------------------
 # update packages
 #-----------------------------
-alias letsupdate-brew="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
+alias letsupdate-brew="brew update ; brew upgrade ; brew cleanup ; brew doctor ; brew file push"
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
 alias letsupdate-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
 
