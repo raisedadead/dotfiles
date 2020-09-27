@@ -65,11 +65,16 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 source ~/.homesick/repos/homeshick/homeshick.sh
 fpath=(~/.homesick/repos/homeshick/completions $fpath)
 
+#-----------------------------
+# macOS
+#-----------------------------
+[ -f ~/.zshrc.macos ] && source ~/.zshrc.macos
+
 
 #-----------------------------
 # macOS
 #-----------------------------
-[ -f ~/.zshrc.mac-os ] && source ~/.zshrc.mac-os
+[ -f ~/.zshrc.linux ] && source ~/.zshrc.linux
 
 #-----------------------------
 # Zplug
