@@ -82,7 +82,7 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 [ -f ~/.zshrc.zplug ] && source ~/.zshrc.zplug
 
 #-----------------------------
-# aliases and env variables
+# aliases and env settings
 #-----------------------------
 
 [ -f ~/.alias ] && source ~/.alias
@@ -94,7 +94,7 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 [ -f ~/.bin/functions.sh ] && source ~/.bin/functions.sh
 
 #-----------------------------
-# private configs
+# private configs and secrets
 #-----------------------------
 [ -f ~/.zshrc.private ] && source ~/.zshrc.private
 
