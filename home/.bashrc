@@ -100,7 +100,4 @@ export NVM_DIR="~/.nvm"
 
 #-----------------------------------------------------------
 
-
-complete -C /usr/local/bin/terraform terraform
-
-export PATH="$HOME/.cargo/bin:$PATH"
+# Warning: Everything below this line was probably added automatically.

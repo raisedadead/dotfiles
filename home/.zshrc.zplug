@@ -27,7 +27,7 @@ source ~/.zplug/init.zsh
 # Node
 #-----------------------------
 # export NVM_LAZY_LOAD=true
-export NVM_COMPLETION=true
+# export NVM_COMPLETION=true
 # export NVM_AUTO_USE=true
 zplug "lukechilds/zsh-nvm"
 zplug "lukechilds/zsh-better-npm-completion", defer:2
@@ -69,6 +69,12 @@ zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 # VIM mode in ZSH
 #-----------------------------
 zplug "softmoth/zsh-vim-mode", from:github, as:plugin, use:'zsh-vim-mode.plugin.zsh'
+
+#-----------------------------
+# kubectl
+#-----------------------------
+zplug "plugins/kubectl", from:oh-my-zsh, defer:2
+zplug "bonnefoa/kubectl-fzf", defer:3
 
 #-----------------------------
 # Get any macOS specific plugins

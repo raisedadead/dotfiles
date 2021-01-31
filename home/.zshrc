@@ -24,11 +24,6 @@ umask 022
 limit coredumpsize 0
 bindkey -d
 
-#-----------------------------
-# VIM Mode in ZSH
-#-----------------------------
-bindkey -v
-
 # Return if zsh is called from Vim
 if [[ -n $VIMRUNTIME ]]; then
     return 0
@@ -140,3 +135,4 @@ compinit
 # zprof >> ~/.zsh-load-log.txt
 #-----------------------------------------------------------
 
+# Warning: Everything below this line was probably added automatically.
