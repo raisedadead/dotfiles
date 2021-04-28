@@ -44,17 +44,6 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
   '
 
 #-----------------------------
-# hub
-#-----------------------------
-
-[ -d ~/hub ] && export PATH=$PATH:~/hub/bin
-
-#-----------------------------
-# linuxbrew
-#-----------------------------
-[ -d /home/linuxbrew ] && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
-
-#-----------------------------
 # homeshick
 #-----------------------------
 source ~/.homesick/repos/homeshick/homeshick.sh
@@ -67,7 +56,7 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 
 
 #-----------------------------
-# macOS
+# Linux
 #-----------------------------
 [ -f ~/.zshrc.linux ] && source ~/.zshrc.linux
 
@@ -75,13 +64,6 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 # Zplug
 #-----------------------------
 [ -f ~/.zshrc.zplug ] && source ~/.zshrc.zplug
-
-#-----------------------------
-# aliases and env settings
-#-----------------------------
-
-[ -f ~/.alias ] && source ~/.alias
-[ -f ~/.profile ] && source ~/.profile
 
 #-----------------------------
 # custom utils and functions
@@ -97,8 +79,6 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 # Path and variable settings
 #-----------------------------
 
-# export PATH="~/.gem/ruby/2.6.0/bin:$PATH"
-# export PATH="~/.yarn/bin:~/.config/yarn/global/node_modules/.bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 export VISUAL=nvim
 export EDITOR="$VISUAL"
@@ -123,6 +103,13 @@ fi
 if type starship &>/dev/null; then
   eval "$(starship init zsh)"
 fi
+
+#-----------------------------
+# aliases and env settings
+#-----------------------------
+
+[ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
+[ -f ~/.profile ] && source ~/.profile
 
 #-----------------------------
 # Autocomplete settings
