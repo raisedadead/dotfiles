@@ -38,3 +38,16 @@ function rollback-no-of-days () {
 
 precmd () {print -Pn "\e]0;%~\a"};
 
+# Credits: https://gist.github.com/dohq/1dc702cc0b46eb62884515ea52330d60
+function fzf-ssh () {
+  local selected_host=$(grep -h "Host " ~/.ssh/config_* | grep -v '*' | cut -b 6- | fzf --query "$LBUFFER" --prompt="SSH Remote > ")
+
+  if [ -n "$selected_host" ]; then
+    BUFFER="ssh ${selected_host}"
+    zle accept-line
+  fi
+  zle reset-prompt
+}
+
+zle -N fzf-ssh
+bindkey '^s' fzf-ssh
