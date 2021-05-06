@@ -8,6 +8,7 @@
     ba = branch -a
     bd = branch -d
     bD = branch -D
+    d  = diff -- ':!package-lock.json' ':!yarn.lock'
     dc = diff --cached
     edit = commit --amend
     no-edit = commit --amend --no-edit
