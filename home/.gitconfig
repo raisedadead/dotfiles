@@ -74,3 +74,5 @@
     rebase = false
 [include]
     path = ~/.gitconfig.local
+[gpg]
+    program = /usr/bin/gpg
