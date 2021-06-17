@@ -38,7 +38,7 @@
 [advice]
     statusuoption = false
 [push]
-	default = matching
+	default = simple
 [color]
     ui = true
 [color "diff"]
