@@ -75,4 +75,4 @@
 [include]
     path = ~/.gitconfig.local
 [gpg]
-    program = /usr/bin/gpg
+	program = /usr/bin/gpg2
