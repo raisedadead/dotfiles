@@ -33,7 +33,7 @@ alias azvms="az vm list-ip-addresses --output table"
 #-----------------------------
 # thefuck - mistyped commands
 #-----------------------------
-[ -f $(brew --prefix)/bin/hub ] && eval $(thefuck --alias)
+[ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
 
 
 #-----------------------------
