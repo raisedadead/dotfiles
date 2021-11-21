@@ -69,11 +69,13 @@ export VISUAL=nvim
 export EDITOR="$VISUAL"
 
 #-----------------------------
-# Brew Completions for zsh
+# Completions
 #-----------------------------
 if type brew &>/dev/null; then
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 fi
+
+[ -f ~/lib/azure-cli/az.completion ] && source ~/lib/azure-cli/az.completion
 
 #-----------------------------
 # Starship Prompt for zsh
