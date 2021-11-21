@@ -58,7 +58,7 @@ zplug "lib/directories", from:oh-my-zsh
 #-----------------------------
 # ZSH syntax-higlighting and suggestions
 #-----------------------------
-zplug "zdharma/fast-syntax-highlighting", from:github, defer:2
+zplug "zdharma-continuum/fast-syntax-highlighting", from:github, defer:2
 zplug "zsh-users/zsh-autosuggestions", from:github, defer:3
 zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 
