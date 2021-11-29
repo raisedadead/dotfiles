@@ -18,8 +18,11 @@ alias home="homeshick"
 #-----------------------------
 # hub.github.com
 #-----------------------------
-[ -f $(brew --prefix)/bin/hub ] && alias git="hub"
+#[ -f $(brew --prefix)/bin/hub ] && alias git="hub"
 
+#-----------------------------
+# Other Git aliases
+# ----------------------------
 alias gti="git"
 alias got="git"
 alias gut="git"
