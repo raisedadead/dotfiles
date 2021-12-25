@@ -76,6 +76,7 @@ if type brew &>/dev/null; then
 fi
 
 [ -f ~/lib/azure-cli/az.completion ] && source ~/lib/azure-cli/az.completion
+[ -f ~/.cdktf.completion ] && source ~/.cdktf.completion
 
 #-----------------------------
 # Starship Prompt for zsh
