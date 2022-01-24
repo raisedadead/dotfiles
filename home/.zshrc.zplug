@@ -62,7 +62,6 @@ zplug "zdharma-continuum/fast-syntax-highlighting", from:github, defer:2
 zplug "zsh-users/zsh-autosuggestions", from:github, defer:3
 zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 
-
 #-----------------------------
 # VIM mode in ZSH
 #-----------------------------
@@ -73,6 +72,11 @@ zplug "softmoth/zsh-vim-mode", from:github, as:plugin, use:'zsh-vim-mode.plugin.
 #-----------------------------
 zplug "plugins/kubectl", from:oh-my-zsh, defer:2
 zplug "bonnefoa/kubectl-fzf", defer:3
+
+#-----------------------------
+# Terraform
+#-----------------------------
+zplug "macunha1/zsh-terraform", defer:3
 
 #-----------------------------
 # Get any macOS specific plugins
