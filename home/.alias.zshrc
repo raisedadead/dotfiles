@@ -16,11 +16,6 @@
 alias home="homeshick"
 
 #-----------------------------
-# hub.github.com
-#-----------------------------
-#[ -f $(brew --prefix)/bin/hub ] && alias git="hub"
-
-#-----------------------------
 # Other Git aliases
 # ----------------------------
 alias gti="git"
@@ -38,7 +33,6 @@ alias azvms="az vm list-ip-addresses --output table"
 #-----------------------------
 [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
 
-
 #-----------------------------
 # Neovim
 #-----------------------------
@@ -54,7 +48,6 @@ alias letsupdate-brew-linux="brew update ; brew upgrade ; brew cleanup ; brew do
 alias letsupdate-brew-macos="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
 alias letsupdate-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
-
 
 #-----------------------------
 # Quick lookup (and edit)
