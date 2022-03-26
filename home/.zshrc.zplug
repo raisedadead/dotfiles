@@ -68,12 +68,6 @@ zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 zplug "softmoth/zsh-vim-mode", from:github, as:plugin, use:'zsh-vim-mode.plugin.zsh'
 
 #-----------------------------
-# kubectl
-#-----------------------------
-zplug "plugins/kubectl", from:oh-my-zsh, defer:2
-zplug "bonnefoa/kubectl-fzf", defer:3
-
-#-----------------------------
 # Terraform
 #-----------------------------
 zplug "macunha1/zsh-terraform", defer:3
