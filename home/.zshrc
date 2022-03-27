@@ -36,14 +36,24 @@ source ~/.homesick/repos/homeshick/homeshick.sh
 fpath=(~/.homesick/repos/homeshick/completions $fpath)
 
 #-----------------------------
-# macOS
+# linuxbrew
 #-----------------------------
-[ -f ~/.zshrc.macos ] && source ~/.zshrc.macos
+[ -d /home/linuxbrew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 #-----------------------------
-# Linux
+# Brew Completions for zsh
 #-----------------------------
-[ -f ~/.zshrc.linux ] && source ~/.zshrc.linux
+if type brew &>/dev/null; then
+  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+fi
+
+#-----------------------------
+# pyenv
+#-----------------------------
+export PATH="$HOME/.pyenv/bin:$PATH"
+[ -d $HOME/.pyenv ] && eval "$(pyenv init --path)"
+# avoid conflicts with homebrew
+[ -d $HOME/.pyenv ] && alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
 
 #-----------------------------
 # Zplug

@@ -31,15 +31,11 @@ alias azvms="az vm list-ip-addresses --output table"
 #-----------------------------
 # thefuck - mistyped commands
 #-----------------------------
-[ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
-
+type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
 #-----------------------------
 # Neovim
 #-----------------------------
-if [ -f $(brew --prefix)/bin/nvim ]; then
-    alias vi="nvim"
-    alias vim="nvim"
-fi
+type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="nvim"; alias vim="nvim"
 
 #-----------------------------
 # update packages
