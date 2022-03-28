@@ -15,64 +15,68 @@
 #-----------------------------
 if [[ ! -d ~/.zplug ]]; then
   git clone https://github.com/zplug/zplug ~/.zplug
-  source ~/.zplug/init.zsh
 fi
-
-#-----------------------------
-# Essential
-#-----------------------------
 source ~/.zplug/init.zsh
 
 #-----------------------------
-# Node
+# Node.js
 #-----------------------------
 zplug "lukechilds/zsh-nvm"
-zplug "lukechilds/zsh-better-npm-completion", defer:2
-zplug "plugins/yarn", from:oh-my-zsh, defer:3
 zplug "Sparragus/zsh-auto-nvm-use", defer:2
+zplug "lukechilds/zsh-better-npm-completion", defer:2
 
 #-----------------------------
-# File browsing
+# Files & directories
 #-----------------------------
 zplug "b4b4r07/enhancd", use:init.sh
 zplug "supercrabtree/k"
 
 #-----------------------------
-# Git Plugins
+# Git
 #-----------------------------
-# gst, gco, gc -> All the git shortcut goodness
-zplug "plugins/git", from:oh-my-zsh, if:"hash git"
+zplug "z-shell/zsh-diff-so-fancy"
 
 #-----------------------------
-# ZSH completions and search
+# Syntax highlighting
 #-----------------------------
-# Load completion library for those sweet [tab] squares
+zplug "zdharma-continuum/fast-syntax-highlighting", defer:2
+
+#-----------------------------
+# vim mode
+#-----------------------------
+zplug "softmoth/zsh-vim-mode"
+
+#-----------------------------
+# Docker
+#-----------------------------
+zplug "srijanshetty/docker-zsh", defer:2
+
+#-----------------------------
+# zsh-users
+#-----------------------------
+zplug "zsh-users/zsh-completions", defer:2
+zplug "zsh-users/zsh-autosuggestions", defer:2
+zplug "zsh-users/zsh-history-substring-search", defer:2
+
+#-----------------------------
+# oh-my-zsh
+#-----------------------------
 zplug "lib/completion", from:oh-my-zsh
-# Up -> History search! Who knew it wasn't a built in?
-zplug "lib/key-bindings", from:oh-my-zsh
-# History defaults
+# zplug "lib/key-bindings", from:oh-my-zsh
 zplug "lib/history", from:oh-my-zsh
-# Adds useful aliases for things dealing with directories
 zplug "lib/directories", from:oh-my-zsh
 
-zplug Aloxaf/fzf-tab
-
-#-----------------------------
-# ZSH syntax-higlighting and suggestions
-#-----------------------------
-zplug "zdharma-continuum/fast-syntax-highlighting", from:github, defer:2
-zplug "zsh-users/zsh-autosuggestions", from:github, defer:3
-zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
-
-#-----------------------------
-# VIM mode in ZSH
-#-----------------------------
-zplug "softmoth/zsh-vim-mode", from:github, as:plugin, use:'zsh-vim-mode.plugin.zsh'
-
-#-----------------------------
-# Terraform
-#-----------------------------
-zplug "macunha1/zsh-terraform", defer:3
+if can_haz fzf; then
+  #-----------------------------
+  # History
+  #-----------------------------
+  zplug "joshskidmore/zsh-fzf-history-search", defer:2
+  #-----------------------------
+  # Tab completion
+  #-----------------------------
+  zplug "Aloxaf/fzf-tab"
+  zplug "unixorn/fzf-zsh-plugin", defer:2
+fi
 
 #-----------------------------
 # Get any macOS specific plugins
@@ -83,10 +87,11 @@ zplug "macunha1/zsh-terraform", defer:3
 # Install plugins if there are plugins that have not been installed
 #-----------------------------
 if ! zplug check --verbose; then
-    printf "Install? [y/N]: "
-    if read -q; then
-        echo; zplug install
-    fi
+  printf "Install? [y/N]: "
+  if read -q; then
+    echo
+    zplug install
+  fi
 fi
 
 #-----------------------------

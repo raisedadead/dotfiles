@@ -26,8 +26,13 @@ bindkey -d
 
 # Return if zsh is called from Vim
 if [[ -n $VIMRUNTIME ]]; then
-    return 0
+  return 0
 fi
+
+# Credit: https://github.com/unixorn/zsh-quickstart-kit/blob/6e940dd38053b0a7c6c0208426d7a7ab798a3db7/zsh/.zshrc#L24-L26
+function can_haz() {
+  which "$@" >/dev/null 2>&1
+}
 
 #-----------------------------
 # homeshick
@@ -43,7 +48,7 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 #-----------------------------
 # Brew Completions for zsh
 #-----------------------------
-if type brew &>/dev/null; then
+if can_haz brew; then
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 fi
 
@@ -81,7 +86,7 @@ export EDITOR="$VISUAL"
 #-----------------------------
 # Completions
 #-----------------------------
-if type brew &>/dev/null; then
+if can_haz brew; then
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 fi
 
@@ -91,21 +96,20 @@ fi
 #-----------------------------
 # Starship Prompt for zsh
 #-----------------------------
-if type starship &>/dev/null; then
+if can_haz starship; then
   eval "$(starship init zsh)"
 fi
 
 #-----------------------------
 # fzf
 #-----------------------------
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-[ -f ~/.fzf.zshrc ] && source ~/.fzf.zshrc
-
+if can_haz fzf; then
+  [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+  [ -f ~/.fzf.zshrc ] && source ~/.fzf.zshrc
+fi
 #-----------------------------
 # aliases and env settings
 #-----------------------------
-
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
 [ -f ~/.profile ] && source ~/.profile
 

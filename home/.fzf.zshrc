@@ -1,4 +1,3 @@
-
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
 export FZF_DEFAULT_OPTS='
@@ -16,9 +15,3 @@ export FZF_CTRL_R_OPTS=$FZF_DEFAULT_OPTS"
 export FZF_ALT_C_OPTS=$FZF_DEFAULT_OPTS"
   --preview 'tree -C {} | head -200'
   "
-
-# Note:
-#   Using omz key-bindings plugin via zplug fucks up the widget,
-#   adding explict binding and load as late as possible.
-
-bindkey '^r' fzf-history-widget
