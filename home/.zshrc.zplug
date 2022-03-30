@@ -61,20 +61,20 @@ zplug "zsh-users/zsh-history-substring-search", defer:2
 #-----------------------------
 # oh-my-zsh
 #-----------------------------
-zplug "lib/completion", from:oh-my-zsh
+# zplug "lib/completion", from:oh-my-zsh
 # zplug "lib/key-bindings", from:oh-my-zsh
 zplug "lib/history", from:oh-my-zsh
-zplug "lib/directories", from:oh-my-zsh
+# zplug "lib/directories", from:oh-my-zsh
 
 if can_haz fzf; then
   #-----------------------------
   # History
   #-----------------------------
-  zplug "joshskidmore/zsh-fzf-history-search", defer:2
+  zplug "joshskidmore/zsh-fzf-history-search"
   #-----------------------------
   # Tab completion
   #-----------------------------
-  zplug "Aloxaf/fzf-tab"
+  zplug "Aloxaf/fzf-tab", defer:2
   zplug "unixorn/fzf-zsh-plugin", defer:2
 fi
 
