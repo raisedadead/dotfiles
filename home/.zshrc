@@ -78,7 +78,6 @@ export PATH="$HOME/.pyenv/bin:$PATH"
 #-----------------------------
 # Path and variable settings
 #-----------------------------
-
 export PATH="$HOME/.cargo/bin:$PATH"
 export VISUAL=nvim
 export EDITOR="$VISUAL"
@@ -89,9 +88,6 @@ export EDITOR="$VISUAL"
 if can_haz brew; then
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 fi
-
-[ -f ~/lib/azure-cli/az.completion ] && source ~/lib/azure-cli/az.completion
-[ -f ~/.cdktf.completion ] && source ~/.cdktf.completion
 
 #-----------------------------
 # Starship Prompt for zsh
@@ -107,6 +103,7 @@ if can_haz fzf; then
   [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
   [ -f ~/.fzf.zshrc ] && source ~/.fzf.zshrc
 fi
+
 #-----------------------------
 # aliases and env settings
 #-----------------------------
@@ -116,7 +113,6 @@ fi
 #-----------------------------
 # Autocomplete settings
 #-----------------------------
-
 autoload -Uz compinit
 compinit
 
