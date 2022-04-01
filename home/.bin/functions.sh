@@ -60,6 +60,7 @@ function fzf-ssh() {
 
 zle -N fzf-ssh
 bindkey '^s' fzf-ssh
+setopt noflowcontrol
 
 if can_haz fzf; then
 
