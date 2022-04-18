@@ -19,6 +19,11 @@ fi
 source ~/.zplug/init.zsh
 
 #-----------------------------
+# WakaTime
+#-----------------------------
+zplug "sobolevn/wakatime-zsh-plugin"
+
+#-----------------------------
 # Node.js
 #-----------------------------
 zplug "lukechilds/zsh-nvm"
