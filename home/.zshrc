@@ -55,10 +55,11 @@ fi
 #-----------------------------
 # pyenv
 #-----------------------------
-export PATH="$HOME/.pyenv/bin:$PATH"
-[ -d $HOME/.pyenv ] && eval "$(pyenv init --path)"
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+[ -d $PYENV_ROOT ] && eval "$(pyenv init --path)"
 # avoid conflicts with homebrew
-[ -d $HOME/.pyenv ] && alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
+[ -d $PYENV_ROOT ] && alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
 
 #-----------------------------
 # Zplug
