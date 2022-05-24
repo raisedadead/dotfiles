@@ -14,8 +14,10 @@
 # common configs
 #-----------------------------------------------------------
 
-# Uncomment for profiling load time
-# zmodload zsh/zprof
+# Use for profiling zsh, should be the first thing in the file
+if [[ "$ZPROF" = true ]]; then
+  zmodload zsh/zprof
+fi
 
 export LC_CTYPE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
@@ -117,8 +119,14 @@ fi
 autoload -Uz compinit
 compinit
 
-# Uncomment for profiling load time
-# zprof >> ~/.zsh-load-log.txt
+# Use for profiling zsh, should be the last thing in the file
+timezsh() {
+    for i in $(seq 1 10); do time zsh -i -c exit; done
+}
+
+if [[ "$ZPROF" = true ]]; then
+  zprof
+fi
 #-----------------------------------------------------------
 
 # Warning: Everything below this line was probably added automatically.

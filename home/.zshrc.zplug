@@ -19,15 +19,9 @@ fi
 source ~/.zplug/init.zsh
 
 #-----------------------------
-# WakaTime
-#-----------------------------
-zplug "sobolevn/wakatime-zsh-plugin"
-
-#-----------------------------
 # Node.js
 #-----------------------------
 zplug "lukechilds/zsh-nvm"
-zplug "Sparragus/zsh-auto-nvm-use", defer:2
 zplug "lukechilds/zsh-better-npm-completion", defer:2
 
 #-----------------------------
