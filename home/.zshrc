@@ -121,7 +121,7 @@ compinit
 
 # Use for profiling zsh, should be the last thing in the file
 timezsh() {
-    for i in $(seq 1 10); do time zsh -i -c exit; done
+  for i in $(seq 1 10); do time zsh -i -c exit; done
 }
 
 if [[ "$ZPROF" = true ]]; then
