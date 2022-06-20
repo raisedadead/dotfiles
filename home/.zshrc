@@ -31,6 +31,11 @@ if [[ -n $VIMRUNTIME ]]; then
   return 0
 fi
 
+setopt INC_APPEND_HISTORY
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_FIND_NO_DUPS
+
 # Credit: https://github.com/unixorn/zsh-quickstart-kit/blob/6e940dd38053b0a7c6c0208426d7a7ab798a3db7/zsh/.zshrc#L24-L26
 function can_haz() {
   which "$@" >/dev/null 2>&1
