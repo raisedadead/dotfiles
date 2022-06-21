@@ -29,30 +29,34 @@
     harmony = "!f() { git pull --rebase upstream \"$1\"; }; f"
     trash = !mkdir -p .trash && git ls-files --others --exclude-standard | xargs mv -f -t .trash
     cp = cherry-pick
+
 [core]
     whitespace = off
     excludesfile = ~/.gitignore
     autocrlf = false
     safecrlf = false
-    pager = diff-so-fancy | less --tabs=4 -RFX
+    pager = delta
+
+[delta]
+    side-by-side = true
+    line-numbers = true
+
 [advice]
     statusuoption = false
+
+[fetch]
+	prune = true
+[merge]
+    conflictstyle = diff3
+[diff]
+    colorMoved = default
+[pull]
+    rebase = false
 [push]
 	default = current
+
 [color]
-    ui = true
-[color "diff"]
-    meta = yellow
-    commit = yellow bold
-    frag = magenta bold
-    old = red bold
-    new = green bold
-    whitespace = red reverse
-[color "diff-highlight"]
-    oldNormal = red bold
-    oldHighlight = red bold 52
-    newNormal = green bold
-    newHighlight = green bold 22
+	ui = true
 [color "branch"]
     current = yellow reverse
     local = yellow
@@ -61,18 +65,18 @@
     added = yellow
     changed = green
     untracked = cyan
+
 [filter "lfs"]
     clean = git-lfs clean -- %f
     smudge = git-lfs smudge -- %f
     process = git-lfs filter-process
     required = true
+
 [url "git@github.com:"]
     pushInsteadOf = git://github.com/
+
 [help]
     autocorrect = 1
-[pull]
-    rebase = false
+
 [include]
     path = ~/.gitconfig.local
-[fetch]
-	prune = true
