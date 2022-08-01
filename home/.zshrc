@@ -48,6 +48,10 @@ source ~/.homesick/repos/homeshick/homeshick.sh
 fpath=(~/.homesick/repos/homeshick/completions $fpath)
 
 #-----------------------------
+# homebrew
+#-----------------------------
+[ -d /opt/homebrew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+#-----------------------------
 # linuxbrew
 #-----------------------------
 [ -d /home/linuxbrew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
