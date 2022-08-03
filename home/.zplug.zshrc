@@ -6,7 +6,7 @@
 # Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
-# File name: .zshrc.zplug
+# File name: .zplug.zshrc
 #
 #-----------------------------------------------------------
 
@@ -78,11 +78,6 @@ if can_haz fzf; then
   #-----------------------------
   zplug "unixorn/fzf-zsh-plugin", defer:2
 fi
-
-#-----------------------------
-# Get any macOS specific plugins
-#-----------------------------
-[ -f ~/.zshrc.zplug.mac-os ] && source ~/.zshrc.zplug.mac-os
 
 #-----------------------------
 # Install plugins if there are plugins that have not been installed

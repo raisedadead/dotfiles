@@ -10,6 +10,9 @@
 #
 #-----------------------------------------------------------
 
+# Fig pre block. Keep at the top of this file.
+[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && . "$HOME/.fig/shell/zshrc.pre.zsh"
+
 #-----------------------------------------------------------
 # common configs
 #-----------------------------------------------------------
@@ -51,17 +54,11 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 # homebrew
 #-----------------------------
 [ -d /opt/homebrew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+
 #-----------------------------
 # linuxbrew
 #-----------------------------
 [ -d /home/linuxbrew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-#-----------------------------
-# Brew Completions for zsh
-#-----------------------------
-if can_haz brew; then
-  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
-fi
 
 #-----------------------------
 # pyenv
@@ -75,7 +72,7 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 #-----------------------------
 # Zplug
 #-----------------------------
-[ -f ~/.zshrc.zplug ] && source ~/.zshrc.zplug
+[ -f ~/.zplug.zshrc ] && source ~/.zplug.zshrc
 
 #-----------------------------
 # custom utils and functions
@@ -85,7 +82,7 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 #-----------------------------
 # private configs and secrets
 #-----------------------------
-[ -f ~/.zshrc.private ] && source ~/.zshrc.private
+[ -f ~/.private.zshrc ] && source ~/.private.zshrc
 
 #-----------------------------
 # Path and variable settings
@@ -137,5 +134,8 @@ if [[ "$ZPROF" = true ]]; then
   zprof
 fi
 #-----------------------------------------------------------
+
+# Fig post block. Keep at the bottom of this file.
+[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && . "$HOME/.fig/shell/zshrc.post.zsh"
 
 # Warning: Everything below this line was probably added automatically.

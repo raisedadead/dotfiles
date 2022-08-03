@@ -41,6 +41,6 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="nvim"; al
 # update packages
 #-----------------------------
 alias letsupdate-brew-linux="brew update ; brew upgrade ; brew cleanup ; brew doctor"
-alias letsupdate-brew-macos="brew update ; brew upgrade ; brew cask upgrade ; brew cleanup ; brew doctor ; brew file push"
+alias letsupdate-brew-macos="brew update ; brew upgrade ; brew upgrade --cask ; brew cleanup ; brew doctor ; brew file push"
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
 alias letsupdate-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
