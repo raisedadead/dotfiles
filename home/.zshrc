@@ -54,6 +54,9 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 # homebrew
 #-----------------------------
 [ -d /opt/homebrew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+if [ -f $(brew --prefix)/etc/brew-wrap ];then
+  source $(brew --prefix)/etc/brew-wrap
+fi
 
 #-----------------------------
 # linuxbrew
