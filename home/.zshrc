@@ -1,3 +1,5 @@
+# Fig pre block. Keep at the top of this file.
+[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && . "$HOME/.fig/shell/zshrc.pre.zsh"
 #-----------------------------------------------------------
 #
 # @raisedadead's config files
@@ -9,9 +11,6 @@
 # File name: .zshrc
 #
 #-----------------------------------------------------------
-
-# Fig pre block. Keep at the top of this file.
-[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && . "$HOME/.fig/shell/zshrc.pre.zsh"
 
 #-----------------------------------------------------------
 # common configs
@@ -138,7 +137,7 @@ if [[ "$ZPROF" = true ]]; then
 fi
 #-----------------------------------------------------------
 
+# Warning: Everything below this line was probably added automatically.
+
 # Fig post block. Keep at the bottom of this file.
 [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && . "$HOME/.fig/shell/zshrc.post.zsh"
-
-# Warning: Everything below this line was probably added automatically.
