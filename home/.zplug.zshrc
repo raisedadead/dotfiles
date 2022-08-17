@@ -71,8 +71,8 @@ if can_haz fzf; then
   #-----------------------------
   # Completions
   #-----------------------------
-  zplug "chitoku-k/fzf-zsh-completions"
-  zplug "Aloxaf/fzf-tab", defer:2
+  # zplug "chitoku-k/fzf-zsh-completions"
+  # zplug "Aloxaf/fzf-tab", defer:2
   #-----------------------------
   # Swiss-army knife & more
   #-----------------------------
