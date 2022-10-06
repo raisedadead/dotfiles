@@ -48,3 +48,8 @@ alias letsupdate-brew-linux="brew update; brew upgrade; brew cleanup; brew docto
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
 alias letsupdate-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
 
+#-----------------------------
+# random string/key generator
+#-----------------------------
+alias genrand="head -c32 /dev/urandom | base64"
+
