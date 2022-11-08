@@ -63,6 +63,11 @@ fi
 [ -d /home/linuxbrew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 #-----------------------------
+# Zplug
+#-----------------------------
+[ -f ~/.zplug.zshrc ] && source ~/.zplug.zshrc
+
+#-----------------------------
 # pyenv
 #-----------------------------
 export PYENV_ROOT="$HOME/.pyenv"
@@ -70,11 +75,6 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 [ -d $PYENV_ROOT ] && eval "$(pyenv init --path)"
 # avoid conflicts with homebrew
 [ -d $PYENV_ROOT ] && alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
-
-#-----------------------------
-# Zplug
-#-----------------------------
-[ -f ~/.zplug.zshrc ] && source ~/.zplug.zshrc
 
 #-----------------------------
 # custom utils and functions
@@ -120,6 +120,15 @@ fi
 #-----------------------------
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
 [ -f ~/.profile ] && source ~/.profile
+
+#-----------------------------
+# iTerm2 settings
+#-----------------------------
+if can_haz test; then
+  if test -e "${HOME}/.iterm2_shell_integration.zsh"; then
+    source "${HOME}/.iterm2_shell_integration.zsh"
+  fi
+fi
 
 #-----------------------------
 # Autocomplete settings
