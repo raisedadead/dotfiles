@@ -21,6 +21,7 @@ source ~/.zplug/init.zsh
 #-----------------------------
 # Node.js
 #-----------------------------
+NVM_AUTO_USE=true
 zplug "lukechilds/zsh-nvm"
 zplug "lukechilds/zsh-better-npm-completion", defer:2
 
