@@ -28,7 +28,8 @@ zplug "lukechilds/zsh-better-npm-completion", defer:2
 #-----------------------------
 # Files & directories
 #-----------------------------
-zplug "b4b4r07/enhancd", use:init.sh
+# zplug "b4b4r07/enhancd", use:init.sh
+zplug "mfaerevaag/wd"
 zplug "supercrabtree/k"
 
 #-----------------------------
@@ -52,6 +53,11 @@ zplug "softmoth/zsh-vim-mode"
 zplug "srijanshetty/docker-zsh", defer:2
 
 #-----------------------------
+# Colors
+#-----------------------------
+# zplug "unixorn/warhol.plugin.zsh", defer:2
+
+#-----------------------------
 # zsh-users
 #-----------------------------
 zplug "zsh-users/zsh-completions", defer:2
@@ -73,7 +79,7 @@ if can_haz fzf; then
   # Completions
   #-----------------------------
   # zplug "chitoku-k/fzf-zsh-completions"
-  # zplug "Aloxaf/fzf-tab", defer:2
+  zplug "Aloxaf/fzf-tab", defer:2
   #-----------------------------
   # Swiss-army knife & more
   #-----------------------------
