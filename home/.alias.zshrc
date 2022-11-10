@@ -35,7 +35,8 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --al
 #-----------------------------
 # Neovim
 #-----------------------------
-type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="nvim"; alias vim="nvim"
+alias vim="vi"
+type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="nvim"
 
 #-----------------------------
 # update packages
@@ -53,3 +54,9 @@ alias letsupdate-node="nvm install 'lts/*' --reinstall-packages-from=default --l
 #-----------------------------
 alias genrand="head -c32 /dev/urandom | base64"
 
+#-----------------------------
+# Exa
+#-----------------------------
+type exa &>/dev/null && alias ls='exa --icons --group-directories-first'
+type exa &>/dev/null && alias ll='exa -l --icons --no-user --group-directories-first  --time-style long-iso'
+type exa &>/dev/null && alias la='exa -la --icons --no-user --group-directories-first  --time-style long-iso'
