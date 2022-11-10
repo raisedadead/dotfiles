@@ -1,47 +1,105 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
 command_timeout = 800
-[aws]
-symbol = "  "
-[buf]
-symbol = " "
-[c]
-symbol = " "
-[conda]
-symbol = " "
-[dart]
-symbol = " "
+
+format = """
+[](#9A348E)\
+$username\
+[](bg:#DA627D fg:#9A348E)\
+$directory\
+[](fg:#DA627D bg:#FCA17D)\
+$git_branch\
+$git_status\
+[](fg:#FCA17D bg:#86BBD8)\
+$golang\
+$nodejs\
+$rust\
+[](fg:#86BBD8 bg:#06969A)\
+$docker_context\
+[](fg:#06969A bg:#33658A)\
+$time\
+[ ](fg:#33658A)\
+\n\n\
+$character\
+"""
+
+[username]
+format = '[$user ]($style)'
+show_always = true
+style_root = "bg:#9A348E"
+style_user = "bg:#9A348E"
+
+[hostname]
+disabled = false
+format = "[$ssh_symbol](bold blue) on [$hostname](bold red)"
+ssh_only = true
+
 [directory]
-read_only = " "
+format = "[$path]($style)[$read_only]($read_only_style)"
+read_only_style = "bg:#DA627D fg:#FCA17D"
+style = "bg:#DA627D"
+truncate_to_repo = true
+truncation_length = 0
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = " "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+"Videos" = " "
+
+[time]
+disabled = false
+format = "[ ♥ $time ]($style)"
+style = "bg:#33658A"
+time_format = "%R"
+
+[aws]
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
+symbol = " "
+
 [docker_context]
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
 symbol = " "
-[elixir]
-symbol = " "
-[elm]
-symbol = " "
+
 [git_branch]
+format = '[ $symbol $branch ]($style)'
+style = "black bg:#FCA17D"
 symbol = " "
+
+[git_status]
+format = '[$all_status$ahead_behind ]($style)'
+style = "black bg:#FCA17D"
+
 [golang]
-symbol = " "
-[haskell]
-symbol = " "
-[hg_branch]
-symbol = " "
-[java]
-symbol = " "
-[julia]
-symbol = " "
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
+symbol = ""
+
 [memory_usage]
-symbol = " "
-[nim]
-symbol = " "
-[nix_shell]
-symbol = " "
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
+symbol = ""
+
 [nodejs]
-symbol = " "
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
+symbol = ""
+
 [package]
-symbol = " "
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
+symbol = ""
+
 [python]
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
 symbol = " "
-[spack]
-symbol = "🅢 "
+
 [rust]
-symbol = " "
+format = '[ $symbol ($version) ]($style)'
+style = "black bg:#86BBD8"
+symbol = ""
