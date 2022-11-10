@@ -121,13 +121,19 @@ fi
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
 [ -f ~/.profile ] && source ~/.profile
 
-#-----------------------------
-# iTerm2 settings
-#-----------------------------
-if can_haz test; then
-  if test -e "${HOME}/.iterm2_shell_integration.zsh"; then
-    source "${HOME}/.iterm2_shell_integration.zsh"
+if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
+##### WHAT YOU WANT TO DISABLE FOR WARP - BELOW
+
+  #-----------------------------
+  # iTerm2 settings
+  #-----------------------------
+  if can_haz test; then
+    if test -e "${HOME}/.iterm2_shell_integration.zsh"; then
+      source "${HOME}/.iterm2_shell_integration.zsh"
+    fi
   fi
+
+##### WHAT YOU WANT TO DISABLE FOR WARP - ABOVE
 fi
 
 #-----------------------------
