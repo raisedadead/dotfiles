@@ -9,14 +9,13 @@ $username\
 $directory\
 [](fg:#DA627D bg:#FCA17D)\
 $git_branch\
+$git_state\
 $git_status\
 [](fg:#FCA17D bg:#86BBD8)\
 $golang\
 $nodejs\
 $rust\
-[](fg:#86BBD8 bg:#06969A)\
-$docker_context\
-[](fg:#06969A bg:#33658A)\
+[](fg:#86BBD8 bg:#33658A)\
 $time\
 [ ](fg:#33658A)\
 \n\n\
@@ -55,23 +54,17 @@ format = "[ ♥ $time ]($style)"
 style = "bg:#33658A"
 time_format = "%R"
 
-[aws]
-format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
-symbol = " "
-
-[docker_context]
-format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
-symbol = " "
-
 [git_branch]
-format = '[ $symbol $branch ]($style)'
+format = '[ $symbol$branch ]($style)'
 style = "black bg:#FCA17D"
 symbol = " "
 
+[git_state]
+format = '[ $symbol$state($progress_current/$progress_total) ]($style)'
+style = "black bg:#FCA17D"
+
 [git_status]
-format = '[$all_status$ahead_behind ]($style)'
+format = '[ $all_status$ahead_behind ]($style)'
 style = "black bg:#FCA17D"
 
 [golang]
