@@ -55,12 +55,12 @@ style = "bg:#33658A"
 time_format = "%R"
 
 [git_branch]
-format = '[ $symbol$branch ]($style)'
+format = '[ $symbol$branch]($style)'
 style = "black bg:#FCA17D"
 symbol = " "
 
 [git_state]
-format = '[ $symbol$state($progress_current/$progress_total) ]($style)'
+format = '[ $symbol$state($progress_current/$progress_total)]($style)'
 style = "black bg:#FCA17D"
 
 [git_status]
