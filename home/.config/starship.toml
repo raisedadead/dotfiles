@@ -17,10 +17,19 @@ $nodejs\
 $rust\
 [](fg:#86BBD8 bg:#33658A)\
 $time\
-[ ](fg:#33658A)\
+[](fg:#33658A bg:#FEF08A)\
+$aws\
+[](fg:#FEF08A)\
 \n\n\
 $character\
 """
+
+[aws]
+format = '[ $symbol( $profile )(\($region\))]($style)'
+style = 'bg:#FEF08A fg:#000000'
+symbol = '🅰 '
+[aws.profile_aliases]
+self-hosted-ci-freecodecamp = 'fcc-ci'
 
 [username]
 format = '[$user ]($style)'
