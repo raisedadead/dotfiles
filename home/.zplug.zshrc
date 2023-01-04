@@ -70,6 +70,11 @@ zplug "zsh-users/zsh-history-substring-search", defer:2
 zplug "lib/history", from:oh-my-zsh
 zplug "lib/directories", from:oh-my-zsh
 
+#-----------------------------
+# wakatime
+#-----------------------------
+zplug "sobolevn/wakatime-zsh-plugin", defer:2
+
 if can_haz fzf; then
   #-----------------------------
   # History
