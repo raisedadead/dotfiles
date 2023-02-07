@@ -17,7 +17,9 @@ $nodejs\
 $rust\
 [](fg:#86BBD8 bg:#33658A)\
 $time\
-[](fg:#33658A bg:#FEF08A)\
+[](fg:#33658A bg:#ECFCCB)\
+$cmd_duration\
+[](fg:#ECFCCB bg:#FEF08A)\
 $aws\
 [](fg:#FEF08A)\
 \n\n\
@@ -62,6 +64,11 @@ disabled = false
 format = "[ ♥ $time ]($style)"
 style = "bg:#33658A"
 time_format = "%R"
+
+[cmd_duration]
+format = '[took $duration]($style)'
+style = 'bg:#ECFCCB fg:#000000'
+min_time = 500
 
 [git_branch]
 format = '[ $symbol$branch]($style)'
