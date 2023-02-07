@@ -90,6 +90,10 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 # Path and variable settings
 #-----------------------------
 export PATH="$HOME/.cargo/bin:$PATH"
+# pnpm
+export PNPM_HOME="/Users/mrugesh/Library/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+# pnpm end
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 
@@ -156,3 +160,4 @@ fi
 
 # Fig post block. Keep at the bottom of this file.
 [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
+
