@@ -52,7 +52,7 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 #-----------------------------
 # homebrew
 #-----------------------------
-[ -d /opt/homebrew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+[ -d /opt/homebrew ] && eval "$(/opt/homebrew/bin/brew shellenv)" && [ -d /opt/homebrew/bin/brew-file ]
 if [ -f $(brew --prefix)/etc/brew-wrap ]; then
   source $(brew --prefix)/etc/brew-wrap
 fi
@@ -126,7 +126,7 @@ fi
 [ -f ~/.profile ] && source ~/.profile
 
 if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
-##### WHAT YOU WANT TO DISABLE FOR WARP - BELOW
+  ##### WHAT YOU WANT TO DISABLE FOR WARP - BELOW
 
   #-----------------------------
   # iTerm2 settings
@@ -160,4 +160,3 @@ fi
 
 # Fig post block. Keep at the bottom of this file.
 [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
-
