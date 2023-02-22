@@ -67,8 +67,8 @@ time_format = "%R"
 
 [cmd_duration]
 format = '[took $duration]($style)'
-style = 'bg:#ECFCCB fg:#000000'
 min_time = 500
+style = 'bg:#ECFCCB fg:#000000'
 
 [git_branch]
 format = '[ $symbol$branch]($style)'
