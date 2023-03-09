@@ -21,17 +21,27 @@ $time\
 $cmd_duration\
 [](fg:#ECFCCB bg:#FEF08A)\
 $aws\
+$azure\
 [](fg:#FEF08A)\
 \n\n\
 $character\
 """
 
+[character]
+error_symbol = '[✗](bold red) '
+success_symbol = '[➜](bold green) '
+
 [aws]
 format = '[ $symbol( $profile )(\($region\))]($style)'
 style = 'bg:#FEF08A fg:#000000'
-symbol = '🅰 '
+symbol = '☁️ '
 [aws.profile_aliases]
 self-hosted-ci-freecodecamp = 'fcc-ci'
+
+[azure]
+format = '[ $symbol($subscription)]($style)'
+style = 'bg:#FEF08A fg:#000000'
+symbol = 'ﴃ '
 
 [username]
 format = '[$user ]($style)'
