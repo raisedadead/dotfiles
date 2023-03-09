@@ -41,8 +41,8 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="lvim"
 #-----------------------------
 # update packages
 #-----------------------------
-export brewupdatecmd="brew update; brew upgrade; brew upgrade --cask; brew cleanup; brew doctor;"
-type brew &>/dev/null && [ -f $(brew --prefix)/bin/brew-file ] && export brewupdatecmd="brew file update;brew cleanup; brew doctor;"
+export brewupdatecmd="brew update; brew upgrade; brew upgrade --cask; brew cleanup; brew doctor"
+type brew &>/dev/null && [ -f $(brew --prefix)/bin/brew-file ] && export brewupdatecmd="brew file update"
 
 alias letsupdate-brew-macos=$brewupdatecmd
 alias letsupdate-brew-linux="brew update; brew upgrade; brew cleanup; brew doctor"
