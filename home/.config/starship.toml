@@ -74,7 +74,7 @@ truncation_symbol = "…/"
 
 [time]
 disabled = false
-format = "[ ♥ $time ]($style)"
+format = "[ ⏲ $time ]($style)"
 style = "black bg:green"
 time_format = "%R"
 
