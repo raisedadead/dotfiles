@@ -25,12 +25,14 @@ $aws\
 $azure\
 [](fg:red)\
 \n\
+[┃](mauve)\n\
+[┗•](mauve)\
 $character\
 """
 
 [character]
-error_symbol = '[⮑](bold red) '
-success_symbol = '[⮑](bold mauve) '
+error_symbol = '[•◎](bold red) '
+success_symbol = '[•◉](bold green) '
 
 [aws]
 format = '[ $symbol( $profile )(\($region\)) ]($style)'
@@ -40,7 +42,6 @@ symbol = '☁️ '
 self-hosted-ci-freecodecamp = 'fcc-ci'
 
 [azure]
-disabled = false
 format = '[ $symbol($subscription) ]($style)'
 style = 'black bg:red'
 symbol = 'ﴃ '
