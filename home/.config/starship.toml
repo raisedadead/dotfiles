@@ -1,28 +1,29 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 command_timeout = 800
+palette = "catppuccin_frappe"
 
 format = """
-[](#9A348E)\
+[](mauve)\
 $username\
-[](bg:#DA627D fg:#9A348E)\
+[](bg:maroon fg:mauve)\
 $directory\
-[](fg:#DA627D bg:#FCA17D)\
+[](fg:maroon bg:peach)\
 $git_branch\
 $git_state\
 $git_status\
-[](fg:#FCA17D bg:#86BBD8)\
+[](fg:peach bg:sapphire)\
 $golang\
 $nodejs\
 $rust\
-[](fg:#86BBD8 bg:#33658A)\
+[](fg:sapphire bg:green)\
 $time\
-[](fg:#33658A bg:#ECFCCB)\
+[](fg:green bg:yellow)\
 $cmd_duration\
-[](fg:#ECFCCB bg:#FEF08A)\
+[](fg:yellow bg:red)\
 $aws\
 $azure\
-[](fg:#FEF08A)\
+[](fg:red)\
 \n\n\
 $character\
 """
@@ -33,21 +34,21 @@ success_symbol = '[➜](bold green) '
 
 [aws]
 format = '[ $symbol( $profile )(\($region\))]($style)'
-style = 'bg:#FEF08A fg:#000000'
+style = 'black bg:red'
 symbol = '☁️ '
 [aws.profile_aliases]
 self-hosted-ci-freecodecamp = 'fcc-ci'
 
 [azure]
 format = '[ $symbol($subscription)]($style)'
-style = 'bg:#FEF08A fg:#000000'
+style = 'black bg:red'
 symbol = 'ﴃ '
 
 [username]
 format = '[$user ]($style)'
 show_always = true
-style_root = "bg:#9A348E"
-style_user = "bg:#9A348E"
+style_root = "black bg:mauve"
+style_user = "black bg:mauve"
 
 [hostname]
 disabled = false
@@ -56,8 +57,8 @@ ssh_only = true
 
 [directory]
 format = "[$path]($style)[$read_only]($read_only_style)"
-read_only_style = "bg:#DA627D fg:#FCA17D"
-style = "bg:#DA627D"
+read_only_style = "bg:maroon fg:peach"
+style = "black bg:maroon"
 truncate_to_repo = true
 truncation_length = 0
 truncation_symbol = "…/"
@@ -72,53 +73,81 @@ truncation_symbol = "…/"
 [time]
 disabled = false
 format = "[ ♥ $time ]($style)"
-style = "bg:#33658A"
+style = "black bg:green"
 time_format = "%R"
 
 [cmd_duration]
-format = '[took $duration]($style)'
+format = '[ took $duration ]($style)'
 min_time = 500
-style = 'bg:#ECFCCB fg:#000000'
+style = 'black bg:yellow'
 
 [git_branch]
 format = '[ $symbol$branch]($style)'
-style = "black bg:#FCA17D"
+style = "black bg:peach"
 symbol = " "
 
 [git_state]
 format = '[ $symbol$state($progress_current/$progress_total)]($style)'
-style = "black bg:#FCA17D"
+style = "black bg:peach"
 
 [git_status]
 format = '[ $all_status$ahead_behind ]($style)'
-style = "black bg:#FCA17D"
+style = "black bg:peach"
 
 [golang]
 format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
+style = "black bg:sapphire"
 symbol = ""
 
 [memory_usage]
 format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
+style = "black bg:sapphire"
 symbol = ""
 
 [nodejs]
 format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
+style = "black bg:sapphire"
 symbol = ""
 
 [package]
 format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
+style = "black bg:sapphire"
 symbol = ""
 
 [python]
 format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
+style = "black bg:sapphire"
 symbol = " "
 
 [rust]
 format = '[ $symbol ($version) ]($style)'
-style = "black bg:#86BBD8"
+style = "black bg:sapphire"
 symbol = ""
+
+[palettes.catppuccin_frappe]
+base = "#303446"
+blue = "#8caaee"
+crust = "#232634"
+flamingo = "#eebebe"
+green = "#a6d189"
+lavender = "#babbf1"
+mantle = "#292c3c"
+maroon = "#ea999c"
+mauve = "#ca9ee6"
+overlay0 = "#737994"
+overlay1 = "#838ba7"
+overlay2 = "#949cbb"
+peach = "#ef9f76"
+pink = "#f4b8e4"
+red = "#e78284"
+rosewater = "#f2d5cf"
+sapphire = "#85c1dc"
+sky = "#99d1db"
+subtext0 = "#a5adce"
+subtext1 = "#b5bfe2"
+surface0 = "#414559"
+surface1 = "#51576d"
+surface2 = "#626880"
+teal = "#81c8be"
+text = "#c6d0f5"
+yellow = "#e5c890"
