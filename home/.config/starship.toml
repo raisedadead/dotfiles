@@ -4,9 +4,12 @@ command_timeout = 800
 palette = "catppuccin_frappe"
 
 format = """
-[█](mauve)\
+[█](fg:mauve)\
 $username\
-[](bg:maroon fg:mauve)\
+[](fg:mauve bg:red)\
+$aws\
+$azure\
+[](fg:red bg:maroon)\
 $directory\
 [](fg:maroon bg:peach)\
 $git_branch\
@@ -20,10 +23,7 @@ $rust\
 $time\
 [](fg:green bg:yellow)\
 $cmd_duration\
-[](fg:yellow bg:red)\
-$aws\
-$azure\
-[](fg:red)\
+[](fg:yellow)\
 \n\
 [┃](mauve)\n\
 [┗•](mauve)\
