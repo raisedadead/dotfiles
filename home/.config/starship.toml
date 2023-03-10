@@ -4,7 +4,7 @@ command_timeout = 800
 palette = "catppuccin_frappe"
 
 format = """
-[](mauve)\
+[█](mauve)\
 $username\
 [](bg:maroon fg:mauve)\
 $directory\
@@ -24,23 +24,24 @@ $cmd_duration\
 $aws\
 $azure\
 [](fg:red)\
-\n\n\
+\n\
 $character\
 """
 
 [character]
-error_symbol = '[✗](bold red) '
-success_symbol = '[➜](bold green) '
+error_symbol = '[⮑](bold red) '
+success_symbol = '[⮑](bold mauve) '
 
 [aws]
-format = '[ $symbol( $profile )(\($region\))]($style)'
+format = '[ $symbol( $profile )(\($region\)) ]($style)'
 style = 'black bg:red'
 symbol = '☁️ '
 [aws.profile_aliases]
 self-hosted-ci-freecodecamp = 'fcc-ci'
 
 [azure]
-format = '[ $symbol($subscription)]($style)'
+disabled = false
+format = '[ $symbol($subscription) ]($style)'
 style = 'black bg:red'
 symbol = 'ﴃ '
 
