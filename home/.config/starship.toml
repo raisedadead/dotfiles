@@ -26,13 +26,13 @@ $cmd_duration\
 [](fg:yellow)\
 \n\
 [┃](mauve)\n\
-[┗•](mauve)\
+[┗••](mauve)\
 $character\
 """
 
 [character]
-error_symbol = '[•◎](bold red) '
-success_symbol = '[•◉](bold green) '
+error_symbol = '[⊗](bold red) '
+success_symbol = '[●](bold green) '
 
 [aws]
 format = '[ $symbol( $profile )(\($region\)) ]($style)'
