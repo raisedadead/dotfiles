@@ -36,6 +36,7 @@ zplug "supercrabtree/k"
 # Git
 #-----------------------------
 zplug "z-shell/zsh-diff-so-fancy"
+zplug "bigH/git-fuzzy", as:command, use:"bin/git-fuzzy"
 
 #-----------------------------
 # Syntax highlighting
