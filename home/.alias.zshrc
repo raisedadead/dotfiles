@@ -36,7 +36,7 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --al
 # Neovim
 #-----------------------------
 alias vim="vi"
-type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="lvim"
+type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="nvim"
 
 #-----------------------------
 # update packages
@@ -60,3 +60,14 @@ alias genrand="head -c32 /dev/urandom | base64"
 type exa &>/dev/null && alias ls='exa --icons --group-directories-first'
 type exa &>/dev/null && alias ll='exa -l --icons --no-user --group-directories-first  --time-style long-iso'
 type exa &>/dev/null && alias la='exa -la --icons --no-user --group-directories-first  --time-style long-iso'
+
+#-----------------------------
+# Open Websites in Browser
+#-----------------------------
+type open &>/dev/null && alias ogo="open https://google.com"
+type open &>/dev/null && alias ogi="open https://github.com"
+
+#-----------------------------
+# GitHub Copilot CLI
+#-----------------------------
+type github-copilot-cli &>/dev/null && eval "$(github-copilot-cli alias -- "$0")"
