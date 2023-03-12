@@ -4,9 +4,9 @@
 
 My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/homeshick).
 
-`homeshick` is a  git based dotfiles synchronizer utility. dotfiles are splitup into repositories called "castles". This repository is my primary castle. It has all the common and most used configs. Other castles are either private (emails, etc.) or are platform specific.
+`homeshick` is a Git-based dotfiles synchronizer utility. The convention is to split up collections of dotfiles into repositories called "castles". This particular repository is my primary castle. It has all the standard and most used configs. Other castles are private or platform-specific.
 
-Be mindful of the spelling, "homesick" vs "home**sh**ick". The former is the original tool implemented in ruby, and later in shell script.
+Be mindful of the spelling "homesick" vs. "home**sh**ick". The former is the original tool implemented in ruby and later in shell script. I use a shell alias `alias home=homeshick` to execute commands for convenience.
 
 In practice, you should be able to use the files as is, by getting them from the `/home` directory in this repository.
 
@@ -39,13 +39,13 @@ Check and get additional tools and packages for the system.
 
    Later we would be able to use our alias `dot` for `homeshick`, once we have loaded the first castle.
 
-2. Get the castle that you need. This one is mine:
+2. Get the primary castle:
 
    ```bash
    homeshick clone git@github.com:raisedadead/dotfiles.git
    ```
 
-3. Rinse and repeat for others:
+3. Repeat for others:
 
    Private Castle (<https://github.com/raisedadead/dotfiles-private>):
 
@@ -63,6 +63,12 @@ Check and get additional tools and packages for the system.
 
    ```bash
    homeshick clone git@github.com:raisedadead/dotfiles-macos.git
+   ```
+   
+   Neovim Castle (<https://github.com/raisedadead/dotfiles-nvim>):
+
+   ```bash
+   homeshick clone git@github.com:raisedadead/dotfiles-nvim.git
    ```
 
 ## License
