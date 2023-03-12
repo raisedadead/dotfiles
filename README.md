@@ -1,4 +1,4 @@
-# @raisedadead's .:zap:files
+# @raisedadead's dotfiles
 
 > my dotfiles | fancy stuff in here... feel free to have a look around.
 
@@ -13,12 +13,6 @@ In practice, you should be able to use the files as is, by getting them from the
 ## Prerequisite
 
 If you are the same person as I am, make sure that the initial system setup checklist has been completed and tools and packages have been installed.
-
-### System Setup Checklist:
-
-Follow the system setup checklist (used after installing Operating System or spining a VM)
-
-<https://get.ms/setup>
 
 ### Packages and tools:
 
@@ -59,7 +53,7 @@ Check and get additional tools and packages for the system.
    homeshick clone git@github.com:raisedadead/dotfiles-private.git
    ```
 
-   Ubuntu 20.04 on WSL / Pop!_OS Castle (<https://github.com/raisedadead/dotfiles-linux>):
+   Ubuntu Castle (<https://github.com/raisedadead/dotfiles-linux>):
 
    ```bash
    homeshick clone git@github.com:raisedadead/dotfiles-linux.git
