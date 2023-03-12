@@ -47,7 +47,7 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/brew-file ] && export brewupd
 alias letsupdate-brew-macos=$brewupdatecmd
 alias letsupdate-brew-linux="brew update; brew upgrade; brew cleanup; brew doctor"
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
-alias letsupdate-node="nvm install 'lts/*' --reinstall-packages-from=default --latest-npm"
+alias letsupdate-node="nvm install --lts --reinstall-packages-from=$(node -v) --latest-npm --default"
 
 #-----------------------------
 # random string/key generator
