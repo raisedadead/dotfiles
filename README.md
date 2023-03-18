@@ -1,6 +1,6 @@
 # @raisedadead's dotfiles
 
-> my dotfiles | fancy stuff in here... feel free to have a look around.
+> Every-day carry for my systems.
 
 My dotfiles follow the convention from [`homeshick`](https://github.com/andsens/homeshick).
 
