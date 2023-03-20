@@ -71,3 +71,8 @@ type open &>/dev/null && alias ogi="open https://github.com"
 # GitHub Copilot CLI
 #-----------------------------
 type github-copilot-cli &>/dev/null && eval "$(github-copilot-cli alias -- "$0")"
+
+#-----------------------------
+# Random String for passwords
+#-----------------------------
+type openssl &>/dev/null && alias genpass='openssl rand -base64 32'
