@@ -86,19 +86,46 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 #-----------------------------
 # Path and variable settings
 #-----------------------------
-export PATH="$HOME/.cargo/bin:$PATH"
+# cargo
+if [[ -d "$HOME/.cargo" ]]; then
+  export CARGO_HOME="$HOME/.cargo"
+  export PATH="$CARGO_HOME/bin:$PATH"
+fi
+
 # pnpm
-export PNPM_HOME="/Users/mrugesh/Library/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-# pnpm end
-export VISUAL=nvim
+if [[ -d "$HOME/.pnpm" ]]; then
+  export PNPM_HOME="$HOME/.pnpm"
+  export PATH="$PNPM_HOME:$PATH"
+elif [[ -d "$HOME/Library/pnpm" ]]; then
+  export PNPM_HOME="$HOME/Library/pnpm"
+  export PATH="$PNPM_HOME:$PATH"
+fi
+
+# editor
+if can_haz nvim; then
+  export VISUAL=nvim
+else
+  export VISUAL=vim
+fi
 export EDITOR="$VISUAL"
+
+# mysql
+if can_haz brew && [[ -d "$(brew --prefix)/opt/mysql-client" ]]; then
+  export PATH="$(brew --prefix)/opt/mysql-client/bin:$PATH"
+fi
 
 #-----------------------------
 # Completions
 #-----------------------------
+# ZSH completions
 if can_haz brew; then
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+fi
+
+# 1password cli completions
+if can_haz op; then
+  eval "$(op completion zsh)"
+  compdef _op op
 fi
 
 #-----------------------------
