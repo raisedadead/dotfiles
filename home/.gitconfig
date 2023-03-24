@@ -1,82 +1,65 @@
 [alias]
-    # Shortening aliases
-    co = checkout
-    cob = checkout -b
-    f = fetch -p
-    c = commit
-    p = push
-    ba = branch -a
-    bd = branch -d
-    bD = branch -D
-    d  = diff -- ':!package-lock.json' ':!yarn.lock'
-    dc = diff --cached
-    edit = commit --amend
-    no-edit = commit --amend --no-edit
+# Shortening aliases
+co = checkout
+cob = checkout -b
+d = diff -- ':!package-lock.json' ':!yarn.lock'
+dc = diff --cached
+edit = commit --amend
+no-edit = commit --amend --no-edit
 
-    # Feature improving aliases
-    st = status -sb
-    a = add -p
-
-    # Complex aliases
-    plog = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
-    tlog = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
-    lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-    rank = shortlog -sn --no-merges
-    bdm = "!git branch --merged | grep -v '*' | xargs -n 1 git branch -d"
-    find-ext = "!f() { git ls-tree -r HEAD --name-only | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -u ;}; f"
-
-    # maintainer aliases (use with git-extras)
-    harmony = "!f() { git pull --rebase upstream \"$1\"; }; f"
-    trash = !mkdir -p .trash && git ls-files --others --exclude-standard | xargs mv -f -t .trash
-    cp = cherry-pick
+# Complex aliases
+lg-timeline = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
+lg = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
+list-all-ext = "!f() { git ls-tree -r HEAD --name-only | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -ru | uniq -c;}; f"
+list-changed-ext = "!f() { git branch -a | grep -E 'remotes/origin/HEAD' | cut -d ' ' -f 5 | xargs -I {} git diff --name-only {} | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -rn | uniq -c ;}; f"
 
 [core]
-    whitespace = off
-    excludesfile = ~/.gitignore
-    autocrlf = false
-    safecrlf = false
-    pager = delta
+whitespace = off
+excludesfile = ~/.gitignore
+autocrlf = false
+safecrlf = false
+pager = delta
 
 [delta]
-    side-by-side = true
-    line-numbers = true
+side-by-side = true
+line-numbers = true
 
 [advice]
-    statusuoption = false
+statusuoption = false
 
 [fetch]
-	prune = true
+prune = true
 [merge]
-    conflictstyle = diff3
+conflictstyle = diff3
 [diff]
-    colorMoved = default
+colorMoved = default
 [pull]
-    rebase = false
+rebase = false
 [push]
-	default = current
+default = current
 
 [color]
-	ui = true
+ui = true
 [color "branch"]
-    current = yellow reverse
-    local = yellow
-    remote = green
+current = yellow reverse
+local = yellow
+remote = green
 [color "status"]
-    added = yellow
-    changed = green
-    untracked = cyan
+added = yellow
+changed = green
+untracked = cyan
 
 [filter "lfs"]
-    clean = git-lfs clean -- %f
-    smudge = git-lfs smudge -- %f
-    process = git-lfs filter-process
-    required = true
+clean = git-lfs clean -- %f
+smudge = git-lfs smudge -- %f
+process = git-lfs filter-process
+required = true
 
 [url "git@github.com:"]
-    pushInsteadOf = git://github.com/
+pushInsteadOf = git://github.com/
 
 [help]
-    autocorrect = 1
+autocorrect = 1
 
 [include]
-    path = ~/.gitconfig.local
+path = ~/.gitconfig.local
