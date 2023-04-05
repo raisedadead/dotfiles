@@ -114,11 +114,6 @@ if can_haz brew && [[ -d "$(brew --prefix)/opt/mysql-client" ]]; then
   export PATH="$(brew --prefix)/opt/mysql-client/bin:$PATH"
 fi
 
-# rcmdnk/homebrew-file
-if can_haz brew && [ -f $(brew --prefix)/etc/brew-wrap ]; then
-  source $(brew --prefix)/etc/brew-wrap
-fi
-
 #-----------------------------
 # Completions
 #-----------------------------
