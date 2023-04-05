@@ -21,8 +21,12 @@ safecrlf = false
 pager = delta
 
 [delta]
-side-by-side = true
+side-by-side = false
 line-numbers = true
+features = diff-so-fancy
+hunk-header-style = file line-number
+hunk-header-decoration-style = blue ol ul
+file-style = omit
 
 [advice]
 statusuoption = false
