@@ -67,6 +67,9 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 #-----------------------------
 # pyenv
 #-----------------------------
+if can_haz brew && [[ -d "$(brew --prefix)/bin/pyenv" ]]; then
+  eval "$(pyenv init -)"
+fi
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 [ -d $PYENV_ROOT ] && eval "$(pyenv init --path)"
