@@ -7,11 +7,11 @@ export FZF_DEFAULT_OPTS='
   --color=info:#af87ff,prompt:#5fff87,pointer:#ff87d7,marker:#ff87d7,spinner:#ff87d7
   '
 export FZF_CTRL_T_OPTS=$FZF_DEFAULT_OPTS
-export FZF_CTRL_R_OPTS=$FZF_DEFAULT_OPTS"
-  --preview 'echo {}'
-  --preview-window down:3:hidden:wrap
-  --bind '?:toggle-preview'
-  "
+# export FZF_CTRL_R_OPTS=$FZF_DEFAULT_OPTS"
+#   --preview 'echo {}'
+#   --preview-window down:3:hidden:wrap
+#   --bind '?:toggle-preview'
+#   "
 export FZF_ALT_C_OPTS=$FZF_DEFAULT_OPTS"
   --preview 'tree -C {} | head -200'
   "

@@ -3,7 +3,6 @@
 #-----------------------------------------------------------
 #
 # @raisedadead's config files
-# https://get.ms/dotfiles
 #
 # Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
@@ -144,6 +143,13 @@ fi
 if can_haz fzf; then
   [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
   [ -f ~/.fzf.zshrc ] && source ~/.fzf.zshrc
+fi
+
+#-----------------------------
+# atuin
+#-----------------------------
+if can_haz atuin; then
+  eval "$(atuin init zsh --disable-up-arrow)"
 fi
 
 #-----------------------------
