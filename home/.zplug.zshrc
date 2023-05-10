@@ -19,6 +19,11 @@ fi
 source ~/.zplug/init.zsh
 
 #-----------------------------
+# Touchplus
+#-----------------------------
+zplug "raisedadead/zsh-touchplus", defer:2
+
+#-----------------------------
 # Node.js
 #-----------------------------
 NVM_AUTO_USE=true
