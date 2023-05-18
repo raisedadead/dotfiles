@@ -73,3 +73,8 @@ type github-copilot-cli &>/dev/null && eval "$(github-copilot-cli alias -- "$0")
 # Random String for passwords
 #-----------------------------
 type openssl &>/dev/null && alias genpass='openssl rand -base64 32'
+
+#-----------------------------
+# Multipass
+#-----------------------------
+type multipass &>/dev/null && alias mp="multipass"
