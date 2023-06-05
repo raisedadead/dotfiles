@@ -12,6 +12,7 @@ lg-timeline = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-c
 lg = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
 list-all-ext = "!f() { git ls-tree -r HEAD --name-only | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -ru | uniq -c;}; f"
 list-changed-ext = "!f() { git branch -a | grep -E 'remotes/origin/HEAD' | cut -d ' ' -f 5 | xargs -I {} git diff --name-only {} | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -rn | uniq -c ;}; f"
+apply-pr-patch = "!f() { curl -o /tmp/patchfile.patch $1 && git apply /tmp/patchfile.patch; }; f"
 
 [core]
 whitespace = off
@@ -41,6 +42,7 @@ colorMoved = default
 rebase = false
 [push]
 default = current
+autoSetupRemote = true
 
 [color]
 ui = true
