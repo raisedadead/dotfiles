@@ -43,26 +43,25 @@ function rollback-no-of-days() {
 # Precmd
 #-----------------------------
 precmd() {print -Pn "\e]0;%~\a"}
-
-#-----------------------------
-# Quick SSH
-#-----------------------------
-# Credits: https://gist.github.com/dohq/1dc702cc0b46eb62884515ea52330d60
-function fzf-ssh() {
-    local selected_host=$(grep -h "Host " ~/.ssh/config_* | grep -v '*' | cut -b 6- | fzf --query "$LBUFFER" --prompt="SSH Remote > ")
-
-    if [ -n "$selected_host" ]; then
-        BUFFER="ssh ${selected_host}"
-        zle accept-line
-    fi
-    zle reset-prompt
-}
-
-zle -N fzf-ssh
-bindkey '^s' fzf-ssh
-setopt noflowcontrol
-
 if can_haz fzf; then
+
+    #-----------------------------
+    # Quick SSH
+    #-----------------------------
+    # Credits: https://gist.github.com/dohq/1dc702cc0b46eb62884515ea52330d60
+    function fzf-ssh() {
+        local selected_host=$(grep -h "Host " ~/.ssh/config_* | grep -v '*' | cut -b 6- | fzf --query "$LBUFFER" --prompt="SSH Remote > ")
+
+        if [ -n "$selected_host" ]; then
+            BUFFER="ssh ${selected_host}"
+            zle accept-line
+        fi
+        zle reset-prompt
+    }
+
+    zle -N fzf-ssh
+    bindkey '^s' fzf-ssh
+    setopt noflowcontrol
 
     #-----------------------------
     # Quick lookup (and edit)
@@ -70,8 +69,7 @@ if can_haz fzf; then
     function check_req() {
         $(type bat >/dev/null 2>&1) && $(type fd >/dev/null 2>&1) && $(type fzf >/dev/null 2>&1)
     }
-
-    function pbv() {
+    function preview_bottom_view() {
         if $(check_req); then
 
             local selected_file=$(
@@ -100,8 +98,7 @@ if can_haz fzf; then
 
         fi
     }
-
-    function psv() {
+    function preview_side_view() {
         if $(check_req); then
 
             local selected_file=$(
@@ -126,9 +123,29 @@ if can_haz fzf; then
         fi
     }
 
-    zle -N psv
-    zle -N pbv
-    bindkey '^P' psv
-    bindkey '^O' pbv
+    zle -N preview_side_view
+    zle -N preview_bottom_view
+    bindkey '^P' preview_side_view
+    bindkey '^O' preview_bottom_view
+    setopt noflowcontrol
 
+    #-----------------------------
+    # Quick remove from known_hosts
+    #-----------------------------
+    function remove_known_hosts() {
+        local hostname_entry
+        hostname_entry=$(cat ~/.ssh/known_hosts | awk '{print $1}' | fzf --prompt="Hostname Entry > ")
+
+        # Exit if no hostname_entry is selected
+        if [[ -z $hostname_entry ]]; then
+            return
+        fi
+
+        echo "Removing $hostname_entry from known_hosts"
+        ssh-keygen -R $hostname_entry
+        rm -rf ~/.ssh/known_hosts.old
+    }
+
+    alias rkh=remove_known_hosts
+    setopt noflowcontrol
 fi
