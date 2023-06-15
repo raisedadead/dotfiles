@@ -132,20 +132,31 @@ if can_haz fzf; then
     #-----------------------------
     # Quick remove from known_hosts
     #-----------------------------
-    function remove_known_hosts() {
-        local hostname_entry
-        hostname_entry=$(cat ~/.ssh/known_hosts | awk '{print $1}' | fzf --prompt="Hostname Entry > ")
+    function rkh() {
+        # Extract the hostnames from the known_hosts file
+        local hostnames=($(awk '{print $1}' ~/.ssh/known_hosts | sed 's/,/\n/g' | sort | uniq))
 
-        # Exit if no hostname_entry is selected
-        if [[ -z $hostname_entry ]]; then
-            return
+        # Use 'fzf' to create an interactive menu to select hostnames
+        local selected_hostnames=($(printf '%s\n' "${hostnames[@]}" | fzf --multi --prompt="Remove Host > " --query "$LBUFFER"))
+
+        # If any selections were made, remove them
+        if [[ ${#selected_hostnames[@]} -ne 0 ]]; then
+            for sel in "${selected_hostnames[@]}"; do
+                # Remove host entry using ssh-keygen
+                ssh-keygen -R "$sel"
+            done
+            echo "Removed selected host(s)."
+        else
+            echo "No host selected."
         fi
 
-        echo "Removing $hostname_entry from known_hosts"
-        ssh-keygen -R $hostname_entry
-        rm -rf ~/.ssh/known_hosts.old
+        rm -f ~/.ssh/known_hosts.old
+
+        zle reset-prompt
     }
 
-    alias rkh=remove_known_hosts
+    zle -N rkh
+
+    bindkey '^H' rkh
     setopt noflowcontrol
 fi
