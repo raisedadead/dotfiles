@@ -157,6 +157,6 @@ if can_haz fzf; then
 
     zle -N rkh
 
-    bindkey '^H' rkh
+    bindkey '^i' rkh
     setopt noflowcontrol
 fi
