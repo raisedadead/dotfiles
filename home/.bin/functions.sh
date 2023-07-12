@@ -49,7 +49,7 @@ if can_haz fzf; then
     # Quick SSH
     #-----------------------------
     # Credits: https://gist.github.com/dohq/1dc702cc0b46eb62884515ea52330d60
-    function fzf-ssh() {
+    function local-config-ssh() {
         local selected_host=$(grep -h "Host " ~/.ssh/config_* | grep -v '*' | cut -b 6- | fzf --query "$LBUFFER" --prompt="SSH Remote > ")
 
         if [ -n "$selected_host" ]; then
@@ -59,8 +59,23 @@ if can_haz fzf; then
         zle reset-prompt
     }
 
-    zle -N fzf-ssh
-    bindkey '^s' fzf-ssh
+    function linode-config-ssh() {
+        local selected_host=$(linode domains records-list 2312481 --type A --text | grep -e "pub" | awk '{print $3}' | fzf --query "$LBUFFER" --prompt="SSH Remote : Linode >
+        ")
+
+        if [ -n "$selected_host" ]; then
+            BUFFER="ssh ${selected_host}.freecodecamp.net"
+            zle accept-line
+        fi
+        zle reset-prompt
+    }
+
+    zle -N local-config-ssh
+    bindkey '^S' local-config-ssh
+    setopt noflowcontrol
+
+    zle -N linode-config-ssh
+    bindkey '^F' linode-config-ssh
     setopt noflowcontrol
 
     #-----------------------------
@@ -157,6 +172,6 @@ if can_haz fzf; then
 
     zle -N rkh
 
-    bindkey '^i' rkh
+    bindkey '^K' rkh
     setopt noflowcontrol
 fi
