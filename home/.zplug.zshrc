@@ -47,6 +47,7 @@ zplug "bigH/git-fuzzy", as:command, use:"bin/git-fuzzy"
 # Syntax highlighting
 #-----------------------------
 zplug "zdharma-continuum/fast-syntax-highlighting", defer:2
+zplug "catppuccin/zsh-syntax-highlighting", as:theme, use:"themes/catppuccin_mocha-zsh-syntax-highlighting", defer:2
 
 #-----------------------------
 # vim mode
