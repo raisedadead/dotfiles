@@ -152,7 +152,7 @@ fi
 # atuin
 #-----------------------------
 if can_haz atuin; then
-  eval "$(atuin init zsh --disable-up-arrow)"
+  eval "$(atuin init zsh)"
 fi
 
 #-----------------------------
