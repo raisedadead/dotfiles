@@ -24,3 +24,6 @@ node_modules
 # Local config files
 *.local
 .vscode/
+
+# 1Password Configs
+.op/
