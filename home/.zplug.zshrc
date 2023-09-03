@@ -60,9 +60,9 @@ zplug "softmoth/zsh-vim-mode"
 zplug "srijanshetty/docker-zsh", defer:2
 
 #-----------------------------
-# Colors
+# Smart Input (bracket matching)
 #-----------------------------
-# zplug "unixorn/warhol.plugin.zsh", defer:2
+zplug "momo-lab/zsh-smartinput", defer:2
 
 #-----------------------------
 # zsh-users
