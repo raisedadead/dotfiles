@@ -131,6 +131,12 @@ if can_haz op; then
   compdef _op op
 fi
 
+# gh cli completions
+if can_haz gh; then
+  eval "$(gh completion -s zsh)"
+  compdef _gh gh
+fi
+
 #-----------------------------
 # Starship Prompt for zsh
 #-----------------------------

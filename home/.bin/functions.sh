@@ -43,7 +43,13 @@ function rollback-no-of-days() {
 # Precmd
 #-----------------------------
 precmd() {print -Pn "\e]0;%~\a"}
+
+#-----------------------------
+# FZF
+#-----------------------------
+# --- FZF --- begin
 if can_haz fzf; then
+    # --- FZF --- begin
 
     #-----------------------------
     # Quick SSH
@@ -59,24 +65,8 @@ if can_haz fzf; then
         zle reset-prompt
     }
 
-    function linode-config-ssh() {
-        local selected_host=$(linode domains records-list 2312481 --type A --text | grep -e "pub" | awk '{print $3}' | fzf --query "$LBUFFER" --prompt="SSH Remote : Linode >
-        ")
-
-        if [ -n "$selected_host" ]; then
-            BUFFER="ssh ${selected_host}.freecodecamp.net"
-            zle accept-line
-        fi
-        zle reset-prompt
-    }
-
     zle -N local-config-ssh
-    bindkey '^S' local-config-ssh
-    setopt noflowcontrol
-
-    zle -N linode-config-ssh
-    bindkey '^F' linode-config-ssh
-    setopt noflowcontrol
+    bindkey '^XZ' local-config-ssh
 
     #-----------------------------
     # Quick lookup (and edit)
@@ -142,7 +132,6 @@ if can_haz fzf; then
     zle -N preview_bottom_view
     bindkey '^P' preview_side_view
     bindkey '^O' preview_bottom_view
-    setopt noflowcontrol
 
     #-----------------------------
     # Quick remove from known_hosts
@@ -165,13 +154,13 @@ if can_haz fzf; then
             echo "No host selected."
         fi
 
-        rm -f ~/.ssh/known_hosts.old
-
         zle reset-prompt
+
+        rm -f ~/.ssh/known_hosts.old
     }
-
     zle -N rkh
+    bindkey '^XK' rkh
 
-    bindkey '^K' rkh
-    setopt noflowcontrol
+# --- FZF --- end
 fi
+# --- FZF --- end

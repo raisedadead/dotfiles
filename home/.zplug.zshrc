@@ -19,9 +19,12 @@ fi
 source ~/.zplug/init.zsh
 
 #-----------------------------
-# Touchplus
+# My custom plugins
 #-----------------------------
 zplug "raisedadead/zsh-touchplus", defer:2
+
+GSO_ENABLE_KEYBINDINGS=true
+zplug "raisedadead/zsh-gso", defer:2
 
 #-----------------------------
 # Node.js
@@ -35,7 +38,6 @@ zplug "lukechilds/zsh-better-npm-completion", defer:2
 #-----------------------------
 # zplug "b4b4r07/enhancd", use:init.sh
 zplug "mfaerevaag/wd"
-zplug "supercrabtree/k"
 
 #-----------------------------
 # Git
