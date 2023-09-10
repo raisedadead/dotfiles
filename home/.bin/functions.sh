@@ -66,7 +66,7 @@ if can_haz fzf; then
     }
 
     zle -N local-config-ssh
-    bindkey '^XZ' local-config-ssh
+    bindkey '^Z' local-config-ssh
 
     #-----------------------------
     # Quick lookup (and edit)

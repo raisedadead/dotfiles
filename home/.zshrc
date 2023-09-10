@@ -125,17 +125,8 @@ if can_haz brew; then
   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 fi
 
-# 1password cli completions
-if can_haz op; then
-  eval "$(op completion zsh)"
-  compdef _op op
-fi
-
-# gh cli completions
-if can_haz gh; then
-  eval "$(gh completion -s zsh)"
-  compdef _gh gh
-fi
+# Add more completions in this file only
+[ -f ~/.bin/completions/main.sh ] && source ~/.bin/completions/main.sh
 
 #-----------------------------
 # Starship Prompt for zsh
