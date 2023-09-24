@@ -20,7 +20,7 @@ font:
   bold_italic:
     family: "JetBrainsMono Nerd Font"
     style: Bold Italic
-  size: 13.0
+  size: 14.0
 import:
   - ~/.config/alacritty/catppuccin/catppuccin-mocha.yml
 key_bindings:
