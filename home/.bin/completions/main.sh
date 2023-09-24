@@ -10,8 +10,11 @@ if can_haz gh; then
   compdef _gh gh
 fi
 
-# akamai
-source ./akamai.sh
+# akamai cli completions
+source ~/.bin/completions/akamai.sh
 
-# docker
-source ./docker.sh
+# docker cli completions
+source ~/.bin/completions/docker.sh
+
+# jumppad cli completions
+source ~/.bin/completions/jumppad.sh
