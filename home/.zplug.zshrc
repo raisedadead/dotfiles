@@ -69,7 +69,7 @@ zplug "momo-lab/zsh-smartinput", defer:2
 #-----------------------------
 # zsh-users
 #-----------------------------
-zplug "zsh-users/zsh-completions", defer:2
+# zplug "zsh-users/zsh-completions", defer:2
 zplug "zsh-users/zsh-autosuggestions", defer:2
 zplug "zsh-users/zsh-history-substring-search", defer:2
 
@@ -88,7 +88,7 @@ if can_haz fzf; then
   #-----------------------------
   # History
   #-----------------------------
-  zplug "joshskidmore/zsh-fzf-history-search"
+  # zplug "joshskidmore/zsh-fzf-history-search"
   #-----------------------------
   # Completions
   #-----------------------------

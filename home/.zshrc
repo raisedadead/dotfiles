@@ -120,13 +120,13 @@ fi
 #-----------------------------
 # Completions
 #-----------------------------
-# ZSH completions
-if can_haz brew; then
-  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
-fi
-
 # Add more completions in this file only
 [ -f ~/.bin/completions/main.sh ] && source ~/.bin/completions/main.sh
+
+# ZSH completions
+if can_haz brew; then
+  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+fi
 
 #-----------------------------
 # Starship Prompt for zsh

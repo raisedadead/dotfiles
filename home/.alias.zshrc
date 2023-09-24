@@ -52,11 +52,11 @@ alias letsupdate-node="nvm install --lts --reinstall-packages-from=$(node -v) --
 alias genrand="head -c32 /dev/urandom | base64"
 
 #-----------------------------
-# Exa
+# Eza
 #-----------------------------
-type exa &>/dev/null && alias ls='exa --icons --group-directories-first'
-type exa &>/dev/null && alias ll='exa -l --icons --no-user --group-directories-first  --time-style long-iso'
-type exa &>/dev/null && alias la='exa -la --icons --no-user --group-directories-first  --time-style long-iso'
+type eza &>/dev/null && alias ls='eza --icons --group-directories-first'
+type eza &>/dev/null && alias ll='eza -l --icons --no-user --group-directories-first  --time-style long-iso'
+type eza &>/dev/null && alias la='eza -la --icons --no-user --group-directories-first  --time-style long-iso'
 
 #-----------------------------
 # Open Websites in Browser
