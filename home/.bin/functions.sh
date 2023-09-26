@@ -154,13 +154,8 @@ if can_haz fzf; then
             echo "No host selected."
         fi
 
-        zle reset-prompt
-
         rm -f ~/.ssh/known_hosts.old
     }
-    zle -N rkh
-    bindkey '^XK' rkh
-
 # --- FZF --- end
 fi
 # --- FZF --- end
