@@ -16,5 +16,3 @@ source ~/.bin/completions/akamai.sh
 # docker cli completions
 source ~/.bin/completions/docker.sh
 
-# jumppad cli completions
-source ~/.bin/completions/jumppad.sh
