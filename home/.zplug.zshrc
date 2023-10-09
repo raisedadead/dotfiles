@@ -32,7 +32,7 @@ zplug "raisedadead/zsh-gso", defer:2
 NVM_AUTO_USE=true
 zplug "lukechilds/zsh-nvm"
 zplug "lukechilds/zsh-better-npm-completion", defer:2
-
+zplug "g-plane/pnpm-shell-completion", hook-build:"./zplug.zsh", defer:2
 #-----------------------------
 # Files & directories
 #-----------------------------
