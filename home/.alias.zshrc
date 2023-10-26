@@ -44,7 +44,7 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="nvim"
 alias letsupdate-brew-macos="brew update; brew upgrade; brew upgrade --cask; brew cleanup; brew doctor"
 alias letsupdate-brew-linux="brew update; brew upgrade; brew cleanup; brew doctor"
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
-alias letsupdate-node="nvm install --lts --reinstall-packages-from=$(node -v) --latest-npm --default"
+type node &>/dev/null && alias letsupdate-node="nvm install --lts --reinstall-packages-from=$(node -v) --latest-npm --default"
 
 #-----------------------------
 # random string/key generator

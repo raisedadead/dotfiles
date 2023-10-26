@@ -26,9 +26,9 @@ limit coredumpsize 0
 bindkey -d
 
 # Return if zsh is called from Vim
-if [[ -n $VIMRUNTIME ]]; then
-  return 0
-fi
+# if [[ -n $VIMRUNTIME ]]; then
+#   return 0
+# fi
 
 setopt INC_APPEND_HISTORY
 setopt HIST_EXPIRE_DUPS_FIRST
@@ -151,6 +151,12 @@ if can_haz atuin; then
 fi
 
 #-----------------------------
+# pkgx
+#-----------------------------
+if can_haz pkgx; then
+ source <(pkgx --shellcode)
+fi 
+
 # aliases and env settings
 #-----------------------------
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
@@ -168,7 +174,7 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
     fi
   fi
 
-##### WHAT YOU WANT TO DISABLE FOR WARP - ABOVE
+ ##### WHAT YOU WANT TO DISABLE FOR WARP - ABOVE
 fi
 
 #-----------------------------
@@ -188,3 +194,4 @@ fi
 #-----------------------------------------------------------
 
 # Warning: Everything below this line was probably added automatically.
+
