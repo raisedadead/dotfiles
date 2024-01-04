@@ -44,6 +44,7 @@ zplug "mfaerevaag/wd"
 #-----------------------------
 zplug "z-shell/zsh-diff-so-fancy"
 zplug "bigH/git-fuzzy", as:command, use:"bin/git-fuzzy"
+zplug "raisedadead/d3733e244918a0d2030a936b4b6e9dbd", from:gist, as:command, rename-to:git-bare-clone, use:bare-clone.sh
 
 #-----------------------------
 # Syntax highlighting
