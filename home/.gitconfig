@@ -1,11 +1,9 @@
 [alias]
 # Shortening aliases
-co = checkout
-cob = checkout -b
-d = diff -- ':!package-lock.json' ':!yarn.lock'
-dc = diff --cached
 edit = commit --amend
 no-edit = commit --amend --no-edit
+no-lockfile-diff = diff -- ':!package-lock.json' ':!yarn.lock'
+no-pager-diff = -c 'delta.line-numbers=false' diff
 
 # Complex aliases
 lg-timeline = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
