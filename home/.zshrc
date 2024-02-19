@@ -151,6 +151,13 @@ if can_haz atuin; then
 fi
 
 #-----------------------------
+# zoxide
+#-----------------------------
+if can_haz zoxide; then
+  eval "$(zoxide init --cmd cd --hook pwd zsh)"
+fi
+
+#-----------------------------
 # pkgx
 #-----------------------------
 if can_haz pkgx; then
