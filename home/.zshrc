@@ -77,11 +77,6 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 [ -d $PYENV_ROOT ] && alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
 
 #-----------------------------
-# custom utils and functions
-#-----------------------------
-[ -f ~/.bin/functions.sh ] && source ~/.bin/functions.sh
-
-#-----------------------------
 # private configs and secrets
 #-----------------------------
 [ -f ~/.private.zshrc ] && source ~/.private.zshrc
@@ -142,6 +137,11 @@ if can_haz fzf; then
   [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
   [ -f ~/.fzf.zshrc ] && source ~/.fzf.zshrc
 fi
+
+#-----------------------------
+# custom utils and functions
+#-----------------------------
+[ -f ~/.bin/functions.sh ] && source ~/.bin/functions.sh
 
 #-----------------------------
 # atuin
