@@ -102,8 +102,10 @@ fi
 # editor
 if can_haz nvim; then
   export VISUAL=nvim
-else
+elif can_haz vim; then
   export VISUAL=vim
+else
+  export VISUAL=vi
 fi
 export EDITOR="$VISUAL"
 
