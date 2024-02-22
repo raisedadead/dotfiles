@@ -23,6 +23,7 @@ source ~/.zplug/init.zsh
 #-----------------------------
 zplug "raisedadead/zsh-touchplus", defer:2
 zplug "raisedadead/zsh-istage", defer:2
+zplug "raisedadead/zsh-awsssh"
 
 GSO_ENABLE_KEYBINDINGS=true
 zplug "raisedadead/zsh-gso", defer:2
