@@ -1,7 +1,6 @@
 #-----------------------------------------------------------
 #
 # @raisedadead's config files
-#
 # Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
@@ -163,8 +162,8 @@ fi
 # pkgx
 #-----------------------------
 if can_haz pkgx; then
- source <(pkgx --shellcode)
-fi 
+  source <(pkgx --shellcode)
+fi
 
 # aliases and env settings
 #-----------------------------
@@ -183,7 +182,7 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
     fi
   fi
 
- ##### WHAT YOU WANT TO DISABLE FOR WARP - ABOVE
+  ##### WHAT YOU WANT TO DISABLE FOR WARP - ABOVE
 fi
 
 #-----------------------------
@@ -203,4 +202,3 @@ fi
 #-----------------------------------------------------------
 
 # Warning: Everything below this line was probably added automatically.
-
