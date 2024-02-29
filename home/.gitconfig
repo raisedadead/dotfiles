@@ -1,5 +1,7 @@
 [alias]
 # Shortening aliases
+co = checkout
+cob = checkout -b
 edit = commit --amend
 no-edit = commit --amend --no-edit
 no-lockfile-diff = diff -- ':!package-lock.json' ':!yarn.lock'
