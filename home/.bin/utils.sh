@@ -3,8 +3,6 @@
 #-----------------------------------------------------------
 #
 # @raisedadead's config files
-# https://get.ms/dotfiles
-#
 # Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
