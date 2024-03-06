@@ -19,6 +19,7 @@ fi
 
 export LC_CTYPE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
+export XDG_CONFIG_HOME="$HOME/.config"
 
 umask 022
 limit coredumpsize 0
