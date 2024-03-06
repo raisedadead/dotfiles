@@ -64,7 +64,7 @@ zplug "srijanshetty/docker-zsh", defer:2
 #-----------------------------
 # Smart Input (bracket matching)
 #-----------------------------
-zplug "momo-lab/zsh-smartinput", defer:2
+zplug "raisedadead/zsh-smartinput", defer:2
 
 #-----------------------------
 # zsh-users
@@ -92,12 +92,8 @@ if can_haz fzf; then
   #-----------------------------
   # Completions
   #-----------------------------
-  # zplug "chitoku-k/fzf-zsh-completions"
-  zplug "Aloxaf/fzf-tab", defer:2
-  #-----------------------------
-  # Swiss-army knife & more
-  #-----------------------------
-  zplug "unixorn/fzf-zsh-plugin", defer:2
+  # zplug "Aloxaf/fzf-tab", defer:2
+    zplug "marlonrichert/zsh-autocomplete", defer:2
 fi
 
 #-----------------------------
