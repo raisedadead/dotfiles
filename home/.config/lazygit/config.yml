@@ -1,0 +1,9 @@
+gui:
+  nerdFontsVersion: '3'
+  border: rounded
+  showRandomTip: false
+git:
+  overrideGpg: false
+  paging:
+    colorArg: always
+    pager: delta --dark --paging=never
