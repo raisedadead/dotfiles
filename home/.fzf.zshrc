@@ -1,5 +1,4 @@
 export FZF_DEFAULT_OPTS='
-  --height=60%
   --color=fg:-1,fg+:-1,bg:-1,bg+:-1
   --color=hl:#f38ba8,hl+:#5fd7ff,info:#cba6f7,marker:#f5e0dc
   --color=prompt:#cba6f7,spinner:#f5e0dc,pointer:#f5e0dc,header:#f38ba8
