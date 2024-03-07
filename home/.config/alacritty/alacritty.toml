@@ -9,7 +9,7 @@ TERM = "xterm-256color"
 [window]
 decorations = "buttonless"
 dynamic_padding = false
-opacity = 0.80
+opacity = 0.90
 blur = true
 
 [window.padding]
