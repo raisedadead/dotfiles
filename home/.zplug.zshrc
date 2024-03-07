@@ -92,8 +92,8 @@ if can_haz fzf; then
   #-----------------------------
   # Completions
   #-----------------------------
-  # zplug "Aloxaf/fzf-tab", defer:2
-    zplug "marlonrichert/zsh-autocomplete", defer:2
+  zplug "Aloxaf/fzf-tab", defer:2
+  # zplug "marlonrichert/zsh-autocomplete", defer:2
 fi
 
 #-----------------------------
