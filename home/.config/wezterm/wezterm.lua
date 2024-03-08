@@ -32,6 +32,20 @@ local config = {
 	},
 	window_background_opacity = 0.85,
 	macos_window_background_blur = 20,
+
+	mouse_bindings = {
+		-- Ctrl/Cmd-click will open the link under the mouse cursor
+		{
+			event = { Up = { streak = 1, button = "Left" } },
+			mods = "CMD",
+			action = wezterm.action.OpenLinkAtMouseCursor,
+		},
+		{
+			event = { Up = { streak = 1, button = "Left" } },
+			mods = "CTRL",
+			action = wezterm.action.OpenLinkAtMouseCursor,
+		},
+	},
 }
 
 return config
