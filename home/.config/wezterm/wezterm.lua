@@ -8,8 +8,6 @@ local config = {
 
 	default_cwd = wezterm.home_dir .. "/DEV",
 
-	use_fancy_tab_bar = false,
-
 	audible_bell = "Disabled",
 
 	font = wezterm.font_with_fallback({
@@ -17,14 +15,13 @@ local config = {
 		{ family = "JetBrains Mono", weight = "Bold" },
 	}),
 	font_size = 14.0,
-
 	color_scheme = "Catppuccin Mocha",
 
 	initial_rows = 45,
 	initial_cols = 175,
 
 	hide_tab_bar_if_only_one_tab = true,
-
+	use_fancy_tab_bar = false,
 	window_close_confirmation = "NeverPrompt",
 	window_decorations = "RESIZE",
 	window_padding = {
@@ -33,7 +30,7 @@ local config = {
 		top = 10,
 		bottom = 15,
 	},
-	window_background_opacity = 0.8,
+	window_background_opacity = 0.85,
 	macos_window_background_blur = 20,
 }
 
