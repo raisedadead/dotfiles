@@ -46,6 +46,34 @@ local config = {
 			action = wezterm.action.OpenLinkAtMouseCursor,
 		},
 	},
+
+	keys = {
+		-- Panes
+		-- Split pane horizontally
+		{
+			key = "d",
+			mods = "CMD",
+			action = wezterm.action({ SplitHorizontal = { domain = "CurrentPaneDomain" } }),
+		},
+		-- Split pane vertically
+		{
+			key = "d",
+			mods = "CMD|SHIFT",
+			action = wezterm.action({ SplitVertical = { domain = "CurrentPaneDomain" } }),
+		},
+		-- Zoom and Close
+		{ key = "z", mods = "CMD", action = "TogglePaneZoomState" },
+		{ key = "x", mods = "CMD", action = wezterm.action({ CloseCurrentPane = { confirm = true } }) },
+		-- Navigate Panes
+		{ key = "h", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Left" }) },
+		{ key = "LeftArrow", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Left" }) },
+		{ key = "j", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Down" }) },
+		{ key = "DownArrow", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Down" }) },
+		{ key = "k", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Up" }) },
+		{ key = "UpArrow", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Up" }) },
+		{ key = "l", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Right" }) },
+		{ key = "RightArrow", mods = "CMD", action = wezterm.action({ ActivatePaneDirection = "Right" }) },
+	},
 }
 
 return config
