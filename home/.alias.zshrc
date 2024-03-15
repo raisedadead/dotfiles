@@ -32,11 +32,6 @@ alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
 alias azvms="az vm list-ip-addresses --output table"
 
 #-----------------------------
-# bat - better cat
-# ----------------------------
-type bat &>/dev/null && alias cat="bat"
-
-#-----------------------------
 # thefuck - mistyped commands
 #-----------------------------
 type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
