@@ -30,8 +30,8 @@ local config = {
 		top = 10,
 		bottom = 15,
 	},
-	window_background_opacity = 0.85,
-	macos_window_background_blur = 20,
+	window_background_opacity = 0.9,
+	macos_window_background_blur = 40,
 
 	mouse_bindings = {
 		-- Ctrl/Cmd-click will open the link under the mouse cursor
