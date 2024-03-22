@@ -13,14 +13,15 @@ export FZF_DEFAULT_OPTS='
   --layout="reverse" 
   --info="right"
 '
+export FZF_COMPLETION_OPTS=$FZF_DEFAULT_OPTS
 export FZF_CTRL_T_OPTS=$FZF_DEFAULT_OPTS
 # export FZF_CTRL_R_OPTS=$FZF_DEFAULT_OPTS"
 #   --preview 'echo {}'
 #   --preview-window down:3:hidden:wrap
 #   --bind '?:toggle-preview'
 #   "
-export FZF_ALT_C_OPTS=$FZF_DEFAULT_OPTS'
-  --preview "tree -C {} | head -200"
-'
-export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+# export FZF_ALT_C_OPTS=$FZF_DEFAULT_OPTS'
+#  --preview "tree -C {} | head -200"
+# '
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND=$FZF_DEFAULT_COMMAND
