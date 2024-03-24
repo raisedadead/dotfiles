@@ -6,6 +6,6 @@ git:
   overrideGpg: false
   paging:
     colorArg: always
-    useConfig: true
+    pager: delta --dark --paging=never
 disableStartupPopups: true
 quitOnTopLevelReturn: true
