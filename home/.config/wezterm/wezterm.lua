@@ -22,6 +22,7 @@ local config = {
 
 	hide_tab_bar_if_only_one_tab = true,
 	use_fancy_tab_bar = false,
+
 	window_close_confirmation = "NeverPrompt",
 	window_decorations = "RESIZE",
 	window_padding = {
@@ -48,6 +49,27 @@ local config = {
 	},
 
 	keys = {
+		-- Open WezTerm Config
+		{
+			key = ",",
+			mods = "CMD",
+			action = wezterm.action.SpawnCommandInNewTab({
+				cwd = os.getenv("WEZTERM_CONFIG_DIR"),
+				set_environment_variables = {
+					TERM = "screen-256color",
+				},
+				args = {
+					"vi",
+					os.getenv("WEZTERM_CONFIG_FILE"),
+				},
+			}),
+		},
+		-- Tab Navigator
+		{
+			key = "t",
+			mods = "CMD|SHIFT",
+			action = wezterm.action.ShowTabNavigator,
+		},
 		-- Panes
 		-- Split pane horizontally
 		{
