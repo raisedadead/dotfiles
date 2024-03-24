@@ -20,7 +20,6 @@ source ~/.zplug/init.zsh
 # My custom plugins
 #-----------------------------
 zplug "raisedadead/zsh-touchplus", defer:2
-zplug "raisedadead/zsh-awsssh"
 
 GSO_ENABLE_KEYBINDINGS=true
 zplug "raisedadead/zsh-gso", defer:2
