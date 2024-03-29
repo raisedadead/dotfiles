@@ -3,7 +3,7 @@ gui:
   border: rounded
   showRandomTip: false
 git:
-  overrideGpg: false
+  overrideGpg: true
   paging:
     colorArg: always
     pager: delta --dark --paging=never
