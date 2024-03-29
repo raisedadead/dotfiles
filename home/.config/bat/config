@@ -13,4 +13,5 @@
 # Uncomment the following line to disable automatic paging:
 #--paging=never
 
---style="full"
+--style="changes"
+--pager="delta"
