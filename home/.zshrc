@@ -32,9 +32,9 @@ autoload -Uz compinit
 compinit
 
 # Return if zsh is called from Vim
-if [[ -n $VIMRUNTIME ]]; then
-  return 0
-fi
+# if [[ -n $VIMRUNTIME ]]; then
+#   return 0
+# fi
 
 setopt INC_APPEND_HISTORY
 setopt HIST_EXPIRE_DUPS_FIRST
