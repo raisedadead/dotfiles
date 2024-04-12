@@ -84,11 +84,10 @@ if [[ -d "$HOME/.cargo" ]]; then
   export PATH="$CARGO_HOME/bin:$PATH"
 fi
 
-if can_haz brew && [[ -d "$(brew --prefix)/bin/pyenv" ]]; then
-  eval "$(pyenv init -)"
+if can_haz brew && command -v pyenv >/dev/null; then
   export PYENV_ROOT="$HOME/.pyenv"
-  command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-  [ -d $PYENV_ROOT ] && eval "$(pyenv init --path)"
+  [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
   # avoid conflicts with homebrew
   [ -d $PYENV_ROOT ] && alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
 fi
