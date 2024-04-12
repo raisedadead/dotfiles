@@ -18,9 +18,9 @@ zinit wait lucid for \
 ### Node.js related plugins
 NVM_AUTO_USE=true
 zinit light lukechilds/zsh-nvm
-zinit wait lucid for \
-    lukechilds/zsh-better-npm-completion \
-    g-plane/pnpm-shell-completion
+zinit light lukechilds/zsh-better-npm-completion
+zinit ice atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone"
+zinit light g-plane/pnpm-shell-completion
 
 ### Files & directories
 zinit light mfaerevaag/wd
