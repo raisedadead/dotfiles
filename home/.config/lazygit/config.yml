@@ -2,6 +2,7 @@ gui:
   nerdFontsVersion: '3'
   border: rounded
   showRandomTip: false
+  skipDiscardChangeWarning: true
 git:
   overrideGpg: true
   paging:
