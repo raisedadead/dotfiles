@@ -7,6 +7,6 @@ git:
   overrideGpg: true
   paging:
     colorArg: always
-    pager: delta --dark --paging=never
+    pager: delta --features=catppuccin-mocha --paging=never
 disableStartupPopups: true
 quitOnTopLevelReturn: true
