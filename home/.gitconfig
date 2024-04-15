@@ -21,28 +21,23 @@ autocrlf = false
 safecrlf = false
 pager = delta
 
-[delta]
-side-by-side = false
-line-numbers = true
-features = diff-so-fancy
-hunk-header-style = file line-number
-hunk-header-decoration-style = blue ol ul
-file-style = omit
-
 [advice]
 statusuoption = false
 
 [fetch]
 prune = true
-[merge]
-conflictstyle = diff3
-[diff]
-colorMoved = default
 [pull]
 rebase = false
 [push]
 default = current
 autoSetupRemote = true
+
+[merge]
+conflictstyle = diff3
+[diff]
+colorMoved = default
+[interactive]
+  diffFilter = delta --color-only
 
 [color]
 ui = true
@@ -69,3 +64,4 @@ autocorrect = 1
 
 [include]
 path = ~/.gitconfig.local
+path = ~/.config/delta/config.gitconfig
