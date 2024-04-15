@@ -137,6 +137,7 @@ fi
 # custom utils and functions
 #-----------------------------
 [ -f ~/.bin/functions.sh ] && source ~/.bin/functions.sh
+[ -f ~/.bin/tailscale-mgmt.sh.sh ] && source ~/.bin/tailscale-mgmt.sh
 
 # atuin
 if can_haz atuin; then
