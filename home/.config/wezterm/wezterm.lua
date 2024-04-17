@@ -11,8 +11,9 @@ local config = {
   audible_bell = "Disabled",
 
   font = wezterm.font_with_fallback({
-    { family = "Maple Mono NF", weight = "Bold" },
-    { family = "JetBrains Mono", weight = "Bold" },
+    { family = "Maple Mono" },
+    { family = "JetBrainsMono Nerd Font" },
+    { family = "Symbols Nerd Font Mono" },
   }),
   font_size = 14.0,
   color_scheme = "Catppuccin Mocha",
