@@ -1,98 +1,61 @@
 #-----------------------------------------------------------
-#
 # @raisedadead's config files
 # Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
 # File name: .zshrc
-#
 #-----------------------------------------------------------
 
 #-----------------------------------------------------------
 # common configs
 #-----------------------------------------------------------
-
-# Use for profiling zsh, should be the first thing in the file
-if [[ "$ZPROF" = true ]]; then
-  zmodload zsh/zprof
-fi
+if [[ "$ZPROF" = true ]]; then zmodload zsh/zprof; fi
 
 export LC_CTYPE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export XDG_CONFIG_HOME="$HOME/.config"
-
 umask 022
 limit coredumpsize 0
 bindkey -d
 
-#-----------------------------
 # Autocomplete settings
-#-----------------------------
-autoload -Uz compinit
-compinit
+autoload -Uz compinit && compinit
 
-# Return if zsh is called from Vim
-# if [[ -n $VIMRUNTIME ]]; then
-#   return 0
-# fi
+setopt INC_APPEND_HISTORY HIST_EXPIRE_DUPS_FIRST HIST_IGNORE_DUPS HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
 
-setopt INC_APPEND_HISTORY
-setopt HIST_EXPIRE_DUPS_FIRST
-setopt HIST_IGNORE_DUPS
-setopt HIST_IGNORE_ALL_DUPS
-setopt HIST_IGNORE_SPACE
-setopt HIST_FIND_NO_DUPS
-setopt HIST_SAVE_NO_DUPS
-
-# Credit: https://github.com/unixorn/zsh-quickstart-kit/blob/6e940dd38053b0a7c6c0208426d7a7ab798a3db7/zsh/.zshrc#L24-L26
+# Function to check command existence
 function can_haz() {
-  which "$@" >/dev/null 2>&1
+  command -v "$1" >/dev/null 2>&1
 }
 
-#-----------------------------
 # homeshick
-#-----------------------------
 source ~/.homesick/repos/homeshick/homeshick.sh
 fpath=(~/.homesick/repos/homeshick/completions $fpath)
 
-#-----------------------------
-# homebrew
-#-----------------------------
-[ -d /opt/homebrew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+# Brew setup
+if [[ -d /opt/homebrew ]]; then eval "$(/opt/homebrew/bin/brew shellenv)"; fi
+if [[ -d /home/linuxbrew ]]; then eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; fi
 
-#-----------------------------
-# linuxbrew
-#-----------------------------
-[ -d /home/linuxbrew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-#-----------------------------
 # zinit
-#-----------------------------
 [ -f ~/.zinit.zshrc ] && source ~/.zinit.zshrc
 
-#-----------------------------
-# private configs and secrets
-#-----------------------------
+# Private configs and secrets
 [ -f ~/.private.zshrc ] && source ~/.private.zshrc
 
-#-----------------------------
 # Path and variable settings
-#-----------------------------
-# cargo
 if [[ -d "$HOME/.cargo" ]]; then
   export CARGO_HOME="$HOME/.cargo"
   export PATH="$CARGO_HOME/bin:$PATH"
 fi
 
-if can_haz brew && command -v pyenv >/dev/null; then
+if can_haz brew && can_haz pyenv; then
   export PYENV_ROOT="$HOME/.pyenv"
   [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
   eval "$(pyenv init -)"
-  # avoid conflicts with homebrew
-  [ -d $PYENV_ROOT ] && alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
+  alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
 fi
 
-# pnpm
 if [[ -d "$HOME/.pnpm" ]]; then
   export PNPM_HOME="$HOME/.pnpm"
   export PATH="$PNPM_HOME:$PATH"
@@ -101,12 +64,10 @@ elif [[ -d "$HOME/Library/pnpm" ]]; then
   export PATH="$PNPM_HOME:$PATH"
 fi
 
-# mysql
 if can_haz brew && [[ -d "$(brew --prefix)/opt/mysql-client" ]]; then
   export PATH="$(brew --prefix)/opt/mysql-client/bin:$PATH"
 fi
 
-# editor
 if can_haz nvim; then
   export VISUAL=nvim
 elif can_haz vim; then
@@ -116,13 +77,10 @@ else
 fi
 export EDITOR="$VISUAL"
 
-#-----------------------------
-# Completions
-#-----------------------------
-# Add more completions in this file only
+# Additional completions
 [ -f ~/.bin/completions/main.sh ] && source ~/.bin/completions/main.sh
 
-# ZSH completions
+# Brew completions
 if can_haz brew; then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 fi
@@ -133,9 +91,7 @@ if can_haz fzf; then
   [ -f ~/.fzf.zshrc ] && source ~/.fzf.zshrc
 fi
 
-#-----------------------------
-# custom utils and functions
-#-----------------------------
+# Custom utils and functions
 [ -f ~/.bin/functions.sh ] && source ~/.bin/functions.sh
 [ -f ~/.bin/tailscale-mgmt.sh.sh ] && source ~/.bin/tailscale-mgmt.sh
 
@@ -154,31 +110,22 @@ if can_haz pkgx; then
   source <(pkgx --shellcode)
 fi
 
-#-----------------------------
 # Starship Prompt for zsh
-#-----------------------------
 if can_haz starship; then
   eval "$(starship init zsh)"
 fi
 
-#-----------------------------
-# aliases and env settings
-#-----------------------------
+# Aliases and env settings
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
 [ -f ~/.profile ] && source ~/.profile
 
-#------------------------------------------------------------|
-# Use for profiling zsh, should be the last thing in the file
+# Profiling
 timezsh() {
-  for i in $(seq 1 10); do time zsh -i -c exit; done
+  for i in {1..10}; do time zsh -i -c exit; done
 }
 
-if [[ "$ZPROF" = true ]]; then
-  zprof
-fi
-#-----------------------------------------------------------|
+if [[ "$ZPROF" = true ]]; then zprof; fi
 
-#----------------------------------------------------------------------
-# Warning: Everything below this line was probably added automatically,
-# by tools, these need to be reviewed and cleaned up.
-#----------------------------------------------------------------------
+#------------------------------------------------------------
+# Automatic additions (Review and clean up)
+#------------------------------------------------------------
