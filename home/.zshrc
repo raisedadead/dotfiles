@@ -37,12 +37,6 @@ fpath=(~/.homesick/repos/homeshick/completions $fpath)
 if [[ -d /opt/homebrew ]]; then eval "$(/opt/homebrew/bin/brew shellenv)"; fi
 if [[ -d /home/linuxbrew ]]; then eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; fi
 
-# zinit
-[ -f ~/.zinit.zshrc ] && source ~/.zinit.zshrc
-
-# Private configs and secrets
-[ -f ~/.private.zshrc ] && source ~/.private.zshrc
-
 # Path and variable settings
 if [[ -d "$HOME/.cargo" ]]; then
   export CARGO_HOME="$HOME/.cargo"
@@ -114,6 +108,12 @@ fi
 if can_haz starship; then
   eval "$(starship init zsh)"
 fi
+
+# ZSH plugins
+[ -f ~/.zinit.zshrc ] && source ~/.zinit.zshrc
+
+# Private configs and secrets
+[ -f ~/.private.zshrc ] && source ~/.private.zshrc
 
 # Aliases and env settings
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
