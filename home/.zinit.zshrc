@@ -16,14 +16,26 @@ source "$ZINIT_HOME/zinit.zsh"
 ### Zinit's self-management
 zinit light zdharma-continuum/zinit
 
-### Plugins
+#### Plugins
+
+### Syntax highlighting
 zinit wait lucid for \
-    atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
+    atclone"rm -rf /tmp/USE_CATPPUCCIN_THEME; touch /tmp/USE_CATPPUCCIN_THEME" \
     zdharma-continuum/fast-syntax-highlighting \
+    as"null" \
+    nocompile \
+    if'[[ -f /tmp/USE_CATPPUCCIN_THEME ]]' \
+    atload'fast-theme ${ZINIT[PLUGINS_DIR]}/catppuccin---zsh-fsh/themes/catppuccin-mocha.ini; echo; rm -rf /tmp/USE_CATPPUCCIN_THEME;' \
+    catppuccin/zsh-fsh
+
+### Completions and autosuggestions
+zinit wait lucid for \
     blockf \
     zsh-users/zsh-completions \
     atload"!_zsh_autosuggest_start" \
     zsh-users/zsh-autosuggestions
+
+# General plugins
 zinit light Aloxaf/fzf-tab
 zinit light mfaerevaag/wd
 zinit light softmoth/zsh-vim-mode
