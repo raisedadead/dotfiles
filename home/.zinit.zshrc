@@ -17,16 +17,16 @@ source "$ZINIT_HOME/zinit.zsh"
 zinit light zdharma-continuum/zinit
 
 ### Plugins
-zinit light zsh-users/zsh-autosuggestions
-zinit light zsh-users/zsh-completions
+zinit wait lucid for \
+    atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
+    zdharma-continuum/fast-syntax-highlighting \
+    blockf \
+    zsh-users/zsh-completions \
+    atload"!_zsh_autosuggest_start" \
+    zsh-users/zsh-autosuggestions
 zinit light Aloxaf/fzf-tab
 zinit light mfaerevaag/wd
 zinit light softmoth/zsh-vim-mode
-
-### Syntax highlighting
-zinit ice pick"themes/catppuccin_mocha-zsh-syntax-highlighting.zsh"
-zinit light catppuccin/zsh-syntax-highlighting
-zinit light zdharma-continuum/fast-syntax-highlighting
 
 ### My plugins
 GSO_ENABLE_KEYBINDINGS=true

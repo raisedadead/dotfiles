@@ -16,10 +16,10 @@ export LC_ALL=en_US.UTF-8
 export XDG_CONFIG_HOME="$HOME/.config"
 umask 022
 limit coredumpsize 0
+autoload -Uz compinit && compinit
 
 # Use vi keybindings
 bindkey -d
-
 # History previous and next search
 bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
@@ -120,8 +120,6 @@ fi
 # Aliases and env settings
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
 [ -f ~/.profile ] && source ~/.profile
-
-autoload -Uz compinit && compinit
 
 # Profiling
 timezsh() {
