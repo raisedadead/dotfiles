@@ -16,10 +16,13 @@ export LC_ALL=en_US.UTF-8
 export XDG_CONFIG_HOME="$HOME/.config"
 umask 022
 limit coredumpsize 0
+
+# Use vi keybindings
 bindkey -d
 
-# Autocomplete settings
-autoload -Uz compinit && compinit
+# History previous and next search
+bindkey '^p' history-search-backward
+bindkey '^n' history-search-forward
 
 setopt INC_APPEND_HISTORY HIST_EXPIRE_DUPS_FIRST HIST_IGNORE_DUPS HIST_IGNORE_ALL_DUPS
 setopt HIST_IGNORE_SPACE HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
@@ -28,6 +31,11 @@ setopt HIST_IGNORE_SPACE HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
 function can_haz() {
   command -v "$1" >/dev/null 2>&1
 }
+
+# ZSH plugins
+[ -f ~/.zinit.zshrc ] && source ~/.zinit.zshrc
+# Private configs and secrets
+[ -f ~/.private.zshrc ] && source ~/.private.zshrc
 
 # homeshick
 source ~/.homesick/repos/homeshick/homeshick.sh
@@ -109,15 +117,11 @@ if can_haz starship; then
   eval "$(starship init zsh)"
 fi
 
-# ZSH plugins
-[ -f ~/.zinit.zshrc ] && source ~/.zinit.zshrc
-
-# Private configs and secrets
-[ -f ~/.private.zshrc ] && source ~/.private.zshrc
-
 # Aliases and env settings
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
 [ -f ~/.profile ] && source ~/.profile
+
+autoload -Uz compinit && compinit
 
 # Profiling
 timezsh() {
