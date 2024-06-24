@@ -81,3 +81,4 @@ type openssl &>/dev/null && alias genpass='openssl rand -base64 32'
 # Multipass
 #-----------------------------
 type multipass &>/dev/null && alias mp="multipass"
+
