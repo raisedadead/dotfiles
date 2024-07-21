@@ -44,7 +44,7 @@ local config = {
     -- Ctrl/Cmd-click will open the link under the mouse cursor
     {
       event = { Up = { streak = 1, button = "Left" } },
-      mods = "CMD",
+      mods = "OPT",
       action = wezterm.action.OpenLinkAtMouseCursor,
     },
     {
