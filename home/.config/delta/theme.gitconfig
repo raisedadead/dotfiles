@@ -28,4 +28,4 @@ map-styles = \
         bold cyan = "#384d5e", \
         bold yellow = "#544f4e" >syntax >syntax >syntax >syntax
 # Should match the name of the bat theme
-syntax-theme = "Catppuccin-mocha"
+syntax-theme = "Catppuccin Mocha"
