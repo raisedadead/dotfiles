@@ -121,6 +121,11 @@ if can_haz starship; then
   eval "$(starship init zsh)"
 fi
 
+# direnv
+if can_haz direnv; then
+  eval "$(direnv hook zsh)"
+fi
+
 # Aliases and env settings
 [ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
 [ -f ~/.profile ] && source ~/.profile
