@@ -66,6 +66,10 @@ elif [[ -d "$HOME/Library/pnpm" ]]; then
   export PATH="$PNPM_HOME:$PATH"
 fi
 
+if can_haz go && [[ -d "$GOPATH/bin" ]]; then
+  export PATH="$PATH:$(go env GOPATH)/bin"
+fi
+
 if can_haz brew && [[ -d "$(brew --prefix)/opt/mysql-client" ]]; then
   export PATH="$(brew --prefix)/opt/mysql-client/bin:$PATH"
 fi
