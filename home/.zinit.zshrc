@@ -46,7 +46,8 @@ zinit wait lucid for \
     raisedadead/zsh-touchplus \
     raisedadead/zsh-gso \
     raisedadead/zsh-smartinput \
-    raisedadead/zsh-snr
+    raisedadead/zsh-snr \
+    raisedadead/zsh-awsssh
 
 ### Node.js
 NVM_AUTO_USE=true
