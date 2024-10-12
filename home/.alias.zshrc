@@ -28,7 +28,7 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/lazygit ] && alias g="lazygit
 #----------------------------
 # LazyGit
 #----------------------------
-alias c="cursor ." 
+alias c="code ." 
 
 #-----------------------------
 # VM lists from Azure and DO
