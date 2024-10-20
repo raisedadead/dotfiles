@@ -67,3 +67,6 @@ path = ~/.gitconfig.local
 path = ~/.config/delta/config.gitconfig
 [rerere]
   enabled = true
+[gitbutler]
+	aiOpenAIKeyOption = bringYourOwn
+	aiOpenAIModelName = gpt-4o-mini
