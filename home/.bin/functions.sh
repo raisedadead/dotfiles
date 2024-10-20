@@ -182,24 +182,24 @@ if can_haz fzf; then
 	# Quick Cheat Sheet
 	#-----------------------------
 	# Check for required commands
-	for cmd in awk cheat awk; do
-		if ! command -v $cmd &>/dev/null; then
-			echo "Error: Required command '$cmd' is not installed." >&2
-			return 1
-		fi
-	done
+	## for cmd in awk cheat awk; do
+	## 	if ! command -v $cmd &>/dev/null; then
+	## 		echo "Error: Required command '$cmd' is not installed." >&2
+	## 		return 1
+	## 	fi
+	## done
 
-	function quick-cheat() {
-		cheat -l | awk '{print $1}' | tail -n +4 | fzf \
-			--height=40% \
-			--layout=reverse \
-			--border \
-			--info=default \
-			--prompt="Search Cheat Sheet: " \
-			--header="Select (Enter), Quit (Ctrl-C or ESC)" \
-			--preview="cheat -c {}" \
-			--preview-window="right:50%:wrap" | while read -r line; do cheat "$line"; done
-	}
+	## function quick-cheat() {
+	## 	cheat -l | awk '{print $1}' | tail -n +4 | fzf \
+	## 		--height=40% \
+	## 		--layout=reverse \
+	## 		--border \
+	## 		--info=default \
+	## 		--prompt="Search Cheat Sheet: " \
+	## 		--header="Select (Enter), Quit (Ctrl-C or ESC)" \
+	## 		--preview="cheat -c {}" \
+	## 		--preview-window="right:50%:wrap" | while read -r line; do cheat "$line"; done
+	## }
 
 # --- FZF --- end
 fi
