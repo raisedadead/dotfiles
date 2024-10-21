@@ -14,6 +14,11 @@
 alias home="homeshick"
 
 #-----------------------------
+# cat
+#-----------------------------
+type brew &>/dev/null && [ -f $(brew --prefix)/bin/bat ] && alias cat="bat"
+
+#-----------------------------
 # Other Git aliases
 # ----------------------------
 alias gti="git"
@@ -40,6 +45,7 @@ alias azvms="az vm list-ip-addresses --output table"
 # thefuck - mistyped commands
 #-----------------------------
 type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
+
 #-----------------------------
 # Neovim
 #-----------------------------

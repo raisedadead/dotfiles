@@ -11,7 +11,7 @@
 --italic-text=always
 
 # Uncomment the following line to disable automatic paging:
-#--paging=never
+--paging=never
 
 --style="changes"
 --pager="delta"
