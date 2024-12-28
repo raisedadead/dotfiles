@@ -50,7 +50,7 @@ type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --al
 # Neovim
 #-----------------------------
 alias vim="vi"
-type brew &>/dev/null && [ -f $(brew --prefix)/bin/nvim ] && alias vi="nvim"
+type nvim &>/dev/null && alias vi="nvim"
 
 #-----------------------------
 # update packages
