@@ -1,4 +1,5 @@
-theme = catppuccin-mocha
+# theme = catppuccin-mocha
+theme = rose-pine-moon
 font-family = "Maple Mono"
 font-family = "Symbols Nerd Font Mono"
 font-size = 14.0
