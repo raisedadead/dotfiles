@@ -70,7 +70,8 @@ alias genrand="head -c32 /dev/urandom | base64"
 #-----------------------------
 type eza &>/dev/null && alias ls='eza --icons --group-directories-first'
 type eza &>/dev/null && alias ll='eza -l --icons --no-user --group-directories-first  --time-style long-iso'
-type eza &>/dev/null && alias la='eza -la --icons --no-user --group-directories-first  --time-style long-iso'
+type eza &>/dev/null && alias ls-all='eza -la --icons --no-user --group-directories-first  --time-style long-iso'
+type eza &>/dev/null && alias ls-plain='eza -la --icons=never --no-permissions --no-filesize --no-time --no-user'
 
 #-----------------------------
 # Open Websites in Browser
