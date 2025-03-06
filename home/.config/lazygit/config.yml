@@ -27,6 +27,8 @@ gui:
   authorColors:
     "*": "#b4befe"
 git:
+  log:
+    order: default
   overrideGpg: true
   paging:
     colorArg: always
