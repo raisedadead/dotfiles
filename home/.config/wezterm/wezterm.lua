@@ -1,5 +1,5 @@
 local wezterm = require("wezterm")
-local theme = wezterm.plugin.require("https://github.com/neapsix/wezterm").main
+-- local theme = wezterm.plugin.require("https://github.com/neapsix/wezterm").main
 local config = {
 	set_environment_variables = {
 		TERM = "xterm-256color",
@@ -17,9 +17,9 @@ local config = {
 	}),
 	font_size = 14.0,
 
-	-- color_scheme = "Catppuccin Mocha",
-	colors = theme.colors(),
-	window_frame = theme.window_frame(),
+	color_scheme = "Catppuccin Mocha",
+	-- colors = theme.colors(),
+	-- window_frame = theme.window_frame(),
 
 	initial_rows = 45,
 	initial_cols = 175,
@@ -32,16 +32,12 @@ local config = {
 	window_padding = {
 		left = 15,
 		right = 15,
-		top = 10,
+		top = 25,
 		bottom = 15,
 	},
 	window_background_opacity = 0.9,
 	macos_window_background_blur = 40,
 
-	inactive_pane_hsb = {
-		saturation = 0.9,
-		brightness = 0.5,
-	},
 
 	mouse_bindings = {
 		-- Ctrl/Cmd-click will open the link under the mouse cursor
