@@ -1,9 +1,8 @@
-# theme = catppuccin-mocha
-theme = rose-pine-moon
+theme = catppuccin-mocha
 font-family = "Maple Mono"
 font-family = "Symbols Nerd Font Mono"
 font-size = 14.0
-window-padding-x = 15
+window-padding-x = 10
 window-padding-y = 10
 background-opacity = 0.9
 background-blur-radius = 40
