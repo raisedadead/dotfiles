@@ -36,8 +36,8 @@ local config = {
 		top = 25,
 		bottom = 15,
 	},
-	window_background_opacity = 0.9,
-	macos_window_background_blur = 40,
+	-- window_background_opacity = 0.9,
+	-- macos_window_background_blur = 40,
 
 
 	mouse_bindings = {
