@@ -45,7 +45,6 @@ GSO_ENABLE_KEYBINDINGS=true
 zinit wait lucid for \
     raisedadead/zsh-touchplus \
     raisedadead/zsh-gso \
-    raisedadead/zsh-smartinput \
     raisedadead/zsh-snr \
     raisedadead/zsh-awsssh
 
