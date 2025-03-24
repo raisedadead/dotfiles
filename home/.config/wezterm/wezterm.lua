@@ -1,4 +1,5 @@
 local wezterm = require("wezterm")
+local balance = require("balance")
 -- local theme = wezterm.plugin.require("https://github.com/neapsix/wezterm").main
 local config = {
 	set_environment_variables = {
@@ -87,6 +88,15 @@ local config = {
 			key = "d",
 			mods = "CMD|SHIFT",
 			action = wezterm.action({ SplitVertical = { domain = "CurrentPaneDomain" } }),
+		},
+		-- Balance Panes
+		{
+			key = 'b',
+			mods = 'CMD',
+			action = wezterm.action.Multiple {
+				wezterm.action_callback(balance.balance_panes("x")),
+				wezterm.action_callback(balance.balance_panes("y")),
+			},
 		},
 		-- Zoom and Close
 		{ key = "z", mods = "CMD", action = "TogglePaneZoomState" },
