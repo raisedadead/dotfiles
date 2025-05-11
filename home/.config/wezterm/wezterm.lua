@@ -1,6 +1,5 @@
 local wezterm = require("wezterm")
 local balance = require("balance")
--- local theme = wezterm.plugin.require("https://github.com/neapsix/wezterm").main
 local config = {
 	set_environment_variables = {
 		TERM = "xterm-256color",
@@ -19,8 +18,6 @@ local config = {
 	font_size = 14.0,
 
 	color_scheme = "Catppuccin Mocha",
-	-- colors = theme.colors(),
-	-- window_frame = theme.window_frame(),
 
 	initial_rows = 45,
 	initial_cols = 175,
@@ -36,8 +33,8 @@ local config = {
 		top = 25,
 		bottom = 15,
 	},
-	-- window_background_opacity = 0.9,
-	-- macos_window_background_blur = 40,
+	window_background_opacity = 0.9,
+	macos_window_background_blur = 40,
 
 
 	mouse_bindings = {
