@@ -27,4 +27,7 @@ node_modules
 
 # 1Password Configs
 .op/
+
+# cursor
+.cursor/
 .cursorignore
