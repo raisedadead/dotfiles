@@ -1,20 +1,16 @@
-// Zed settings
-//
-// For information on how to configure Zed, see the Zed
-// documentation: https://zed.dev/docs/configuring-zed
-//
-// To see all of Zed's default settings without changing your
-// custom settings, run the `open default settings` command
-// from the command palette or from `Zed` application menu.
 {
-  "assistant": {
+  "agent": {
+    "version": "2",
+    "enabled": true,
+    "model_parameters": [],
     "default_model": {
       "provider": "zed.dev",
-      "model": "claude-3-5-sonnet-latest"
-    },
-    "version": "2"
+      "model": "claude-3-7-sonnet-thinking-latest"
+    }
   },
-  "theme": "Catppuccin Mocha",
+  "features": {
+    "edit_prediction_provider": "zed"
+  },
   "base_keymap": "VSCode",
   "telemetry": {
     "diagnostics": false,
@@ -28,6 +24,51 @@
   "remove_trailing_whitespace_on_save": true,
   "highlight_line": true,
   "show_whitespaces": "selection",
+  "format_on_save": "on",
+  "ensure_final_newline_on_save": true,
+  "soft_wrap": "preferred_line_length",
+  "preferred_line_length": 100,
+  "relative_line_numbers": true,
+  "inlay_hints": {
+    "enabled": true,
+    "show_type_hints": true,
+    "show_parameter_hints": true
+  },
+  "project_panel": {
+    "git_status": true,
+    "dock": "left",
+    "auto_fold_dirs": true,
+    "indent_size": 12
+  },
+  "terminal": {
+    "font_family": "Maple Mono",
+    "font_size": 14,
+    "option_as_meta": true,
+    "copy_on_select": true,
+    "blinking": "on"
+  },
+  "cursor": {
+    "blink": true,
+    "width": 2
+  },
+  "git": {
+    "inline_blame": {
+      "enabled": true,
+      "delay_ms": 100,
+      "min_column": 80
+    }
+  },
+  "auto_update": true,
+  "show_breadcrumbs": true,
+  "show_scope_guides": true,
+  "preview_tabs": {
+    "enable_preview_from_file_finder": true
+  },
+  "hover_popover_enabled": true,
+  "code_actions_on_save": {
+    "source.fixAll": true,
+    "source.organizeImports": true
+  },
   "copilot": {
     "disabled_globs": [".env"]
   }
