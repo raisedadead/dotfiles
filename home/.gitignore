@@ -31,3 +31,7 @@ node_modules
 # cursor
 .cursor/
 .cursorignore
+
+#claude
+CLAUDE.md
+.claude
