@@ -1,9 +1,41 @@
+# Application Behavior
+quit-after-last-window-closed = true
+
+# Shell Integration
+shell-integration = zsh
+
+# Quick Terminal
+keybind = global:ctrl+grave_accent=toggle_quick_terminal
+quick-terminal-position = center
+quick-terminal-screen = mouse
+quick-terminal-animation-duration = 0.1
+
+# Clipboard
+clipboard-read = allow
+clipboard-write = allow
+copy-on-select = clipboard
+
+# Window & Display
+window-save-state = always
+window-theme = system
+window-decoration = none
+window-padding-balance = true
+window-padding-x = 15
+window-padding-y = 5,0
+window-width = 166
+window-height = 54
+
+# Appearance & Transparency
+background-opacity = 0.95
+background-blur = 15
+unfocused-split-opacity = 0.75
 theme = catppuccin-mocha
-font-family = "Maple Mono"
-font-family = "Symbols Nerd Font Mono"
-font-size = 14.0
-window-padding-x = 5
-window-padding-y = 0
-background-opacity = 0.9
-background-blur-radius = 40
-macos-titlebar-style = "tabs"
+bold-is-bright = true
+
+# Typography
+font-size = 13.5
+font-family = "Monalisa Variable, Maple Mono"
+
+# macOS Specific
+macos-titlebar-style = hidden
+macos-titlebar-proxy-icon = hidden
