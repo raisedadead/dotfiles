@@ -36,7 +36,8 @@ zinit wait lucid for \
     zsh-users/zsh-autosuggestions
 
 # General plugins
-zinit light Aloxaf/fzf-tab
+zinit ice atload"zstyle ':fzf-tab:*' use-fzf-default-opts yes"
+zinit load Aloxaf/fzf-tab
 zinit light mfaerevaag/wd
 zinit light softmoth/zsh-vim-mode
 
