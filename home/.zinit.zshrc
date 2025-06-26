@@ -65,8 +65,3 @@ zinit wait"3" lucid for \
 ### Docker
 zinit wait"2" lucid for \
     srijanshetty/docker-zsh
-
-### Snippets
-zinit wait"1" lucid for \
-    OMZP::git \
-    OMZP::sudo
