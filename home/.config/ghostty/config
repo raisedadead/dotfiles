@@ -33,8 +33,11 @@ theme = catppuccin-mocha
 bold-is-bright = true
 
 # Typography
-font-size = 13.5
-font-family = "Monalisa Variable, Maple Mono"
+font-family="Maple Mono Regular"
+font-size=14
+font-thicken=true
+font-thicken-strength=10
+adjust-cell-width = "-5%"
 
 # macOS Specific
 macos-titlebar-style = hidden
