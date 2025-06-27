@@ -36,11 +36,9 @@ zinit wait"0b" lucid for \
     zsh-users/zsh-autosuggestions
 
 # General plugins
-zinit ice wait"1" lucid atload"zstyle ':fzf-tab:*' use-fzf-default-opts yes; zstyle ':fzf-tab:*' fzf-flags --height=~25%"
-zinit load Aloxaf/fzf-tab
 zinit wait"1" lucid for \
-    mfaerevaag/wd \
-    softmoth/zsh-vim-mode
+    atload"zstyle ':fzf-tab:*' use-fzf-default-opts yes; zstyle ':fzf-tab:*' fzf-flags --height=~25%" \
+    Aloxaf/fzf-tab
 
 ### My plugins
 GSO_ENABLE_KEYBINDINGS=true
