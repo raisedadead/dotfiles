@@ -20,9 +20,6 @@ autoload -Uz compinit && compinit
 
 # Use vi keybindings
 bindkey -d
-# History previous and next search
-bindkey '^p' history-search-backward
-bindkey '^n' history-search-forward
 
 setopt INC_APPEND_HISTORY HIST_EXPIRE_DUPS_FIRST HIST_IGNORE_DUPS HIST_IGNORE_ALL_DUPS
 setopt HIST_IGNORE_SPACE HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
@@ -51,12 +48,15 @@ if [[ -d "$HOME/.cargo" ]]; then
   export PATH="$CARGO_HOME/bin:$PATH"
 fi
 
-if can_haz brew && can_haz pyenv; then
-  export PYENV_ROOT="$HOME/.pyenv"
-  [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init -)"
-  alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
-fi
+# if can_haz brew && can_haz pyenv; then
+#   export PYENV_ROOT="$HOME/.pyenv"
+#   [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+#   eval "$(pyenv init -)"
+#   alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
+# fi
+
+# UV for managing python needs this
+[ -f "$HOME/bin/env" ] && . "$HOME/.local/bin/env"
 
 if [[ -d "$HOME/.pnpm" ]]; then
   export PNPM_HOME="$HOME/.pnpm"
@@ -140,3 +140,4 @@ if [[ "$ZPROF" = true ]]; then zprof; fi
 #------------------------------------------------------------
 # Automatic additions (Review and clean up)
 #------------------------------------------------------------
+
