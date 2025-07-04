@@ -38,7 +38,9 @@ font-size=14
 font-thicken=true
 font-thicken-strength=10
 adjust-cell-width = "-5%"
+adjust-cell-height = "20%"
 
 # macOS Specific
 macos-titlebar-style = hidden
 macos-titlebar-proxy-icon = hidden
+keybind = shift+enter=text:\n
