@@ -50,10 +50,10 @@ zinit wait"1" lucid for \
 
 ### Node.js
 NVM_AUTO_USE=true
-zinit wait"2" lucid for \
+zinit wait"1" lucid for \
     lukechilds/zsh-nvm \
     lukechilds/zsh-better-npm-completion
-zinit ice wait"2" lucid atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone"
+zinit ice wait"1" lucid atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone"
 zinit light g-plane/pnpm-shell-completion
 
 ### Wakatime
@@ -61,5 +61,10 @@ zinit wait"3" lucid for \
     sobolevn/wakatime-zsh-plugin
 
 ### Docker
-zinit wait"2" lucid for \
+zinit wait"1" lucid for \
     srijanshetty/docker-zsh
+
+### VIM Mode
+# zinit wait"1" lucid for \
+#     jeffreytse/zsh-vi-mode
+#

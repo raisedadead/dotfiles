@@ -44,7 +44,7 @@ alias azvms="az vm list-ip-addresses --output table"
 #-----------------------------
 # thefuck - mistyped commands
 #-----------------------------
-type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
+# type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
 
 #-----------------------------
 # Neovim

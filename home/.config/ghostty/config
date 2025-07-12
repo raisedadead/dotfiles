@@ -18,7 +18,7 @@ copy-on-select = clipboard
 # Window & Display
 window-save-state = always
 window-theme = system
-window-decoration = none
+window-decoration = true
 window-padding-balance = true
 window-padding-x = 15
 window-padding-y = 5,0
