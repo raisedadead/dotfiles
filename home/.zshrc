@@ -57,8 +57,9 @@ zinit light romkatv/zsh-defer
 # NOW we can use zsh-defer - Compile zinit and plugins for faster loading
 zsh-defer -c "zinit compile --all 2>/dev/null"
 
-# Defer completion system entirely
-zsh-defer -a -c 'autoload -Uz compinit && compinit -C'
+# Load completion system immediately (required for fzf-tab)
+autoload -Uz compinit && compinit -C
+
 # Completion caching for faster subsequent completions
 zsh-defer -c "
   zstyle ':completion:*' use-cache on
@@ -69,6 +70,16 @@ zsh-defer -c "
   zstyle ':completion:*' accept-exact '*(N)'
   zstyle ':completion:*' rehash false
   zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+"
+
+# FZF tab (must load after compinit but before widget-wrapping plugins)
+zinit wait"0a" silent for \
+    Aloxaf/fzf-tab
+
+# Configure fzf-tab
+zsh-defer -c "
+  zstyle ':fzf-tab:*' use-fzf-default-opts yes
+  zstyle ':fzf-tab:*' fzf-flags --height=~25%
 "
 
 # Syntax highlighting with Catppuccin theme
@@ -104,20 +115,9 @@ zinit wait"1" silent for \
 zinit ice wait"1" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone"
 zinit light g-plane/pnpm-shell-completion
 
-# Docker completions
-zinit wait"2" silent for \
-    srijanshetty/docker-zsh
-
 # Wakatime
 zinit wait"3" silent for \
     sobolevn/wakatime-zsh-plugin
-
-# FZF tab
-zsh-defer -c "
-  zinit load Aloxaf/fzf-tab
-  zstyle ':fzf-tab:*' use-fzf-default-opts yes
-  zstyle ':fzf-tab:*' fzf-flags --height=~25%
-"
 
 #-----------------------------------------------------------
 # Tool Integrations
