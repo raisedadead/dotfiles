@@ -10,197 +10,47 @@
 #
 #-----------------------------------------------------------
 
-#-----------------------------
-# Commit in the past
-#-----------------------------
-function rollback_git_history() {
-	if [ -z "$1" ]; then
-		echo "Please pass an argument as a number (as in days ago)."
-		return 1
-	fi
+# source utilities
+source ~/.bin/utils.sh
 
-	local commit_target_date="undefined"
-	if [ -f ~/.bin/utils.sh ]; then
-		source ~/.bin/utils.sh
-		if [ $? -ne 0 ]; then
-			echo "An error occurred while sourcing utils.sh"
-			return 1
-		fi
-	fi
+# load git functions
+source ~/.bin/commit-past.sh
 
-	local target=$(_get_system)
-	case "$target" in
-	macos*)
-		commit_target_date=$(date -v-$1d)
-		;;
-	linux*)
-		commit_target_date=$(date --date="$1 days ago")
-		;;
-	*) ;;
+# load fzf functions
+source ~/.bin/ssh-helpers.sh
+source ~/.bin/file-search.sh
 
-	esac
+# load aws functions
+source ~/.bin/ssh-ec2.sh
 
-	if [ "$commit_target_date" != "undefined" ]; then
-		GIT_COMMITTER_DATE="$commit_target_date" git commit --amend --no-edit --date "$commit_target_date"
-	else
-		echo "An error occured in the custom script, or not implemented for your OS"
-	fi
-}
-
-#-----------------------------
-# Precmd
-#-----------------------------
+# terminal title
 precmd() {print -Pn "\e]0;%~\a"}
 
-#-----------------------------
-# FZF
-#-----------------------------
-# --- FZF --- begin
-if can_haz fzf; then
-	# --- FZF --- begin
-	#-----------------------------
-	# Quick SSH
-	#-----------------------------
-	# Credits: https://gist.github.com/dohq/1dc702cc0b46eb62884515ea52330d60
+# create convenient aliases for commonly used functions
+alias git_commit_past='_mrgsh_gcp'           # commit with past date
+alias ssh_host_select='_mrgsh_ssh'           # select ssh host from config
+alias ssh_host_remove='_mrgsh_rkh'           # remove host from known_hosts
+alias aws_ssh='_mrgsh_aws'                   # ssh to aws ec2 instance
+alias aws_get_instance_id='_mrgsh_aws_get_id' # get ec2 instance id by name
+alias fdd='_mrgsh_fdd'                       # find directories with fd
+alias fdf='_mrgsh_fdf'                       # find files with fd
+alias psf='_mrgsh_psf'                       # find processes with fzf
+alias rgfzf='_mrgsh_rgfzf'                   # search file content with ripgrep+fzf
+alias fif='_mrgsh_fif'                       # advanced file/content search
+alias rkh='_mrgsh_rkh'                       # remove host from known_hosts
 
-	#########################################################################
+# completion descriptions
+compdef '_describe "commit in the past" "(git_commit_past:\"commit with past date\")"' git_commit_past
+compdef '_describe "select ssh host" "(ssh_host_select:\"select ssh host from config\")"' ssh_host_select
+compdef '_describe "remove host" "(ssh_host_remove:\"remove host from known_hosts\")"' ssh_host_remove
+compdef '_describe "aws ssh" "(aws_ssh:\"ssh to aws ec2 instance\")"' aws_ssh
+compdef '_describe "get instance id" "(aws_get_instance_id:\"get ec2 instance id by name\")"' aws_get_instance_id
+compdef '_describe "find directories" "(fdd:\"find directories with fd\")"' fdd
+compdef '_describe "find files" "(fdf:\"find files with fd\")"' fdf
+compdef '_describe "find processes" "(psf:\"find processes with fzf\")"' psf
+compdef '_describe "search content" "(rgfzf:\"search file content with ripgrep+fzf\")"' rgfzf
+compdef '_describe "advanced search" "(fif:\"advanced file/content search\")"' fif
+compdef '_describe "remove host" "(rkh:\"remove host from known_hosts\")"' rkh
 
-	function local-config-ssh() {
-		local selected_host=$(grep -h "Host " ~/.ssh/config_* | grep -v '*' | cut -b 6- | fzf --query "$LBUFFER" --prompt="SSH Remote > ")
-		if [ -n "$selected_host" ]; then
-			BUFFER="ssh ${selected_host}"
-			zle accept-line
-		fi
-		zle reset-prompt
-	}
-	zle -N local-config-ssh
-	bindkey '^Z' local-config-ssh
-
-	#########################################################################
-
-	#-----------------------------
-	# Quick lookup (and edit)
-	#-----------------------------
-	function check_req() {
-		$(type bat >/dev/null 2>&1) && $(type fd >/dev/null 2>&1) && $(type fzf >/dev/null 2>&1)
-	}
-	function preview_bottom_view() {
-		if $(check_req); then
-			local selected_file=$(
-				fd --type f \
-					--hidden \
-					--follow \
-					--exclude .git |
-					fzf --height 80% \
-						--layout reverse \
-						--info inline \
-						--border \
-						--preview "bat --style=numbers --color=always {} | head -500" \
-						--preview-window "down:24:noborder" \
-						--prompt="File > " \
-						--query "$LBUFFER"
-			)
-			if [ -n "$selected_file" ]; then
-				BUFFER="vi $selected_file"
-				zle accept-line
-			fi
-			zle reset-prompt
-		fi
-	}
-	function preview_side_view() {
-		if $(check_req); then
-			local selected_file=$(
-				fd --type f \
-					--hidden \
-					--follow \
-					--exclude .git |
-					fzf --preview "bat --style=numbers --color=always {} | head -500"
-			)
-			if [ -n "$selected_file" ]; then
-				BUFFER="vi $selected_file"
-				zle accept-line
-			fi
-			zle reset-prompt
-		fi
-	}
-	zle -N preview_side_view
-	zle -N preview_bottom_view
-	bindkey '^P' preview_side_view
-	bindkey '^O' preview_bottom_view
-
-	#########################################################################
-
-	#-----------------------------
-	# Quick remove from known_hosts
-	#-----------------------------
-	# Check for required commands
-	for cmd in awk sed sort uniq fzf ssh-keygen; do
-		if ! command -v $cmd &>/dev/null; then
-			echo "Error: Required command '$cmd' is not installed." >&2
-			return 1
-		fi
-	done
-
-	function rkh() {
-		local known_hosts_file="$HOME/.ssh/known_hosts"
-
-		# Ensure known_hosts file exists
-		if [[ ! -f $known_hosts_file ]]; then
-			echo "Error: known_hosts file does not exist."
-			return 1
-		fi
-
-		# Extract the hostnames from the known_hosts file
-		local hostnames=($(awk '{print $1}' $known_hosts_file | sed 's/,/\n/g' | sort | uniq))
-
-		# Use 'fzf' to create an interactive menu to select hostnames
-		local selected_hostnames=($(printf '%s\n' "${hostnames[@]}" | fzf --multi --prompt="Remove Host > " --query "$LBUFFER"))
-
-		# If any selections were made, remove them
-		if [[ ${#selected_hostnames[@]} -ne 0 ]]; then
-			for sel in "${selected_hostnames[@]}"; do
-				# Remove host entry using ssh-keygen
-				ssh-keygen -R "$sel" >/dev/null 2>&1
-				if [[ $? -eq 0 ]]; then
-					echo "Removed host: $sel"
-				else
-					echo "Failed to remove host: $sel"
-				fi
-			done
-		else
-			echo "No host selected."
-			return 1
-		fi
-
-		# Clean up
-		rm -f ~/.ssh/known_hosts.old
-	}
-
-	#########################################################################
-
-	#-----------------------------
-	# Quick Cheat Sheet
-	#-----------------------------
-	# Check for required commands
-	## for cmd in awk cheat awk; do
-	## 	if ! command -v $cmd &>/dev/null; then
-	## 		echo "Error: Required command '$cmd' is not installed." >&2
-	## 		return 1
-	## 	fi
-	## done
-
-	## function quick-cheat() {
-	## 	cheat -l | awk '{print $1}' | tail -n +4 | fzf \
-	## 		--height=40% \
-	## 		--layout=reverse \
-	## 		--border \
-	## 		--info=default \
-	## 		--prompt="Search Cheat Sheet: " \
-	## 		--header="Select (Enter), Quit (Ctrl-C or ESC)" \
-	## 		--preview="cheat -c {}" \
-	## 		--preview-window="right:50%:wrap" | while read -r line; do cheat "$line"; done
-	## }
-
-# --- FZF --- end
-fi
-# --- FZF --- end
+# load keybindings
+source ~/.bin/keybindings.sh
