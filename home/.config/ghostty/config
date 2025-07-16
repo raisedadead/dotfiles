@@ -1,5 +1,5 @@
 # Application Behavior
-quit-after-last-window-closed = true
+quit-after-last-window-closed = false
 
 # Shell Integration
 shell-integration = zsh
@@ -33,7 +33,7 @@ theme = catppuccin-mocha
 bold-is-bright = true
 
 # Typography
-font-family="Maple Mono Regular"
+font-family="MonoLisa Variable"
 font-size=14
 font-thicken=true
 font-thicken-strength=10
@@ -41,6 +41,6 @@ adjust-cell-width = "-5%"
 adjust-cell-height = "5%"
 
 # macOS Specific
-macos-titlebar-style = hidden
-macos-titlebar-proxy-icon = hidden
+# macos-titlebar-style = hidden
+# macos-titlebar-proxy-icon = hidden
 keybind = shift+enter=text:\n
