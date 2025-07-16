@@ -111,7 +111,7 @@ if can_haz atuin; then
 fi
 
 # zoxide
-if can_haz zoxide; then
+if can_haz zoxide && [[ -o interactive ]]; then
   eval "$(zoxide init --cmd cd --hook pwd zsh)"
 fi
 
@@ -144,4 +144,3 @@ if [[ "$ZPROF" = true ]]; then zprof; fi
 #------------------------------------------------------------
 # Automatic additions (Review and clean up)
 #------------------------------------------------------------
-
