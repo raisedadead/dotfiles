@@ -6,141 +6,154 @@
 # File name: .zshrc
 #-----------------------------------------------------------
 
-if [[ "$ZPROF" = true ]]; then zmodload zsh/zprof; fi
+# Performance profiling (set ZPROF=true to enable)
+[[ "$ZPROF" = true ]] && zmodload zsh/zprof
 
-export LC_CTYPE=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
-export XDG_CONFIG_HOME="$HOME/.config"
-export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
-
+#-----------------------------------------------------------
+# Core Settings
+#-----------------------------------------------------------
 umask 022
 limit coredumpsize 0
-autoload -Uz compinit && compinit
 
-setopt INC_APPEND_HISTORY HIST_EXPIRE_DUPS_FIRST HIST_IGNORE_DUPS HIST_IGNORE_ALL_DUPS
-setopt HIST_IGNORE_SPACE HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
+# History
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt INC_APPEND_HISTORY
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
 
-function can_haz() {
-  command -v "$1" >/dev/null 2>&1
-}
+# Options
+setopt AUTO_CD
+setopt AUTO_PUSHD
+setopt PUSHD_IGNORE_DUPS
+setopt CDABLE_VARS
+setopt INTERACTIVECOMMENTS
 
-# ZSH Plugins
-[ -f ~/.zinit.zshrc ] && source ~/.zinit.zshrc
-[ -f ~/.private.zshrc ] && source ~/.private.zshrc
+# Helpers
+can_haz() { command -v "$1" >/dev/null 2>&1 }
+timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
 
-# Homeshick for dotfiles
-source ~/.homesick/repos/homeshick/homeshick.sh
-fpath=(~/.homesick/repos/homeshick/completions $fpath)
+# Force emacs mode (prevent vi mode auto-activation from EDITOR=nvim)
+bindkey -e
+
+# Prompt
+can_haz starship && eval "$(starship init zsh)"
+
+#-----------------------------------------------------------
+# Plugin Manager
+#-----------------------------------------------------------
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+[[ ! -d $ZINIT_HOME ]] && mkdir -p "$(dirname $ZINIT_HOME)" && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+source "$ZINIT_HOME/zinit.zsh"
+
+# Load zsh-defer first
+zinit light romkatv/zsh-defer
+
+# NOW we can use zsh-defer - Compile zinit and plugins for faster loading
+zsh-defer -c "zinit compile --all 2>/dev/null"
+
+# Defer completion system entirely
+zsh-defer -a -c 'autoload -Uz compinit && compinit -C'
+# Completion caching for faster subsequent completions
+zsh-defer -c "
+  zstyle ':completion:*' use-cache on
+  zstyle ':completion:*' cache-path ~/.zsh/cache
+  mkdir -p ~/.zsh/cache
+  
+  # More completion optimizations
+  zstyle ':completion:*' accept-exact '*(N)'
+  zstyle ':completion:*' rehash false
+  zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+"
+
+# Syntax highlighting with Catppuccin theme
+zinit wait"0a" silent for \
+    atclone"rm -rf /tmp/USE_CATPPUCCIN_THEME; touch /tmp/USE_CATPPUCCIN_THEME" \
+    zdharma-continuum/fast-syntax-highlighting \
+    as"null" \
+    nocompile \
+    if'[[ -f /tmp/USE_CATPPUCCIN_THEME ]]' \
+    atload'fast-theme ${ZINIT[PLUGINS_DIR]}/catppuccin---zsh-fsh/themes/catppuccin-mocha.ini; echo; rm -rf /tmp/USE_CATPPUCCIN_THEME;' \
+    catppuccin/zsh-fsh
+
+# Completions and suggestions
+zinit wait"0b" silent for \
+    blockf zsh-users/zsh-completions \
+    atload"!_zsh_autosuggest_start" zsh-users/zsh-autosuggestions
+
+# Custom plugins
+export GSO_ENABLE_KEYBINDINGS=true
+zinit wait"1" silent for \
+    raisedadead/zsh-touchplus \
+    raisedadead/zsh-gso \
+    raisedadead/zsh-smartinput \
+    raisedadead/zsh-snr
+
+# Node.js plugins
+export NVM_AUTO_USE=true
+zinit wait"1" silent for \
+    lukechilds/zsh-nvm \
+    lukechilds/zsh-better-npm-completion
+
+# PNPM completions
+zinit ice wait"1" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone"
+zinit light g-plane/pnpm-shell-completion
+
+# Docker completions
+zinit wait"2" silent for \
+    srijanshetty/docker-zsh
+
+# Wakatime
+zinit wait"3" silent for \
+    sobolevn/wakatime-zsh-plugin
+
+# FZF tab
+zsh-defer -c "
+  zinit load Aloxaf/fzf-tab
+  zstyle ':fzf-tab:*' use-fzf-default-opts yes
+  zstyle ':fzf-tab:*' fzf-flags --height=~25%
+"
+
+#-----------------------------------------------------------
+# Tool Integrations
+#-----------------------------------------------------------
 
 # Homebrew
-if [[ -d /opt/homebrew ]]; then eval "$(/opt/homebrew/bin/brew shellenv)"; fi
-if [[ -d /home/linuxbrew ]]; then eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; fi
+zsh-defer -c '[[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"'
 
-# Rust
-if [[ -d "$HOME/.cargo" ]]; then
-  export CARGO_HOME="$HOME/.cargo"
-  export PATH="$CARGO_HOME/bin:$PATH"
+# FZF
+zsh-defer source ~/.fzf.zsh
+zsh-defer source ~/.fzf.zshrc
+
+# Modern tools (interactive only)
+if [[ -o interactive ]]; then
+  zsh-defer -c 'can_haz atuin && eval "$(atuin init zsh --disable-up-arrow)"'
+  zsh-defer -c 'can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"'
+  zsh-defer -c 'can_haz direnv && eval "$(direnv hook zsh)"'
+  zsh-defer -c 'can_haz pkgx && source <(pkgx --shellcode)'
 fi
 
-# Ruby
-if can_haz brew && [[ -d "$(brew --prefix ruby)" ]]; then
-  export PATH="$(brew --prefix ruby)/bin:$PATH"
-  export GEM_HOME=$HOME/.gem
-  export PATH=$GEM_HOME/bin:$PATH
-fi
+# File sourcing
+zsh-defer source ~/.alias.zshrc
+zsh-defer source ~/.private.zshrc
+zsh-defer -c '[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"'
+zsh-defer -c '[[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh'
+zsh-defer -c '[[ -f ~/.homesick/repos/homeshick/homeshick.sh ]] && source ~/.homesick/repos/homeshick/homeshick.sh'
 
-# Python
-# if can_haz brew && can_haz pyenv; then
-#   export PYENV_ROOT="$HOME/.pyenv"
-#   [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-#   eval "$(pyenv init -)"
-#   alias brew='env PATH="${PATH//$(pyenv root)\/shims:/}" brew'
-# fi
-[ -f "$HOME/bin/env" ] && . "$HOME/.local/bin/env"
+# Config compilation
+zsh-defer -c "
+  [[ -f ~/.zshrc && ! -f ~/.zshrc.zwc ]] && zcompile ~/.zshrc
+  [[ -f ~/.zshenv && ! -f ~/.zshenv.zwc ]] && zcompile ~/.zshenv
+  [[ -f ~/.alias.zshrc && ! -f ~/.alias.zshrc.zwc ]] && zcompile ~/.alias.zshrc
+"
 
-# PNPM
-if [[ -d "$HOME/.pnpm" ]]; then
-  export PNPM_HOME="$HOME/.pnpm"
-  export PATH="$PNPM_HOME:$PATH"
-elif [[ -d "$HOME/Library/pnpm" ]]; then
-  export PNPM_HOME="$HOME/Library/pnpm"
-  export PATH="$PNPM_HOME:$PATH"
-fi
-
-# Golang
-if can_haz go && [[ -d "$GOPATH/bin" ]]; then
-  export PATH="$PATH:$(go env GOPATH)/bin"
-fi
-
-# MySQL
-if can_haz brew && [[ -d "$(brew --prefix)/opt/mysql-client" ]]; then
-  export PATH="$(brew --prefix)/opt/mysql-client/bin:$PATH"
-fi
-
-# NVIM
-if can_haz nvim; then
-  export VISUAL=nvim
-elif can_haz vim; then
-  export VISUAL=vim
-else
-  export VISUAL=vi
-fi
-export EDITOR="$VISUAL"
-
-# Additional completions
-[ -f ~/.bin/completions/main.sh ] && source ~/.bin/completions/main.sh
-
-# Brew completions
-if can_haz brew; then
-  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
-fi
-
-# fzf
-if can_haz fzf; then
-  [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-  [ -f ~/.fzf.zshrc ] && source ~/.fzf.zshrc
-fi
-
-# Custom utils and functions
-[ -f ~/.bin/functions.sh ] && source ~/.bin/functions.sh
-[ -f ~/.bin/tailscale-mgmt.sh.sh ] && source ~/.bin/tailscale-mgmt.sh
-
-# Atuin
-if can_haz atuin; then
-  eval "$(atuin init zsh --disable-up-arrow)"
-fi
-
-# zoxide
-if can_haz zoxide && [[ -o interactive ]]; then
-  eval "$(zoxide init --cmd cd --hook pwd zsh)"
-fi
-
-# pkgx
-if can_haz pkgx; then
-  source <(pkgx --shellcode)
-fi
-
-# Starship Prompt for zsh
-if can_haz starship; then
-  eval "$(starship init zsh)"
-fi
-
-# direnv
-if can_haz direnv; then
-  eval "$(direnv hook zsh)"
-fi
-
-# Aliases and env settings
-[ -f ~/.alias.zshrc ] && source ~/.alias.zshrc
-[ -f ~/.profile ] && source ~/.profile
-
-# Profiling
-timezsh() {
-  for i in {1..10}; do time zsh -i -c exit; done
-}
-
-if [[ "$ZPROF" = true ]]; then zprof; fi
-
-#------------------------------------------------------------
-# Automatic additions (Review and clean up)
-#------------------------------------------------------------
+# Performance profiling
+[[ "$ZPROF" = true ]] && zprof
+#-----------------------------------------------------------
+# End of .zshrc
+#-----------------------------------------------------------

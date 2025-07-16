@@ -1,11 +1,9 @@
 #-----------------------------------------------------------
-#
 # @raisedadead's config files
 # Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
 # License: ISC
 #
 # File name: .alias.zshrc
-#
 #-----------------------------------------------------------
 
 #-----------------------------
@@ -16,11 +14,11 @@ alias home="homeshick"
 #-----------------------------
 # cat
 #-----------------------------
-type brew &>/dev/null && [ -f $(brew --prefix)/bin/bat ] && alias cat="bat"
+can_haz bat && alias cat="bat"
 
 #-----------------------------
 # Other Git aliases
-# ----------------------------
+#----------------------------
 alias gti="git"
 alias got="git"
 alias gut="git"
@@ -28,12 +26,12 @@ alias gut="git"
 #----------------------------
 # LazyGit
 #----------------------------
-type brew &>/dev/null && [ -f $(brew --prefix)/bin/lazygit ] && alias g="lazygit"
+can_haz lazygit && alias g="lazygit"
 
 #----------------------------
 # Code (VS Code, or others)
 #----------------------------
-alias c="cursor ." 
+alias c="cursor ."
 
 #-----------------------------
 # VM lists from Azure and DO
@@ -42,15 +40,10 @@ alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
 alias azvms="az vm list-ip-addresses --output table"
 
 #-----------------------------
-# thefuck - mistyped commands
-#-----------------------------
-# type brew &>/dev/null && [ -f $(brew --prefix)/bin/fuck ] && eval $(thefuck --alias)
-
-#-----------------------------
 # Neovim
 #-----------------------------
 alias vim="vi"
-type nvim &>/dev/null && alias vi="nvim"
+can_haz nvim && alias vi="nvim"
 
 #-----------------------------
 # update packages
@@ -58,39 +51,37 @@ type nvim &>/dev/null && alias vi="nvim"
 alias letsupdate-brew-macos="export HOMEBREW_NO_ENV_HINTS=1;brew update; brew upgrade; brew upgrade --cask; brew cleanup; brew doctor"
 alias letsupdate-brew-linux="brew update; brew upgrade; brew cleanup; brew doctor"
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
-type node &>/dev/null && alias letsupdate-node="nvm install --lts --reinstall-packages-from=$(node -v) --latest-npm --default"
+can_haz node && alias letsupdate-node="nvm install --lts --reinstall-packages-from=$(node -v) --latest-npm --default"
 
 #-----------------------------
 # random string/key generator
 #-----------------------------
 alias genrand="head -c32 /dev/urandom | base64"
+alias genpass='openssl rand -base64 32'
 
 #-----------------------------
 # Eza
 #-----------------------------
-type eza &>/dev/null && alias ls='eza --icons --group-directories-first'
-type eza &>/dev/null && alias ll='eza -l --icons --no-user --group-directories-first  --time-style long-iso'
-type eza &>/dev/null && alias ls-all='eza -la --icons --no-user --group-directories-first  --time-style long-iso'
-type eza &>/dev/null && alias ls-plain='eza -la --icons=never --no-permissions --no-filesize --no-time --no-user'
+if can_haz eza; then
+  alias ls='eza --icons --group-directories-first'
+  alias ll='eza -l --icons --no-user --group-directories-first --time-style long-iso'
+  alias ls-all='eza -la --icons --no-user --group-directories-first --time-style long-iso'
+  alias ls-plain='eza -la --icons=never --no-permissions --no-filesize --no-time --no-user'
+fi
 
 #-----------------------------
 # Open Websites in Browser
 #-----------------------------
-type open &>/dev/null && alias ogo="open https://google.com"
-type open &>/dev/null && alias ogi="open https://github.com"
+can_haz open && alias ogo="open https://google.com"
+can_haz open && alias ogi="open https://github.com"
 
 #-----------------------------
-# GitHub Copilot CLI
+# GitHub Copilot CLI (lazy load)
 #-----------------------------
-type github-copilot-cli &>/dev/null && eval "$(github-copilot-cli alias -- "$0")"
-
-#-----------------------------
-# Random String for passwords
-#-----------------------------
-type openssl &>/dev/null && alias genpass='openssl rand -base64 32'
+# Only load when actually used
+alias copilot='can_haz github-copilot-cli && eval "$(github-copilot-cli alias -- "$0")" && copilot'
 
 #-----------------------------
 # Multipass
 #-----------------------------
-type multipass &>/dev/null && alias mp="multipass"
-
+can_haz multipass && alias mp="multipass"
