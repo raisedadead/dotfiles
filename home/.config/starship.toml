@@ -70,6 +70,7 @@ tag_symbol = "  "
 
 [docker_context]
 symbol = " "
+only_with_files = false
 
 # Programming language symbols
 [aws]
