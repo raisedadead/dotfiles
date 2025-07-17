@@ -29,6 +29,11 @@ alias gut="git"
 can_haz lazygit && alias g="lazygit"
 
 #----------------------------
+# LazyDocker
+#----------------------------
+can_haz lazydocker && alias d="lazydocker"
+
+#----------------------------
 # Code (VS Code, or others)
 #----------------------------
 alias c="cursor ."
@@ -84,4 +89,5 @@ alias copilot='can_haz github-copilot-cli && eval "$(github-copilot-cli alias --
 #-----------------------------
 # Multipass
 #-----------------------------
+
 can_haz multipass && alias mp="multipass"
