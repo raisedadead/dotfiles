@@ -50,37 +50,46 @@ can_haz starship && eval "$(starship init zsh)"
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 [[ ! -d $ZINIT_HOME ]] && mkdir -p "$(dirname $ZINIT_HOME)" && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 source "$ZINIT_HOME/zinit.zsh"
+#-----------------------------------------------------------
 
 # Load zsh-defer first
 zinit light romkatv/zsh-defer
 
-# NOW we can use zsh-defer - Compile zinit and plugins for faster loading
+# Compile zinit and plugins for faster loading
 zsh-defer -c "zinit compile --all 2>/dev/null"
+
+# Load completions before compinit (per zsh-completions guidelines)
+zinit light zsh-users/zsh-completions
+
+# Add Homebrew completions to FPATH before compinit
+[[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"
 
 # Load completion system immediately (required for fzf-tab)
 autoload -Uz compinit && compinit -C
-
-# Completion caching for faster subsequent completions
-# zsh-defer -c "
-#   zstyle ':completion:*' use-cache on
-#   zstyle ':completion:*' cache-path ~/.zsh/cache
-#   mkdir -p ~/.zsh/cache
-#   # More completion optimizations
-#   zstyle ':completion:*' accept-exact '*(N)'
-#   zstyle ':completion:*' rehash false
-#   zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-# "
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
     Aloxaf/fzf-tab
 zsh-defer -c "
+  # Disable sort when completing git checkout
+  zstyle ':completion:*:git-checkout:*' sort false
+  # Set descriptions format to enable group support
+  zstyle ':completion:*:descriptions' format '[%d]'
+  # Set list-colors to enable filename colorizing
+  zstyle ':completion:*' list-colors \${(s.:.)LS_COLORS}
+  # Force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
+  zstyle ':completion:*' menu no
+  # Preview directory's content with eza when completing cd
+  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always \$realpath'
+  # Switch group using < and >
+  zstyle ':fzf-tab:*' switch-group '<' '>'
+  # Existing user configurations
   zstyle ':fzf-tab:*' use-fzf-default-opts yes
   zstyle ':fzf-tab:*' fzf-flags --height=~25%
 "
 
 # Syntax highlighting with Catppuccin theme
-zinit wait"0a" silent for \
+zinit wait"0b" silent for \
     atclone"rm -rf /tmp/USE_CATPPUCCIN_THEME; touch /tmp/USE_CATPPUCCIN_THEME" \
     zdharma-continuum/fast-syntax-highlighting \
     as"null" \
@@ -89,43 +98,39 @@ zinit wait"0a" silent for \
     atload'fast-theme ${ZINIT[PLUGINS_DIR]}/catppuccin---zsh-fsh/themes/catppuccin-mocha.ini; echo; rm -rf /tmp/USE_CATPPUCCIN_THEME;' \
     catppuccin/zsh-fsh
 
-# Completions and suggestions
-zinit wait"0b" silent for \
-    blockf zsh-users/zsh-completions \
+# Suggestions
+zinit wait"0c" silent for \
     atload"!_zsh_autosuggest_start" zsh-users/zsh-autosuggestions
 
-# Custom plugins
-export GSO_ENABLE_KEYBINDINGS=true
-zinit wait"1" silent for \
-    raisedadead/zsh-touchplus \
-    raisedadead/zsh-gso \
-    raisedadead/zsh-smartinput \
-    raisedadead/zsh-snr
+# Pair matching
+zinit wait"0d" silent for \
+    raisedadead/zsh-smartinput
 
 # Node.js plugins
 export NVM_AUTO_USE=true
-zinit wait"1" silent for \
+zinit wait"1b" silent for \
     lukechilds/zsh-nvm \
     lukechilds/zsh-better-npm-completion
 
 # PNPM completions
-zinit ice wait"1" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone"
-zinit light g-plane/pnpm-shell-completion
+zinit wait"1c" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" for \
+    g-plane/pnpm-shell-completion
+
+# Touch file with paths
+zinit wait"2a" silent for \
+    raisedadead/zsh-touchplus
 
 # Wakatime
-zinit wait"3" silent for \
+zinit wait"3a" silent for \
     sobolevn/wakatime-zsh-plugin
 
 #-----------------------------------------------------------
 # Tool Integrations
 #-----------------------------------------------------------
 
-# Homebrew
-zsh-defer -c '[[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"'
-
 # FZF
-zsh-defer source ~/.fzf.zsh
 zsh-defer source ~/.fzf.zshrc
+zsh-defer source ~/.fzf.zsh
 
 # Modern tools (interactive only)
 if [[ -o interactive ]]; then
