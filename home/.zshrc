@@ -61,22 +61,19 @@ zsh-defer -c "zinit compile --all 2>/dev/null"
 autoload -Uz compinit && compinit -C
 
 # Completion caching for faster subsequent completions
-zsh-defer -c "
-  zstyle ':completion:*' use-cache on
-  zstyle ':completion:*' cache-path ~/.zsh/cache
-  mkdir -p ~/.zsh/cache
-  
-  # More completion optimizations
-  zstyle ':completion:*' accept-exact '*(N)'
-  zstyle ':completion:*' rehash false
-  zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-"
+# zsh-defer -c "
+#   zstyle ':completion:*' use-cache on
+#   zstyle ':completion:*' cache-path ~/.zsh/cache
+#   mkdir -p ~/.zsh/cache
+#   # More completion optimizations
+#   zstyle ':completion:*' accept-exact '*(N)'
+#   zstyle ':completion:*' rehash false
+#   zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+# "
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
     Aloxaf/fzf-tab
-
-# Configure fzf-tab
 zsh-defer -c "
   zstyle ':fzf-tab:*' use-fzf-default-opts yes
   zstyle ':fzf-tab:*' fzf-flags --height=~25%
