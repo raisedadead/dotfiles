@@ -145,7 +145,7 @@ zsh-defer source ~/.alias.zshrc
 zsh-defer source ~/.private.zshrc
 zsh-defer -c '[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"'
 zsh-defer -c '[[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh'
-zsh-defer -c '[[ -f ~/.homesick/repos/homeshick/homeshick.sh ]] && source ~/.homesick/repos/homeshick/homeshick.sh'
+zsh-defer -c 'can_haz homeshick && export HOMESHICK_DIR=/opt/homebrew/opt/homeshick && source /opt/homebrew/opt/homeshick/homeshick.sh'
 
 # Config compilation
 zsh-defer -c "
