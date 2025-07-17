@@ -54,14 +54,11 @@ if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/ruby" ]]; then
   export PATH="$GEM_HOME/bin:$PATH"
 fi
 
-# Python environment (choose one approach)
-# Option 1: If using pyenv
+# Python environment
 # if [[ -d "$HOME/.pyenv" ]]; then
 #   export PYENV_ROOT="$HOME/.pyenv"
 #   export PATH="$PYENV_ROOT/bin:$PATH"
 # fi
-# Option 2: If using local Python (current approach - keep this in .zshrc)
-# The line in .zshrc: [[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 
 # MySQL client
 if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/mysql-client" ]]; then
