@@ -106,12 +106,6 @@ zinit wait"0c" silent for \
 zinit wait"0d" silent for \
     raisedadead/zsh-smartinput
 
-# Node.js plugins
-export NVM_AUTO_USE=true
-zinit wait"1b" silent for \
-    lukechilds/zsh-nvm \
-    lukechilds/zsh-better-npm-completion
-
 # PNPM completions
 zinit wait"1c" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" for \
     g-plane/pnpm-shell-completion
@@ -127,6 +121,9 @@ zinit wait"3a" silent for \
 #-----------------------------------------------------------
 # Tool Integrations
 #-----------------------------------------------------------
+
+# Node.js version manager (fnm)
+eval "$(fnm env --use-on-cd --version-file-strategy=recursive --corepack-enabled --resolve-engines)"
 
 # FZF
 zsh-defer source ~/.fzf.zshrc
