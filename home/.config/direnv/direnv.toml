@@ -1,0 +1,4 @@
+[global]
+load_dotenv = true
+log_filter="^$"
+
