@@ -1,18 +1,9 @@
 [alias]
-# Shortening aliases
-co = checkout
-cob = checkout -b
-edit = commit --amend
-no-edit = commit --amend --no-edit
-no-lockfile-diff = diff -- ':!package-lock.json' ':!yarn.lock'
-no-pager-diff = -c 'delta.line-numbers=false' diff
-
-# Complex aliases
-lg-timeline = log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
+no-diff-lockfile = diff -- ':!package-lock.json' ':!yarn.lock'
+no-diff-pager = -c 'delta.line-numbers=false' diff
 lg = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
-list-all-ext = "!f() { git ls-tree -r HEAD --name-only | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -ru | uniq -c;}; f"
-list-changed-ext = "!f() { git branch -a | grep -E 'remotes/origin/HEAD' | cut -d ' ' -f 5 | xargs -I {} git diff --name-only {} | perl -ne 'print $1 if m/\\.([^.\\/]+)$/' | sort -rn | uniq -c ;}; f"
-apply-pr-patch = "!f() { curl -o /tmp/patchfile.patch $1 && git apply /tmp/patchfile.patch; }; f"
+lg-stat = log --stat --graph --pretty=oneline --abbrev-commit --date=relative
+pull-rebase = "!b() { branch=\"${1:-main}\"; if git remote | grep -q '^upstream$'; then echo \"Rebasing from upstream/$branch\"; git pull --rebase upstream \"$branch\"; else echo \"Rebasing from origin/$branch\"; git pull --rebase origin \"$branch\"; fi; }; b"
 
 [core]
 whitespace = off
@@ -37,7 +28,10 @@ conflictstyle = diff3
 [diff]
 colorMoved = default
 [interactive]
-  diffFilter = delta --color-only
+diffFilter = delta --color-only
+
+[rerere]
+enabled = true
 
 [color]
 ui = true
@@ -65,8 +59,3 @@ autocorrect = 1
 [include]
 path = ~/.gitconfig.local
 path = ~/.config/delta/config.gitconfig
-[rerere]
-  enabled = true
-[gitbutler]
-	aiOpenAIKeyOption = bringYourOwn
-	aiOpenAIModelName = gpt-4o-mini
