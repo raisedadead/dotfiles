@@ -1,0 +1,13 @@
+## Ignore specific directories
+--glob=!.git/
+--glob=!node_modules/
+
+# follow symlinks
+--follow
+
+# include hidden files
+--hidden
+
+# ignore case
+--smart-case
+
