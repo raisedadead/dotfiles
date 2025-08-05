@@ -11,8 +11,7 @@ local config = {
 	audible_bell = "Disabled",
 
 	font = wezterm.font_with_fallback({
-		{ family = "Maple Mono" },
-		{ family = "JetBrainsMono Nerd Font" },
+		{ family = "Menlo" },
 		{ family = "Symbols Nerd Font Mono" },
 	}),
 	font_size = 14.0,
@@ -35,7 +34,6 @@ local config = {
 	},
 	window_background_opacity = 0.9,
 	macos_window_background_blur = 40,
-
 
 	mouse_bindings = {
 		-- Ctrl/Cmd-click will open the link under the mouse cursor
@@ -88,12 +86,12 @@ local config = {
 		},
 		-- Balance Panes
 		{
-			key = 'b',
-			mods = 'CMD',
-			action = wezterm.action.Multiple {
+			key = "b",
+			mods = "CMD",
+			action = wezterm.action.Multiple({
 				wezterm.action_callback(balance.balance_panes("x")),
 				wezterm.action_callback(balance.balance_panes("y")),
-			},
+			}),
 		},
 		-- Zoom and Close
 		{ key = "z", mods = "CMD", action = "TogglePaneZoomState" },
