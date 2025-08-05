@@ -134,7 +134,7 @@ if [[ -o interactive ]]; then
   zsh-defer -c 'can_haz atuin && eval "$(atuin init zsh --disable-up-arrow)"'
   zsh-defer -c 'can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"'
   zsh-defer -c 'can_haz direnv && eval "$(direnv hook zsh)"'
-  zsh-defer -c 'can_haz pkgx && source <(pkgx --shellcode)'
+  # zsh-defer -c 'can_haz pkgx && source <(pkgx --shellcode)'
 fi
 
 # File sourcing
