@@ -15,16 +15,6 @@ export LC_ALL=en_US.UTF-8
 export XDG_CONFIG_HOME="$HOME/.config"
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
-# Editor configuration
-if command -v nvim >/dev/null 2>&1; then
-  export VISUAL=nvim
-elif command -v vim >/dev/null 2>&1; then
-  export VISUAL=vim
-else
-  export VISUAL=vi
-fi
-export EDITOR="$VISUAL"
-
 # Homebrew (needs to be early in PATH)
 if [[ -d /opt/homebrew ]]; then 
   eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -69,8 +59,26 @@ fi
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
 [[ -d "$HOME/bin" ]] && export PATH="$HOME/bin:$PATH"
 
+# Editor configuration (KEEP LAST)
+if command -v nvim >/dev/null 2>&1; then    # Preferred editor is Neovim
+  export EDITOR="nvim"
+elif command -v code >/dev/null 2>&1; then  # Visual Studio Code as fallback
+  export EDITOR="code"
+elif command -v vim >/dev/null 2>&1; then   # Vim as last resort
+  export EDITOR="vim"
+else
+  export EDITOR="vi"                        # Default to vi if none of the above are available
+fi
+
+if command -v code >/dev/null 2>&1; then
+  export VISUAL="code"                      # Use VS Code as visual editor if available    
+else
+  export VISUAL="$EDITOR"                   # Fallback to EDITOR if VS Code is not available
+fi
+
 # Remove duplicate PATH entries
 typeset -U PATH path
+
 #-----------------------------------------------------------
 # End of .zshenv
 #-----------------------------------------------------------
