@@ -151,6 +151,9 @@ zsh-defer -c "
   [[ -f ~/.alias.zshrc && ! -f ~/.alias.zshrc.zwc ]] && zcompile ~/.alias.zshrc
 "
 
+# This ensures that PATH is set for homebrew
+export PATH="/opt/homebrew/bin:$PATH"
+
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
 #-----------------------------------------------------------
