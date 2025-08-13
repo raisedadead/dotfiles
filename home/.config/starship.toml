@@ -3,11 +3,11 @@
 
 # Global settings
 command_timeout = 1024
-palette = "catppuccin_mocha"
+palette = "rose-pine-moon" # Default palette
 format = "$all"
 
 # Theme palette: Catppuccin Mocha
-[palettes.catppuccin_mocha]
+[palettes.catppuccin-mocha]
 rosewater = "#f5e0dc"
 flamingo  = "#f2cdcd"
 pink      = "#f5c2e7"
@@ -34,6 +34,15 @@ surface0  = "#313244"
 base      = "#1e1e2e"
 mantle    = "#181825"
 crust     = "#11111b"
+# Theme palette: Rose Pine Moon
+[palettes.rose-pine-moon]
+overlay = '#393552'
+love = '#eb6f92'
+gold = '#f6c177'
+rose = '#ea9a97'
+pine = '#3e8fb0'
+foam = '#9ccfd8'
+iris = '#c4a7e7'
 
 # OS configuration
 [os]
