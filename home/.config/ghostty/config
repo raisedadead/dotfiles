@@ -29,7 +29,7 @@ window-height = 54
 background-opacity = 0.95
 background-blur = 15
 unfocused-split-opacity = 0.75
-theme = catppuccin-mocha
+theme = dark:rose-pine-moon,light:rose-pine-dawn
 bold-is-bright = true
 
 # Typography
