@@ -88,15 +88,10 @@ zsh-defer -c "
   zstyle ':fzf-tab:*' fzf-flags --height=~25%
 "
 
-# Syntax highlighting with Catppuccin theme
+# Fast Syntax Highlighting
 zinit wait"0b" silent for \
-    atclone"rm -rf /tmp/USE_CATPPUCCIN_THEME; touch /tmp/USE_CATPPUCCIN_THEME" \
-    zdharma-continuum/fast-syntax-highlighting \
-    as"null" \
-    nocompile \
-    if'[[ -f /tmp/USE_CATPPUCCIN_THEME ]]' \
-    atload'fast-theme ${ZINIT[PLUGINS_DIR]}/catppuccin---zsh-fsh/themes/catppuccin-mocha.ini; echo; rm -rf /tmp/USE_CATPPUCCIN_THEME;' \
-    catppuccin/zsh-fsh
+      atload'fast-theme -q XDG:rose-pine-moon' \
+    zdharma-continuum/fast-syntax-highlighting 
 
 # Suggestions
 zinit wait"0c" silent for \
