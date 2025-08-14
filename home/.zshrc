@@ -120,9 +120,9 @@ zinit wait"3a" silent for \
 # Node.js version manager (fnm)
 eval "$(fnm env --use-on-cd --version-file-strategy=recursive --corepack-enabled --resolve-engines)"
 
-# FZF
-zsh-defer source ~/.fzf.zshrc
-zsh-defer source ~/.fzf.zsh
+# FZF (should not be deferred)
+source ~/.fzf.zshrc
+source ~/.fzf.zsh
 
 # Modern tools (interactive only)
 if [[ -o interactive ]]; then
