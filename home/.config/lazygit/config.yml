@@ -5,33 +5,53 @@ gui:
   skipDiscardChangeWarning: true
   theme:
     activeBorderColor:
-      - "#fab387"
+      - '#eb6f92'
       - bold
     inactiveBorderColor:
-      - "#a6adc8"
-    optionsTextColor:
-      - "#89b4fa"
-    selectedLineBgColor:
-      - "#313244"
-    cherryPickedCommitBgColor:
-      - "#45475a"
-    cherryPickedCommitFgColor:
-      - "#fab387"
-    unstagedChangesColor:
-      - "#f38ba8"
-    defaultFgColor:
-      - "#cdd6f4"
+      - '#908caa'
     searchingActiveBorderColor:
-      - "#f9e2af"
-
+      - '#f6c177'
+      - bold
+    optionsTextColor:
+      - '#9ccfd8'
+    selectedLineBgColor:
+      - '#56526e'
+    inactiveViewSelectedLineBgColor:
+      - '#393552'
+    cherryPickedCommitFgColor:
+      - '#c4a7e7'
+      - bold
+    cherryPickedCommitBgColor:
+      - '#44415a'
+    markedBaseCommitFgColor:
+      - '#f6c177'
+      - bold
+    markedBaseCommitBgColor:
+      - '#44415a'
+    unstagedChangesColor:
+      - '#eb6f92'
+      - bold
+    defaultFgColor:
+      - '#e0def4'
   authorColors:
-    "*": "#b4befe"
+    '*': '#c4a7e7'
+  branchColorPatterns:
+    '^main$': '#f6c177'
+    '^master$': '#f6c177'
+    '^develop': '#c4a7e7'
+    '^feature/': '#9ccfd8'
+    '^hotfix/': '#eb6f92'
+    '^release/': '#f6c177'
+    '^bugfix/': '#eb6f92'
+    '^fix/': '#eb6f92'
+    '^chore/': '#908caa'
+    '^docs/': '#9ccfd8'
 git:
   log:
     order: default
   overrideGpg: true
   paging:
     colorArg: always
-    pager: delta --features=catppuccin-mocha --paging=never
+    pager: delta --paging=never
 disableStartupPopups: true
 quitOnTopLevelReturn: true
