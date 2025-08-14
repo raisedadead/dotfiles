@@ -1,11 +1,10 @@
 # Include this file in the .gitconfig
-[include]
-path = ~/.config/delta/theme.gitconfig
+# [include]
+# path = ~/.config/delta/theme.gitconfig
 
 [delta]
 side-by-side = false
 line-numbers = false
-features = catppuccin-mocha
 hunk-header-style = file omit-code-fragment
 hunk-header-decoration-style = blue ol ul
 hunk-header-file-style = purple
