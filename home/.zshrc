@@ -44,6 +44,10 @@ bindkey -e
 # Prompt
 can_haz starship && eval "$(starship init zsh)"
 
+# FZF (should not be deferred)
+source ~/.fzf.zsh
+source ~/.fzf.zshrc
+
 #-----------------------------------------------------------
 # Plugin Manager
 #-----------------------------------------------------------
@@ -64,38 +68,24 @@ zinit light zsh-users/zsh-completions
 # Add Homebrew completions to FPATH before compinit
 [[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"
 
-# Load completion system immediately (required for fzf-tab)
+# Load completion system immediately
 autoload -Uz compinit && compinit -C
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
     Aloxaf/fzf-tab
 zsh-defer -c "
-  # Disable sort when completing git checkout
-  zstyle ':completion:*:git-checkout:*' sort false
-  # Set descriptions format to enable group support
-  zstyle ':completion:*:descriptions' format '[%d]'
-  # Set list-colors to enable filename colorizing
-  zstyle ':completion:*' list-colors \${(s.:.)LS_COLORS}
-  # Force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
-  zstyle ':completion:*' menu no
-  # Preview directory's content with eza when completing cd
-  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always \$realpath'
-  # Switch group using < and >
-  zstyle ':fzf-tab:*' switch-group '<' '>'
-  # Existing user configurations
   zstyle ':fzf-tab:*' use-fzf-default-opts yes
-  zstyle ':fzf-tab:*' fzf-flags --height=~25%
+  zstyle ':fzf-tab:*' fzf-flags --height=~50%
 "
 
 # Fast Syntax Highlighting
-zinit wait"0b" silent for \
-      atload'fast-theme -q XDG:rose-pine-moon' \
-    zdharma-continuum/fast-syntax-highlighting 
+zinit wait"0b" silent atload"fast-theme -q XDG:rose-pine-moon" for \
+    zdharma-continuum/fast-syntax-highlighting
 
 # Suggestions
-zinit wait"0c" silent for \
-    atload"!_zsh_autosuggest_start" zsh-users/zsh-autosuggestions
+zinit wait"0c" silent atload"!_zsh_autosuggest_start" for \
+    zsh-users/zsh-autosuggestions
 
 # Pair matching
 zinit wait"0d" silent for \
@@ -119,10 +109,6 @@ zinit wait"3a" silent for \
 
 # Node.js version manager (fnm)
 eval "$(fnm env --use-on-cd --version-file-strategy=recursive --corepack-enabled --resolve-engines)"
-
-# FZF (should not be deferred)
-source ~/.fzf.zshrc
-source ~/.fzf.zsh
 
 # Modern tools (interactive only)
 if [[ -o interactive ]]; then
