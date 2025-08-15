@@ -26,9 +26,9 @@ window-width = 166
 window-height = 54
 
 # Appearance & Transparency
-background-opacity = 0.95
+background-opacity = 1
 background-blur = 15
-unfocused-split-opacity = 0.75
+unfocused-split-opacity = 0.95
 theme = dark:rose-pine-moon,light:rose-pine-dawn
 bold-is-bright = true
 
