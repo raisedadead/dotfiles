@@ -51,13 +51,6 @@ can_haz nvim && alias vi="nvim"
 can_haz nvim && alias vim="nvim"
 
 #-----------------------------
-# update packages
-#-----------------------------
-alias letsupdate-brew-macos="export HOMEBREW_NO_ENV_HINTS=1;brew update; brew upgrade; brew upgrade --cask; brew cleanup; brew doctor"
-alias letsupdate-brew-linux="brew update; brew upgrade; brew cleanup; brew doctor"
-alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
-
-#-----------------------------
 # random string/key generator
 #-----------------------------
 alias genrand="head -c32 /dev/urandom | base64"
