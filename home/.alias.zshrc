@@ -36,7 +36,7 @@ can_haz lazydocker && alias d="lazydocker"
 #----------------------------
 # Code (VS Code, or others)
 #----------------------------
-alias c="cursor ."
+alias c="$VISUAL ."
 
 #-----------------------------
 # VM lists from Azure and DO
@@ -47,8 +47,8 @@ alias azvms="az vm list-ip-addresses --output table"
 #-----------------------------
 # Neovim
 #-----------------------------
-alias vim="vi"
 can_haz nvim && alias vi="nvim"
+can_haz nvim && alias vim="nvim"
 
 #-----------------------------
 # update packages
@@ -56,7 +56,6 @@ can_haz nvim && alias vi="nvim"
 alias letsupdate-brew-macos="export HOMEBREW_NO_ENV_HINTS=1;brew update; brew upgrade; brew upgrade --cask; brew cleanup; brew doctor"
 alias letsupdate-brew-linux="brew update; brew upgrade; brew cleanup; brew doctor"
 alias letsupdate-xcode="sudo rm -rf /Library/Developer/CommandLineTools ; xcode-select --install"
-can_haz node && alias letsupdate-node="nvm install --lts --reinstall-packages-from=$(node -v) --latest-npm --default"
 
 #-----------------------------
 # random string/key generator
@@ -74,20 +73,3 @@ if can_haz eza; then
   alias ls-plain='eza -la --icons=never --no-permissions --no-filesize --no-time --no-user'
 fi
 
-#-----------------------------
-# Open Websites in Browser
-#-----------------------------
-can_haz open && alias ogo="open https://google.com"
-can_haz open && alias ogi="open https://github.com"
-
-#-----------------------------
-# GitHub Copilot CLI (lazy load)
-#-----------------------------
-# Only load when actually used
-alias copilot='can_haz github-copilot-cli && eval "$(github-copilot-cli alias -- "$0")" && copilot'
-
-#-----------------------------
-# Multipass
-#-----------------------------
-
-can_haz multipass && alias mp="multipass"
