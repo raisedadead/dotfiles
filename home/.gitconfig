@@ -1,4 +1,5 @@
 [alias]
+co = checkout
 no-diff-lockfile = diff -- ':!package-lock.json' ':!yarn.lock'
 no-diff-pager = -c 'delta.line-numbers=false' diff
 lg = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
