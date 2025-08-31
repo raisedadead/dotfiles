@@ -99,6 +99,14 @@ zinit wait"1c" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" f
 zinit wait"2a" silent for \
     raisedadead/zsh-touchplus
 
+# Docker completions
+zinit wait"2b" silent for \
+    felixr/docker-zsh-completion
+
+# Cloud & tool completions
+zinit wait"2c" silent for \
+    lukechilds/zsh-better-npm-completion
+
 # Wakatime
 zinit wait"3a" silent for \
     sobolevn/wakatime-zsh-plugin
