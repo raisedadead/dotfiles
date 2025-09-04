@@ -1,12 +1,7 @@
 {
+  "theme": "Rosé Pine",
   "agent": {
-    "version": "2",
-    "enabled": true,
-    "model_parameters": [],
-    "default_model": {
-      "provider": "zed.dev",
-      "model": "claude-3-7-sonnet-thinking-latest"
-    }
+    "play_sound_when_agent_done": true
   },
   "features": {
     "edit_prediction_provider": "zed"
@@ -18,11 +13,10 @@
   },
   "vim_mode": true,
   "ui_font_size": 16,
-  "buffer_font_family": "Maple Mono",
+  "buffer_font_family": "MonoLisa Variable",
   "buffer_font_size": 14,
   "tab_size": 2,
   "remove_trailing_whitespace_on_save": true,
-  "highlight_line": true,
   "show_whitespaces": "selection",
   "format_on_save": "on",
   "ensure_final_newline_on_save": true,
@@ -41,15 +35,11 @@
     "indent_size": 12
   },
   "terminal": {
-    "font_family": "Maple Mono",
+    "font_family": "MonoLisa Variable",
     "font_size": 14,
     "option_as_meta": true,
     "copy_on_select": true,
     "blinking": "on"
-  },
-  "cursor": {
-    "blink": true,
-    "width": 2
   },
   "git": {
     "inline_blame": {
@@ -59,17 +49,8 @@
     }
   },
   "auto_update": true,
-  "show_breadcrumbs": true,
-  "show_scope_guides": true,
   "preview_tabs": {
     "enable_preview_from_file_finder": true
   },
-  "hover_popover_enabled": true,
-  "code_actions_on_save": {
-    "source.fixAll": true,
-    "source.organizeImports": true
-  },
-  "copilot": {
-    "disabled_globs": [".env"]
-  }
+  "hover_popover_enabled": true
 }
