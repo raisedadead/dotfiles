@@ -101,7 +101,7 @@ zinit wait"2a" silent for \
 
 # Docker completions
 zinit wait"2b" silent for \
-    felixr/docker-zsh-completion
+    srijanshetty/docker-zsh
 
 # Cloud & tool completions
 zinit wait"2c" silent for \
@@ -123,6 +123,7 @@ if [[ -o interactive ]]; then
   zsh-defer -c 'can_haz atuin && eval "$(atuin init zsh --disable-up-arrow)"'
   zsh-defer -c 'can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"'
   zsh-defer -c 'can_haz direnv && eval "$(direnv hook zsh)"'
+  zsh-defer -c 'can_haz gh && eval "$(op completion zsh)"; compdef _op op'
   # zsh-defer -c 'can_haz pkgx && source <(pkgx --shellcode)'
 fi
 
