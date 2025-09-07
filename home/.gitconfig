@@ -7,6 +7,10 @@ lg = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %
 lg-stat = log --stat --graph --pretty=oneline --abbrev-commit --date=relative
 pull-rebase = "!b() { branch=\"${1:-main}\"; if git remote | grep -q '^upstream$'; then echo \"Rebasing from upstream/$branch\"; git pull --rebase upstream \"$branch\"; else echo \"Rebasing from origin/$branch\"; git pull --rebase origin \"$branch\"; fi; }; b"
 
+pruner = !"git prune --expire=now; git reflog expire --expire-unreachable=now --rewrite --all"
+repacker = repack -a -d -f --depth=300 --window=300 --window-memory=1g
+optimizer = !"git pruner; git repacker; git prune-packed"
+
 [core]
 whitespace = off
 excludesfile = ~/.gitignore
