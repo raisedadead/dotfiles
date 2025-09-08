@@ -1,5 +1,6 @@
 local wezterm = require("wezterm")
 local balance = require("balance")
+local theme = wezterm.plugin.require("https://github.com/neapsix/wezterm").moon
 local config = {
 	set_environment_variables = {
 		TERM = "xterm-256color",
@@ -11,12 +12,14 @@ local config = {
 	audible_bell = "Disabled",
 
 	font = wezterm.font_with_fallback({
-		{ family = "Menlo" },
-		{ family = "Symbols Nerd Font Mono" },
+		{ family = "MonoLisa Variable" },
+		-- { family = "Menlo" },
+		-- { family = "Symbols Nerd Font Mono" },
 	}),
 	font_size = 14.0,
 
-	color_scheme = "Catppuccin Mocha",
+	-- color_scheme = "Catppuccin Mocha",
+	colors = theme.colors(),
 
 	initial_rows = 45,
 	initial_cols = 175,
@@ -27,13 +30,13 @@ local config = {
 	window_close_confirmation = "NeverPrompt",
 	window_decorations = "RESIZE",
 	window_padding = {
-		left = 15,
-		right = 15,
+		left = 25,
+		right = 25,
 		top = 25,
-		bottom = 15,
+		bottom = 25,
 	},
-	window_background_opacity = 0.9,
-	macos_window_background_blur = 40,
+	window_background_opacity = 0.7,
+	macos_window_background_blur = 20,
 
 	mouse_bindings = {
 		-- Ctrl/Cmd-click will open the link under the mouse cursor
