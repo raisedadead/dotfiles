@@ -76,6 +76,9 @@ else
   export VISUAL="$EDITOR"                   # Fallback to EDITOR if VS Code is not available
 fi
 
+# Setup editor for git, the order that Git prefers is: GIT_EDITOR, core.editor, VISUAL, EDITOR
+export GIT_EDITOR="$EDITOR"
+
 # Remove duplicate PATH entries
 typeset -U PATH path
 
