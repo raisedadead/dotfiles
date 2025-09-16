@@ -12,8 +12,6 @@ quick-terminal-animation-duration = 0.1
 
 # Clipboard
 clipboard-read = allow
-clipboard-write = allow
-copy-on-select = clipboard
 
 # Window & Display
 window-save-state = always
@@ -36,9 +34,12 @@ bold-is-bright = true
 font-family="MonoLisa Variable"
 font-size=14
 font-thicken=true
-font-thicken-strength=10
+font-thicken-strength=255
 adjust-cell-width = "-5%"
 adjust-cell-height = "5%"
+
+# Cursor
+cursor-color = #ea9a97
 
 # macOS Specific
 macos-titlebar-style = hidden
