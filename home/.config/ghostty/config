@@ -21,15 +21,15 @@ window-theme = system
 window-decoration = true
 window-padding-balance = true
 window-padding-x = 15
-window-padding-y = 5,0
+window-padding-y = 0
 window-width = 166
 window-height = 54
 
 # Appearance & Transparency
-background-opacity = 1
+background-opacity = 0.9
 background-blur = 15
-unfocused-split-opacity = 0.75
-theme = dark:rose-pine-moon,light:rose-pine-dawn
+unfocused-split-opacity = 0.5
+theme = Rose Pine Moon
 bold-is-bright = true
 
 # Typography
