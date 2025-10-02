@@ -1,7 +1,9 @@
 [alias]
 co = switch
 cob = switch -c
-no-diff-lockfile = diff -- ':!package-lock.json' ':!yarn.lock'
+edit = commit --amend
+no-edit = commit --amend --no-edit
+no-diff-lockfile = diff -- ':!*lock.json' ':!*.lock' ':!*lock.yaml' ':!*lock.yml'
 no-diff-pager = -c 'delta.line-numbers=false' diff
 lg = log --graph --pretty='format:%C(red)%d%C(reset) %C(yellow)%h%C(reset) %ar %C(green)%aN%C(reset) %s'
 lg-stat = log --stat --graph --pretty=oneline --abbrev-commit --date=relative
@@ -17,6 +19,7 @@ excludesfile = ~/.gitignore
 autocrlf = false
 safecrlf = false
 pager = delta
+attributesFile = ~/.gitattributes
 
 [advice]
 statusuoption = false
