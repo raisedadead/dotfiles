@@ -44,6 +44,15 @@ if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/ruby" ]]; then
   export PATH="$GEM_HOME/bin:$PATH"
 fi
 
+# Ruby (via rbenv)
+if [[ -d "$HOME/.rbenv" ]]; then
+  export RBENV_ROOT="$HOME/.rbenv"
+  export PATH="$RBENV_ROOT/bin:$PATH"
+  if command -v rbenv >/dev/null 2>&1; then
+    eval "$(rbenv init - --no-rehash zsh)"
+ fi
+fi
+
 # Python environment
 # if [[ -d "$HOME/.pyenv" ]]; then
 #   export PYENV_ROOT="$HOME/.pyenv"
@@ -85,3 +94,4 @@ typeset -U PATH path
 #-----------------------------------------------------------
 # End of .zshenv
 #-----------------------------------------------------------
+
