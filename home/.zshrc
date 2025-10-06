@@ -80,7 +80,7 @@ zsh-defer -c "
 "
 
 # Fast Syntax Highlighting
-zinit wait"0b" silent atload"fast-theme -q XDG:rose-pine-moon" for \
+zinit wait"0b" silent atload"fast-theme -q XDG:catppuccin-mocha" for \
     zdharma-continuum/fast-syntax-highlighting
 
 # Suggestions
