@@ -3,49 +3,87 @@ gui:
   border: rounded
   showRandomTip: false
   skipDiscardChangeWarning: true
+  # Catppuccin Mocha (mauve accent)
   theme:
     activeBorderColor:
-      - '#eb6f92'
+      - '#cba6f7'
       - bold
     inactiveBorderColor:
-      - '#908caa'
+      - '#a6adc8'
     searchingActiveBorderColor:
-      - '#f6c177'
+      - '#f9e2af'
       - bold
     optionsTextColor:
-      - '#9ccfd8'
+      - '#89b4fa'
     selectedLineBgColor:
-      - '#56526e'
-    inactiveViewSelectedLineBgColor:
-      - '#393552'
+      - '#313244'
     cherryPickedCommitFgColor:
-      - '#c4a7e7'
+      - '#cba6f7'
       - bold
     cherryPickedCommitBgColor:
-      - '#44415a'
-    markedBaseCommitFgColor:
-      - '#f6c177'
-      - bold
-    markedBaseCommitBgColor:
-      - '#44415a'
+      - '#45475a'
     unstagedChangesColor:
-      - '#eb6f92'
+      - '#f38ba8'
       - bold
     defaultFgColor:
-      - '#e0def4'
+      - '#cdd6f4'
   authorColors:
-    '*': '#c4a7e7'
+    '*': '#b4befe'
   branchColorPatterns:
-    '^main$': '#f6c177'
-    '^master$': '#f6c177'
-    '^develop': '#c4a7e7'
-    '^feature/': '#9ccfd8'
-    '^hotfix/': '#eb6f92'
-    '^release/': '#f6c177'
-    '^bugfix/': '#eb6f92'
-    '^fix/': '#eb6f92'
-    '^chore/': '#908caa'
-    '^docs/': '#9ccfd8'
+    '^main$': '#fab387'
+    '^master$': '#fab387'
+    '^develop': '#cba6f7'
+    '^feature/': '#89dceb'
+    '^hotfix/': '#f38ba8'
+    '^release/': '#fab387'
+    '^bugfix/': '#f38ba8'
+    '^fix/': '#f38ba8'
+    '^chore/': '#7f849c'
+    '^docs/': '#89dceb'
+  # Rose Pine Moon theme (commented)
+  # theme:
+  #   activeBorderColor:
+  #     - '#eb6f92'
+  #     - bold
+  #   inactiveBorderColor:
+  #     - '#908caa'
+  #   searchingActiveBorderColor:
+  #     - '#f6c177'
+  #     - bold
+  #   optionsTextColor:
+  #     - '#9ccfd8'
+  #   selectedLineBgColor:
+  #     - '#56526e'
+  #   inactiveViewSelectedLineBgColor:
+  #     - '#393552'
+  #   cherryPickedCommitFgColor:
+  #     - '#c4a7e7'
+  #     - bold
+  #   cherryPickedCommitBgColor:
+  #     - '#44415a'
+  #   markedBaseCommitFgColor:
+  #     - '#f6c177'
+  #     - bold
+  #   markedBaseCommitBgColor:
+  #     - '#44415a'
+  #   unstagedChangesColor:
+  #     - '#eb6f92'
+  #     - bold
+  #   defaultFgColor:
+  #     - '#e0def4'
+  # authorColors:
+  #   '*': '#c4a7e7'
+  # branchColorPatterns:
+  #   '^main$': '#f6c177'
+  #   '^master$': '#f6c177'
+  #   '^develop': '#c4a7e7'
+  #   '^feature/': '#9ccfd8'
+  #   '^hotfix/': '#eb6f92'
+  #   '^release/': '#f6c177'
+  #   '^bugfix/': '#eb6f92'
+  #   '^fix/': '#eb6f92'
+  #   '^chore/': '#908caa'
+  #   '^docs/': '#9ccfd8'
 git:
   log:
     order: default
