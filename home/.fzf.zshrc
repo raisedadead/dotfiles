@@ -1,10 +1,21 @@
+# Catppuccin Mocha FZF theme
+export FZF_THEME_CATPPUCCIN_MOCHA='
+  --color=bg+:#313244,bg:#1E1E2E,spinner:#F5E0DC,hl:#F38BA8
+  --color=fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC
+  --color=marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8
+  --color=selected-bg:#45475A
+  --color=border:#6C7086,label:#CDD6F4
+'
+
 # Rose Pine Moon FZF theme
-export FZF_THEME='
+export FZF_THEME_ROSE_PINE_MOON='
   --color=hl:#c4a7e7,hl+:#ebbcba,info:#9ccfd8,marker:#f6c177
   --color=prompt:#c4a7e7,spinner:#f6c177,pointer:#ebbcba,header:#eb6f92
   --color=border:#403d52,label:#908caa,query:#e0def4
   --color=bg+:#2a273f,gutter:#232136,selected-bg:#393552
 '
+
+export FZF_THEME=$FZF_THEME_CATPPUCCIN_MOCHA
 
 # FZF Base Options
 export FZF_BASE_OPTS='
