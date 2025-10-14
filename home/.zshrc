@@ -71,9 +71,8 @@ zinit light zsh-users/zsh-completions
 # Load completion system immediately
 autoload -Uz compinit && compinit -C
 
-export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
-zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
-source <(carapace _carapace)
+# export CARAPACE_BRIDGES='zsh,bash,inshellisense'
+# source <(carapace _carapace)
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
@@ -81,6 +80,8 @@ zinit wait"0a" silent for \
 zsh-defer -c "
   zstyle ':fzf-tab:*' use-fzf-default-opts yes
   zstyle ':fzf-tab:*' fzf-flags --height=~50%
+  zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+  zstyle ':completion:*:git:*' group-order 'main commands' 'alias commands' 'external commands'
 "
 
 # Fast Syntax Highlighting
@@ -96,8 +97,8 @@ zinit wait"0d" silent for \
     raisedadead/zsh-smartinput
 
 # PNPM completions
-# zinit wait"1c" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" for \
-#     g-plane/pnpm-shell-completion
+zinit wait"1c" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" for \
+    g-plane/pnpm-shell-completion
 
 # Touch file with paths
 zinit wait"2a" silent for \
