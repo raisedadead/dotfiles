@@ -37,10 +37,8 @@ fi
 [[ -d "$HOME/.cargo" ]] && export PATH="$HOME/.cargo/bin:$PATH"
 
 # Go
-if command -v go >/dev/null 2>&1; then
-  GOPATH="$(go env GOPATH 2>/dev/null)"
-  [[ -n "$GOPATH" ]] && export PATH="$PATH:$GOPATH/bin"
-fi
+export GOPATH="$HOME/go"
+[[ -d "$GOPATH/bin" ]] && export PATH="$PATH:$GOPATH/bin"
 
 # Ruby (via Homebrew)
 if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/ruby" ]]; then
