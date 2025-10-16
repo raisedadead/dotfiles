@@ -76,23 +76,33 @@ fi
 [[ -d "$HOME/bin" ]] && export PATH="$HOME/bin:$PATH"
 
 # Editor configuration (KEEP LAST)
-if command -v nvim >/dev/null 2>&1; then    # Preferred editor is Neovim
-  export EDITOR="nvim"
-elif command -v code >/dev/null 2>&1; then  # Visual Studio Code as fallback
-  export EDITOR="code"
-elif command -v vim >/dev/null 2>&1; then   # Vim as last resort
-  export EDITOR="vim"
-else
-  export EDITOR="vi"                        # Default to vi if none of the above are available
+# Cache the result to avoid repeated command -v calls
+if [[ -z "$EDITOR" ]]; then
+  # Only do expensive lookups once per boot (cache in temp file)
+  local editor_cache="/tmp/.zsh_editor_cache_${UID}"
+
+  if [[ -f "$editor_cache" ]] && [[ -n "$(cat "$editor_cache" 2>/dev/null)" ]]; then
+    # Use cached value
+    export EDITOR="$(cat "$editor_cache")"
+  else
+    # Do the lookup and cache it
+    if command -v nvim >/dev/null 2>&1; then
+      export EDITOR="nvim"
+    elif command -v code >/dev/null 2>&1; then
+      export EDITOR="code"
+    elif command -v vim >/dev/null 2>&1; then
+      export EDITOR="vim"
+    else
+      export EDITOR="vi"
+    fi
+    echo "$EDITOR" > "$editor_cache"
+  fi
 fi
 
-if command -v code >/dev/null 2>&1; then
-  export VISUAL="code"                      # Use VS Code as visual editor if available    
-else
-  export VISUAL="$EDITOR"                   # Fallback to EDITOR if VS Code is not available
+if [[ -z "$VISUAL" ]]; then
+  command -v code >/dev/null 2>&1 && export VISUAL="code" || export VISUAL="$EDITOR"
 fi
 
-# Setup editor for git, the order that Git prefers is: GIT_EDITOR, core.editor, VISUAL, EDITOR
 export GIT_EDITOR="$EDITOR"
 
 # Remove duplicate PATH entries
