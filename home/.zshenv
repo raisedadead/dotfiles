@@ -47,13 +47,17 @@ if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/ruby" ]]; then
   export PATH="$GEM_HOME/bin:$PATH"
 fi
 
-# Ruby (via rbenv)
+# Ruby (via rbenv) - lazy loaded
 if [[ -d "$HOME/.rbenv" ]]; then
   export RBENV_ROOT="$HOME/.rbenv"
   export PATH="$RBENV_ROOT/bin:$PATH"
-  if command -v rbenv >/dev/null 2>&1; then
-    eval "$(rbenv init - --no-rehash zsh)"
- fi
+
+  # Lazy-load rbenv init only when rbenv is called
+  rbenv() {
+    unfunction rbenv
+    eval "$(command rbenv init - --no-rehash zsh)"
+    rbenv "$@"
+  }
 fi
 
 # Python environment
