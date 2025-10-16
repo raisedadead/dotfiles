@@ -44,10 +44,6 @@ bindkey -e
 # Prompt
 can_haz starship && eval "$(starship init zsh)"
 
-# FZF (should not be deferred)
-source ~/.fzf.zsh
-source ~/.fzf.zshrc
-
 #-----------------------------------------------------------
 # Plugin Manager
 #-----------------------------------------------------------
@@ -58,6 +54,11 @@ source "$ZINIT_HOME/zinit.zsh"
 
 # Load zsh-defer first
 zinit light romkatv/zsh-defer
+
+# FZF - core setup (DO NOT DEFER, need immediate availability)
+source ~/.fzf.zsh
+# FZF styling (can be deferred)
+zsh-defer source ~/.fzf.zshrc
 
 # Compile zinit and plugins for faster loading
 zsh-defer -c "zinit compile --all 2>/dev/null"
