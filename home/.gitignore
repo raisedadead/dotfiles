@@ -28,13 +28,17 @@ node_modules
 # 1Password Configs
 .op/
 
-# cursor
+# AI Agents
 .cursor/
 .cursorignore
 
-#claude
-CLAUDE.md
 .claude
+CLAUDE.md
+
 .specify
 specs
+
+AGENTS.md
+
 .playwright-mcp/
+
