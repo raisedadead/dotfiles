@@ -6,6 +6,10 @@
 # File name: .zshenv
 #-----------------------------------------------------------
 
+# Load OS detection utility
+source "$HOME/.bin/utils.sh"
+DOT_TARGET="$(_mrgsh_get_system)"
+
 # Skip loading for global system scripts
 [[ -o no_global_rcs ]] && return
 
@@ -16,15 +20,16 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
 # Homebrew (needs to be early in PATH)
-if [[ -d /opt/homebrew ]]; then 
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [[ -d /home/linuxbrew ]]; then 
+if [[ "$DOT_TARGET" == "macos" ]]; then
+  # macOS - hardcoded paths for speed
+  export HOMEBREW_PREFIX="/opt/homebrew"
+  export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
+  export HOMEBREW_REPOSITORY="/opt/homebrew"
+  export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
+  export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
+  export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
+elif [[ "$DOT_TARGET" == "linux" ]] && [[ -d /home/linuxbrew/.linuxbrew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
-
-# Cache brew prefix to avoid repeated calls
-if command -v brew >/dev/null 2>&1; then
-  export HOMEBREW_PREFIX="$(brew --prefix)"
 fi
 
 # Programming languages PATH setup
