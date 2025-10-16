@@ -2,7 +2,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 # Global settings
-command_timeout = 1024
+command_timeout = 500
 palette = "catppuccin_mocha" # Default palette
 format = "$all"
 
