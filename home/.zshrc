@@ -73,7 +73,7 @@ zinit light zsh-users/zsh-completions
 autoload -Uz compinit && compinit -C
 
 # export CARAPACE_BRIDGES='zsh,bash,inshellisense'
-# source <(carapace _carapace)
+source <(carapace _carapace)
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
@@ -86,35 +86,27 @@ zsh-defer -c "
 "
 
 # Fast Syntax Highlighting
-zinit wait"0b" silent atload"fast-theme -q XDG:catppuccin-mocha" for \
+zinit wait"1a" silent atload"fast-theme -q XDG:catppuccin-mocha" for \
     zdharma-continuum/fast-syntax-highlighting
 
 # Suggestions
-zinit wait"0c" silent atload"!_zsh_autosuggest_start" for \
+zinit wait"1b" silent atload"!_zsh_autosuggest_start" for \
     zsh-users/zsh-autosuggestions
 
 # Pair matching
-zinit wait"0d" silent for \
+zinit wait"1c" silent for \
     raisedadead/zsh-smartinput
 
 # PNPM completions
-zinit wait"1c" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" for \
+zinit wait"1d" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" for \
     g-plane/pnpm-shell-completion
 
 # Touch file with paths
 zinit wait"2a" silent for \
     raisedadead/zsh-touchplus
 
-# Docker completions
-# zinit wait"2b" silent for \
-#     srijanshetty/docker-zsh
-
-# Cloud & tool completions
-# zinit wait"2c" silent for \
-#     lukechilds/zsh-better-npm-completion
-
 # Wakatime
-zinit wait"3a" silent for \
+zinit wait"2b" silent for \
     sobolevn/wakatime-zsh-plugin
 
 #-----------------------------------------------------------
