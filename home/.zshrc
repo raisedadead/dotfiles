@@ -72,17 +72,13 @@ zinit light zsh-users/zsh-completions
 # Load completion system immediately
 autoload -Uz compinit && compinit -C
 
-# export CARAPACE_BRIDGES='zsh,bash,inshellisense'
-source <(carapace _carapace)
-
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
     Aloxaf/fzf-tab
+
 zsh-defer -c "
   zstyle ':fzf-tab:*' use-fzf-default-opts yes
-  zstyle ':fzf-tab:*' fzf-flags --height=~50%
-  zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
-  zstyle ':completion:*:git:*' group-order 'main commands' 'alias commands' 'external commands'
+  zstyle ':fzf-tab:*' fzf-flags --height=~60%
 "
 
 # Fast Syntax Highlighting
