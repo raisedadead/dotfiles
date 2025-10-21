@@ -46,4 +46,10 @@ cursor-text = 11111b
 # macOS Specific
 macos-titlebar-style = hidden
 macos-titlebar-proxy-icon = hidden
+
+# Keybindings
 keybind = shift+enter=text:\n
+keybind = ctrl+shift+h=goto_split:left
+keybind = ctrl+shift+j=goto_split:bottom
+keybind = ctrl+shift+k=goto_split:top
+keybind = ctrl+shift+l=goto_split:right
