@@ -33,7 +33,7 @@ export FZF_BASE_OPTS='
 '
 
 # Common fd options
-export FD_COMMON_OPTS="--follow --hidden --color=always --exclude .git --exclude node_modules --exclude .venv"
+export FD_COMMON_OPTS="--follow --hidden --color=always --exclude .git --exclude node_modules --exclude .venv --no-ignore-vcs"
 export EZA_TREE_COMMAND='eza --tree --recurse --level 3 --only-dirs --icons --color=always'
 
 # FZF Default Options (may be used by other tools using FZF)
