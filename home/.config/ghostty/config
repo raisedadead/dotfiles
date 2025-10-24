@@ -7,6 +7,7 @@ shell-integration = zsh
 # Quick Terminal
 keybind = global:ctrl+grave_accent=toggle_quick_terminal
 quick-terminal-position = center
+quick-terminal-size=50%,50%
 quick-terminal-screen = mouse
 quick-terminal-animation-duration = 0.1
 
@@ -31,12 +32,12 @@ theme = Catppuccin Mocha
 bold-is-bright = true
 
 # Typography
-font-family="MonoLisa Variable"
+font-family="Berkeley Mono"
 font-size=14
 font-thicken=true
-font-thicken-strength=255
-adjust-cell-width = "-5%"
-adjust-cell-height = "5%"
+# font-thicken-strength=255
+# adjust-cell-width = "-5%"
+# adjust-cell-height = "5%"
 
 # Cursor
 # Catppuccin Mocha: rosewater cursor, crust text
