@@ -51,9 +51,6 @@ Check and get additional tools and packages for the system.
    source ~/.homesick/repos/homeshick/homeshick.sh
    ```
 
-   Later we would be able to use our alias `dot` for `homeshick`, once we have
-   loaded the first castle.
-
 2. Get the primary castle:
 
    ```bash
