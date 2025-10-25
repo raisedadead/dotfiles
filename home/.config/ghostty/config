@@ -50,6 +50,7 @@ macos-titlebar-proxy-icon = hidden
 
 # Keybindings
 keybind = shift+enter=text:\n
+keybind = ctrl+enter=text:\r
 keybind = ctrl+shift+h=goto_split:left
 keybind = ctrl+shift+j=goto_split:bottom
 keybind = ctrl+shift+k=goto_split:top

@@ -38,8 +38,9 @@ setopt INTERACTIVECOMMENTS
 can_haz() { command -v "$1" >/dev/null 2>&1 }
 timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
 
-# Force emacs mode (prevent vi mode auto-activation from EDITOR=nvim)
-# bindkey -e
+# Keybindings
+bindkey -e  # Emacs mode
+bindkey -M viins 'jk' vi-cmd-mode
 
 # Prompt
 can_haz starship && eval "$(starship init zsh)"
