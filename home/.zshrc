@@ -110,8 +110,6 @@ zinit wait"2b" silent for \
 # Tool Integrations
 #-----------------------------------------------------------
 
-# Node.js version manager (fnm)
-eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines)"
 
 # Modern tools (interactive only)
 if [[ -o interactive ]]; then
@@ -137,8 +135,21 @@ zsh-defer -c "
   [[ -f ~/.alias.zshrc && ! -f ~/.alias.zshrc.zwc ]] && zcompile ~/.alias.zshrc
 "
 
-# Homebrew is already in PATH via /etc/paths.d/homebrew
-# Removed explicit PATH prepend to allow fnm to take precedence
+# Note: Homebrew is already in path via /etc/paths.d/homebrew,
+#  but we need it here to avoid this:
+#
+#  ```
+#  Warning: /usr/bin occurs before /opt/homebrew/bin in your PATH.
+#  This means that system-provided programs will be used instead of those
+#  provided by Homebrew.
+#  ```
+#
+#  The probnlem is, this will make Node.js from homebrew,
+#  if installed by a formula, or cask take precedence over
+#  fnm-managed Node.js.
+export PATH="/opt/homebrew/bin:$PATH"
+#  so Node.js version manager (fnm) should be installed after Homebrew in path
+eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines)"
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
