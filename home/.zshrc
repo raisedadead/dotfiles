@@ -111,7 +111,7 @@ zinit wait"2b" silent for \
 #-----------------------------------------------------------
 
 # Node.js version manager (fnm)
-eval "$(fnm env --use-on-cd --version-file-strategy=recursive --corepack-enabled --resolve-engines)"
+eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines)"
 
 # Modern tools (interactive only)
 if [[ -o interactive ]]; then
@@ -137,8 +137,8 @@ zsh-defer -c "
   [[ -f ~/.alias.zshrc && ! -f ~/.alias.zshrc.zwc ]] && zcompile ~/.alias.zshrc
 "
 
-# This ensures that PATH is set for homebrew
-export PATH="/opt/homebrew/bin:$PATH"
+# Homebrew is already in PATH via /etc/paths.d/homebrew
+# Removed explicit PATH prepend to allow fnm to take precedence
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
