@@ -149,7 +149,7 @@ zsh-defer -c "
 #  fnm-managed Node.js.
 export PATH="/opt/homebrew/bin:$PATH"
 #  so Node.js version manager (fnm) should be installed after Homebrew in path
-eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines)"
+eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines 2>/dev/null)"
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
