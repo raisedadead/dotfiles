@@ -39,6 +39,8 @@ font-thicken=true
 # adjust-cell-width = "-5%"
 # adjust-cell-height = "5%"
 
+custom-shader = ~/.config/ghostty/shaders/shader.glsl
+
 # Cursor
 # Catppuccin Mocha: rosewater cursor, crust text
 cursor-color = f5e0dc
@@ -51,7 +53,7 @@ macos-titlebar-proxy-icon = hidden
 # Keybindings
 keybind = shift+enter=text:\n
 keybind = ctrl+enter=text:\r
-keybind = ctrl+shift+h=goto_split:left
-keybind = ctrl+shift+j=goto_split:bottom
-keybind = ctrl+shift+k=goto_split:top
-keybind = ctrl+shift+l=goto_split:right
+keybind = cmd+shift+h=goto_split:left
+keybind = cmd+shift+j=goto_split:bottom
+keybind = cmd+shift+k=goto_split:top
+keybind = cmd+shift+l=goto_split:right
