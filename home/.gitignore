@@ -33,6 +33,7 @@ node_modules
 .cursorignore
 
 .claude
+.mcp.json
 CLAUDE.md
 
 .specify
