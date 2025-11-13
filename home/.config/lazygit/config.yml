@@ -40,56 +40,56 @@ gui:
     '^fix/': '#f38ba8'
     '^chore/': '#7f849c'
     '^docs/': '#89dceb'
-  # Rose Pine Moon theme (commented)
-  # theme:
-  #   activeBorderColor:
-  #     - '#eb6f92'
-  #     - bold
-  #   inactiveBorderColor:
-  #     - '#908caa'
-  #   searchingActiveBorderColor:
-  #     - '#f6c177'
-  #     - bold
-  #   optionsTextColor:
-  #     - '#9ccfd8'
-  #   selectedLineBgColor:
-  #     - '#56526e'
-  #   inactiveViewSelectedLineBgColor:
-  #     - '#393552'
-  #   cherryPickedCommitFgColor:
-  #     - '#c4a7e7'
-  #     - bold
-  #   cherryPickedCommitBgColor:
-  #     - '#44415a'
-  #   markedBaseCommitFgColor:
-  #     - '#f6c177'
-  #     - bold
-  #   markedBaseCommitBgColor:
-  #     - '#44415a'
-  #   unstagedChangesColor:
-  #     - '#eb6f92'
-  #     - bold
-  #   defaultFgColor:
-  #     - '#e0def4'
-  # authorColors:
-  #   '*': '#c4a7e7'
-  # branchColorPatterns:
-  #   '^main$': '#f6c177'
-  #   '^master$': '#f6c177'
-  #   '^develop': '#c4a7e7'
-  #   '^feature/': '#9ccfd8'
-  #   '^hotfix/': '#eb6f92'
-  #   '^release/': '#f6c177'
-  #   '^bugfix/': '#eb6f92'
-  #   '^fix/': '#eb6f92'
-  #   '^chore/': '#908caa'
-  #   '^docs/': '#9ccfd8'
+    # Rose Pine Moon theme (commented)
+    # theme:
+    #   activeBorderColor:
+    #     - '#eb6f92'
+    #     - bold
+    #   inactiveBorderColor:
+    #     - '#908caa'
+    #   searchingActiveBorderColor:
+    #     - '#f6c177'
+    #     - bold
+    #   optionsTextColor:
+    #     - '#9ccfd8'
+    #   selectedLineBgColor:
+    #     - '#56526e'
+    #   inactiveViewSelectedLineBgColor:
+    #     - '#393552'
+    #   cherryPickedCommitFgColor:
+    #     - '#c4a7e7'
+    #     - bold
+    #   cherryPickedCommitBgColor:
+    #     - '#44415a'
+    #   markedBaseCommitFgColor:
+    #     - '#f6c177'
+    #     - bold
+    #   markedBaseCommitBgColor:
+    #     - '#44415a'
+    #   unstagedChangesColor:
+    #     - '#eb6f92'
+    #     - bold
+    #   defaultFgColor:
+    #     - '#e0def4'
+    # authorColors:
+    #   '*': '#c4a7e7'
+    # branchColorPatterns:
+    #   '^main$': '#f6c177'
+    #   '^master$': '#f6c177'
+    #   '^develop': '#c4a7e7'
+    #   '^feature/': '#9ccfd8'
+    #   '^hotfix/': '#eb6f92'
+    #   '^release/': '#f6c177'
+    #   '^bugfix/': '#eb6f92'
+    #   '^fix/': '#eb6f92'
+    #   '^chore/': '#908caa'
+    #   '^docs/': '#9ccfd8'
 git:
   log:
     order: default
   overrideGpg: true
-  paging:
-    colorArg: always
-    pager: delta --paging=never
+  pagers:
+    - colorArg: always
+      pager: delta --paging=never
 disableStartupPopups: true
 quitOnTopLevelReturn: true
