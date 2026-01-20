@@ -1,6 +1,4 @@
 [alias]
-co = switch
-cob = switch -c
 edit = commit --amend
 no-edit = commit --amend --no-edit
   

@@ -54,7 +54,7 @@ can_haz nvim && alias vim="nvim"
 # random string/key generator
 #-----------------------------
 alias genrand="head -c32 /dev/urandom | base64"
-alias genpass='openssl rand -base64 32'
+alias genpass='openssl rand -hex 32'
 
 #-----------------------------
 # Eza
