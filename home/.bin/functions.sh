@@ -1,3 +1,4 @@
+
 #!/usr/bin/env zsh
 
 #-----------------------------------------------------------
@@ -12,6 +13,7 @@
 
 # source utilities
 source ~/.bin/utils.sh
+source ~/.bin/cleanup.sh
 
 # load git functions
 source ~/.bin/commit-past.sh
@@ -38,6 +40,7 @@ alias psf='_mrgsh_psf'                       # find processes with fzf
 alias rgfzf='_mrgsh_rgfzf'                   # search file content with ripgrep+fzf
 alias fif='_mrgsh_fif'                       # advanced file/content search
 alias rkh='_mrgsh_rkh'                       # remove host from known_hosts
+alias cleanup='_mrgsh_cleanup'               # cleanup macOS junk files
 
 # completion descriptions
 compdef '_describe "commit in the past" "(git_commit_past:\"commit with past date\")"' git_commit_past
@@ -51,6 +54,7 @@ compdef '_describe "find processes" "(psf:\"find processes with fzf\")"' psf
 compdef '_describe "search content" "(rgfzf:\"search file content with ripgrep+fzf\")"' rgfzf
 compdef '_describe "advanced search" "(fif:\"advanced file/content search\")"' fif
 compdef '_describe "remove host" "(rkh:\"remove host from known_hosts\")"' rkh
+compdef '_describe "cleanup junk" "(cleanup:\"cleanup macOS junk files\")"' cleanup
 
 # load keybindings
 source ~/.bin/keybindings.sh
