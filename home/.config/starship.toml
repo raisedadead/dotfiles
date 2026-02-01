@@ -2,38 +2,38 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 # Global settings
-command_timeout = 500
+command_timeout = 200
 palette = "catppuccin_mocha" # Default palette
 format = "$all"
 
 # Theme palette: Catppuccin Mocha
 [palettes.catppuccin_mocha]
 rosewater = "#f5e0dc"
-flamingo  = "#f2cdcd"
-pink      = "#f5c2e7"
-mauve     = "#cba6f7"
-red       = "#f38ba8"
-maroon    = "#eba0ac"
-peach     = "#fab387"
-yellow    = "#f9e2af"
-green     = "#a6e3a1"
-teal      = "#94e2d5"
-sky       = "#89dceb"
-sapphire  = "#74c7ec"
-blue      = "#89b4fa"
-lavender  = "#b4befe"
-text      = "#cdd6f4"
-subtext1  = "#bac2de"
-subtext0  = "#a6adc8"
-overlay2  = "#9399b2"
-overlay1  = "#7f849c"
-overlay0  = "#6c7086"
-surface2  = "#585b70"
-surface1  = "#45475a"
-surface0  = "#313244"
-base      = "#1e1e2e"
-mantle    = "#181825"
-crust     = "#11111b"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"
 # Theme palette: Rose Pine Moon
 [palettes.rose-pine-moon]
 overlay = '#393552'
@@ -49,15 +49,15 @@ iris = '#c4a7e7'
 disabled = true
 
 [os.symbols]
-Debian   = " "
-Linux    = " "
-Macos    = " "
-NixOS    = " "
-Pop      = " "
+Debian = " "
+Linux = " "
+Macos = " "
+NixOS = " "
+Pop = " "
 Raspbian = " "
-Ubuntu   = " "
-Unknown  = " "
-Windows  = "󰍲 "
+Ubuntu = " "
+Unknown = " "
+Windows = "󰍲 "
 
 # Host & system info
 [hostname]
@@ -69,17 +69,36 @@ symbol = "󰍛 "
 # Directory info
 [directory]
 read_only = " 󰌾"
+truncation_length = 0
+truncate_to_repo = false
 
 # VCS (Git/Docker) modules
 [git_branch]
-symbol = " "
+disabled = true
+
+[git_status]
+disabled = true
 
 [git_commit]
-tag_symbol = "  "
+tag_symbol = "  "
+
+# Custom git info (worktree-aware) - optimized to use 2 git commands
+[custom.git_info]
+disabled = false
+command = "~/.config/starship/git-worktree-prompt.sh"
+when = "[ -d .git ] || [ -f .git ]"
+format = "[on  $output]($style) "
+style = "bold purple"
 
 [docker_context]
-symbol = " "
-only_with_files = false
+disabled = true
+
+# Custom docker context (skip orbstack)
+[custom.docker]
+command = "docker context show 2>/dev/null | grep -v orbstack"
+when = "command -v docker"
+format = "([via  $output]($style) )"
+style = "blue bold"
 
 # Programming language symbols
 [aws]
@@ -110,3 +129,10 @@ symbol = "󰏗 "
 # Kubernetes (disabled)
 [kubernetes]
 disabled = true
+
+# Git worktree container indicator
+[custom.worktrees]
+command = "echo 'worktrees'"
+when = "test -d .bare"
+style = "bold mauve"
+format = "[on 󰙅 $output]($style) "
