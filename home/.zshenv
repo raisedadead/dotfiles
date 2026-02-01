@@ -38,7 +38,7 @@ fi
 
 # Go
 export GOPATH="$HOME/go"
-[[ -d "$GOPATH/bin" ]] && export PATH="$PATH:$GOPATH/bin"
+[[ -d "$GOPATH/bin" ]] && export PATH="$GOPATH/bin:$PATH"
 
 # Ruby (via Homebrew)
 if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/ruby" ]]; then
