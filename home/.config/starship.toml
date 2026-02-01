@@ -44,28 +44,6 @@ pine = '#3e8fb0'
 foam = '#9ccfd8'
 iris = '#c4a7e7'
 
-# OS configuration
-[os]
-disabled = true
-
-[os.symbols]
-Debian = " "
-Linux = " "
-Macos = " "
-NixOS = " "
-Pop = " "
-Raspbian = " "
-Ubuntu = " "
-Unknown = " "
-Windows = "󰍲 "
-
-# Host & system info
-[hostname]
-ssh_symbol = " "
-
-[memory_usage]
-symbol = "󰍛 "
-
 # Directory info
 [directory]
 read_only = " 󰌾"
@@ -87,7 +65,7 @@ tag_symbol = "  "
 disabled = false
 command = "~/.config/starship/git-worktree-prompt.sh"
 when = "[ -d .git ] || [ -f .git ]"
-format = "[on  $output]($style) "
+format = "([on  $output]($style) )"
 style = "bold purple"
 
 [docker_context]
@@ -106,29 +84,18 @@ symbol = "  "
 
 [golang]
 symbol = " "
-
-[lua]
-symbol = " "
-
 [nodejs]
 symbol = " "
 
 [python]
 symbol = " "
 
-[rust]
-symbol = "󱘗 "
-
-[swift]
-symbol = " "
+[terraform]
+symbol = "󱁢 "
 
 # Package management
 [package]
 symbol = "󰏗 "
-
-# Kubernetes (disabled)
-[kubernetes]
-disabled = true
 
 # Git worktree container indicator
 [custom.worktrees]
