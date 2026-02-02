@@ -18,6 +18,7 @@ export LC_CTYPE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export XDG_CONFIG_HOME="$HOME/.config"
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
+export STARSHIP_LOG=error
 
 # Homebrew (needs to be early in PATH)
 if [[ "$DOT_TARGET" == "macos" ]]; then

@@ -64,7 +64,7 @@ tag_symbol = "  "
 [custom.git_info]
 disabled = false
 command = "~/.config/starship/git-worktree-prompt.sh"
-when = "[ -d .git ] || [ -f .git ]"
+when = "[ -d .git ] || [ -f .git ] || git rev-parse --is-inside-work-tree 2>/dev/null"
 format = "([on  $output]($style) )"
 style = "bold purple"
 
