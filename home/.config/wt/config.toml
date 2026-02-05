@@ -1,0 +1,26 @@
+worktree_root = ""
+default_owner = "raisedadead"
+default_remote = ""
+default_base_branch = ""
+branch_template = ""
+git_timeout = 0
+git_long_timeout = 0
+hook_timeout = 0
+
+[hooks]
+  post_clone = ["zoxide", "gh-default"]
+  post_add = ["zoxide", "direnv"]
+
+[workflows]
+  [workflows.bugfix]
+    description = "Bug fix"
+    branch_template = "fix/{slug}"
+    [workflows.bugfix.hooks]
+      pre_create = ["github-issue"]
+      post_add = ["direnv", "zoxide"]
+  [workflows.feature]
+    description = "New feature development"
+    branch_template = "feat/{slug}"
+    [workflows.feature.hooks]
+      pre_create = ["github-issue"]
+      post_add = ["direnv", "zoxide"]
