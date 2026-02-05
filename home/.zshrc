@@ -70,6 +70,9 @@ zinit light zsh-users/zsh-completions
 # Add Homebrew completions to FPATH before compinit
 [[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"
 
+# Add custom completions to FPATH (highest priority - added last so it's first)
+[[ -d ~/.zfunc ]] && FPATH="$HOME/.zfunc:$FPATH"
+
 # Load completion system immediately
 autoload -Uz compinit && compinit -C
 
@@ -156,3 +159,5 @@ eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines)
 #-----------------------------------------------------------
 # End of .zshrc
 #-----------------------------------------------------------
+
+alias claude-mem='bun "/Users/mrugesh/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
