@@ -106,6 +106,9 @@ fi
 
 export GIT_EDITOR="$EDITOR"
 
+# CLAUDE unlock phrase
+export CLAUDE_GIT_PASSPHRASE='Avada Kedavra'
+
 # Remove duplicate PATH entries
 typeset -U PATH path
 
