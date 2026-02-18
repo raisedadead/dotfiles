@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 # @name: github-issue
 # @description: Fetch GitHub issue metadata and suggest branch name
 # @events: pre_create
 # @requires: gh
 
-source "$WT_LIB/helpers.sh"
+. "$WT_LIB/helpers.sh"
 wt_requires gh
 wt_requires jq
 
@@ -13,7 +13,8 @@ issue_num="${WT_ISSUE:-}"
 if [ -z "$issue_num" ]; then
     # Only prompt if stdin is a TTY (interactive mode)
     if [ -t 0 ]; then
-        read -p "Issue number: " issue_num
+        printf "Issue number: "
+        read issue_num
     else
         wt_error "Issue number is required. Use --issue <number> or run interactively."
     fi
@@ -25,8 +26,7 @@ fi
 
 # Fetch issue from GitHub
 wt_info "Fetching issue #$issue_num..."
-issue=$(gh issue view "$issue_num" --json number,title,labels,url 2>&1)
-if [ $? -ne 0 ]; then
+if ! issue=$(gh issue view "$issue_num" --json number,title,labels,url 2>&1); then
     wt_error "Failed to fetch issue #$issue_num: $issue"
 fi
 

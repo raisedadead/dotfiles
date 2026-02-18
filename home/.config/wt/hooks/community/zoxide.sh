@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # @name: zoxide
 # @description: Add worktree to zoxide for quick navigation
 # @events: post_clone, post_add

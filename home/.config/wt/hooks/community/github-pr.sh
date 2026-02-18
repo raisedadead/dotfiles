@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 # @name: github-pr
 # @description: Checkout PR branch for review (uses actual PR head branch)
 # @events: pre_create
 # @requires: gh
 
-source "$WT_LIB/helpers.sh"
+. "$WT_LIB/helpers.sh"
 wt_requires gh
 wt_requires jq
 
@@ -13,7 +13,8 @@ pr_num="${WT_PR:-}"
 if [ -z "$pr_num" ]; then
     # Only prompt if stdin is a TTY (interactive mode)
     if [ -t 0 ]; then
-        read -p "PR number: " pr_num
+        printf "PR number: "
+        read pr_num
     else
         wt_error "PR number is required. Use --pr <number> or run interactively."
     fi
@@ -25,8 +26,7 @@ fi
 
 # Fetch PR from GitHub
 wt_info "Fetching PR #$pr_num..."
-pr=$(gh pr view "$pr_num" --json number,title,author,headRefName,url,state 2>&1)
-if [ $? -ne 0 ]; then
+if ! pr=$(gh pr view "$pr_num" --json number,title,author,headRefName,url,state 2>&1); then
     wt_error "Failed to fetch PR #$pr_num: $pr"
 fi
 
