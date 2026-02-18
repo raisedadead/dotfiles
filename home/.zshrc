@@ -121,6 +121,7 @@ if [[ -o interactive ]]; then
   zsh-defer -c 'can_haz direnv && eval "$(direnv hook zsh)"'
   zsh-defer -c 'can_haz gh && eval "$(gh completion -s zsh)"'
   zsh-defer -c 'can_haz op && eval "$(op completion zsh)"; compdef _op op'
+  zsh-defer -c 'can_haz but && eval "$(but completions zsh)"'
   # zsh-defer -c 'can_haz pkgx && source <(pkgx --shellcode)'
 fi
 
