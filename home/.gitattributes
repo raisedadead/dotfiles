@@ -1,5 +1,5 @@
-*lock.json -diff
-*.lock -diff
-*lock.yaml -diff
-*lock.yml -diff
+# *lock.json -diff
+# *.lock -diff
+# *lock.yaml -diff
+# *lock.yml -diff
 
