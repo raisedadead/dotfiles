@@ -122,6 +122,7 @@ if [[ -o interactive ]]; then
   zsh-defer -c 'can_haz gh && eval "$(gh completion -s zsh)"'
   zsh-defer -c 'can_haz op && eval "$(op completion zsh)"; compdef _op op'
   zsh-defer -c 'can_haz but && eval "$(but completions zsh)"'
+  zsh-defer -c 'can_haz wrangler && eval "$(wrangler completions zsh)"'
   # zsh-defer -c 'can_haz pkgx && source <(pkgx --shellcode)'
 fi
 
@@ -160,5 +161,3 @@ eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines)
 #-----------------------------------------------------------
 # End of .zshrc
 #-----------------------------------------------------------
-
-alias claude-mem='bun "/Users/mrugesh/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
