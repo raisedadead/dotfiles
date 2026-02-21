@@ -53,8 +53,18 @@ can_haz nvim && alias vim="nvim"
 #-----------------------------
 # random string/key generator
 #-----------------------------
-alias genrand="head -c32 /dev/urandom | base64"
+alias genrand='openssl rand -base64 32'
 alias genpass='openssl rand -hex 32'
+
+#-----------------------------
+# wt (dev build)
+#-----------------------------
+if can_haz "$HOME/DEV/rd/wt/main/bin/wt"; then
+  wt_bin="$HOME/DEV/rd/wt/main/bin/wt"
+  alias wt-dev="$wt_bin"
+  alias wtd="$wt_bin"
+  unset wt_bin
+fi
 
 #-----------------------------
 # Eza
