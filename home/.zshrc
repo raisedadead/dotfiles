@@ -43,7 +43,8 @@ bindkey -e  # Emacs mode
 bindkey -M viins 'jk' vi-cmd-mode
 
 # Prompt
-can_haz starship && eval "$(starship init zsh)"
+# can_haz starship && eval "$(starship init zsh)"
+can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
 
 #-----------------------------------------------------------
 # Plugin Manager

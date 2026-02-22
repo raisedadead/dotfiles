@@ -1,0 +1,152 @@
+"$schema" = "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json"
+version = 4
+final_space = true
+
+# --- Catppuccin Mocha (red from Tokyo Night) ---
+[palette]
+rosewater = '#f5e0dc'
+flamingo = '#f2cdcd'
+pink = '#f5c2e7'
+mauve = '#cba6f7'
+red = '#f7768e'
+maroon = '#eba0ac'
+peach = '#fab387'
+yellow = '#f9e2af'
+green = '#a6e3a1'
+teal = '#94e2d5'
+sky = '#89dceb'
+sapphire = '#74c7ec'
+blue = '#89b4fa'
+lavender = '#b4befe'
+text = '#cdd6f4'
+subtext1 = '#bac2de'
+subtext0 = '#a6adc8'
+overlay2 = '#9399b2'
+overlay1 = '#7f849c'
+overlay0 = '#6c7086'
+surface2 = '#585b70'
+surface1 = '#45475a'
+surface0 = '#313244'
+base = '#1e1e2e'
+mantle = '#181825'
+crust = '#11111b'
+
+[upgrade]
+auto = false
+notice = false
+
+# Main prompt
+[[blocks]]
+type = 'prompt'
+alignment = 'left'
+newline = true
+
+# SSH indicator (only shows in SSH sessions)
+[[blocks.segments]]
+type = 'session'
+style = 'plain'
+foreground = 'p:red'
+template = "{{ if .SSHSession }}\uF489 {{ .UserName }}@{{ .HostName }} {{ end }}"
+
+# Directory (full path, no truncation)
+[[blocks.segments]]
+type = 'path'
+style = 'plain'
+foreground = 'p:maroon'
+template = "{{ .Path }}{{ if not .Writable }} \U000F033E{{ end }} "
+
+[blocks.segments.options]
+style = 'full'
+home_icon = '~'
+
+# Git (worktree-aware: shows worktree indicator OR branch+status, never both)
+[[blocks.segments]]
+type = 'git'
+style = 'plain'
+foreground = 'p:lavender'
+timeout = 200
+template = "{{ if eq .HEAD \"\" }}on \U000F0645 worktrees {{ else }}on \uE725 {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
+
+[blocks.segments.options]
+fetch_status = true
+branch_icon = ''
+commit_icon = ''
+tag_icon = ''
+
+# Docker context (skip default and orbstack)
+[[blocks.segments]]
+type = 'docker'
+style = 'plain'
+foreground = 'p:blue'
+timeout = 200
+template = "{{ if and (ne .Context \"default\") (ne .Context \"orbstack\") }}via \uF308  {{ .Context }} {{ end }}"
+
+# Node.js
+[[blocks.segments]]
+type = 'node'
+style = 'plain'
+foreground = 'p:green'
+timeout = 200
+template = "via \uE718 {{ .Full }} "
+
+[blocks.segments.options]
+display_mode = 'context'
+
+# Go
+[[blocks.segments]]
+type = 'go'
+style = 'plain'
+foreground = 'p:sapphire'
+timeout = 200
+template = "via \uE627 {{ .Full }} "
+
+# Python
+[[blocks.segments]]
+type = 'python'
+style = 'plain'
+foreground = 'p:yellow'
+timeout = 200
+template = "via \uE235 {{ .Full }} "
+
+# Terraform
+[[blocks.segments]]
+type = 'terraform'
+style = 'plain'
+foreground = 'p:mauve'
+timeout = 200
+template = "via \U000F1062 {{ .Version }} "
+
+# AWS
+[[blocks.segments]]
+type = 'aws'
+style = 'plain'
+foreground = 'p:peach'
+timeout = 200
+template = "on \uE33D {{ .Profile }}{{ if .Region }} ({{ .Region }}){{ end }} "
+
+# Execution time (only shows for commands >2s)
+[[blocks.segments]]
+type = 'executiontime'
+style = 'plain'
+foreground = 'p:yellow'
+template = "took \u23F1 {{ .FormattedMs }} "
+
+[blocks.segments.options]
+threshold = 2000
+style = 'austin'
+
+# Prompt character (on new line, red on error)
+[[blocks]]
+type = 'prompt'
+alignment = 'left'
+newline = true
+
+[[blocks.segments]]
+type = 'status'
+style = 'plain'
+foreground = 'p:green'
+foreground_templates = ["{{ if gt .Code 0 }}p:red{{ end }}"]
+template = "\u276F"
+
+[blocks.segments.options]
+always_enabled = true
