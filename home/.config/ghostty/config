@@ -52,6 +52,9 @@ font-thicken = true
 # Links
 link-previews = true
 
+# Shaders
+custom-shader = shaders/cursor_warp.glsl
+
 # Cursor
 cursor-color = f5e0dc
 cursor-text = 11111b
