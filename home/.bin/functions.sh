@@ -25,6 +25,16 @@ source ~/.bin/file-search.sh
 # load aws functions
 source ~/.bin/ssh-ec2.sh
 
+# yazi wrapper: q to cd on exit, Q to quit in place
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+	command yazi "$@" --cwd-file="$tmp"
+	local cwd
+	IFS= read -r -d '' cwd < "$tmp"
+	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
+}
+
 # terminal title
 precmd() {print -Pn "\e]0;%~\a"}
 

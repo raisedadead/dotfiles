@@ -1,5 +1,52 @@
-[plugin]
-deps = []
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-enter"
+rev = "b224ddf"
+hash = "187cc58ba7ac3befd49c342129e6f1b6"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:jump-to-char"
+rev = "b224ddf"
+hash = "7a4b4237223aaa94e589d1c01a23542a"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:full-border"
+rev = "b224ddf"
+hash = "6fa6a05a81c98dd000fbca3cca6e9682"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:git"
+rev = "b224ddf"
+hash = "270915fa8282a19908449530ff66f7e2"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-filter"
+rev = "b224ddf"
+hash = "c887903a63a2ff520081b6d90a4b3392"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:mime-ext"
+rev = "b224ddf"
+hash = "8b177921e50732b2c8e9d71aa5956270"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:piper"
+rev = "b224ddf"
+hash = "384464b6df8cb807425c521f8cd790f3"
+
+[[plugin.deps]]
+use = "Lil-Dank/lazygit"
+rev = "0e56060"
+hash = "ab2e66065a94cca4886b303518e44bd8"
+
+[[plugin.deps]]
+use = "AnirudhG07/plugins-yazi:copy-file-contents"
+rev = "71545f4"
+hash = "f8530ee84fee95dbcc26bb1d8d8019c7"
+
+[[plugin.deps]]
+use = "Ape/open-with-cmd"
+rev = "e3d430f"
+hash = "d29c1ffa99099181faf8c01d1f59aa4c"
 
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-mocha"

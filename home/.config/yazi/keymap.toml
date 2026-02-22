@@ -1,0 +1,79 @@
+[[mgr.prepend_keymap]]
+on   = "<Enter>"
+run  = "plugin smart-enter"
+desc = "Enter the child directory, or open the file"
+
+[[mgr.prepend_keymap]]
+on   = "l"
+run  = "plugin smart-enter"
+desc = "Enter the child directory, or open the file"
+
+[[mgr.prepend_keymap]]
+on   = "<C-f>"
+run  = "plugin jump-to-char"
+desc = "Jump to char"
+
+[[mgr.prepend_keymap]]
+on   = "f"
+run  = "plugin smart-filter"
+desc = "Smart filter"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "i"]
+run  = "plugin lazygit"
+desc = "Open lazygit"
+
+[[mgr.prepend_keymap]]
+on   = "<A-y>"
+run  = "plugin copy-file-contents"
+desc = "Copy file contents to clipboard"
+
+[[mgr.prepend_keymap]]
+on   = "o"
+run  = "plugin open-with-cmd -- block"
+desc = "Open with command in terminal"
+
+[[mgr.prepend_keymap]]
+on   = "O"
+run  = "plugin open-with-cmd"
+desc = "Open with command in background"
+
+[[mgr.prepend_keymap]]
+on   = "<Backspace>"
+run  = "leave"
+desc = "Go to parent directory"
+
+[[mgr.prepend_keymap]]
+on   = "d"
+run  = "noop"
+desc = "Disabled"
+
+[[mgr.prepend_keymap]]
+on   = "D"
+run  = "noop"
+desc = "Disabled"
+
+[[mgr.prepend_keymap]]
+on   = "<Delete>"
+run  = "remove"
+desc = "Trash selected files"
+
+[[mgr.prepend_keymap]]
+on   = "q"
+run  = "quit --no-cwd-file"
+desc = "Quit without changing directory"
+
+[[mgr.prepend_keymap]]
+on   = "Q"
+run  = "quit"
+desc = "Quit and cd to current directory"
+
+[[mgr.prepend_keymap]]
+on   = "?"
+run  = "help"
+desc = "Show keybindings help"
+
+[[mgr.prepend_keymap]]
+on   = "<C-y>"
+run  = 'shell "echo %s | cb" --orphan'
+desc = "Copy file path to clipboard"

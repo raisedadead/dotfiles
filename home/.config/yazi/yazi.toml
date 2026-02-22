@@ -1,0 +1,44 @@
+[mgr]
+show_hidden = true
+
+[[plugin.prepend_fetchers]]
+id   = "mime"
+url  = "local://*"
+run  = "mime-ext.local"
+prio = "high"
+
+[[plugin.prepend_fetchers]]
+id   = "mime"
+url  = "remote://*"
+run  = "mime-ext.remote"
+prio = "high"
+
+[[plugin.prepend_fetchers]]
+id  = "git"
+url = "*"
+run = "git"
+
+[[plugin.prepend_fetchers]]
+id  = "git"
+url = "*/"
+run = "git"
+
+[[plugin.prepend_previewers]]
+url  = "*/"
+run  = 'piper -- eza -TL=3 --color=always --icons=always "$1"'
+
+[[plugin.prepend_previewers]]
+url  = "*.md"
+run  = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"'
+
+[[plugin.prepend_previewers]]
+url  = "*.csv"
+run  = 'piper -- bat -p --color=always "$1"'
+
+[[plugin.prepend_previewers]]
+url  = "*.tsv"
+run  = 'piper -- bat -p --color=always "$1"'
+
+[[plugin.prepend_previewers]]
+url  = "*.tar*"
+run  = 'piper --format=url -- tar tf "$1"'
