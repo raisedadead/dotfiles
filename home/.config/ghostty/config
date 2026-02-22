@@ -46,13 +46,13 @@ mouse-hide-while-typing = true
 
 # Typography
 font-family = "Berkeley Mono"
-font-size = 14
 font-thicken = true
+font-size = 14
 font-feature = calt
 font-feature = ss01
 font-feature = zero
-font-codepoint-map = U+E000-U+F8FF=Symbols Nerd Font Mono
-font-codepoint-map = U+F0000-U+FFFFF=Symbols Nerd Font Mono
+font-codepoint-map = U+E000-U+F8FF=Symbols Nerd Font
+font-codepoint-map = U+F0000-U+FFFFF=Symbols Nerd Font
 
 # Links
 link-previews = true
