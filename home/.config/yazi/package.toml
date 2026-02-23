@@ -48,6 +48,11 @@ use = "Ape/open-with-cmd"
 rev = "e3d430f"
 hash = "d29c1ffa99099181faf8c01d1f59aa4c"
 
+[[plugin.deps]]
+use = "h-hg/yamb"
+rev = "5f2e22e"
+hash = "699fe07e0d2d1b4af8dafb84168eeb04"
+
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-mocha"
 rev = "f6b425a"

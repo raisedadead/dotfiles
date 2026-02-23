@@ -1,4 +1,5 @@
 [mgr]
+ratio       = [1, 2, 3]
 show_hidden = true
 
 [[plugin.prepend_fetchers]]

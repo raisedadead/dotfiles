@@ -1,4 +1,14 @@
 [[mgr.prepend_keymap]]
+on   = "E"
+run  = 'shell -- ${VISUAL:-$EDITOR} %d'
+desc = "Open current directory in $VISUAL"
+
+[[mgr.prepend_keymap]]
+on   = "<S-Enter>"
+run  = 'shell -- ${VISUAL:-$EDITOR} %h'
+desc = "Open in $VISUAL"
+
+[[mgr.prepend_keymap]]
 on   = "<Enter>"
 run  = "plugin smart-enter"
 desc = "Enter the child directory, or open the file"
@@ -77,3 +87,29 @@ desc = "Show keybindings help"
 on   = "<C-y>"
 run  = 'shell "echo %s | cb" --orphan'
 desc = "Copy file path to clipboard"
+
+# Bookmarks (yamb)
+[[mgr.prepend_keymap]]
+on   = ["u", "a"]
+run  = "plugin yamb save"
+desc = "Bookmark: save current dir"
+
+[[mgr.prepend_keymap]]
+on   = ["u", "g"]
+run  = "plugin yamb jump_by_key"
+desc = "Bookmark: jump by key"
+
+[[mgr.prepend_keymap]]
+on   = ["u", "G"]
+run  = "plugin yamb jump_by_fzf"
+desc = "Bookmark: jump by fzf"
+
+[[mgr.prepend_keymap]]
+on   = ["u", "d"]
+run  = "plugin yamb delete_by_key"
+desc = "Bookmark: delete by key"
+
+[[mgr.prepend_keymap]]
+on   = ["u", "r"]
+run  = "plugin yamb rename_by_key"
+desc = "Bookmark: rename by key"

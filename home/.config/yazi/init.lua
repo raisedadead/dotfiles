@@ -10,3 +10,8 @@ require("copy-file-contents"):setup {
 	append_char = "\n",
 	notification = true,
 }
+
+require("yamb"):setup {
+	cli = "fzf",
+	jump_notify = true,
+}
