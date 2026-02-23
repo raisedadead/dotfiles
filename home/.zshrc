@@ -148,10 +148,10 @@ export PATH="/opt/homebrew/bin:$PATH"
 _fnm_cache="$HOME/.cache/fnm-env.zsh"
 _fnm_bin="$(whence -p fnm)"
 if [[ ! -f "$_fnm_cache" ]] || [[ "$_fnm_bin" -nt "$_fnm_cache" ]]; then
-  fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines > "$_fnm_cache"
+  fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet > "$_fnm_cache"
   zcompile "$_fnm_cache"
 fi
-source "$_fnm_cache"
+source "$_fnm_cache" >/dev/null 2>&1
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
