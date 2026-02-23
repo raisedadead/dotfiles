@@ -2,7 +2,7 @@
 quit-after-last-window-closed = true
 
 # Shell Integration
-shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
+shell-integration-features = cursor,sudo
 
 # Quick Terminal
 keybind = global:ctrl+grave_accent=toggle_quick_terminal
