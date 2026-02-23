@@ -67,7 +67,7 @@ timeout = 200
 template = "{{ if eq .HEAD \"\" }}on \U000F0645 worktrees {{ else }}on \uE725 {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
 options = { fetch_status = true, branch_icon = '', commit_icon = '', tag_icon = '' }
 
-# Kubernetes context
+# Kubernetes context (only in k8s/k3s project dirs)
 [[blocks.segments]]
 type = 'kubectl'
 style = 'plain'
@@ -75,8 +75,9 @@ foreground = 'p:blue'
 timeout = 200
 template = "on \U000F10FE {{ .Context }}{{ if .Namespace }} ({{ .Namespace }}){{ end }} "
 cache = { duration = '5m', strategy = 'session' }
+include_folders = ['.*k[38]s.*']
 
-# Docker context (skip default and orbstack)
+# Docker context — file-based (compose file in cwd, but not already in a docker path)
 [[blocks.segments]]
 type = 'docker'
 style = 'plain'
@@ -84,6 +85,18 @@ foreground = 'p:blue'
 timeout = 200
 template = "{{ if and (ne .Context \"default\") (ne .Context \"orbstack\") }}via \uF308  {{ .Context }} {{ end }}"
 cache = { duration = '5m', strategy = 'session' }
+exclude_folders = ['.*docker.*']
+options = { display_mode = 'files' }
+
+# Docker context — path-based (dir path contains "docker")
+[[blocks.segments]]
+type = 'docker'
+style = 'plain'
+foreground = 'p:blue'
+timeout = 200
+template = "{{ if and (ne .Context \"default\") (ne .Context \"orbstack\") }}via \uF308  {{ .Context }} {{ end }}"
+cache = { duration = '5m', strategy = 'session' }
+include_folders = ['.*docker.*']
 
 # Node.js
 [[blocks.segments]]
