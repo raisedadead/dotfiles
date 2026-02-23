@@ -1,5 +1,17 @@
 {
-  "theme": "Catppuccin Mocha",
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "theme": {
+    "mode": "system",
+    "light": "Catppuccin Latte (Blur)",
+    "dark": "Catppuccin Mocha (Blur)"
+  },
+  "icon_theme": {
+    "mode": "system",
+    "light": "Catppuccin Latte",
+    "dark": "Catppuccin Mocha"
+  },
   "agent": {
     "play_sound_when_agent_done": true
   },
@@ -15,6 +27,29 @@
   "ui_font_size": 16,
   "buffer_font_family": "MonoLisa Variable",
   "buffer_font_size": 14,
+  "buffer_font_features": {
+    "calt": true,
+    "liga": true,
+    "zero": true,
+    "onum": true,
+    "ss01": true,
+    "ss03": true,
+    "ss04": true,
+    "ss05": true,
+    "ss06": true,
+    "ss07": true,
+    "ss08": true,
+    "ss09": true,
+    "ss10": true,
+    "ss11": true,
+    "ss12": true,
+    "ss13": true,
+    "ss14": true,
+    "ss15": true,
+    "ss16": true,
+    "ss17": true,
+    "ss18": true
+  },
   "tab_size": 2,
   "remove_trailing_whitespace_on_save": true,
   "show_whitespaces": "selection",
