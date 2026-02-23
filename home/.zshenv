@@ -7,8 +7,9 @@
 #-----------------------------------------------------------
 
 # Load OS detection utility
-source "$HOME/.bin/utils.sh"
-DOT_TARGET="$(_mrgsh_get_system)"
+# source "$HOME/.bin/utils.sh"
+# DOT_TARGET="$(_mrgsh_get_system)"
+DOT_TARGET="macos"
 
 # Skip loading for global system scripts
 [[ -o no_global_rcs ]] && return
