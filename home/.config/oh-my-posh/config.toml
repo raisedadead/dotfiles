@@ -1,6 +1,8 @@
 "$schema" = "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json"
 version = 4
 final_space = true
+async = true
+shell_integration = true
 
 # --- Catppuccin Mocha (red from Tokyo Night) ---
 [palette]
@@ -33,7 +35,7 @@ crust = '#11111b'
 
 [upgrade]
 auto = false
-notice = false
+notice = true
 
 # Main prompt
 [[blocks]]
@@ -54,10 +56,7 @@ type = 'path'
 style = 'plain'
 foreground = 'p:maroon'
 template = "{{ .Path }}{{ if not .Writable }} \U000F033E{{ end }} "
-
-[blocks.segments.options]
-style = 'full'
-home_icon = '~'
+options = { style = 'full', home_icon = '~' }
 
 # Git (worktree-aware: shows worktree indicator OR branch+status, never both)
 [[blocks.segments]]
@@ -66,12 +65,16 @@ style = 'plain'
 foreground = 'p:lavender'
 timeout = 200
 template = "{{ if eq .HEAD \"\" }}on \U000F0645 worktrees {{ else }}on \uE725 {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
+options = { fetch_status = true, branch_icon = '', commit_icon = '', tag_icon = '' }
 
-[blocks.segments.options]
-fetch_status = true
-branch_icon = ''
-commit_icon = ''
-tag_icon = ''
+# Kubernetes context
+[[blocks.segments]]
+type = 'kubectl'
+style = 'plain'
+foreground = 'p:blue'
+timeout = 200
+template = "on \U000F10FE {{ .Context }}{{ if .Namespace }} ({{ .Namespace }}){{ end }} "
+cache = { duration = '5m', strategy = 'session' }
 
 # Docker context (skip default and orbstack)
 [[blocks.segments]]
@@ -80,6 +83,7 @@ style = 'plain'
 foreground = 'p:blue'
 timeout = 200
 template = "{{ if and (ne .Context \"default\") (ne .Context \"orbstack\") }}via \uF308  {{ .Context }} {{ end }}"
+cache = { duration = '5m', strategy = 'session' }
 
 # Node.js
 [[blocks.segments]]
@@ -88,9 +92,7 @@ style = 'plain'
 foreground = 'p:green'
 timeout = 200
 template = "via \uE718 {{ .Full }} "
-
-[blocks.segments.options]
-display_mode = 'context'
+options.display_mode = 'context'
 
 # Go
 [[blocks.segments]]
@@ -108,32 +110,13 @@ foreground = 'p:yellow'
 timeout = 200
 template = "via \uE235 {{ .Full }} "
 
-# Terraform
-[[blocks.segments]]
-type = 'terraform'
-style = 'plain'
-foreground = 'p:mauve'
-timeout = 200
-template = "via \U000F1062 {{ .Version }} "
-
-# AWS
-[[blocks.segments]]
-type = 'aws'
-style = 'plain'
-foreground = 'p:peach'
-timeout = 200
-template = "on \uE33D {{ .Profile }}{{ if .Region }} ({{ .Region }}){{ end }} "
-
 # Execution time (only shows for commands >2s)
 [[blocks.segments]]
 type = 'executiontime'
 style = 'plain'
 foreground = 'p:yellow'
 template = "took \u23F1 {{ .FormattedMs }} "
-
-[blocks.segments.options]
-threshold = 2000
-style = 'austin'
+options = { threshold = 2000, style = 'austin' }
 
 # Prompt character (on new line, red on error)
 [[blocks]]
@@ -147,6 +130,4 @@ style = 'plain'
 foreground = 'p:green'
 foreground_templates = ["{{ if gt .Code 0 }}p:red{{ end }}"]
 template = "\u276F"
-
-[blocks.segments.options]
-always_enabled = true
+options.always_enabled = true
