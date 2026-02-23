@@ -141,21 +141,17 @@ zsh-defer -c "
   [[ -f ~/.alias.zshrc && ! -f ~/.alias.zshrc.zwc ]] && zcompile ~/.alias.zshrc
 "
 
-# Note: Homebrew is already in path via /etc/paths.d/homebrew,
-#  but we need it here to avoid this:
-#
-#  ```
-#  Warning: /usr/bin occurs before /opt/homebrew/bin in your PATH.
-#  This means that system-provided programs will be used instead of those
-#  provided by Homebrew.
-#  ```
-#
-#  The probnlem is, this will make Node.js from homebrew,
-#  if installed by a formula, or cask take precedence over
-#  fnm-managed Node.js.
+# Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
+# fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
 export PATH="/opt/homebrew/bin:$PATH"
-#  so Node.js version manager (fnm) should be installed after Homebrew in path
-eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines)" && clear
+
+_fnm_cache="$HOME/.cache/fnm-env.zsh"
+_fnm_bin="$(whence -p fnm)"
+if [[ ! -f "$_fnm_cache" ]] || [[ "$_fnm_bin" -nt "$_fnm_cache" ]]; then
+  fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines > "$_fnm_cache"
+  zcompile "$_fnm_cache"
+fi
+source "$_fnm_cache"
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
