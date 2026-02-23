@@ -64,8 +64,8 @@ type = 'git'
 style = 'plain'
 foreground = 'p:lavender'
 timeout = 200
-template = "{{ if eq .HEAD \"\" }}on \U000F0645 worktrees {{ else }}on \uE725 {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
-options = { fetch_status = true, branch_icon = '', commit_icon = '', tag_icon = '' }
+template = "{{ if eq .HEAD \"\" }}on \U000F0645 worktrees {{ else }}on {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
+options = { fetch_status = true, branch_icon = "\uE725 ", commit_icon = "\uF417 ", tag_icon = "\uF412 " }
 
 # Kubernetes context (only in k8s/k3s project dirs)
 [[blocks.segments]]
@@ -73,29 +73,35 @@ type = 'kubectl'
 style = 'plain'
 foreground = 'p:blue'
 timeout = 200
-template = "on \U000F10FE {{ .Context }}{{ if .Namespace }} ({{ .Namespace }}){{ end }} "
-cache = { duration = '5m', strategy = 'session' }
+template = "<p:overlay0>\u00B7</> \U000F10FE {{ .Context }}{{ if .Namespace }} ({{ .Namespace }}){{ end }} "
 include_folders = ['.*k[38]s.*']
 
-# Docker context — file-based (compose file in cwd, but not already in a docker path)
+# Docker context — context-based (non-orbstack, outside docker paths)
 [[blocks.segments]]
 type = 'docker'
 style = 'plain'
-foreground = 'p:blue'
+foreground = 'p:sky'
 timeout = 200
-template = "{{ if and (ne .Context \"default\") (ne .Context \"orbstack\") }}via \uF308  {{ .Context }} {{ end }}"
-cache = { duration = '5m', strategy = 'session' }
+template = "{{ if ne .Context \"orbstack\" }}<p:overlay0>\u00B7</> \uF308  {{ .Context }} {{ end }}"
 exclude_folders = ['.*docker.*']
-options = { display_mode = 'files' }
 
-# Docker context — path-based (dir path contains "docker")
+# Docker context — file-based (compose/Dockerfile in cwd, outside docker paths)
 [[blocks.segments]]
 type = 'docker'
 style = 'plain'
-foreground = 'p:blue'
+foreground = 'p:sky'
 timeout = 200
-template = "{{ if and (ne .Context \"default\") (ne .Context \"orbstack\") }}via \uF308  {{ .Context }} {{ end }}"
-cache = { duration = '5m', strategy = 'session' }
+template = "{{ if or (eq .Context \"orbstack\") (eq .Context \"default\") }}<p:overlay0>\u00B7</> \uF308  {{ .Context }} {{ end }}"
+exclude_folders = ['.*docker.*']
+options = { display_mode = 'files', fetch_context = true }
+
+# Docker context — path-based (dir path contains "docker", any context)
+[[blocks.segments]]
+type = 'docker'
+style = 'plain'
+foreground = 'p:sky'
+timeout = 200
+template = "<p:overlay0>\u00B7</> \uF308  {{ .Context }} "
 include_folders = ['.*docker.*']
 
 # Node.js
@@ -104,16 +110,16 @@ type = 'node'
 style = 'plain'
 foreground = 'p:green'
 timeout = 200
-template = "via \uE718 {{ .Full }} "
+template = "<p:overlay0>\u00B7</> \uE718 {{ .Full }} "
 options.display_mode = 'context'
 
 # Go
 [[blocks.segments]]
 type = 'go'
 style = 'plain'
-foreground = 'p:sapphire'
+foreground = 'p:teal'
 timeout = 200
-template = "via \uE627 {{ .Full }} "
+template = "<p:overlay0>\u00B7</> \uE627 {{ .Full }} "
 
 # Python
 [[blocks.segments]]
@@ -121,14 +127,14 @@ type = 'python'
 style = 'plain'
 foreground = 'p:yellow'
 timeout = 200
-template = "via \uE235 {{ .Full }} "
+template = "<p:overlay0>\u00B7</> \uE235 {{ .Full }} "
 
 # Execution time (only shows for commands >2s)
 [[blocks.segments]]
 type = 'executiontime'
 style = 'plain'
-foreground = 'p:yellow'
-template = "took \u23F1 {{ .FormattedMs }} "
+foreground = 'p:peach'
+template = "<p:overlay0>\u00B7</> \u23F1 {{ .FormattedMs }} "
 options = { threshold = 2000, style = 'austin' }
 
 # Prompt character (on new line, red on error)
