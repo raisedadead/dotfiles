@@ -178,21 +178,21 @@ foreground_templates = [
 ]
 template = "{{ if eq .State.String \"Discharging\" }}{{ if lt .Percentage 10.0 }}\U000F007A{{ else if lt .Percentage 20.0 }}\U000F007B{{ else if lt .Percentage 30.0 }}\U000F007C{{ else if lt .Percentage 40.0 }}\U000F007D{{ else if lt .Percentage 50.0 }}\U000F007E{{ else if lt .Percentage 60.0 }}\U000F007F{{ else if lt .Percentage 70.0 }}\U000F0080{{ else if lt .Percentage 80.0 }}\U000F0081{{ else }}\U000F0082{{ end }}  {{ round .Percentage 0 }}%{{ if lt .Percentage 20.0 }}!{{ end }} {{ end }}{{ if and (eq .State.String \"Charging\") (lt .Percentage 80.0) }}{{ if lt .Percentage 40.0 }}\U000F089C{{ else }}\U000F008A{{ end }}  {{ round .Percentage 0 }}% {{ end }}"
 
-# CPU load (>60%, red >80%, derived from Load1 / 10 cores)
-[[blocks.segments]]
-type = 'sysinfo'
-style = 'plain'
-foreground = 'p:peach'
-foreground_templates = ["{{ if gt (mulf (divf .Load1 10.0) 100.0) 80.0 }}p:red{{ end }}"]
-template = "{{ if gt (mulf (divf .Load1 10.0) 100.0) 60.0 }}\U000F035B  {{ round (mulf (divf .Load1 10.0) 100.0) 0 }}% <p:overlay0>\u2022</> {{ end }}"
-
-# Memory (>60%, red >80%)
-[[blocks.segments]]
-type = 'sysinfo'
-style = 'plain'
-foreground = 'p:yellow'
-foreground_templates = ["{{ if gt .PhysicalPercentUsed 80.0 }}p:red{{ end }}"]
-template = "{{ if gt .PhysicalPercentUsed 60.0 }}\uefc5  {{ round .PhysicalPercentUsed 0 }}%{{ end }}"
+# # CPU load (>60%, red >80%, derived from Load5 / 10 cores)
+# [[blocks.segments]]
+# type = 'sysinfo'
+# style = 'plain'
+# foreground = 'p:peach'
+# foreground_templates = ["{{ if gt (mulf (divf .Load5 10.0) 100.0) 80.0 }}p:red{{ end }}"]
+# template = "{{ if gt (mulf (divf .Load5 10.0) 100.0) 60.0 }}\U000F035B  {{ round (mulf (divf .Load5 10.0) 100.0) 0 }}% <p:overlay0>\u2022</> {{ end }}"
+#
+# # Memory (>60%, red >80%)
+# [[blocks.segments]]
+# type = 'sysinfo'
+# style = 'plain'
+# foreground = 'p:yellow'
+# foreground_templates = ["{{ if gt .PhysicalPercentUsed 80.0 }}p:red{{ end }}"]
+# template = "{{ if gt .PhysicalPercentUsed 60.0 }}\uefc5  {{ round .PhysicalPercentUsed 0 }}%{{ end }}"
 
 # Prompt character (on new line, red on error)
 [[blocks]]
