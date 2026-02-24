@@ -10,14 +10,10 @@ quick-terminal-position = center
 quick-terminal-size = 50%,50%
 quick-terminal-screen = mouse
 quick-terminal-animation-duration = 0.1
-quick-terminal-space-behavior = move
 
 # Clipboard
 clipboard-read = allow
 copy-on-select = clipboard
-
-# Scrollback
-scrollback-limit = 10000000
 
 # Window & Display
 window-save-state = always
@@ -28,7 +24,6 @@ window-padding-y = 10,0
 window-padding-color = extend
 window-width = 166
 window-height = 54
-window-inherit-font-size = true
 
 # Appearance & Transparency
 background-opacity = 0.9
@@ -53,9 +48,6 @@ font-feature = ss01
 font-feature = zero
 font-codepoint-map = U+E000-U+F8FF=Symbols Nerd Font
 font-codepoint-map = U+F0000-U+FFFFF=Symbols Nerd Font
-
-# Links
-link-previews = true
 
 # Shaders
 custom-shader = shaders/cursor_warp.glsl
