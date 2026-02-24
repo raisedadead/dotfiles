@@ -3,6 +3,7 @@ version = 4
 final_space = true
 async = true
 shell_integration = true
+streaming = 100
 
 # --- Catppuccin Mocha (red from Tokyo Night) ---
 [palette]
@@ -34,7 +35,7 @@ mantle = '#181825'
 crust = '#11111b'
 
 [upgrade]
-auto = false
+auto = true
 notice = true
 
 # Main prompt
@@ -58,14 +59,14 @@ foreground = 'p:maroon'
 template = "{{ .Path }}{{ if not .Writable }} \U000F033E{{ end }} "
 options = { style = 'full', home_icon = '~' }
 
-# Git (worktree-aware: shows worktree indicator OR branch+status, never both)
+# Git (worktree-aware: bare root shows worktree icon only, worktree checkouts show full git info with worktree prefix)
 [[blocks.segments]]
 type = 'git'
 style = 'plain'
 foreground = 'p:lavender'
 timeout = 200
-template = "{{ if eq .HEAD \"\" }}on \U000F0645 worktrees {{ else }}on {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
-options = { fetch_status = true, branch_icon = "\uE725 ", commit_icon = "\uF417 ", tag_icon = "\uF412 " }
+template = "{{ if .IsBare }}on \U000F0645 worktrees {{ else }}on {{ if .IsWorkTree }}\U000F0645 {{ else }}\uE725 {{ end }}{{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
+options = { fetch_status = true, fetch_bare_info = true, branch_icon = "", commit_icon = "\uF417 ", tag_icon = "\uF412 " }
 
 # Kubernetes context (only in k8s/k3s project dirs)
 [[blocks.segments]]
@@ -174,7 +175,7 @@ foreground = 'p:green'
 foreground_templates = [
   "{{ if lt .Percentage 20.0 }}p:red{{ end }}",
   "{{ if and (ge .Percentage 20.0) (lt .Percentage 40.0) }}p:maroon{{ end }}",
-  "{{ if and (ge .Percentage 40.0) (lt .Percentage 60.0) }}p:yellow{{ end }}"
+  "{{ if and (ge .Percentage 40.0) (lt .Percentage 60.0) }}p:yellow{{ end }}",
 ]
 template = "{{ if eq .State.String \"Discharging\" }}{{ if lt .Percentage 10.0 }}\U000F007A{{ else if lt .Percentage 20.0 }}\U000F007B{{ else if lt .Percentage 30.0 }}\U000F007C{{ else if lt .Percentage 40.0 }}\U000F007D{{ else if lt .Percentage 50.0 }}\U000F007E{{ else if lt .Percentage 60.0 }}\U000F007F{{ else if lt .Percentage 70.0 }}\U000F0080{{ else if lt .Percentage 80.0 }}\U000F0081{{ else }}\U000F0082{{ end }}  {{ round .Percentage 0 }}%{{ if lt .Percentage 20.0 }}!{{ end }} {{ end }}{{ if and (eq .State.String \"Charging\") (lt .Percentage 80.0) }}{{ if lt .Percentage 40.0 }}\U000F089C{{ else }}\U000F008A{{ end }}  {{ round .Percentage 0 }}% {{ end }}"
 
