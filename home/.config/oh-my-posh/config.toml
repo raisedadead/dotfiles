@@ -113,6 +113,22 @@ timeout = 200
 template = "<p:overlay0>\u2022</> \uE718 {{ .Full }} "
 options.display_mode = 'context'
 
+# pnpm (lockfile-gated via glob)
+[[blocks.segments]]
+type = 'pnpm'
+style = 'plain'
+foreground = 'p:peach'
+timeout = 500
+template = "{{ if glob \"pnpm-lock.yaml\" }}<p:overlay0>\u2022</> \ue865 {{ .Full }} {{ end }}"
+
+# npm (lockfile-gated via glob)
+[[blocks.segments]]
+type = 'npm'
+style = 'plain'
+foreground = 'p:red'
+timeout = 500
+template = "{{ if glob \"package-lock.json\" }}<p:overlay0>\u2022</> \uE71E {{ .Full }} {{ end }}"
+
 # Go
 [[blocks.segments]]
 type = 'go'
@@ -129,6 +145,15 @@ foreground = 'p:yellow'
 timeout = 200
 template = "<p:overlay0>\u2022</> \uE235 {{ .Full }} "
 
+# Zig
+[[blocks.segments]]
+type = 'zig'
+style = 'plain'
+foreground = 'p:flamingo'
+timeout = 200
+template = "<p:overlay0>\u2022</> \ue6a9 {{ .Full }} "
+options.display_mode = 'context'
+
 # Execution time (only shows for commands >2s)
 [[blocks.segments]]
 type = 'executiontime'
@@ -136,6 +161,38 @@ style = 'plain'
 foreground = 'p:peach'
 template = "<p:overlay0>\u2022</> \u23F1 {{ .FormattedMs }} "
 options = { threshold = 2000, style = 'austin' }
+
+# Battery warning (right-aligned, only when discharging <25%)
+[[blocks]]
+type = 'prompt'
+alignment = 'right'
+
+[[blocks.segments]]
+type = 'battery'
+style = 'plain'
+foreground = 'p:green'
+foreground_templates = [
+  "{{ if lt .Percentage 20.0 }}p:red{{ end }}",
+  "{{ if and (ge .Percentage 20.0) (lt .Percentage 40.0) }}p:maroon{{ end }}",
+  "{{ if and (ge .Percentage 40.0) (lt .Percentage 60.0) }}p:yellow{{ end }}"
+]
+template = "{{ if eq .State.String \"Discharging\" }}{{ if lt .Percentage 10.0 }}\U000F007A{{ else if lt .Percentage 20.0 }}\U000F007B{{ else if lt .Percentage 30.0 }}\U000F007C{{ else if lt .Percentage 40.0 }}\U000F007D{{ else if lt .Percentage 50.0 }}\U000F007E{{ else if lt .Percentage 60.0 }}\U000F007F{{ else if lt .Percentage 70.0 }}\U000F0080{{ else if lt .Percentage 80.0 }}\U000F0081{{ else }}\U000F0082{{ end }}  {{ round .Percentage 0 }}%{{ if lt .Percentage 20.0 }}!{{ end }} {{ end }}{{ if and (eq .State.String \"Charging\") (lt .Percentage 80.0) }}{{ if lt .Percentage 40.0 }}\U000F089C{{ else }}\U000F008A{{ end }}  {{ round .Percentage 0 }}% {{ end }}"
+
+# CPU load (>60%, red >80%, derived from Load1 / 10 cores)
+[[blocks.segments]]
+type = 'sysinfo'
+style = 'plain'
+foreground = 'p:peach'
+foreground_templates = ["{{ if gt (mulf (divf .Load1 10.0) 100.0) 80.0 }}p:red{{ end }}"]
+template = "{{ if gt (mulf (divf .Load1 10.0) 100.0) 60.0 }}\U000F035B  {{ round (mulf (divf .Load1 10.0) 100.0) 0 }}% <p:overlay0>\u2022</> {{ end }}"
+
+# Memory (>60%, red >80%)
+[[blocks.segments]]
+type = 'sysinfo'
+style = 'plain'
+foreground = 'p:yellow'
+foreground_templates = ["{{ if gt .PhysicalPercentUsed 80.0 }}p:red{{ end }}"]
+template = "{{ if gt .PhysicalPercentUsed 60.0 }}\uefc5  {{ round .PhysicalPercentUsed 0 }}%{{ end }}"
 
 # Prompt character (on new line, red on error)
 [[blocks]]
