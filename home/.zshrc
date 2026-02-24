@@ -67,6 +67,7 @@ zsh-defer -c "zinit compile --all 2>/dev/null"
 
 # Load completions before compinit (per zsh-completions guidelines)
 zinit light zsh-users/zsh-completions
+zinit light wbingli/zsh-claudecode-completion
 
 # Add Homebrew completions to FPATH before compinit
 [[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"
