@@ -2,8 +2,6 @@
 version = 4
 final_space = true
 async = true
-shell_integration = true
-streaming = 100
 
 # --- Catppuccin Mocha (red from Tokyo Night) ---
 [palette]
