@@ -29,6 +29,11 @@ run  = "plugin smart-filter"
 desc = "Smart filter"
 
 [[mgr.prepend_keymap]]
+on   = "S"
+run  = "plugin fr rg"
+desc = "Search file contents (rg + fzf)"
+
+[[mgr.prepend_keymap]]
 on   = ["g", "i"]
 run  = "plugin lazygit"
 desc = "Open lazygit"
@@ -37,16 +42,6 @@ desc = "Open lazygit"
 on   = "<A-y>"
 run  = "plugin copy-file-contents"
 desc = "Copy file contents to clipboard"
-
-[[mgr.prepend_keymap]]
-on   = "o"
-run  = "plugin open-with-cmd -- block"
-desc = "Open with command in terminal"
-
-[[mgr.prepend_keymap]]
-on   = "O"
-run  = "plugin open-with-cmd"
-desc = "Open with command in background"
 
 [[mgr.prepend_keymap]]
 on   = "<Backspace>"
@@ -87,29 +82,3 @@ desc = "Show keybindings help"
 on   = "<C-y>"
 run  = 'shell "echo %s | cb" --orphan'
 desc = "Copy file path to clipboard"
-
-# Bookmarks (yamb)
-[[mgr.prepend_keymap]]
-on   = ["u", "a"]
-run  = "plugin yamb save"
-desc = "Bookmark: save current dir"
-
-[[mgr.prepend_keymap]]
-on   = ["u", "g"]
-run  = "plugin yamb jump_by_key"
-desc = "Bookmark: jump by key"
-
-[[mgr.prepend_keymap]]
-on   = ["u", "G"]
-run  = "plugin yamb jump_by_fzf"
-desc = "Bookmark: jump by fzf"
-
-[[mgr.prepend_keymap]]
-on   = ["u", "d"]
-run  = "plugin yamb delete_by_key"
-desc = "Bookmark: delete by key"
-
-[[mgr.prepend_keymap]]
-on   = ["u", "r"]
-run  = "plugin yamb rename_by_key"
-desc = "Bookmark: rename by key"
