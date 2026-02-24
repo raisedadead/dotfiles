@@ -73,7 +73,7 @@ type = 'kubectl'
 style = 'plain'
 foreground = 'p:blue'
 timeout = 200
-template = "<p:overlay0>\u00B7</> \U000F10FE {{ .Context }}{{ if .Namespace }} ({{ .Namespace }}){{ end }} "
+template = "<p:overlay0>\u2022</> \U000F10FE {{ .Context }}{{ if .Namespace }} ({{ .Namespace }}){{ end }} "
 include_folders = ['.*k[38]s.*']
 
 # Docker context — context-based (non-orbstack, outside docker paths)
@@ -82,7 +82,7 @@ type = 'docker'
 style = 'plain'
 foreground = 'p:sky'
 timeout = 200
-template = "{{ if ne .Context \"orbstack\" }}<p:overlay0>\u00B7</> \uF308  {{ .Context }} {{ end }}"
+template = "{{ if ne .Context \"orbstack\" }}<p:overlay0>\u2022</> \uF308  {{ .Context }} {{ end }}"
 exclude_folders = ['.*docker.*']
 
 # Docker context — file-based (compose/Dockerfile in cwd, outside docker paths)
@@ -91,7 +91,7 @@ type = 'docker'
 style = 'plain'
 foreground = 'p:sky'
 timeout = 200
-template = "{{ if or (eq .Context \"orbstack\") (eq .Context \"default\") }}<p:overlay0>\u00B7</> \uF308  {{ .Context }} {{ end }}"
+template = "{{ if or (eq .Context \"orbstack\") (eq .Context \"default\") }}<p:overlay0>\u2022</> \uF308  {{ .Context }} {{ end }}"
 exclude_folders = ['.*docker.*']
 options = { display_mode = 'files', fetch_context = true }
 
@@ -101,7 +101,7 @@ type = 'docker'
 style = 'plain'
 foreground = 'p:sky'
 timeout = 200
-template = "<p:overlay0>\u00B7</> \uF308  {{ .Context }} "
+template = "<p:overlay0>\u2022</> \uF308  {{ .Context }} "
 include_folders = ['.*docker.*']
 
 # Node.js
@@ -110,7 +110,7 @@ type = 'node'
 style = 'plain'
 foreground = 'p:green'
 timeout = 200
-template = "<p:overlay0>\u00B7</> \uE718 {{ .Full }} "
+template = "<p:overlay0>\u2022</> \uE718 {{ .Full }} "
 options.display_mode = 'context'
 
 # Go
@@ -119,7 +119,7 @@ type = 'go'
 style = 'plain'
 foreground = 'p:teal'
 timeout = 200
-template = "<p:overlay0>\u00B7</> \uE627 {{ .Full }} "
+template = "<p:overlay0>\u2022</> \uE627 {{ .Full }} "
 
 # Python
 [[blocks.segments]]
@@ -127,14 +127,14 @@ type = 'python'
 style = 'plain'
 foreground = 'p:yellow'
 timeout = 200
-template = "<p:overlay0>\u00B7</> \uE235 {{ .Full }} "
+template = "<p:overlay0>\u2022</> \uE235 {{ .Full }} "
 
 # Execution time (only shows for commands >2s)
 [[blocks.segments]]
 type = 'executiontime'
 style = 'plain'
 foreground = 'p:peach'
-template = "<p:overlay0>\u00B7</> \u23F1 {{ .FormattedMs }} "
+template = "<p:overlay0>\u2022</> \u23F1 {{ .FormattedMs }} "
 options = { threshold = 2000, style = 'austin' }
 
 # Prompt character (on new line, red on error)
