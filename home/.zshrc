@@ -58,6 +58,10 @@ bindkey '^[f' forward-word          # Alt+F / Opt+Right: forward word (accepts s
 bindkey '^[b' backward-word         # Alt+B / Opt+Left: backward word
 bindkey '^[[1;3C' forward-word      # Opt+Right arrow
 bindkey '^[[1;3D' backward-word     # Opt+Left arrow
+bindkey '\eh' backward-word         # Alt+H: back one word
+bindkey '\el' forward-word          # Alt+L: forward one word (accepts suggestion word-by-word)
+bindkey '\ej' down-line-or-history  # Alt+J: next history
+bindkey '\ek' up-line-or-history    # Alt+K: prev history
 
 # Prompt
 # can_haz starship && eval "$(starship init zsh)"

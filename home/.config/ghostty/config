@@ -69,10 +69,16 @@ keybind = cmd+shift+h=goto_split:left
 keybind = cmd+shift+j=goto_split:bottom
 keybind = cmd+shift+k=goto_split:top
 keybind = cmd+shift+l=goto_split:right
-keybind = cmd+shift+left=resize_split:left,40
-keybind = cmd+shift+right=resize_split:right,40
-keybind = cmd+shift+up=resize_split:up,40
-keybind = cmd+shift+down=resize_split:down,40
+keybind = cmd+ctrl+h=resize_split:left,40
+keybind = cmd+ctrl+j=resize_split:down,40
+keybind = cmd+ctrl+k=resize_split:up,40
+keybind = cmd+ctrl+l=resize_split:right,40
+
+# Scrollback
+keybind = ctrl+shift+j=scroll_page_lines:5
+keybind = ctrl+shift+k=scroll_page_lines:-5
+keybind = ctrl+shift+h=scroll_to_top
+keybind = ctrl+shift+l=scroll_to_bottom
 
 # Split management
 keybind = cmd+shift+e=equalize_splits

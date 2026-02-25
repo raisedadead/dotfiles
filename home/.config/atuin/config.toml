@@ -71,6 +71,9 @@ show_preview = true
 ## possible values: return-original, return-query
 # exit_mode = "return-original"
 
+## possible values: emacs, vim-normal, auto
+keymap_mode = "vim-normal"
+
 ## possible values: emacs, subl
 # word_jump_mode = "emacs"
 
