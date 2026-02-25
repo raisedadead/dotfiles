@@ -65,7 +65,7 @@ bindkey '\ek' up-line-or-history    # Alt+K: prev history
 
 # Prompt
 # can_haz starship && eval "$(starship init zsh)"
-can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
+cached_evalz oh-my-posh "oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml"
 
 #-----------------------------------------------------------
 # Plugin Manager
@@ -83,8 +83,14 @@ source ~/.fzf.zsh
 # FZF styling (can be deferred)
 zsh-defer source ~/.fzf.zshrc
 
-# Compile zinit and plugins for faster loading
-zsh-defer -c "zinit compile --all 2>/dev/null"
+# Compile zinit and plugins (once daily via stamp file)
+zsh-defer -c '
+  local stamp="$HOME/.cache/zinit-compile-stamp"
+  if [[ ! -f "$stamp" ]] || [[ $(( $(date +%s) - $(stat -f%m "$stamp" 2>/dev/null || echo 0) )) -gt 86400 ]]; then
+    zinit compile --all 2>/dev/null
+    touch "$stamp"
+  fi
+'
 
 # Load completions before compinit (per zsh-completions guidelines)
 zinit light zsh-users/zsh-completions
@@ -96,8 +102,14 @@ zinit light wbingli/zsh-claudecode-completion
 # Add custom completions to FPATH (highest priority - added last so it's first)
 [[ -d ~/.zfunc ]] && FPATH="$HOME/.zfunc:$FPATH"
 
-# Load completion system immediately
-autoload -Uz compinit && compinit -C
+# Load completion system (full rebuild once daily, cached otherwise)
+autoload -Uz compinit
+local zcomp="$HOME/.zcompdump"
+if [[ ! -f "$zcomp" ]] || [[ $(( $(date +%s) - $(stat -f%m "$zcomp" 2>/dev/null || echo 0) )) -gt 86400 ]]; then
+  compinit
+else
+  compinit -C
+fi
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
@@ -157,12 +169,12 @@ zsh-defer -c '[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"'
 zsh-defer -c '[[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh'
 zsh-defer -c 'can_haz homeshick && export HOMESHICK_DIR=/opt/homebrew/opt/homeshick && source /opt/homebrew/opt/homeshick/homeshick.sh'
 
-# Config compilation
-zsh-defer -c "
-  [[ -f ~/.zshrc && ! -f ~/.zshrc.zwc ]] && zcompile ~/.zshrc
-  [[ -f ~/.zshenv && ! -f ~/.zshenv.zwc ]] && zcompile ~/.zshenv
-  [[ -f ~/.alias.zshrc && ! -f ~/.alias.zshrc.zwc ]] && zcompile ~/.alias.zshrc
-"
+# Config compilation (recompile when source is newer than .zwc)
+zsh-defer -c '
+  for f in ~/.zshrc ~/.zshenv ~/.alias.zshrc; do
+    [[ -f "$f" ]] && [[ ! -f "$f.zwc" || "$f" -nt "$f.zwc" ]] && zcompile "$f"
+  done
+'
 
 # Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
 # fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
