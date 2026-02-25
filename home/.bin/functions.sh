@@ -57,3 +57,6 @@ compdef '_describe "cleanup junk" "(cleanup:\"cleanup macOS junk files\")"' clea
 
 # load keybindings
 source ~/.bin/keybindings.sh
+
+# load which-key
+source ~/.bin/which-key.sh
