@@ -60,6 +60,7 @@ cursor-click-to-move = true
 # macOS Specific
 macos-titlebar-style = hidden
 macos-titlebar-proxy-icon = hidden
+macos-option-as-alt = left
 
 # Keybindings
 keybind = shift+enter=text:\n
