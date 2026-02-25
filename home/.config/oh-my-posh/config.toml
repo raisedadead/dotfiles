@@ -111,6 +111,11 @@ foreground = 'p:green'
 timeout = 200
 template = "<p:overlay0>\u2022</> \uE718 {{ .Full }} "
 options.display_mode = 'context'
+options.cache_duration = '5m'
+
+[blocks.segments.cache]
+duration = "5m"
+strategy = "folder"
 
 # pnpm (lockfile-gated via glob)
 [[blocks.segments]]
@@ -119,6 +124,11 @@ style = 'plain'
 foreground = 'p:peach'
 timeout = 500
 template = "{{ if glob \"pnpm-lock.yaml\" }}<p:overlay0>\u2022</> \ue865 {{ .Full }} {{ end }}"
+options.cache_duration = '5m'
+
+[blocks.segments.cache]
+duration = "5m"
+strategy = "folder"
 
 # npm (lockfile-gated via glob)
 [[blocks.segments]]
@@ -127,6 +137,11 @@ style = 'plain'
 foreground = 'p:red'
 timeout = 500
 template = "{{ if glob \"package-lock.json\" }}<p:overlay0>\u2022</> \uE71E {{ .Full }} {{ end }}"
+options.cache_duration = '5m'
+
+[blocks.segments.cache]
+duration = "5m"
+strategy = "folder"
 
 # Go
 [[blocks.segments]]
