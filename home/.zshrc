@@ -54,6 +54,10 @@ cached_evalz() {
 # Keybindings
 bindkey -e  # Emacs mode
 bindkey -M viins 'jk' vi-cmd-mode
+bindkey '^[f' forward-word          # Alt+F / Opt+Right: forward word (accepts suggestion word-by-word)
+bindkey '^[b' backward-word         # Alt+B / Opt+Left: backward word
+bindkey '^[[1;3C' forward-word      # Opt+Right arrow
+bindkey '^[[1;3D' backward-word     # Opt+Left arrow
 
 # Prompt
 # can_haz starship && eval "$(starship init zsh)"
