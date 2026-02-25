@@ -35,8 +35,21 @@ setopt CDABLE_VARS
 setopt INTERACTIVECOMMENTS
 
 # Helpers
-can_haz() { command -v "$1" >/dev/null 2>&1 }
+can_haz() { whence -p "$1" >/dev/null 2>&1 }
 timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
+
+# Cache and source tool-generated shell code (regenerates when binary updates)
+# Usage: cached_evalz <tool> "<command>"
+cached_evalz() {
+  local tool=$1 cmd=$2 cache_dir="$HOME/.cache/zsh-eval-cache"
+  can_haz "$tool" || return 1
+  local bin="$(whence -p "$tool")" cache="$cache_dir/$tool.zsh"
+  [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
+  if [[ ! -f "$cache" ]] || [[ "$bin" -nt "$cache" ]]; then
+    eval "$cmd" > "$cache" 2>/dev/null && zcompile "$cache" 2>/dev/null
+  fi
+  source "$cache"
+}
 
 # Keybindings
 bindkey -e  # Emacs mode
@@ -115,17 +128,18 @@ zinit wait"2b" silent for \
 # Tool Integrations
 #-----------------------------------------------------------
 
-
-# Modern tools (interactive only)
 if [[ -o interactive ]]; then
-  zsh-defer -c 'can_haz atuin && eval "$(atuin init zsh --disable-up-arrow)"'
-  zsh-defer -c 'can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"'
-  zsh-defer -c 'can_haz direnv && eval "$(direnv hook zsh)"'
-  zsh-defer -c 'can_haz gh && eval "$(gh completion -s zsh)"'
-  zsh-defer -c 'can_haz op && eval "$(op completion zsh)"; compdef _op op'
-  zsh-defer -c 'can_haz but && eval "$(but completions zsh)"'
-  zsh-defer -c 'can_haz wrangler && eval "$(wrangler completions zsh)"'
-  # zsh-defer -c 'can_haz pkgx && source <(pkgx --shellcode)'
+  # Sync inits (hooks in place before first prompt — no post-prompt re-renders)
+  cached_evalz atuin "atuin init zsh --disable-up-arrow"
+  cached_evalz zoxide "zoxide init --cmd cd --hook pwd zsh"
+
+  # Deferred inits and completions (cached = instant source, no subprocess spawn)
+  zsh-defer -c 'cached_evalz direnv "direnv hook zsh"'
+  zsh-defer -c 'cached_evalz gh "gh completion -s zsh"'
+  zsh-defer -c 'cached_evalz op "op completion zsh" && compdef _op op'
+  zsh-defer -c 'cached_evalz but "but completions zsh"'
+  zsh-defer -c 'cached_evalz wrangler "wrangler complete zsh"'
+  # zsh-defer -c 'cached_evalz pkgx "pkgx --shellcode"'
 fi
 
 # File sourcing
@@ -145,14 +159,7 @@ zsh-defer -c "
 # Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
 # fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
 export PATH="/opt/homebrew/bin:$PATH"
-
-_fnm_cache="$HOME/.cache/fnm-env.zsh"
-_fnm_bin="$(whence -p fnm)"
-if [[ ! -f "$_fnm_cache" ]] || [[ "$_fnm_bin" -nt "$_fnm_cache" ]]; then
-  fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet > "$_fnm_cache"
-  zcompile "$_fnm_cache"
-fi
-source "$_fnm_cache" >/dev/null 2>&1
+cached_evalz fnm "fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet"
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
