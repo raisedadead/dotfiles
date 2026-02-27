@@ -159,6 +159,7 @@ if [[ -o interactive ]]; then
   zsh-defer -c 'cached_evalz op "op completion zsh" && compdef _op op'
   zsh-defer -c 'cached_evalz but "but completions zsh"'
   zsh-defer -c 'cached_evalz wrangler "wrangler complete zsh"'
+  zsh-defer -c 'cached_evalz wt "wt shell-init zsh"'
   # zsh-defer -c 'cached_evalz pkgx "pkgx --shellcode"'
 fi
 

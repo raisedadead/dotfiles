@@ -62,7 +62,7 @@ alias genpass='openssl rand -hex 32'
 if can_haz "$HOME/DEV/rd/wt/main/bin/wt"; then
   wt_bin="$HOME/DEV/rd/wt/main/bin/wt"
   alias wt-dev="$wt_bin"
-  alias wtd="$wt_bin"
+  alias w="$wt_bin"
   unset wt_bin
 fi
 
