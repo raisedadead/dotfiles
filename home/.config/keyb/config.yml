@@ -1,0 +1,23 @@
+settings:
+  debug: false
+  reverse: false
+  mouse: false
+  search_mode: false
+  sort_keys: false
+  title: "Keybindings"
+  prompt: "filter > "
+  prompt_location: "bottom"
+  placeholder: "type to filter..."
+  prefix_sep: " + "
+  sep_width: 4
+  margin: 0
+  padding: 1
+  border: "rounded"
+color:
+  filter_fg: "#FFA066"
+keys:
+  quit: "q"
+  up: "k, up"
+  down: "j, down"
+  search: "/"
+  normal: "esc"

@@ -17,6 +17,16 @@ if command -v fzf &>/dev/null; then
 	# register zle widgets
 	zle -N _mrgsh_ssh_widget
 
+	# zle widget for which-key
+	function _mrgsh_whichkey_widget() {
+		which-key
+		zle reset-prompt
+	}
+
+	# register zle widgets
+	zle -N _mrgsh_whichkey_widget
+
 	# keybindings
-	bindkey '^z' '_mrgsh_ssh_widget'   # bind Ctrl+Z to ssh selection
+	bindkey '^z' '_mrgsh_ssh_widget'     # bind Ctrl+Z to ssh selection
+	bindkey '^_' '_mrgsh_whichkey_widget' # bind Ctrl+/ to which-key
 fi
