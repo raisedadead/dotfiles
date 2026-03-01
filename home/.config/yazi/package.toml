@@ -43,7 +43,6 @@ use = "AnirudhG07/plugins-yazi:copy-file-contents"
 rev = "71545f4"
 hash = "f8530ee84fee95dbcc26bb1d8d8019c7"
 
-
 [[plugin.deps]]
 use = "lpnh/fr"
 rev = "aa88cd4"
@@ -53,6 +52,11 @@ hash = "8b0e87c3176e0d44f79a8656f79f0fa"
 use = "lpnh/fr"
 rev = "aa88cd4"
 hash = "8b0e87c3176e0d44f79a8656f79f0fa"
+
+[[plugin.deps]]
+use = "Sonico98/exifaudio"
+rev = "4506f9d"
+hash = "4761fffb60a12d37096c34a356380cdf"
 
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-mocha"
