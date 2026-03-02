@@ -16,7 +16,7 @@ clipboard-read = allow
 copy-on-select = clipboard
 
 # Window & Display
-window-save-state = always
+# window-save-state = always
 window-theme = system
 window-padding-balance = true
 window-padding-x = 15
