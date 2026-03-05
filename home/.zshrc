@@ -65,7 +65,7 @@ bindkey '\ek' up-line-or-history    # Alt+K: prev history
 
 # Prompt
 # can_haz starship && eval "$(starship init zsh)"
-cached_evalz oh-my-posh "oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml"
+can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
 
 #-----------------------------------------------------------
 # Plugin Manager
