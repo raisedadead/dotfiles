@@ -66,6 +66,10 @@ bindkey '\ek' up-line-or-history    # Alt+K: prev history
 # Prompt
 # can_haz starship && eval "$(starship init zsh)"
 can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
+# Kill bootstrap precmd after first fire — prevents re-sourcing 344-line init on every prompt
+# (saves ~25ms/prompt: avoids re-spawning oh-my-posh print secondary + re-parsing)
+_omp_kill_bootstrap() { unfunction precmd 2>/dev/null; precmd_functions=(${precmd_functions:#_omp_kill_bootstrap}); }
+precmd_functions+=(_omp_kill_bootstrap)
 
 #-----------------------------------------------------------
 # Plugin Manager

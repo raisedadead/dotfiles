@@ -81,26 +81,16 @@ timeout = 200
 template = "<p:overlay0>\u2022</> \U000F10FE {{ .Context }}{{ if .Namespace }} ({{ .Namespace }}){{ end }} "
 include_folders = ['.*k[38]s.*']
 
-# Docker context — context-based (non-orbstack, outside docker paths)
+# Docker context — outside docker paths (non-orbstack always; orbstack/default only with docker files)
 [[blocks.segments]]
 type = 'docker'
 style = 'plain'
 foreground = 'p:sky'
 timeout = 200
-template = "{{ if ne .Context \"orbstack\" }}<p:overlay0>\u2022</> \uF308  {{ .Context }} {{ end }}"
+template = "{{ if ne .Context \"orbstack\" }}<p:overlay0>\u2022</> \uF308  {{ .Context }} {{ else }}{{ if or (glob \"docker-compose.y*ml\") (glob \"Dockerfile\") }}<p:overlay0>\u2022</> \uF308  {{ .Context }} {{ end }}{{ end }}"
 exclude_folders = ['.*docker.*']
 
-# Docker context — file-based (compose/Dockerfile in cwd, outside docker paths)
-[[blocks.segments]]
-type = 'docker'
-style = 'plain'
-foreground = 'p:sky'
-timeout = 200
-template = "{{ if or (eq .Context \"orbstack\") (eq .Context \"default\") }}<p:overlay0>\u2022</> \uF308  {{ .Context }} {{ end }}"
-exclude_folders = ['.*docker.*']
-options = { display_mode = 'files', fetch_context = true }
-
-# Docker context — path-based (dir path contains "docker", any context)
+# Docker context — inside docker paths (always show)
 [[blocks.segments]]
 type = 'docker'
 style = 'plain'
