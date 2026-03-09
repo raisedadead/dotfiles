@@ -33,6 +33,7 @@ setopt AUTO_PUSHD
 setopt PUSHD_IGNORE_DUPS
 setopt CDABLE_VARS
 setopt INTERACTIVECOMMENTS
+stty -ixon -ixoff 2>/dev/null
 
 # Helpers
 can_haz() { whence -p "$1" >/dev/null 2>&1 }
