@@ -58,8 +58,8 @@ cursor-text = 11111b
 cursor-click-to-move = true
 
 # macOS Specific
-# macos-titlebar-style = hidden
-# macos-titlebar-proxy-icon = hidden
+macos-titlebar-style = hidden
+macos-titlebar-proxy-icon = hidden
 macos-option-as-alt = left
 
 # Keybindings
