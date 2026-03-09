@@ -52,6 +52,10 @@ cached_evalz() {
   source "$cache"
 }
 
+# Tmux exit code indicator (must be first precmd to capture $? before OMP)
+_tmux_exit_code() { [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code $?; }
+precmd_functions=(_tmux_exit_code $precmd_functions)
+
 # Keybindings
 bindkey -e  # Emacs mode
 bindkey -M viins 'jk' vi-cmd-mode
