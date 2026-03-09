@@ -76,3 +76,11 @@ if can_haz eza; then
   alias ls-plain='eza -la --icons=never --no-permissions --no-filesize --no-time --no-user'
 fi
 
+
+#-----------------------------
+# Sesh
+#-----------------------------
+if can_haz sesh; then
+  alias t='sesh connect .'
+fi
+
