@@ -152,6 +152,45 @@ function which-key() {
     __wk_add "$_sec" "$_wid" "$_rk"
   done < <(bindkey)
 
+  if [[ -n "$TMUX" ]]; then
+    __wk_add "Tmux Panes" "Select left" "C-b h"
+    __wk_add "Tmux Panes" "Select down" "C-b j"
+    __wk_add "Tmux Panes" "Select up" "C-b k"
+    __wk_add "Tmux Panes" "Select right" "C-b l"
+    __wk_add "Tmux Panes" "Select left (prefix-free)" "Alt+Left"
+    __wk_add "Tmux Panes" "Select down (prefix-free)" "Alt+Down"
+    __wk_add "Tmux Panes" "Select up (prefix-free)" "Alt+Up"
+    __wk_add "Tmux Panes" "Select right (prefix-free)" "Alt+Right"
+    __wk_add "Tmux Panes" "Resize left (repeatable)" "C-b H"
+    __wk_add "Tmux Panes" "Resize down (repeatable)" "C-b J"
+    __wk_add "Tmux Panes" "Resize up (repeatable)" "C-b K"
+    __wk_add "Tmux Panes" "Resize right (repeatable)" "C-b L"
+    __wk_add "Tmux Panes" "Split side-by-side (cwd)" "Alt+D"
+    __wk_add "Tmux Panes" "Split top-bottom (cwd)" "Alt+Shift+D"
+    __wk_add "Tmux Panes" "Split horizontal (cwd)" "C-b |"
+    __wk_add "Tmux Panes" "Split vertical (cwd)" "C-b -"
+    __wk_add "Tmux Panes" "Zoom toggle" "Alt+Shift+Enter"
+    __wk_add "Tmux Panes" "Zoom toggle" "C-b f"
+    __wk_add "Tmux Panes" "Kill pane" "C-b x"
+    __wk_add "Tmux Panes" "Sync panes toggle" "C-b i"
+
+    __wk_add "Tmux Windows" "New window (cwd)" "Alt+T"
+    __wk_add "Tmux Windows" "Next window" "Ctrl+Tab"
+    __wk_add "Tmux Windows" "Previous window" "Ctrl+Shift+Tab"
+    __wk_add "Tmux Windows" "Jump to window 1..9" "Alt+1..9"
+
+    __wk_add "Tmux Copy Mode" "Enter copy mode" "C-b ["
+    __wk_add "Tmux Copy Mode" "Begin selection" "v"
+    __wk_add "Tmux Copy Mode" "Rectangle toggle" "Ctrl+V"
+    __wk_add "Tmux Copy Mode" "Copy and exit" "y"
+
+    __wk_add "Tmux Session" "Session picker (sesh)" "C-b o"
+    __wk_add "Tmux Session" "Last session toggle" "C-b L"
+    __wk_add "Tmux Session" "Reload config" "C-b r"
+    __wk_add "Tmux Session" "Rename session" "C-b $"
+    __wk_add "Tmux Session" "Rename window" "C-b ,"
+  fi
+
   __wk_add "Shell Utilities" "Which-key (this menu)" "Ctrl+/"
   __wk_add "Shell Utilities" "SSH host selector" "Ctrl+Z"
 

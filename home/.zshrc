@@ -63,9 +63,6 @@ bindkey '\el' forward-word          # Alt+L: forward one word (accepts suggestio
 bindkey '\ej' down-line-or-history  # Alt+J: next history
 bindkey '\ek' up-line-or-history    # Alt+K: prev history
 
-# Bell on error (triggers red dot in tmux)
-TRAPZERR() { printf '\a' }
-
 # Prompt
 # can_haz starship && eval "$(starship init zsh)"
 can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
