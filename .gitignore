@@ -28,3 +28,6 @@ node_modules
 .npmrc
 
 *.private
+
+# Allow project CLAUDE.md (overrides global gitignore)
+!CLAUDE.md
