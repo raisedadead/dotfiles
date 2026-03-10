@@ -36,7 +36,8 @@ home/
 ## Keybinding System
 
 - tmux: `M-` (Alt) prefix-free bindings for navigation, `C-M-` for resize
-- zsh: emacs mode default (`bindkey -e`) with `jk` escape to vi mode — required for Alt keybinds to work without lag
+- zsh: emacs mode default (`bindkey -e`) with `C-z` toggle to vi mode — required for Alt keybinds to work without lag
+- Vi mode indicator: prompt chevron flips `❯` → `❮` and turns mauve; requires `_omp_get_prompt` re-eval in `zle-keymap-select`
 - All keybindings documented in `home/.config/keyb/keyb.yml`, viewable via `M-?` in tmux
 - Popup scripts live in `home/.config/tmux/scripts/`, not `.bin/`
 
@@ -55,6 +56,14 @@ All tmux popups follow consistent styling:
 - Window dots: magenta (current), brightyellow (bell), red (error), yellow (activity), brightblack (idle)
 - Session squares: green (active + name), brightblack (inactive)
 - Exit code tracking via `_tmux_exit_code` precmd hook in `.zshrc`
+
+## zshrc Load Order
+
+- `zsh-defer` is NOT available until after zinit loads it — don't use in the prompt section
+- OMP init is cached via `~/.cache/zsh-eval-cache/oh-my-posh.zsh` with binary+config mtime invalidation
+- `_omp_kill_bootstrap` prevents re-sourcing 344-line OMP init on every prompt
+- OMP spawns 3 subprocesses per startup: init (~30ms), secondary prompt (~18ms), primary prompt (~43ms)
+- `cached_evalz` invalidates on binary mtime only; OMP needs config mtime check too (custom cache logic)
 
 ## Validation
 
