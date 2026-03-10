@@ -1,0 +1,172 @@
+- name: tmux › panes
+  keybinds:
+    - name: Navigate left
+      key: M-h
+    - name: Navigate down
+      key: M-j
+    - name: Navigate up
+      key: M-k
+    - name: Navigate right
+      key: M-l
+    - name: Resize left
+      key: C-M-h
+    - name: Resize down
+      key: C-M-j
+    - name: Resize up
+      key: C-M-k
+    - name: Resize right
+      key: C-M-l
+    - name: Horizontal split
+      key: M-d
+    - name: Vertical split
+      key: M-D
+    - name: Zoom pane
+      key: M-S-Enter
+
+- name: tmux › windows
+  keybinds:
+    - name: New window
+      key: M-t
+    - name: Next window
+      key: M-n
+    - name: Previous window
+      key: M-p
+    - name: Window 1-9
+      key: M-1..9
+
+- name: tmux › sessions
+  keybinds:
+    - name: Sesh picker
+      key: M-o
+    - name: Choose-tree
+      key: M-w
+    - name: Next session
+      key: M-N
+    - name: Previous session
+      key: M-P
+    - name: Session 1-5
+      key: M-!/M-@/M-#/M-$/M-%
+    - name: Last session
+      key: C-b L
+
+- name: tmux › popups
+  keybinds:
+    - name: Lazygit
+      key: M-g
+    - name: Keybindings
+      key: M-?
+
+- name: tmux › prefix (C-b)
+  prefix: C-b
+  keybinds:
+    - name: Pane left / down / up / right
+      key: h / j / k / l
+    - name: Resize left / down / up / right
+      key: H / J / K / L
+    - name: Horizontal split
+      key: "|"
+    - name: Vertical split
+      key: "-"
+    - name: Kill pane
+      key: x
+    - name: Zoom pane
+      key: f
+    - name: Sync panes
+      key: i
+    - name: Reload config
+      key: r
+
+- name: tmux › copy mode (vi)
+  keybinds:
+    - name: Begin selection
+      key: v
+    - name: Rectangle toggle
+      key: C-v
+    - name: Copy and cancel
+      key: y
+
+- name: sesh picker
+  keybinds:
+    - name: All sources
+      key: C-a
+    - name: Tmux sessions
+      key: C-t
+    - name: Configs
+      key: C-g
+    - name: Zoxide
+      key: C-x
+    - name: Find directories
+      key: C-f
+    - name: Kill session
+      key: C-d
+    - name: Navigate
+      key: Tab / S-Tab
+
+- name: ghostty › splits
+  keybinds:
+    - name: Navigate left / down / up / right
+      key: Cmd+S-h/j/k/l
+    - name: Resize left / down / up / right
+      key: Cmd+C-h/j/k/l
+    - name: Equalize splits
+      key: Cmd+S-e
+
+- name: ghostty › scrollback
+  keybinds:
+    - name: Scroll down / up 5 lines
+      key: C-S-j / C-S-k
+    - name: Scroll to top / bottom
+      key: C-S-h / C-S-l
+    - name: Export scrollback
+      key: Cmd+S-s
+
+- name: ghostty › misc
+  keybinds:
+    - name: Quick terminal (global)
+      key: C-"`"
+    - name: Literal newline
+      key: S-Enter
+    - name: Literal CR
+      key: C-Enter
+    - name: Copy URL
+      key: Cmd+S-c
+
+- name: yazi
+  keybinds:
+    - name: Open dir in editor
+      key: E
+    - name: Open file in editor
+      key: S-Enter
+    - name: Smart enter
+      key: Enter / l
+    - name: Jump to char
+      key: C-f
+    - name: Smart filter
+      key: f
+    - name: Search contents (rg)
+      key: S
+    - name: Lazygit
+      key: g,i
+    - name: Copy file contents
+      key: M-y
+    - name: Parent directory
+      key: Backspace
+    - name: Trash files
+      key: Delete
+    - name: Quit (no cd / cd)
+      key: q / Q
+    - name: Help
+      key: "?"
+
+- name: zsh
+  keybinds:
+    - name: Vi command mode
+      key: jk
+    - name: Forward / backward word
+      key: M-f / M-b
+    - name: Forward / backward word
+      key: Opt+Right / Left
+    - name: Beginning / end of line
+      key: M-S-b / M-S-f
+    - name: Suspend process
+      key: C-z

@@ -17,6 +17,4 @@ if command -v fzf &>/dev/null; then
 	# register zle widgets
 	zle -N _mrgsh_ssh_widget
 
-	# keybindings
-	bindkey '^z' '_mrgsh_ssh_widget'     # bind Ctrl+Z to ssh selection
 fi
