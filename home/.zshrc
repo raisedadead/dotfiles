@@ -59,10 +59,10 @@ precmd_functions=(_tmux_exit_code $precmd_functions)
 # Keybindings
 bindkey -e  # Emacs mode
 bindkey -M viins 'jk' vi-cmd-mode
-bindkey '^[f' forward-word          # Alt+F / Opt+Right: forward word (accepts suggestion word-by-word)
-bindkey '^[b' backward-word         # Alt+B / Opt+Left: backward word
-bindkey '^[[1;3C' forward-word      # Opt+Right arrow
-bindkey '^[[1;3D' backward-word     # Opt+Left arrow
+bindkey '^[f' forward-word          # Alt+F: forward word
+bindkey '^[b' backward-word         # Alt+B: backward word
+bindkey '^[F' end-of-line           # Alt+Shift+F: end of line
+bindkey '^[B' beginning-of-line     # Alt+Shift+B: beginning of line
 
 # Prompt
 # can_haz starship && eval "$(starship init zsh)"

@@ -164,9 +164,9 @@
       key: jk
     - name: Forward / backward word
       key: M-f / M-b
-    - name: Forward / backward word
-      key: Opt+Right / Left
-    - name: Beginning / end of line
-      key: M-S-b / M-S-f
+    - name: Beginning of line
+      key: M-S-b
+    - name: End of line
+      key: M-S-f
     - name: Suspend process
       key: C-z
