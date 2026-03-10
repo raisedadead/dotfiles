@@ -58,7 +58,22 @@ precmd_functions=(_tmux_exit_code $precmd_functions)
 
 # Keybindings
 bindkey -e  # Emacs mode
-bindkey -M viins 'jk' vi-cmd-mode
+bindkey '^z' vi-cmd-mode
+bindkey -M vicmd '^z' vi-add-next
+
+function zle-keymap-select {
+  if [[ "$KEYMAP" == "vicmd" ]]; then
+    export POSH_VI_MODE="cmd"
+  else
+    unset POSH_VI_MODE
+  fi
+  # Re-generate OMP prompt (reads updated POSH_VI_MODE), then redisplay
+  if (( $+functions[_omp_get_prompt] )); then
+    eval "$(_omp_get_prompt primary --eval)"
+  fi
+  zle .reset-prompt
+}
+zle -N zle-keymap-select
 bindkey '^[f' forward-word          # Alt+F: forward word
 bindkey '^[b' backward-word         # Alt+B: backward word
 bindkey '^[F' end-of-line           # Alt+Shift+F: end of line

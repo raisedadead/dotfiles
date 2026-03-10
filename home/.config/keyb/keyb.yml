@@ -158,15 +158,72 @@
     - name: Help
       key: "?"
 
-- name: zsh
+- name: zsh (emacs mode)
   keybinds:
-    - name: Vi command mode
-      key: jk
+    - name: Toggle vi mode
+      key: C-z
     - name: Forward / backward word
       key: M-f / M-b
-    - name: Beginning of line
-      key: M-S-b
-    - name: End of line
-      key: M-S-f
-    - name: Suspend process
+    - name: Beginning / end of line
+      key: M-S-b / M-S-f
+    - name: Beginning / end of line
+      key: C-a / C-e
+    - name: Forward / backward char
+      key: C-f / C-b
+    - name: Delete char forward / back
+      key: C-d / Backspace
+    - name: Delete word backward
+      key: C-w
+    - name: Kill to end of line
+      key: C-k
+    - name: Kill to beginning of line
+      key: C-u
+    - name: Yank (paste killed text)
+      key: C-y
+    - name: Transpose chars
+      key: C-t
+    - name: Clear screen
+      key: C-l
+    - name: Accept line (run command)
+      key: C-m / Enter
+    - name: Search history backward
+      key: C-r
+    - name: Search history forward
+      key: C-s
+    - name: Previous / next history
+      key: C-p / C-n
+    - name: Cancel
+      key: C-c
+    - name: EOF / exit
+      key: C-d
+
+- name: zsh (vi cmd mode)
+  keybinds:
+    - name: Toggle back to emacs
       key: C-z
+    - name: Move left / down / up / right
+      key: h / j / k / l
+    - name: Word forward / back
+      key: w / b
+    - name: End of word
+      key: e
+    - name: Beginning / end of line
+      key: 0 / $
+    - name: Insert / append
+      key: i / a
+    - name: Insert at beginning / end
+      key: I / A
+    - name: Delete char
+      key: x
+    - name: Change word / line
+      key: cw / cc
+    - name: Delete word / line
+      key: dw / dd
+    - name: Paste after / before
+      key: p / P
+    - name: Undo / redo
+      key: u / C-r
+    - name: Search backward
+      key: "?"
+    - name: Search forward
+      key: /

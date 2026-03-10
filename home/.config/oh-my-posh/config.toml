@@ -224,6 +224,9 @@ newline = true
 type = 'status'
 style = 'plain'
 foreground = 'p:green'
-foreground_templates = ["{{ if gt .Code 0 }}p:red{{ end }}"]
-template = "\u276F"
+foreground_templates = [
+  "{{ if .Env.POSH_VI_MODE }}p:mauve{{ end }}",
+  "{{ if gt .Code 0 }}p:red{{ end }}",
+]
+template = "{{ if .Env.POSH_VI_MODE }}\u276E{{ else }}\u276F{{ end }}"
 options.always_enabled = true
