@@ -69,12 +69,55 @@
       key: "-"
     - name: Kill pane
       key: x
+    - name: Kill window
+      key: "&"
     - name: Zoom pane
       key: f
     - name: Sync panes
       key: i
     - name: Reload config
       key: r
+    - name: Enter copy mode
+      key: "["
+    - name: Paste buffer
+      key: "]"
+    - name: Command prompt
+      key: ":"
+    - name: Detach
+      key: d
+    - name: New window
+      key: c
+    - name: Rename window
+      key: ","
+    - name: Rename session
+      key: "$"
+    - name: List keybindings
+      key: "?"
+    - name: Display pane numbers
+      key: q
+    - name: Choose session
+      key: s
+    - name: Choose window
+      key: w
+    - name: Swap pane left / right
+      key: "{ / }"
+    - name: Last session (sesh)
+      key: L
+    - name: Thumbs (hint copy)
+      key: Space
+
+- name: tmux › thumbs (hint copy)
+  keybinds:
+    - name: Activate thumbs
+      key: C-b Space
+    - name: Copy hint to clipboard
+      key: hint letter
+    - name: Paste hint + clipboard
+      key: S-hint letter
+    - name: Multi-select mode
+      key: Space (after activating)
+    - name: Cancel
+      key: Esc / q
 
 - name: tmux › copy mode (vi)
   keybinds:
@@ -155,8 +198,30 @@
       key: Delete
     - name: Quit (no cd / cd)
       key: q / Q
+    - name: Copy file path
+      key: C-y
     - name: Help
       key: "?"
+
+- name: fzf (shell)
+  keybinds:
+    - name: File search
+      key: C-t
+    - name: Directory navigation
+      key: M-c
+    - name: Toggle preview
+      key: C-/
+    - name: Copy to clipboard
+      key: C-y
+    - name: Preview scroll up / down
+      key: S-Up / S-Down
+
+- name: atuin (history)
+  keybinds:
+    - name: Search history
+      key: C-r
+    - name: Vim-normal mode (inside atuin)
+      key: Esc
 
 - name: zsh (emacs mode)
   keybinds:
