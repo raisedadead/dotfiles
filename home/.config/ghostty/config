@@ -18,7 +18,7 @@ quick-terminal-animation-duration = 0.1
 
 # Clipboard
 clipboard-read = allow
-copy-on-select = clipboard
+copy-on-select = false
 
 # Window & Display
 window-save-state = always

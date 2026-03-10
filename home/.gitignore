@@ -48,3 +48,4 @@ docs/plans
 .worktrees
 .sidecar
 .beads/
+.dolt/
