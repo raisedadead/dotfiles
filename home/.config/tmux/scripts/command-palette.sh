@@ -47,8 +47,8 @@ tmux_commands() {
 }
 
 selected=$({ commands; tmux_commands; } | fzf-tmux -p 53%,60% \
-  --no-sort --no-info --ansi --border=rounded --padding=0,1 \
-  --color='header:8,pointer:magenta,prompt:magenta,border:white' \
+  --no-sort --no-info --ansi --border=rounded --border-label=' Commands ' --padding=1,2 \
+  --color='header:8,pointer:yellow,prompt:yellow,border:white,label:yellow' \
   --prompt '  ' \
   --bind 'esc:abort')
 
@@ -74,7 +74,7 @@ case "$label" in
   "Close Window")
     tmux confirm-before -p "kill-window #W? (y/n)" kill-window ;;
   "New Session")
-    tmux display-popup -E -w 30% -h 3 -b rounded "$HOME/.config/tmux/scripts/new-session-popup.sh" ;;
+    tmux display-popup -E -w 20% -h 5 -b rounded -T ' New Session ' "$HOME/.config/tmux/scripts/new-session-popup.sh" ;;
   "Rename Session")
     tmux command-prompt -I "#S" "rename-session -- '%%'" ;;
   "Kill Session")
@@ -86,7 +86,7 @@ case "$label" in
   "Choose Tree")
     tmux choose-tree -Zw ;;
   "Lazygit")
-    tmux display-popup -E -w 70% -h 80% -b rounded -d "#{pane_current_path}" lazygit ;;
+    tmux display-popup -E -w 70% -h 80% -b rounded -T '#[align=centre] Lazygit ' -d "#{pane_current_path}" lazygit ;;
   "Keybindings")
     tmux run-shell "$HOME/.config/tmux/scripts/keyb-popup.sh || true" ;;
   "Reload Config")

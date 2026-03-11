@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 D=$'\033[90m'  # dim (brightblack)
-M=$'\033[95m'  # bright magenta
+M=$'\033[93m'  # bright yellow
 R=$'\033[0m'   # reset
 
 H_ALL="${M}all${R}${D} (^a) • tmux (^t) • configs (^g) • zoxide (^x) • kill (^d) • find (^f)${R}"
@@ -11,10 +11,10 @@ H_ZOXIDE="${D}all (^a) • tmux (^t) • configs (^g) • ${M}zoxide${R}${D} (^x
 H_FIND="${D}all (^a) • tmux (^t) • configs (^g) • zoxide (^x) • kill (^d) • ${M}find${R}${D} (^f)${R}"
 
 selected=$(sesh list --icons | fzf-tmux -p 53%,60% \
-  --no-sort --no-info --ansi --border=rounded --padding=0,1 \
+  --no-sort --no-info --ansi --border=rounded --border-label=' Sessions ' --padding=1,2 \
   --header-first --header-border=line \
   --header "$H_ALL" \
-  --color='header:8,pointer:magenta,prompt:magenta,border:white' \
+  --color='header:8,pointer:yellow,prompt:yellow,border:white,label:yellow' \
   --prompt '  ' \
   --preview 'sesh preview {}' --preview-window 'right:50%,hidden' \
   --bind 'tab:down,btab:up' \

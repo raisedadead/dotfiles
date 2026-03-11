@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-printf '  \033[95mNew session:\033[0m '
+printf '\n   '
 
 name=""
 while true; do

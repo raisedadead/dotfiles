@@ -39,7 +39,7 @@ esac
 
 # Header fragments — active category gets bright color, others stay dim
 D=$'\033[90m'  # dim (brightblack)
-M=$'\033[95m'  # bright magenta
+M=$'\033[93m'  # bright yellow
 R=$'\033[0m'   # reset
 H_ALL="${M}all${R}${D} (^a) • tmux (^t) • ghostty (^g) • yazi (^y) • zsh (^z) • sesh (^s)${R}"
 H_TMUX="${D}all (^a) • ${M}tmux${R}${D} (^t) • ghostty (^g) • yazi (^y) • zsh (^z) • sesh (^s)${R}"
@@ -49,10 +49,10 @@ H_ZSH="${D}all (^a) • tmux (^t) • ghostty (^g) • yazi (^y) • ${M}zsh${R}
 H_SESH="${D}all (^a) • tmux (^t) • ghostty (^g) • yazi (^y) • zsh (^z) • ${M}sesh${R}${D} (^s)${R}"
 
 keyb_all | fzf-tmux -p 53%,60% \
-  --no-sort --no-info --ansi --border=rounded --padding=0,1 \
+  --no-sort --no-info --ansi --border=rounded --border-label=' Keybindings ' --padding=1,2 \
   --header-first --header-border=line \
   --header "$H_ALL" \
-  --color='header:8,pointer:magenta,prompt:magenta,border:white' \
+  --color='header:8,pointer:yellow,prompt:yellow,border:white,label:yellow' \
   --prompt '  ' \
   --bind 'esc:abort' \
   --bind "ctrl-a:reload($0 --all)+change-header($H_ALL)" \

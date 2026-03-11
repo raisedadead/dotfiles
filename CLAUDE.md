@@ -47,14 +47,16 @@ All tmux popups follow consistent styling:
 
 - Size: 70%x80% (lazygit), 53%x60% (fzf-tmux pickers)
 - Border: rounded, white color
-- fzf color scheme: `header:8,pointer:magenta,prompt:magenta,border:white`
-- Active category indicator: bright magenta text, inactive: dim (brightblack)
+- fzf color scheme: `header:8,pointer:yellow,prompt:yellow,border:white,label:yellow`
+- Active category indicator: bright yellow text, inactive: dim (brightblack)
 - Scripts use `fzf-tmux -p` for popups (not `display-popup` + `fzf`) except lazygit
 
 ## Status Bar
 
-- Window dots: magenta (current), brightyellow (bell), red (error), yellow (activity), brightblack (idle)
-- Session squares: green (active + name), brightblack (inactive)
+- Three-zone status bar via `status-format[0]` with `#[align=left|centre|right]`
+- Left: window dots — yellow (active), brightyellow (bell), red (error), brightblack (idle); pane superscript when > 1
+- Centre: `❮ session // windows ❯` — session in magenta, active window in cyan, inactive dimmed; zoom shows `←`, prefix shows `^B`
+- Right: session squares — green (attached), brightblack (other); superscript window count when > 1
 - Exit code tracking via `_tmux_exit_code` precmd hook in `.zshrc`
 
 ## zshrc Load Order

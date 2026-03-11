@@ -32,7 +32,7 @@
     - name: Previous window
       key: M-<
     - name: Window 1-9
-      key: M-S-1..9
+      key: M-1..9
 
 - name: tmux › sessions
   keybinds:
@@ -46,8 +46,6 @@
       key: M-.
     - name: Previous session
       key: M-,
-    - name: Session 1-5
-      key: M-1..5
     - name: Last session
       key: C-b L
 
