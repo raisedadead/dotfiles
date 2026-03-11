@@ -20,6 +20,10 @@
       key: M-d
     - name: Vertical split
       key: M-D
+    - name: Equalize vertical
+      key: M-e
+    - name: Equalize horizontal
+      key: M-E
     - name: Zoom pane
       key: M-S-Enter
 
@@ -61,10 +65,10 @@
 - name: tmux › prefix (C-b)
   prefix: C-b
   keybinds:
+    - name: URL picker (fzf)
+      key: u
     - name: Pane left / down / up / right
       key: h / j / k / l
-    - name: Resize left / down / up / right
-      key: H / J / K / L
     - name: Horizontal split
       key: "|"
     - name: Vertical split
@@ -105,21 +109,13 @@
       key: "{ / }"
     - name: Last session (sesh)
       key: L
-    - name: Thumbs (hint copy)
-      key: Space
 
-- name: tmux › thumbs (hint copy)
+- name: tmux › scroll
   keybinds:
-    - name: Activate thumbs
-      key: C-b Space
-    - name: Copy hint to clipboard
-      key: hint letter
-    - name: Paste hint + clipboard
-      key: S-hint letter
-    - name: Multi-select mode
-      key: Space (after activating)
-    - name: Cancel
-      key: Esc / q
+    - name: Scroll down / up 5 lines
+      key: C-S-j / C-S-k
+    - name: Scroll to top / bottom
+      key: C-S-h / C-S-l
 
 - name: tmux › copy mode (vi)
   keybinds:

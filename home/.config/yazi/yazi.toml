@@ -1,18 +1,20 @@
 [mgr]
-ratio       = [1, 2, 3]
-show_hidden = true
+ratio          = [1, 2, 4]
+sort_by        = "natural"
+sort_dir_first = true
+show_hidden    = false
+show_symlink   = true
+scrolloff      = 5
+linemode       = "size"
+title_format   = "yazi: {cwd}"
 
-[[plugin.prepend_fetchers]]
-id   = "mime"
-url  = "local://*"
-run  = "mime-ext.local"
-prio = "high"
-
-[[plugin.prepend_fetchers]]
-id   = "mime"
-url  = "remote://*"
-run  = "mime-ext.remote"
-prio = "high"
+[preview]
+wrap         = "no"
+tab_size     = 2
+max_width    = 600
+max_height   = 900
+image_filter = "triangle"
+image_quality = 75
 
 [[plugin.prepend_fetchers]]
 id  = "git"
@@ -25,12 +27,12 @@ url = "*/"
 run = "git"
 
 [[plugin.prepend_previewers]]
-url  = "*/"
-run  = 'piper -- eza -TL=3 --color=always --icons=always "$1"'
+mime = "text/markdown"
+run  = 'piper -- glow -w=$w -s=dark "$1"'
 
 [[plugin.prepend_previewers]]
-url  = "*.md"
-run  = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"'
+url  = "*/"
+run  = 'piper -- eza -TL=3 --color=always --icons=always "$1"'
 
 [[plugin.prepend_previewers]]
 url  = "*.csv"
@@ -39,7 +41,3 @@ run  = 'piper -- bat -p --color=always "$1"'
 [[plugin.prepend_previewers]]
 url  = "*.tsv"
 run  = 'piper -- bat -p --color=always "$1"'
-
-[[plugin.prepend_previewers]]
-mime = "audio/*"
-run  = "exifaudio"

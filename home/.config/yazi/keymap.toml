@@ -1,22 +1,7 @@
 [[mgr.prepend_keymap]]
-on   = "E"
-run  = 'shell -- ${VISUAL:-$EDITOR} %d'
-desc = "Open current directory in $VISUAL"
-
-[[mgr.prepend_keymap]]
-on   = "<S-Enter>"
-run  = 'shell -- ${VISUAL:-$EDITOR} %h'
-desc = "Open in $VISUAL"
-
-[[mgr.prepend_keymap]]
 on   = "<Enter>"
 run  = "plugin smart-enter"
-desc = "Enter the child directory, or open the file"
-
-[[mgr.prepend_keymap]]
-on   = "l"
-run  = "plugin smart-enter"
-desc = "Enter the child directory, or open the file"
+desc = "Enter directory or open file"
 
 [[mgr.prepend_keymap]]
 on   = "<C-f>"
@@ -24,44 +9,14 @@ run  = "plugin jump-to-char"
 desc = "Jump to char"
 
 [[mgr.prepend_keymap]]
-on   = "f"
+on   = "F"
 run  = "plugin smart-filter"
 desc = "Smart filter"
 
 [[mgr.prepend_keymap]]
-on   = "S"
-run  = "plugin fr rg"
-desc = "Search file contents (rg + fzf)"
-
-[[mgr.prepend_keymap]]
-on   = ["g", "i"]
-run  = "plugin lazygit"
-desc = "Open lazygit"
-
-[[mgr.prepend_keymap]]
-on   = "<A-y>"
-run  = "plugin copy-file-contents"
-desc = "Copy file contents to clipboard"
-
-[[mgr.prepend_keymap]]
-on   = "<Backspace>"
-run  = "leave"
-desc = "Go to parent directory"
-
-[[mgr.prepend_keymap]]
-on   = "d"
-run  = "noop"
-desc = "Disabled"
-
-[[mgr.prepend_keymap]]
-on   = "D"
-run  = "noop"
-desc = "Disabled"
-
-[[mgr.prepend_keymap]]
-on   = "<Delete>"
-run  = "remove"
-desc = "Trash selected files"
+on   = "T"
+run  = "plugin toggle-pane min-preview"
+desc = "Toggle preview pane"
 
 [[mgr.prepend_keymap]]
 on   = "q"
@@ -74,11 +29,46 @@ run  = "quit"
 desc = "Quit and cd to current directory"
 
 [[mgr.prepend_keymap]]
-on   = "?"
-run  = "help"
-desc = "Show keybindings help"
+on   = "!"
+run  = 'shell "$SHELL" --block'
+desc = "Open shell here"
 
 [[mgr.prepend_keymap]]
-on   = "<C-y>"
-run  = 'shell "echo %s | cb" --orphan'
-desc = "Copy file path to clipboard"
+on   = ["g", "r"]
+run  = 'shell -- ya emit cd "$(git rev-parse --show-toplevel)"'
+desc = "Go to git root"
+
+[[mgr.prepend_keymap]]
+on   = "<C-p>"
+run  = 'shell -- qlmanage -p "$@" &>/dev/null'
+desc = "Preview with Quick Look"
+
+[[mgr.prepend_keymap]]
+on   = "L"
+run  = "plugin bypass"
+desc = "Enter and skip single-child dirs"
+
+[[mgr.prepend_keymap]]
+on   = "H"
+run  = "plugin bypass reverse"
+desc = "Leave and skip single-child dirs"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "d"]
+run  = "cd ~/Downloads"
+desc = "Go to Downloads"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "D"]
+run  = "cd ~/DEV"
+desc = "Go to DEV"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "."]
+run  = "cd ~/.homesick/repos/dotfiles"
+desc = "Go to dotfiles"
+
+[[input.prepend_keymap]]
+on   = "<Esc>"
+run  = "close"
+desc = "Cancel input"
