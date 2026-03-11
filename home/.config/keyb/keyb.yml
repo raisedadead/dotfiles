@@ -28,11 +28,11 @@
     - name: New window
       key: M-t
     - name: Next window
-      key: M-.
+      key: M->
     - name: Previous window
-      key: M-,
+      key: M-<
     - name: Window 1-9
-      key: M-1..9
+      key: M-S-1..9
 
 - name: tmux › sessions
   keybinds:
@@ -43,11 +43,11 @@
     - name: New session (prompt)
       key: M-n
     - name: Next session
-      key: M->
+      key: M-.
     - name: Previous session
-      key: M-<
+      key: M-,
     - name: Session 1-5
-      key: M-!/M-@/M-#/M-$/M-%
+      key: M-1..5
     - name: Last session
       key: C-b L
 
