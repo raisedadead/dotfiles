@@ -28,9 +28,9 @@
     - name: New window
       key: M-t
     - name: Next window
-      key: M-n
+      key: M-.
     - name: Previous window
-      key: M-p
+      key: M-,
     - name: Window 1-9
       key: M-1..9
 
@@ -40,10 +40,12 @@
       key: M-o
     - name: Choose-tree
       key: M-w
+    - name: New session (prompt)
+      key: M-n
     - name: Next session
-      key: M-N
+      key: M->
     - name: Previous session
-      key: M-P
+      key: M-<
     - name: Session 1-5
       key: M-!/M-@/M-#/M-$/M-%
     - name: Last session
@@ -55,6 +57,8 @@
       key: M-g
     - name: Keybindings
       key: M-?
+    - name: Command palette
+      key: M-p
 
 - name: tmux › prefix (C-b)
   prefix: C-b
@@ -229,7 +233,7 @@
       key: C-z
     - name: Forward / backward word
       key: M-f / M-b
-    - name: Beginning / end of line
+    - name: Beginning / end of line (Alt)
       key: M-S-b / M-S-f
     - name: Beginning / end of line
       key: C-a / C-e

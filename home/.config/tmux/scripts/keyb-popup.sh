@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
+CACHE=$(mktemp)
+trap 'rm -f "$CACHE"' EXIT
+keyb -p > "$CACHE"
+
 keyb_all() {
-  keyb -p | awk \
+  awk \
     -v r="\033[0m" \
     -v tmux="\033[35m" \
     -v ghostty="\033[34m" \
@@ -15,16 +19,16 @@ keyb_all() {
     /^zsh/     { cat="zsh";     c=zsh;     next }
     /^[[:space:]]*$/ { next }
     { printf "%s  %s%s%s\n", $0, c, cat, r }
-  '
+  ' "$CACHE"
 }
 
 keyb_cat() {
-  keyb -p | awk -v cat="$1" '
+  awk -v cat="$1" '
     $0 ~ "^"cat { f=1; next }
     /^(tmux|ghostty|sesh|yazi|zsh)/ { f=0 }
     f && /^[[:space:]]*$/ { next }
     f
-  '
+  ' "$CACHE"
 }
 
 # Handle reload calls from fzf bindings
