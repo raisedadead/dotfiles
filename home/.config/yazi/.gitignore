@@ -1,0 +1,4 @@
+# ya pkg-managed (not tracked in dotfiles)
+flavors/
+plugins/*
+!plugins/folder-rules.yazi

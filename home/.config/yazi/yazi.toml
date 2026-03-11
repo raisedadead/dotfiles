@@ -2,7 +2,7 @@
 ratio          = [1, 2, 4]
 sort_by        = "natural"
 sort_dir_first = true
-show_hidden    = false
+show_hidden    = true
 show_symlink   = true
 scrolloff      = 5
 linemode       = "size"
@@ -15,6 +15,18 @@ max_width    = 600
 max_height   = 900
 image_filter = "triangle"
 image_quality = 75
+
+[[plugin.prepend_fetchers]]
+id   = "mime"
+url  = "local://*"
+run  = "mime-ext.local"
+prio = "high"
+
+[[plugin.prepend_fetchers]]
+id   = "mime"
+url  = "remote://*"
+run  = "mime-ext.remote"
+prio = "high"
 
 [[plugin.prepend_fetchers]]
 id  = "git"
