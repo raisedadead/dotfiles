@@ -80,20 +80,12 @@ bindkey '^[F' end-of-line           # Alt+Shift+F: end of line
 bindkey '^[B' beginning-of-line     # Alt+Shift+B: beginning of line
 
 # Prompt (oh-my-posh)
-# Cache the init bootstrap (~30ms subprocess saved on most startups).
-# Invalidates when binary or config changes.
+# v29+ uses a two-stage init: bootstrap sets a precmd that sources the real
+# init from ~/.cache/oh-my-posh/init.HASH.zsh on first prompt. OMP manages
+# its own cache, so we just run the bootstrap directly.
 if can_haz oh-my-posh; then
-  local _omp_cfg=~/.config/oh-my-posh/config.toml
-  local _omp_cache=~/.cache/zsh-eval-cache/oh-my-posh.zsh
-  local _omp_bin="$(whence -p oh-my-posh)"
-  if [[ ! -f "$_omp_cache" ]] || [[ "$_omp_bin" -nt "$_omp_cache" ]] || [[ "$_omp_cfg" -nt "$_omp_cache" ]]; then
-    oh-my-posh init zsh --config "$_omp_cfg" > "$_omp_cache" 2>/dev/null
-    zcompile "$_omp_cache" 2>/dev/null
-  fi
-  source "$_omp_cache"
+  eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
 fi
-_omp_kill_bootstrap() { unfunction precmd 2>/dev/null; precmd_functions=(${precmd_functions:#_omp_kill_bootstrap}); }
-precmd_functions+=(_omp_kill_bootstrap)
 
 #-----------------------------------------------------------
 # Plugin Manager
