@@ -3,7 +3,7 @@
 D=$'\033[90m'  # dim (brightblack)
 R=$'\033[0m'   # reset
 
-WIDTH=50
+WIDTH=30
 
 commands() {
   local entries=(
@@ -46,7 +46,7 @@ tmux_commands() {
       done
 }
 
-selected=$({ commands; tmux_commands; } | fzf-tmux -p 53%,60% \
+selected=$({ commands; tmux_commands; } | fzf-tmux -p 40%,45% \
   --no-sort --no-info --ansi --border=rounded --border-label=' Commands ' --padding=1,2 \
   --color='header:8,pointer:yellow,prompt:yellow,border:white,label:yellow' \
   --prompt '  ' \

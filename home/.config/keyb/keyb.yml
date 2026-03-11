@@ -99,6 +99,8 @@
       key: "$"
     - name: List keybindings
       key: "?"
+    - name: Menus (tmux-menus)
+      key: \
     - name: Display pane numbers
       key: q
     - name: Choose session
