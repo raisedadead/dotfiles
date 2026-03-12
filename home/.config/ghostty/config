@@ -38,7 +38,6 @@ unfocused-split-fill = 181825
 split-divider-color = 585b70
 theme = Catppuccin Mocha
 bold-is-bright = true
-minimum-contrast = 1.1
 faint-opacity=1
 
 # Mouse & Selection
