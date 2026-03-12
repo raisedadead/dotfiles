@@ -1,63 +1,78 @@
 #!/usr/bin/env bash
 
-CACHE=$(mktemp)
-trap 'rm -f "$CACHE"' EXIT
-keyb -p > "$CACHE"
+SELF="$0"
+CACHE="/tmp/keyb-popup-cache"
+STATE="/tmp/keyb-popup-state"
 
-keyb_all() {
-  awk \
-    -v r="\033[0m" \
-    -v tmux="\033[35m" \
-    -v ghostty="\033[34m" \
-    -v sesh="\033[32m" \
-    -v yazi="\033[33m" \
-    -v zsh="\033[36m" '
-    /^tmux/    { cat="tmux";    c=tmux;    next }
-    /^ghostty/ { cat="ghostty"; c=ghostty; next }
-    /^sesh/    { cat="sesh";    c=sesh;    next }
-    /^yazi/    { cat="yazi";    c=yazi;    next }
-    /^zsh/     { cat="zsh";     c=zsh;     next }
-    /^[[:space:]]*$/ { next }
-    { printf "%s  %s%s%s\n", $0, c, cat, r }
-  ' "$CACHE"
+CATS=(all tmux ghostty yazi fzf atuin zsh sesh)
+
+D=$'\033[90m'
+M=$'\033[93m'
+R=$'\033[0m'
+
+make_header() {
+  local active="$1" first=1
+  printf '  '
+  for cat in "${CATS[@]}"; do
+    [ "$first" = "1" ] && first=0 || printf ' %s•%s ' "$D" "$R"
+    if [ "$cat" = "$active" ]; then
+      printf '%s%s%s' "$M" "$cat" "$R"
+    else
+      printf '%s%s%s' "$D" "$cat" "$R"
+    fi
+  done
+  printf '  %stab ⇥%s' "$D" "$R"
 }
 
-keyb_cat() {
-  awk -v cat="$1" '
-    $0 ~ "^"cat { f=1; next }
-    /^(tmux|ghostty|sesh|yazi|zsh)/ { f=0 }
-    f && /^[[:space:]]*$/ { next }
-    f
-  ' "$CACHE"
+keyb_content() {
+  local cat="$1"
+  if [ "$cat" = "all" ]; then
+    awk -v d="\033[90m" -v r="\033[0m" '
+      /^(tmux|ghostty|sesh|yazi|fzf|atuin|zsh)/ { printf "%s%s%s\n", d, $0, r; next }
+      /^[[:space:]]*$/ { next }
+      { print }
+    ' "$CACHE"
+  else
+    awk -v cat="$cat" -v d="\033[90m" -v r="\033[0m" '
+      $0 ~ "^"cat { f=1; printf "%s%s%s\n", d, $0, r; next }
+      /^(tmux|ghostty|sesh|yazi|fzf|atuin|zsh)/ { f=0 }
+      f && /^[[:space:]]*$/ { next }
+      f
+    ' "$CACHE"
+  fi
 }
 
-# Handle reload calls from fzf bindings
 case "${1:-}" in
-  --all) keyb_all; exit ;;
-  --cat) keyb_cat "$2"; exit ;;
+  --show)
+    keyb_content "$2"
+    exit ;;
+  --cycle)
+    idx=$(cat "$STATE" 2>/dev/null || echo 0)
+    total=${#CATS[@]}
+    if [ "$2" = "next" ]; then
+      idx=$(( (idx + 1) % total ))
+    else
+      idx=$(( (idx - 1 + total) % total ))
+    fi
+    echo "$idx" > "$STATE"
+    header=$(make_header "${CATS[$idx]}")
+    printf '%s' "reload($SELF --show ${CATS[$idx]})+change-header($header)"
+    exit ;;
 esac
 
-# Header fragments — active category gets bright color, others stay dim
-D=$'\033[90m'  # dim (brightblack)
-M=$'\033[93m'  # bright yellow
-R=$'\033[0m'   # reset
-H_ALL="${M}all${R}${D} (^a) • tmux (^t) • ghostty (^g) • yazi (^y) • zsh (^z) • sesh (^s)${R}"
-H_TMUX="${D}all (^a) • ${M}tmux${R}${D} (^t) • ghostty (^g) • yazi (^y) • zsh (^z) • sesh (^s)${R}"
-H_GHOSTTY="${D}all (^a) • tmux (^t) • ${M}ghostty${R}${D} (^g) • yazi (^y) • zsh (^z) • sesh (^s)${R}"
-H_YAZI="${D}all (^a) • tmux (^t) • ghostty (^g) • ${M}yazi${R}${D} (^y) • zsh (^z) • sesh (^s)${R}"
-H_ZSH="${D}all (^a) • tmux (^t) • ghostty (^g) • yazi (^y) • ${M}zsh${R}${D} (^z) • sesh (^s)${R}"
-H_SESH="${D}all (^a) • tmux (^t) • ghostty (^g) • yazi (^y) • zsh (^z) • ${M}sesh${R}${D} (^s)${R}"
+# Main entry
+keyb -p > "$CACHE"
+echo "0" > "$STATE"
+trap 'rm -f "$CACHE" "$STATE"' EXIT
 
-keyb_all | fzf-tmux -p 53%,60% \
+header=$(make_header "all")
+
+keyb_content "all" | fzf-tmux -p 53%,60% \
   --no-sort --no-info --ansi --border=rounded --border-label=' Keybindings ' --padding=1,2 \
   --header-first --header-border=line \
-  --header "$H_ALL" \
+  --header "$header" \
   --color='header:8,pointer:yellow,prompt:yellow,border:white,label:yellow' \
   --prompt '  ' \
   --bind 'esc:abort' \
-  --bind "ctrl-a:reload($0 --all)+change-header($H_ALL)" \
-  --bind "ctrl-t:reload($0 --cat tmux)+change-header($H_TMUX)" \
-  --bind "ctrl-g:reload($0 --cat ghostty)+change-header($H_GHOSTTY)" \
-  --bind "ctrl-y:reload($0 --cat yazi)+change-header($H_YAZI)" \
-  --bind "ctrl-z:reload($0 --cat zsh)+change-header($H_ZSH)" \
-  --bind "ctrl-s:reload($0 --cat sesh)+change-header($H_SESH)"
+  --bind "btab:transform($SELF --cycle prev)" \
+  --bind "tab:transform($SELF --cycle next)"

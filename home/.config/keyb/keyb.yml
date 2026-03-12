@@ -112,13 +112,6 @@
     - name: Last session (sesh)
       key: L
 
-- name: tmux › scroll
-  keybinds:
-    - name: Scroll down / up 5 lines
-      key: C-S-j / C-S-k
-    - name: Scroll to top / bottom
-      key: C-S-h / C-S-l
-
 - name: tmux › copy mode (vi)
   keybinds:
     - name: Begin selection
@@ -130,20 +123,10 @@
 
 - name: sesh picker
   keybinds:
-    - name: All sources
-      key: C-a
-    - name: Tmux sessions
-      key: C-t
-    - name: Configs
-      key: C-g
-    - name: Zoxide
-      key: C-x
-    - name: Find directories
-      key: C-f
+    - name: Next / prev filter
+      key: Tab / S-Tab
     - name: Kill session
       key: C-d
-    - name: Navigate
-      key: Tab / S-Tab
 
 - name: ghostty › splits
   keybinds:
