@@ -47,6 +47,7 @@ alias rgs='_mrgsh_sg'                        # search file contents (ripgrep)
 alias fds='_mrgsh_sf'                        # search filenames (fd)
 alias rkh='_mrgsh_rkh'                       # remove host from known_hosts
 alias cleanup='_mrgsh_cleanup'               # cleanup macOS junk files
+alias set_default_app='_mrgsh_set_default_app' # set default app for dev files
 
 # completion descriptions
 compdef '_describe "commit in the past" "(git_commit_past:\"commit with past date\")"' git_commit_past
@@ -56,6 +57,7 @@ compdef '_describe "search contents" "(rgs:\"search file contents\")"' rgs
 compdef '_describe "search files" "(fds:\"search filenames\")"' fds
 compdef '_describe "remove host" "(rkh:\"remove host from known_hosts\")"' rkh
 compdef '_describe "cleanup junk" "(cleanup:\"cleanup macOS junk files\")"' cleanup
+compdef '_describe "set default app" "(set_default_app:\"set default app for dev files\")"' set_default_app
 
 # load keybindings
 source ~/.bin/keybindings.sh
