@@ -38,7 +38,7 @@
     - name: Previous session
       key: M-S-Tab
     - name: Last session
-      key: C-Space L
+      key: C-Space S
 
 - name: tmux › popups
   keybinds:
@@ -94,8 +94,6 @@
       key: "$"
     - name: List keybindings
       key: "?"
-    - name: Menus (tmux-menus)
-      key: \
     - name: Display pane numbers
       key: q
     - name: Choose session
