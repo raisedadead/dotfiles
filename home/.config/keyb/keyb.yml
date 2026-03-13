@@ -217,6 +217,8 @@
 
 - name: zsh (emacs mode)
   keybinds:
+    - name: Yazi (cd-on-exit)
+      key: C-f
     - name: Toggle vi mode
       key: C-z
     - name: Forward / backward word

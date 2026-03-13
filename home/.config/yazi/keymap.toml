@@ -68,6 +68,11 @@ on   = ["g", "."]
 run  = "cd ~/.homesick/repos/dotfiles"
 desc = "Go to dotfiles"
 
+[[mgr.prepend_keymap]]
+on   = "<C-y>"
+run  = 'shell -- echo -n "$1" | pbcopy'
+desc = "Copy file path to clipboard"
+
 [[input.prepend_keymap]]
 on   = "<Esc>"
 run  = "close"
