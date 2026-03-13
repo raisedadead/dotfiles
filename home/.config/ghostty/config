@@ -31,11 +31,8 @@ window-width = 166
 window-height = 54
 
 # Appearance & Transparency
-background-opacity = 0.7
-background-blur = 10
-unfocused-split-opacity = 0.5
-unfocused-split-fill = 181825
-split-divider-color = 585b70
+background-opacity = 0.8
+background-blur = 15
 theme = Catppuccin Mocha
 bold-is-bright = true
 faint-opacity=1
@@ -43,11 +40,12 @@ faint-opacity=1
 # Mouse & Selection
 focus-follows-mouse = true
 mouse-hide-while-typing = true
+mouse-scroll-multiplier = precision:0.5,discrete:3
 
 # Typography
 font-family = "Berkeley Mono"
 font-thicken = true
-font-size = 15
+font-size = 14
 font-feature = calt
 font-feature = ss01
 font-feature = zero
@@ -70,23 +68,12 @@ macos-option-as-alt = left
 # Keybindings
 keybind = shift+enter=text:\n
 keybind = ctrl+enter=text:\r
-keybind = cmd+shift+h=goto_split:left
-keybind = cmd+shift+j=goto_split:bottom
-keybind = cmd+shift+k=goto_split:top
-keybind = cmd+shift+l=goto_split:right
-keybind = cmd+ctrl+h=resize_split:left,40
-keybind = cmd+ctrl+j=resize_split:down,40
-keybind = cmd+ctrl+k=resize_split:up,40
-keybind = cmd+ctrl+l=resize_split:right,40
 
 # Scrollback
 keybind = ctrl+shift+j=scroll_page_lines:5
 keybind = ctrl+shift+k=scroll_page_lines:-5
 keybind = ctrl+shift+h=scroll_to_top
 keybind = ctrl+shift+l=scroll_to_bottom
-
-# Split management
-keybind = cmd+shift+e=equalize_splits
 
 # Scrollback & screen export
 keybind = cmd+shift+s=write_scrollback_file:paste

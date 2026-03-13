@@ -1,29 +1,16 @@
+- name: tmux › navigation (smart-splits)
+  keybinds:
+    - name: Navigate left / down / up / right
+      key: C-M-h / C-M-j / C-M-k / C-M-l
+    - name: Resize left / down / up / right
+      key: C-Space H / J / K / L
+
 - name: tmux › panes
   keybinds:
-    - name: Navigate left
-      key: M-h
-    - name: Navigate down
-      key: M-j
-    - name: Navigate up
-      key: M-k
-    - name: Navigate right
-      key: M-l
-    - name: Resize left
-      key: C-M-h
-    - name: Resize down
-      key: C-M-j
-    - name: Resize up
-      key: C-M-k
-    - name: Resize right
-      key: C-M-l
-    - name: Horizontal split
+    - name: Split right
       key: M-d
-    - name: Vertical split
+    - name: Split down
       key: M-D
-    - name: Equalize vertical
-      key: M-e
-    - name: Equalize horizontal
-      key: M-E
     - name: Zoom pane
       key: M-S-Enter
 
@@ -32,9 +19,9 @@
     - name: New window
       key: M-t
     - name: Next window
-      key: M->
+      key: M-.
     - name: Previous window
-      key: M-<
+      key: M-,
     - name: Window 1-9
       key: M-1..9
 
@@ -47,11 +34,11 @@
     - name: New session (prompt)
       key: M-n
     - name: Next session
-      key: M-.
+      key: M-Tab
     - name: Previous session
-      key: M-,
+      key: M-S-Tab
     - name: Last session
-      key: C-b L
+      key: C-Space L
 
 - name: tmux › popups
   keybinds:
@@ -62,16 +49,20 @@
     - name: Command palette
       key: M-p
 
-- name: tmux › prefix (C-b)
-  prefix: C-b
+- name: tmux › prefix (C-Space)
+  prefix: C-Space
   keybinds:
     - name: URL picker (fzf)
       key: u
     - name: Pane left / down / up / right
       key: h / j / k / l
-    - name: Horizontal split
+    - name: Clear screen (passthrough)
+      key: C-l
+    - name: Kill line (passthrough)
+      key: C-k
+    - name: Split right
       key: "|"
-    - name: Vertical split
+    - name: Split down
       key: "-"
     - name: Kill pane
       key: x
@@ -79,6 +70,10 @@
       key: "&"
     - name: Zoom pane
       key: f
+    - name: Equalize vertical
+      key: e
+    - name: Equalize horizontal
+      key: E
     - name: Sync panes
       key: i
     - name: Reload config
@@ -109,8 +104,14 @@
       key: w
     - name: Swap pane left / right
       key: "{ / }"
+    - name: Resize left / down / up / right
+      key: H / J / K / L
     - name: Last session (sesh)
-      key: L
+      key: S
+    - name: Yank command line
+      key: "y"
+    - name: Yank pane cwd
+      key: "Y"
 
 - name: tmux › copy mode (vi)
   keybinds:
@@ -120,6 +121,23 @@
       key: C-v
     - name: Copy and cancel
       key: y
+    - name: Navigate panes
+      key: C-M-h / C-M-j / C-M-k / C-M-l
+
+- name: tmux › mouse
+  keybinds:
+    - name: Select word (no auto-copy)
+      key: Double-click
+    - name: Select line (no auto-copy)
+      key: Triple-click
+    - name: Copy selection
+      key: y (in copy mode)
+    - name: Native selection (bypass tmux)
+      key: Shift+drag
+    - name: Scroll up (enters copy mode)
+      key: Wheel up
+    - name: Scroll down (auto-exits at bottom)
+      key: Wheel down
 
 - name: sesh picker
   keybinds:
@@ -127,15 +145,6 @@
       key: Tab / S-Tab
     - name: Kill session
       key: C-d
-
-- name: ghostty › splits
-  keybinds:
-    - name: Navigate left / down / up / right
-      key: Cmd+S-h/j/k/l
-    - name: Resize left / down / up / right
-      key: Cmd+C-h/j/k/l
-    - name: Equalize splits
-      key: Cmd+S-e
 
 - name: ghostty › scrollback
   keybinds:
@@ -211,9 +220,9 @@
     - name: Toggle vi mode
       key: C-z
     - name: Forward / backward word
-      key: M-f / M-b
-    - name: Beginning / end of line (Alt)
-      key: M-S-b / M-S-f
+      key: M-l / M-h
+    - name: Beginning / end of line
+      key: M-L / M-H
     - name: Beginning / end of line
       key: C-a / C-e
     - name: Forward / backward char

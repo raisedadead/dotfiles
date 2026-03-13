@@ -74,10 +74,10 @@ function zle-keymap-select {
   zle .reset-prompt
 }
 zle -N zle-keymap-select
-bindkey '^[f' forward-word          # Alt+F: forward word
-bindkey '^[b' backward-word         # Alt+B: backward word
-bindkey '^[F' end-of-line           # Alt+Shift+F: end of line
-bindkey '^[B' beginning-of-line     # Alt+Shift+B: beginning of line
+bindkey '^[l' forward-word          # Alt+L: forward word
+bindkey '^[h' backward-word         # Alt+H: backward word
+bindkey '^[L' end-of-line           # Alt+Shift+L: end of line
+bindkey '^[H' beginning-of-line     # Alt+Shift+H: beginning of line
 
 # Prompt (oh-my-posh)
 # v29+ uses a two-stage init: bootstrap sets a precmd that sources the real

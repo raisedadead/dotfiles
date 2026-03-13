@@ -35,6 +35,8 @@ home/
 
 ## Keybinding System
 
+- keybinds.conf and keyb.yml must stay in sync — always update both when changing bindings
+- tmux names Shift-Tab as `BTab` (e.g., `M-BTab`), not `M-S-Tab`
 - tmux: `M-` (Alt) prefix-free bindings for navigation, `C-M-` for resize
 - zsh: emacs mode default (`bindkey -e`) with `C-z` toggle to vi mode — required for Alt keybinds to work without lag
 - Vi mode indicator: prompt chevron flips `❯` → `❮` and turns mauve; requires `_omp_get_prompt` re-eval in `zle-keymap-select`
@@ -53,6 +55,7 @@ All tmux popups follow consistent styling:
 
 ## Status Bar
 
+- theme.conf header comments (lines 20-42) document the three-zone layout — update when changing indicator logic
 - Three-zone status bar via `status-format[0]` with `#[align=left|centre|right]`
 - Left: window dots — yellow (active), brightyellow (bell), red (error), brightblack (idle); pane superscript when > 1
 - Centre: `❮ session // windows ❯` — session in magenta, active window in cyan, inactive dimmed; zoom shows `←`, prefix shows `^B`

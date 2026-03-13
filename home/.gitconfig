@@ -73,5 +73,3 @@ autocorrect = 1
 [include]
 path = ~/.gitconfig.local
 path = ~/.config/delta/config.gitconfig
-[gitbutler]
-	aiModelProvider = anthropic
