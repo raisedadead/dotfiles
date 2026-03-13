@@ -181,6 +181,7 @@ if [[ -o interactive ]]; then
   zsh-defer -c 'cached_evalz wrangler "wrangler complete zsh"'
   zsh-defer -c 'cached_evalz wt "wt shell-init zsh"'
   zsh-defer -c 'cached_evalz sesh "sesh completion zsh"'
+  zsh-defer -c 'cached_evalz bd "bd completion zsh"'
   # zsh-defer -c 'cached_evalz pkgx "pkgx --shellcode"'
 fi
 
