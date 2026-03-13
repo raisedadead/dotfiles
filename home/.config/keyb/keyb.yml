@@ -10,7 +10,7 @@
     - name: Split right
       key: M-d
     - name: Split down
-      key: M-D
+      key: M-S-D
     - name: Zoom pane
       key: M-S-Enter
 
