@@ -24,6 +24,10 @@
       key: M-,
     - name: Window 1-9
       key: M-1..9
+    - name: Rename window
+      key: M-r
+    - name: Rename session
+      key: M-R
 
 - name: tmux › sessions
   keybinds:
@@ -124,14 +128,10 @@
 
 - name: tmux › mouse
   keybinds:
-    - name: Select word (no auto-copy)
-      key: Double-click
-    - name: Select line (no auto-copy)
-      key: Triple-click
-    - name: Copy selection
-      key: y (in copy mode)
-    - name: Native selection (bypass tmux)
+    - name: Select text (native Ghostty)
       key: Shift+drag
+    - name: Copy selection
+      key: Cmd+C
     - name: Scroll up (enters copy mode)
       key: Wheel up
     - name: Scroll down (auto-exits at bottom)

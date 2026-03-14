@@ -56,6 +56,7 @@ cached_evalz() {
 _tmux_exit_code() { [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code $?; }
 precmd_functions=(_tmux_exit_code $precmd_functions)
 
+
 # Keybindings
 bindkey -e  # Emacs mode
 bindkey '^z' vi-cmd-mode
