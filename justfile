@@ -1,5 +1,5 @@
 # Dotfiles Management with Just
-# Run `just` or `just help` for available recipes
+# Run `home` or `home help` for available commands
 
 set shell := ["bash", "-cu"]
 
@@ -10,32 +10,30 @@ private := "~/.dotfiles-private"
 # Default recipe - show help
 default: help
 
-# Show available recipes
+# Show available commands
 help:
-    @echo "Dotfiles Management:"
-    @echo ""
-    @echo "  Setup:"
-    @echo "    just init                - First-time setup (clone private, apply both)"
-    @echo ""
-    @echo "  Daily:"
-    @echo "    just apply               - Apply both public and private dotfiles"
-    @echo "    just apply-public        - Apply public dotfiles only"
-    @echo "    just apply-private       - Apply private dotfiles only"
-    @echo "    just edit FILE           - Edit a managed file (opens in \$EDITOR)"
-    @echo "    just add FILE            - Add a file to public dotfiles"
-    @echo "    just add-private FILE    - Add a file to private dotfiles"
-    @echo "    just re-add FILE         - Re-add a changed file to public dotfiles"
-    @echo ""
-    @echo "  Sync:"
-    @echo "    just pull                - Pull and apply both repos"
-    @echo "    just push                - Push both repos"
-    @echo "    just status              - Show status of both repos"
-    @echo ""
-    @echo "  Info:"
-    @echo "    just diff                - Show pending changes (both repos)"
-    @echo "    just managed             - List all managed files"
-    @echo "    just doctor              - Run chezmoi doctor"
-    @echo "    just verify              - Verify all managed files are in sync"
+    #!/usr/bin/env bash
+    B=$'\e[1m'; D=$'\e[0;90m'; R=$'\e[0m'
+    echo ""
+    printf "  ${B}home cd dotfiles${R}          ${D}cd to public source${R}\n"
+    printf "  ${B}home cd dotfiles-private${R}  ${D}cd to private source${R}\n"
+    echo ""
+    printf "  ${B}home check${R}               ${D}status + what to do next${R}\n"
+    printf "  ${B}home apply${R}               ${D}apply both repos to ~${R}\n"
+    printf "  ${B}home pull${R}                ${D}pull + apply both repos${R}\n"
+    printf "  ${B}home push${R}                ${D}push both repos${R}\n"
+    printf "  ${B}home status${R}              ${D}git status both repos${R}\n"
+    echo ""
+    printf "  ${B}home add FILE${R}            ${D}chezmoi add (public)${R}\n"
+    printf "  ${B}home edit FILE${R}           ${D}chezmoi edit (auto-applies on save)${R}\n"
+    printf "  ${B}home re-add FILE${R}         ${D}re-add changed target file${R}\n"
+    printf "  ${B}home re-add-all${R}          ${D}re-add all drifted files${R}\n"
+    printf "  ${B}home merge-all${R}           ${D}interactive merge all drifted files${R}\n"
+    printf "  ${B}home diff${R}                ${D}chezmoi diff both repos${R}\n"
+    printf "  ${B}home managed${R}             ${D}list all managed files${R}\n"
+    printf "  ${B}home verify${R}              ${D}verify sync state${R}\n"
+    printf "  ${B}home init${R}                ${D}first-time setup${R}\n"
+    echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Setup
@@ -46,21 +44,24 @@ help:
 init:
     #!/usr/bin/env bash
     set -euo pipefail
+    D=$'\e[0;90m'; G=$'\e[0;32m'; Y=$'\e[0;33m'; B=$'\e[1m'; R=$'\e[0m'
+    p() { printf "${D}dotfiles ·${R} %s\n" "$1"; }
+    ok() { printf "${G}dotfiles ·${R} %s\n" "$1"; }
     if [ ! -d {{ private }} ]; then
-        echo "Cloning private dotfiles..."
+        p "cloning private repo..."
         git clone git@github.com:raisedadead/dotfiles-private.git {{ private }} || {
-            echo "Failed to clone private repo. Is SSH configured?"
-            echo "Set up SSH first, then run: just init"
+            printf "${Y}dotfiles ·${R} clone failed — is SSH configured?\n"
+            printf "           run ${B}home init${R} after setting up SSH\n"
             exit 1
         }
     else
-        echo "Private repo already exists at {{ private }}"
+        p "private repo exists"
     fi
-    echo "Applying public dotfiles..."
+    p "applying public..."
     chezmoi apply
-    echo "Applying private dotfiles..."
+    p "applying private..."
     chezmoi --source {{ private }} apply
-    echo "Done."
+    ok "done"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Apply
@@ -70,19 +71,27 @@ init:
 apply: apply-public apply-private
 
 # Apply public dotfiles only
+[no-exit-message]
 apply-public:
+    #!/usr/bin/env bash
+    D=$'\e[0;90m'; G=$'\e[0;32m'; R=$'\e[0m'
+    printf "${D}dotfiles ·${R} applying public...\n"
     chezmoi apply
+    printf "${G}dotfiles ·${R} public applied\n"
 
 # Apply private dotfiles only
 [no-exit-message]
 apply-private:
     #!/usr/bin/env bash
     set -euo pipefail
+    D=$'\e[0;90m'; G=$'\e[0;32m'; Y=$'\e[0;33m'; R=$'\e[0m'
     if [ ! -d {{ private }} ]; then
-        echo "Private repo not found. Run: just init"
+        printf "${Y}dotfiles ·${R} private repo not found — run home init\n"
         exit 1
     fi
+    printf "${D}dotfiles ·${R} applying private...\n"
     chezmoi --source {{ private }} apply
+    printf "${G}dotfiles ·${R} private applied\n"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Edit & Add
@@ -104,6 +113,24 @@ add-private file:
 re-add file:
     chezmoi re-add {{ file }}
 
+# Re-add ALL changed managed files at once
+[no-exit-message]
+re-add-all:
+    #!/usr/bin/env bash
+    D=$'\e[0;90m'; G=$'\e[0;32m'; R=$'\e[0m'
+    printf "${D}dotfiles ·${R} re-adding all drifted files...\n"
+    chezmoi re-add
+    printf "${G}dotfiles ·${R} source updated from target\n"
+
+# Interactive merge of all drifted files
+[no-exit-message]
+merge-all:
+    #!/usr/bin/env bash
+    D=$'\e[0;90m'; G=$'\e[0;32m'; R=$'\e[0m'
+    printf "${D}dotfiles ·${R} merging drifted files...\n"
+    chezmoi merge-all
+    printf "${G}dotfiles ·${R} merge complete\n"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Sync
 # ─────────────────────────────────────────────────────────────────────────────
@@ -113,13 +140,15 @@ re-add file:
 pull:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "=== Public ==="
+    D=$'\e[0;90m'; G=$'\e[0;32m'; R=$'\e[0m'
+    printf "${D}dotfiles ·${R} pulling public...\n"
     chezmoi update
+    printf "${G}dotfiles ·${R} public updated\n"
     if [ -d {{ private }} ]; then
-        echo ""
-        echo "=== Private ==="
+        printf "${D}dotfiles ·${R} pulling private...\n"
         git -C {{ private }} pull --rebase
         chezmoi --source {{ private }} apply
+        printf "${G}dotfiles ·${R} private updated\n"
     fi
 
 # Push both repos
@@ -127,31 +156,32 @@ pull:
 push:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "=== Public ==="
-    cd {{ public }}
-    BRANCH=$(git branch --show-current)
-    git push origin "$BRANCH"
+    D=$'\e[0;90m'; G=$'\e[0;32m'; Y=$'\e[0;33m'; R=$'\e[0m'
+    export DOTFILES_PUSH=1
+    PUB_BRANCH=$(git -C {{ public }} branch --show-current)
+    printf "${D}dotfiles ·${R} pushing public (%s)...\n" "$PUB_BRANCH"
+    git -C {{ public }} push origin "$PUB_BRANCH"
+    printf "${G}dotfiles ·${R} public pushed\n"
     if [ -d {{ private }} ]; then
-        echo ""
-        echo "=== Private ==="
-        cd {{ private }}
-        BRANCH=$(git branch --show-current)
-        git push origin "$BRANCH"
+        PRIV_BRANCH=$(git -C {{ private }} branch --show-current)
+        printf "${D}dotfiles ·${R} pushing private (%s)...\n" "$PRIV_BRANCH"
+        git -C {{ private }} push origin "$PRIV_BRANCH"
+        printf "${G}dotfiles ·${R} private pushed\n"
     fi
 
 # Show git status of both repos
 [no-exit-message]
 status:
     #!/usr/bin/env bash
-    echo "=== Public ({{ public }}) ==="
+    D=$'\e[0;90m'; B=$'\e[1m'; R=$'\e[0m'
+    printf "${D}dotfiles ·${R} ${B}public${R}\n"
     git -C {{ public }} status --short
     if [ -d {{ private }} ]; then
         echo ""
-        echo "=== Private ({{ private }}) ==="
+        printf "${D}dotfiles ·${R} ${B}private${R}\n"
         git -C {{ private }} status --short
     else
-        echo ""
-        echo "=== Private: not cloned ==="
+        printf "\n${D}dotfiles · private not cloned${R}\n"
     fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -162,11 +192,12 @@ status:
 [no-exit-message]
 diff:
     #!/usr/bin/env bash
-    echo "=== Public ==="
+    D=$'\e[0;90m'; B=$'\e[1m'; R=$'\e[0m'
+    printf "${D}dotfiles ·${R} ${B}public${R}\n"
     chezmoi diff || true
     if [ -d {{ private }} ]; then
         echo ""
-        echo "=== Private ==="
+        printf "${D}dotfiles ·${R} ${B}private${R}\n"
         chezmoi --source {{ private }} diff || true
     fi
 
@@ -174,11 +205,14 @@ diff:
 [no-exit-message]
 managed:
     #!/usr/bin/env bash
-    echo "=== Public ($(chezmoi managed | wc -l | tr -d ' ') files) ==="
+    D=$'\e[0;90m'; B=$'\e[1m'; R=$'\e[0m'
+    PUB_N=$(chezmoi managed | wc -l | tr -d ' ')
+    printf "${D}dotfiles ·${R} ${B}public${R} ${D}(%s files)${R}\n" "$PUB_N"
     chezmoi managed
     if [ -d {{ private }} ]; then
+        PRIV_N=$(chezmoi --source {{ private }} managed | wc -l | tr -d ' ')
         echo ""
-        echo "=== Private ($(chezmoi --source {{ private }} managed | wc -l | tr -d ' ') files) ==="
+        printf "${D}dotfiles ·${R} ${B}private${R} ${D}(%s files)${R}\n" "$PRIV_N"
         chezmoi --source {{ private }} managed
     fi
 
@@ -190,64 +224,90 @@ doctor:
 [no-exit-message]
 verify:
     #!/usr/bin/env bash
-    echo "=== Public ==="
-    chezmoi verify && echo "In sync." || echo "Drift detected — run: just diff"
+    D=$'\e[0;90m'; G=$'\e[0;32m'; Y=$'\e[0;33m'; B=$'\e[1m'; R=$'\e[0m'
+    printf "${D}dotfiles ·${R} ${B}public${R}  "
+    if chezmoi verify 2>/dev/null; then
+        printf "${G}in sync${R}\n"
+    else
+        printf "${Y}drift detected${R} — run ${B}home diff${R}\n"
+    fi
     if [ -d {{ private }} ]; then
-        echo ""
-        echo "=== Private ==="
-        chezmoi --source {{ private }} verify && echo "In sync." || echo "Drift detected — run: just diff"
+        printf "${D}dotfiles ·${R} ${B}private${R} "
+        if chezmoi --source {{ private }} verify 2>/dev/null; then
+            printf "${G}in sync${R}\n"
+        else
+            printf "${Y}drift detected${R} — run ${B}home diff${R}\n"
+        fi
     fi
 
-# Full health check: chezmoi, git, managed files, hooks
+# Actionable health check — shows status + what to do next
 [no-exit-message]
 check:
     #!/usr/bin/env bash
     set -uo pipefail
-    PASS=0; FAIL=0; TOTAL=0
-    DIM="\033[0;90m"; GREEN="\033[0;32m"; RED="\033[0;31m"; BOLD="\033[1m"; RST="\033[0m"
-    check() {
-        ((TOTAL++))
-        if eval "$2" >/dev/null 2>&1; then
-            printf "${GREEN}✓${RST} %s\n" "$1"; ((PASS++))
+    DIM=$'\e[0;90m'; GRN=$'\e[0;32m'; RED=$'\e[0;31m'; YLW=$'\e[0;33m'
+    CYN=$'\e[0;36m'; BLD=$'\e[1m'; RST=$'\e[0m'
+    PUB="$HOME/.dotfiles"; PRIV="$HOME/.dotfiles-private"
+    PUB_N=$(chezmoi managed 2>/dev/null | wc -l | tr -d ' ')
+    PRIV_N=$(chezmoi --source "$PRIV" managed 2>/dev/null | wc -l | tr -d ' ')
+    printf "${BLD}dotfiles${RST} ${DIM}· %s public · %s private${RST}\n\n" "$PUB_N" "$PRIV_N"
+    # Fetch for accurate ahead/behind
+    git -C "$PUB" fetch --quiet 2>/dev/null &
+    [ -d "$PRIV" ] && git -C "$PRIV" fetch --quiet 2>/dev/null &
+    wait
+    # Accumulate actions in workflow order
+    ACT_PULL=""; ACT_COMMIT=""; ACT_APPLY=""; ACT_PUSH=""
+    HAS_ISSUES=0
+    for REPO in public private; do
+        if [ "$REPO" = "public" ]; then
+            DIR="$PUB"; CM_SRC=""; CD="home cd dotfiles"; APPLY="home apply"
         else
-            printf "${RED}✗${RST} %s\n" "$1"; ((FAIL++))
-            if [ -n "${3:-}" ]; then
-                eval "$3" 2>/dev/null | while IFS= read -r line; do
-                    printf "${DIM}  │ %s${RST}\n" "$line"
+            DIR="$PRIV"; CM_SRC="--source $PRIV"; CD="home cd dotfiles-private"; APPLY="home apply-private"
+            if [ ! -d "$DIR" ]; then
+                printf "  ${DIM}%-10s not cloned${RST}\n" "$REPO"
+                continue
+            fi
+        fi
+        # Ahead/behind
+        AHEAD=0; BEHIND=0
+        BR=$(git -C "$DIR" branch --show-current 2>/dev/null)
+        if git -C "$DIR" rev-parse --verify "origin/$BR" &>/dev/null; then
+            read -r BEHIND AHEAD < <(git -C "$DIR" rev-list --left-right --count "origin/$BR...HEAD" 2>/dev/null)
+        fi
+        # Dirty working tree
+        DIRTY=$(git -C "$DIR" status --porcelain 2>/dev/null)
+        DIRTY_N=0; [ -n "$DIRTY" ] && DIRTY_N=$(echo "$DIRTY" | wc -l | tr -d ' ')
+        # Unapplied source → target
+        UNAPPLIED=$(chezmoi $CM_SRC diff --no-pager 2>&1 | grep -c '^diff' || true)
+        # Format status line
+        S=""
+        [ "$BEHIND" -gt 0 ]    && S="${S} ${CYN}${BEHIND}↓${RST}"
+        [ "$AHEAD" -gt 0 ]     && S="${S} ${YLW}${AHEAD}↑${RST}"
+        [ "$DIRTY_N" -gt 0 ]   && S="${S} ${RED}${DIRTY_N} dirty${RST}"
+        [ "$UNAPPLIED" -gt 0 ] && S="${S} ${YLW}${UNAPPLIED} to apply${RST}"
+        if [ -z "$S" ]; then
+            printf "  %-10s ${GRN}✓${RST}\n" "$REPO"
+        else
+            HAS_ISSUES=1
+            printf "  %-10s%s\n" "$REPO" "$S"
+            if [ -n "$DIRTY" ]; then
+                echo "$DIRTY" | while IFS= read -r l; do
+                    printf "  ${DIM}           %s${RST}\n" "$l"
                 done
             fi
         fi
-    }
-    section() { printf "\n${DIM}─── %s${RST}\n" "$1"; }
-    PUB=$(chezmoi managed 2>/dev/null | wc -l | tr -d ' ')
-    PRIV=$(chezmoi --source {{ private }} managed 2>/dev/null | wc -l | tr -d ' ')
-    printf "${BOLD}dotfiles${RST} ${DIM}· %s public · %s private${RST}\n" "$PUB" "$PRIV"
-    section "tools"
-    check "chezmoi"                   "command -v chezmoi"
-    check "git"                       "command -v git"
-    check "just"                      "command -v just"
-    check "1Password SSH agent"       "test -S \"$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock\""
-    section "sources"
-    check "public  ~/.dotfiles"       "test -d {{ public }}"
-    check "private ~/.dotfiles-private" "test -d {{ private }}"
-    check "chezmoi.toml"              "test -f ~/.config/chezmoi/chezmoi.toml"
-    check "git hooks"                 "test -f {{ public }}/.githooks/pre-commit"
-    section "state"
-    check "public repo clean" \
-        "test -z \"\$(git -C {{ public }} status --porcelain)\"" \
-        "git -C {{ public }} status --short"
-    check "private repo clean" \
-        "test -z \"\$(git -C {{ private }} status --porcelain)\"" \
-        "git -C {{ private }} status --short"
-    check "public in sync" \
-        "chezmoi verify" \
-        "chezmoi diff --no-pager 2>&1 | grep '^diff' | sed 's|diff --git a/||;s| b/.*||' | head -10"
-    check "private in sync" \
-        "chezmoi --source {{ private }} verify" \
-        "chezmoi --source {{ private }} diff --no-pager 2>&1 | grep '^diff' | sed 's|diff --git a/||;s| b/.*||' | head -10"
-    printf "\n${BOLD}%s${RST}/${DIM}%s${RST}" "$PASS" "$TOTAL"
-    if [ "$FAIL" -gt 0 ]; then
-        printf " ${RED}(%s failed)${RST}\n" "$FAIL"
-    else
-        printf " ${GREEN}all clear${RST}\n"
+        # Collect actions in workflow order (pad command to 26 chars)
+        pad() { local n=$((26 - ${#1})); printf '%*s' "$n" ''; }
+        [ "$BEHIND" -gt 0 ]    && ACT_PULL="  ${BLD}home pull${RST}$(pad 'home pull')${DIM}pull from origin${RST}\n"
+        [ "$DIRTY_N" -gt 0 ]   && ACT_COMMIT="${ACT_COMMIT}  ${BLD}${CD}${RST}$(pad "$CD")${DIM}commit ${DIRTY_N} files${RST}\n"
+        [ "$UNAPPLIED" -gt 0 ] && ACT_APPLY="${ACT_APPLY}  ${BLD}${APPLY}${RST}$(pad "$APPLY")${DIM}apply ${UNAPPLIED} files to ~${RST}\n"
+        [ "$AHEAD" -gt 0 ]     && ACT_PUSH="  ${BLD}home push${RST}$(pad 'home push')${DIM}push to origin${RST}\n"
+    done
+    # Print suggested actions
+    ACTS="${ACT_PULL}${ACT_COMMIT}${ACT_APPLY}${ACT_PUSH}"
+    if [ -n "$ACTS" ]; then
+        printf "\n${DIM}next →${RST}\n"
+        printf "%b" "$ACTS"
+    elif [ "$HAS_ISSUES" -eq 0 ]; then
+        printf "\n${GRN}all clear${RST}\n"
     fi

@@ -1,13 +1,3 @@
 #!/bin/bash
-# Pre-commit: verify chezmoi state is in sync
-
-if command -v chezmoi >/dev/null 2>&1; then
-  if ! chezmoi verify --source ~/.dotfiles 2>/dev/null; then
-    echo ""
-    echo "⚠  chezmoi drift detected — some managed files differ from source."
-    echo "   Run 'chezmoi diff' to inspect, 'chezmoi re-add <file>' to sync."
-    echo ""
-    echo "   Proceeding with commit anyway."
-    echo ""
-  fi
-fi
+# Remind to apply after committing source changes
+printf "\e[0;90mdotfiles ·\e[0m remember to \e[1mhome apply\e[0m after commit\n"

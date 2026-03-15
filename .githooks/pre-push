@@ -1,11 +1,4 @@
 #!/bin/bash
-# Pre-push: remind to check private repo
-
-echo "┌──────────────────────────────────────────────┐"
-echo "│  Pushing public dotfiles.                    │"
-echo "│                                              │"
-echo "│  Remember to also commit and push:           │"
-echo "│    cd ~/.dotfiles-private                    │"
-echo "│    git add -A && git commit && git push      │"
-echo "└──────────────────────────────────────────────┘"
-echo ""
+# Skip reminder when running under `home push` (just sets DOTFILES_PUSH=1)
+[ "${DOTFILES_PUSH:-}" = "1" ] && exit 0
+printf "\e[0;33mdotfiles ·\e[0m use \e[1mhome push\e[0m to push both repos\n"

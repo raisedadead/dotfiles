@@ -11,7 +11,14 @@
 #-----------------------------
 home() {
   case "${1:-}" in
-    check|pull|push|status|verify|managed|init)
+    cd)
+      case "${2:-}" in
+        dotfiles-private|private|priv|p) cd ~/.dotfiles-private ;;
+        dotfiles|public|pub|"")          cd ~/.dotfiles ;;
+        *) echo "unknown repo: $2 (dotfiles | dotfiles-private)" >&2; return 1 ;;
+      esac
+      ;;
+    check|pull|push|status|verify|managed|init|re-add-all|merge-all)
       just --justfile ~/.dotfiles/justfile --working-directory ~/.dotfiles "$@"
       ;;
     *)
