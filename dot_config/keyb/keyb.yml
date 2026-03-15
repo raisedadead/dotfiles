@@ -117,6 +117,8 @@
 
 - name: tmux › copy mode (vi)
   keybinds:
+    - name: Enter copy mode
+      key: M-v
     - name: Begin selection
       key: v
     - name: Rectangle toggle
