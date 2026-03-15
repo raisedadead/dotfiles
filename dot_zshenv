@@ -76,6 +76,7 @@ fi
 # Local bin directories (should be last to override system commands)
 [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
 [[ -d "$HOME/bin" ]] && export PATH="$HOME/bin:$PATH"
+[[ -d "$HOME/.bin" ]] && export PATH="$HOME/.bin:$PATH"
 
 # Editor configuration (KEEP LAST)
 # Cache the result to avoid repeated command -v calls
