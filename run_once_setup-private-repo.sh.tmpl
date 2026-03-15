@@ -1,0 +1,27 @@
+#!/bin/bash
+# Clones the private dotfiles repo and applies it.
+# chezmoi runs this once on first apply (tracked by content hash).
+
+set -euo pipefail
+
+PRIVATE_REPO="git@github.com:raisedadead/dotfiles-private.git"
+PRIVATE_DIR="{{ .chezmoi.homeDir }}/.dotfiles-private"
+
+if [ -d "$PRIVATE_DIR" ]; then
+  echo "[dotfiles] Private repo already cloned at $PRIVATE_DIR"
+else
+  echo "[dotfiles] Cloning private repo..."
+  if git clone "$PRIVATE_REPO" "$PRIVATE_DIR" 2>/dev/null; then
+    echo "[dotfiles] Private repo cloned successfully."
+  else
+    echo "[dotfiles] WARNING: Could not clone private repo."
+    echo "[dotfiles] SSH may not be configured yet. Run manually later:"
+    echo "[dotfiles]   git clone $PRIVATE_REPO $PRIVATE_DIR"
+    echo "[dotfiles]   chezmoi --source $PRIVATE_DIR apply"
+    exit 0
+  fi
+fi
+
+echo "[dotfiles] Applying private dotfiles..."
+chezmoi --source "$PRIVATE_DIR" apply
+echo "[dotfiles] Private dotfiles applied."

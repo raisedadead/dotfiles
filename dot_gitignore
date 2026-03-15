@@ -1,0 +1,56 @@
+# Folder view configuration files
+.DS_Store
+Desktop.ini
+
+# Thumbnail cache files
+._*
+Thumbs.db
+
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+
+# Compiled Python files
+*.pyc
+
+# Compiled C++ files
+*.out
+
+# Application specific files
+venv
+node_modules
+.sass-cache
+
+# Local config files
+*.local
+.vscode/
+
+# 1Password Configs
+.op/
+
+# AI Agents
+.cursor/
+.cursorignore
+
+.claude
+.mcp.json
+CLAUDE.md
+
+.specify
+specs
+
+AGENTS.md
+
+.playwright-mcp/
+
+.serena/
+docs/plans
+.worktrees
+.sidecar
+.beads/
+.dolt/
+
+.dp-cto
+
+# Backup files
+*.bak

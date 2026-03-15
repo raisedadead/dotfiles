@@ -2,86 +2,177 @@
 
 > ### Every-day carry for my systems.
 
-My dotfiles follow the convention from
-[`homeshick`](https://github.com/andsens/homeshick).
+Managed with [`chezmoi`](https://www.chezmoi.io/). Previously managed with
+[`homeshick`](https://github.com/andsens/homeshick), which served reliably for
+years.
 
-`homeshick` is a Git-based dotfiles synchronizer utility. The convention is to
-split up collections of dotfiles into repositories called "castles". This
-particular repository is my primary castle. It has all the standard and most
-used configs. Other castles are private or platform-specific.
+## Structure
 
-Be mindful of the spelling "homesick" vs. "home**sh**ick". The former is the
-original tool implemented in ruby and later in shell script. I use a shell alias
-`alias home=homeshick` to execute commands for convenience.
+This repository is the public dotfiles source. A separate private repository
+handles credentials and sensitive configuration.
 
-In practice, you should be able to use the files as is, by getting them from the
-`/home` directory in this repository.
+```
+~/.dotfiles           # this repo (public)
+~/.dotfiles-private   # private repo
+```
 
-## Prerequisite
+## Packages and tools
 
-If you are the same person as I am, make sure that the initial system setup
-checklist has been completed and tools and packages have been installed.
+Brewfile for Homebrew on macOS is included at `.config/brewfile/Brewfile`.
 
-### Packages and tools:
+```bash
+brew bundle --file=~/.config/brewfile/Brewfile
+```
 
-Check and get additional tools and packages for the system.
+## Setup (new machine)
 
-- Brewfile for Homebrew on Linux
+A bootstrap script handles the full sequence interactively:
 
-  <https://github.com/raisedadead/dotfiles-linux/blob/master/home/Brewfile>
+```bash
+# If you already have Homebrew + git:
+git clone git@github.com:raisedadead/dotfiles.git ~/.dotfiles
+~/.dotfiles/install.sh
 
-- Brewfile for Homebrew on macOS
+# Or step by step — see below.
+```
 
-  <https://github.com/raisedadead/Brewfile>
+```
+┌──────────────────────────┐
+│  1. Install Homebrew     │
+└────────────┬─────────────┘
+             ▼
+┌──────────────────────────┐
+│  2. brew install         │
+│     chezmoi git just     │
+└────────────┬─────────────┘
+             ▼
+┌──────────────────────────┐     ┌─────────────────────────┐
+│  3. Install 1Password    │────▶│ Enable SSH Agent in     │
+│     (manual / brew)      │     │ Settings → Developer    │
+└────────────┬─────────────┘     └─────────────────────────┘
+             ▼
+┌──────────────────────────┐
+│  4. ./install.sh         │
+│     ├─ apply public      │
+│     ├─ clone + apply     │
+│     │  private (if SSH)  │
+│     └─ brew bundle       │
+└────────────┬─────────────┘
+             ▼
+┌──────────────────────────┐
+│  5. just check           │
+└──────────────────────────┘
+```
 
-  ~~I manage my `Brewfile` on macOS with a Brewfile manager called
-  [Brew-file](https://github.com/rcmdnk/homebrew-file). It handles installing
-  casks and applications from the App Store with `mas-cli`. Additionally it
-  neatly wraps the `brew` command to keep the Brewfile updated and
-  synchronized.~~
+### Manual steps (if not using install.sh)
 
-  I now use `brew bundle` to manage the Brewfile.
-
-## Installation
-
-1. Install [`homeshick`](https://github.com/andsens/homeshick) and source it:
-
-   ```bash
-   git clone https://github.com/andsens/homeshick.git $HOME/.homesick/repos/homeshick
-   source ~/.homesick/repos/homeshick/homeshick.sh
-   ```
-
-2. Get the primary castle:
-
-   ```bash
-   homeshick clone git@github.com:raisedadead/dotfiles.git
-   ```
-
-3. Repeat for others:
-
-   Private Castle (<https://github.com/raisedadead/dotfiles-private>):
-
-   ```bash
-   homeshick clone git@github.com:raisedadead/dotfiles-private.git
-   ```
-
-   Ubuntu Castle (<https://github.com/raisedadead/dotfiles-linux>):
-
-   ```bash
-   homeshick clone git@github.com:raisedadead/dotfiles-linux.git
-   ```
-
-   macOS Castle (<https://github.com/raisedadead/dotfiles-macos>):
+1. Install [Homebrew](https://brew.sh/):
 
    ```bash
-   homeshick clone git@github.com:raisedadead/dotfiles-macos.git
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
 
-   Neovim Castle (<https://github.com/raisedadead/dotfiles-nvim>):
+2. Install essentials:
 
    ```bash
-   homeshick clone git@github.com:raisedadead/dotfiles-nvim.git
+   brew install chezmoi git just
    ```
+
+3. Set up [1Password](https://1password.com/downloads/mac/) and enable the SSH
+   agent under **Settings → Developer → SSH Agent**.
+
+4. Apply public dotfiles:
+
+   ```bash
+   chezmoi init git@github.com:raisedadead/dotfiles.git --source ~/.dotfiles --apply
+   ```
+
+5. Apply private dotfiles:
+
+   ```bash
+   git clone git@github.com:raisedadead/dotfiles-private.git ~/.dotfiles-private
+   chezmoi --source ~/.dotfiles-private apply
+   ```
+
+6. Install packages:
+
+   ```bash
+   brew bundle --file=~/.config/brewfile/Brewfile
+   ```
+
+7. Verify:
+
+   ```bash
+   just check
+   ```
+
+## Daily workflow
+
+Two commands cover everything. `chezmoi` for public, add `--source
+~/.dotfiles-private` for private. A `justfile` handles multi-repo operations
+(`just pull`, `just push`).
+
+### Editing a managed file
+
+```bash
+# Edit in place, then sync back to source
+vim ~/.zshrc
+chezmoi re-add ~/.zshrc
+
+# Or edit via chezmoi (opens in $EDITOR, applies on save)
+chezmoi edit ~/.zshrc
+```
+
+### Adding a new file
+
+```bash
+chezmoi add ~/.config/foo/config.toml                            # public
+chezmoi --source ~/.dotfiles-private add ~/.config/foo/secret.yml # private
+```
+
+### Syncing across machines
+
+```bash
+chezmoi update                                    # pull + apply public
+
+git -C ~/.dotfiles-private pull --rebase           # pull private
+chezmoi --source ~/.dotfiles-private apply          # apply private
+
+# Or both at once:
+just pull
+```
+
+### Checking status
+
+```bash
+chezmoi diff                                      # public drift
+chezmoi --source ~/.dotfiles-private diff           # private drift
+chezmoi doctor                                     # health check
+```
+
+### Pushing changes
+
+```bash
+cd ~/.dotfiles && git add -A && git commit -m "chore: update configs"
+git push
+
+# Or both repos at once:
+just push
+```
+
+### Quick reference
+
+| Task             | chezmoi                                           |
+| ---------------- | ------------------------------------------------- |
+| Add a file       | `chezmoi add <file>`                              |
+| Add (private)    | `chezmoi --source ~/.dotfiles-private add <file>` |
+| Apply            | `chezmoi apply`                                   |
+| Apply (private)  | `chezmoi --source ~/.dotfiles-private apply`      |
+| Pull from remote | `chezmoi update`                                  |
+| Check for drift  | `chezmoi diff`                                    |
+| Edit a file      | `chezmoi edit <file>`                             |
+| Re-sync a file   | `chezmoi re-add <file>`                           |
+| List managed     | `chezmoi managed`                                 |
 
 ## License
 
