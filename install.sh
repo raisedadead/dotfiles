@@ -148,4 +148,4 @@ fi
 
 echo ""
 ok "Setup complete."
-info "Run 'just verify' to confirm everything is in sync."
+info "Run 'home verify' to confirm everything is in sync."
