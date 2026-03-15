@@ -7,9 +7,19 @@
 #-----------------------------------------------------------
 
 #-----------------------------
-# chezmoi
+# chezmoi / dotfiles
 #-----------------------------
-alias home="chezmoi"
+home() {
+  case "${1:-}" in
+    check|pull|push|status|verify|managed|init)
+      just --justfile ~/.dotfiles/justfile --working-directory ~/.dotfiles "$@"
+      ;;
+    *)
+      chezmoi "$@"
+      ;;
+  esac
+}
+compdef home=chezmoi
 
 #-----------------------------
 # cat
