@@ -1,6 +1,8 @@
 #!/bin/bash
-# Clones the private dotfiles repo and applies it.
+# Clones the private dotfiles repo.
 # chezmoi runs this once on first apply (tracked by content hash).
+# NOTE: Does not call chezmoi apply — that would deadlock (nested chezmoi).
+# Run `chezmoi --source ~/.dotfiles-private apply` separately after.
 
 set -euo pipefail
 
@@ -9,19 +11,16 @@ PRIVATE_DIR="{{ .chezmoi.homeDir }}/.dotfiles-private"
 
 if [ -d "$PRIVATE_DIR" ]; then
   echo "[dotfiles] Private repo already cloned at $PRIVATE_DIR"
-else
-  echo "[dotfiles] Cloning private repo..."
-  if git clone "$PRIVATE_REPO" "$PRIVATE_DIR" 2>/dev/null; then
-    echo "[dotfiles] Private repo cloned successfully."
-  else
-    echo "[dotfiles] WARNING: Could not clone private repo."
-    echo "[dotfiles] SSH may not be configured yet. Run manually later:"
-    echo "[dotfiles]   git clone $PRIVATE_REPO $PRIVATE_DIR"
-    echo "[dotfiles]   chezmoi --source $PRIVATE_DIR apply"
-    exit 0
-  fi
+  exit 0
 fi
 
-echo "[dotfiles] Applying private dotfiles..."
-chezmoi --source "$PRIVATE_DIR" apply
-echo "[dotfiles] Private dotfiles applied."
+echo "[dotfiles] Cloning private repo..."
+if git clone "$PRIVATE_REPO" "$PRIVATE_DIR" 2>/dev/null; then
+  echo "[dotfiles] Private repo cloned."
+  echo "[dotfiles] Run: chezmoi --source ~/.dotfiles-private apply"
+else
+  echo "[dotfiles] WARNING: Could not clone private repo (SSH may not be ready)."
+  echo "[dotfiles] Run manually later:"
+  echo "[dotfiles]   git clone $PRIVATE_REPO $PRIVATE_DIR"
+  echo "[dotfiles]   chezmoi --source $PRIVATE_DIR apply"
+fi
