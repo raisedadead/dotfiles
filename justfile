@@ -20,16 +20,13 @@ help:
     printf "  ${B}home pull${R}                ${D}pull + apply both repos${R}\n"
     printf "  ${B}home push${R}                ${D}push both repos${R}\n"
     printf "  ${B}home status${R}              ${D}git status both repos${R}\n"
-    echo ""
-    printf "  ${B}home add FILE${R}            ${D}chezmoi add (public)${R}\n"
-    printf "  ${B}home edit FILE${R}           ${D}chezmoi edit (auto-applies on save)${R}\n"
-    printf "  ${B}home re-add FILE${R}         ${D}re-add changed target file${R}\n"
-    printf "  ${B}home re-add-all${R}          ${D}re-add all drifted files${R}\n"
-    printf "  ${B}home merge-all${R}           ${D}interactive merge all drifted files${R}\n"
-    printf "  ${B}home diff${R}                ${D}chezmoi diff both repos${R}\n"
+    printf "  ${B}home diff${R}                ${D}diff both repos${R}\n"
     printf "  ${B}home managed${R}             ${D}list all managed files${R}\n"
     printf "  ${B}home verify${R}              ${D}verify sync state${R}\n"
     printf "  ${B}home init${R}                ${D}first-time setup${R}\n"
+    echo ""
+    printf "  ${D}Everything else passes through to chezmoi:${R}\n"
+    printf "  ${D}home re-add, home edit, home doctor, etc.${R}\n"
     echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -89,44 +86,6 @@ apply-private:
     printf "${D}dotfiles ·${R} applying private...\n"
     chezmoi --source {{ private }} apply
     printf "${G}dotfiles ·${R} private applied\n"
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Edit & Add
-# ─────────────────────────────────────────────────────────────────────────────
-
-# Edit a managed file (opens in $EDITOR, applies on save)
-edit file:
-    chezmoi edit {{ file }}
-
-# Add a file to public dotfiles
-add file:
-    chezmoi add {{ file }}
-
-# Add a file to private dotfiles
-add-private file:
-    chezmoi --source {{ private }} add {{ file }}
-
-# Re-add a changed managed file
-re-add file:
-    chezmoi re-add {{ file }}
-
-# Re-add ALL changed managed files at once
-[no-exit-message]
-re-add-all:
-    #!/usr/bin/env bash
-    D=$'\e[0;90m'; G=$'\e[0;32m'; R=$'\e[0m'
-    printf "${D}dotfiles ·${R} re-adding all drifted files...\n"
-    chezmoi re-add
-    printf "${G}dotfiles ·${R} source updated from target\n"
-
-# Interactive merge of all drifted files
-[no-exit-message]
-merge-all:
-    #!/usr/bin/env bash
-    D=$'\e[0;90m'; G=$'\e[0;32m'; R=$'\e[0m'
-    printf "${D}dotfiles ·${R} merging drifted files...\n"
-    chezmoi merge-all
-    printf "${G}dotfiles ·${R} merge complete\n"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sync
@@ -212,10 +171,6 @@ managed:
         printf "${D}dotfiles ·${R} ${B}private${R} ${D}(%s files)${R}\n" "$PRIV_N"
         chezmoi --source {{ private }} managed
     fi
-
-# Run chezmoi doctor
-doctor:
-    chezmoi doctor
 
 # Verify all managed files are in sync
 [no-exit-message]

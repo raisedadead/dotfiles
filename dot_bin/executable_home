@@ -10,7 +10,7 @@
 #-----------------------------------------------------------
 
 case "${1:-}" in
-  check|pull|push|status|verify|managed|init|re-add-all|merge-all)
+  check|pull|push|status|verify|managed|init|apply|apply-public|apply-private|diff)
     just --justfile ~/.dotfiles/justfile --working-directory ~/.dotfiles "$@"
     ;;
   *)
