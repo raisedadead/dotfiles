@@ -130,10 +130,14 @@
 
 - name: tmux › mouse
   keybinds:
-    - name: Select text (native Ghostty)
+    - name: Select text (pane-aware, auto-copies)
+      key: Drag
+    - name: Select word (auto-copies)
+      key: Double-click
+    - name: Select line (auto-copies)
+      key: Triple-click
+    - name: Select text (native Ghostty, cross-pane)
       key: Shift+drag
-    - name: Copy selection
-      key: Cmd+C
     - name: Scroll up (enters copy mode)
       key: Wheel up
     - name: Scroll down (auto-exits at bottom)

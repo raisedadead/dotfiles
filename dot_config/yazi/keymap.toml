@@ -65,7 +65,7 @@ desc = "Go to DEV"
 
 [[mgr.prepend_keymap]]
 on   = ["g", "."]
-run  = "cd ~/.homesick/repos/dotfiles"
+run  = "cd ~/.dotfiles"
 desc = "Go to dotfiles"
 
 [[mgr.prepend_keymap]]

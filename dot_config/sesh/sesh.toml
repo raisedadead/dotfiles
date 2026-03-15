@@ -23,23 +23,11 @@ pattern = "~/DEV/rd/*"
 [[wildcard]]
 pattern = "~/DEV/one-off/*"
 
-# Homesick castles
+# Chezmoi source dirs
 [[session]]
 name = "dotfiles"
-path = "~/.homesick/repos/dotfiles"
-
-[[session]]
-name = "dotfiles-nvim"
-path = "~/.homesick/repos/dotfiles-nvim"
+path = "~/.dotfiles"
 
 [[session]]
 name = "dotfiles-private"
-path = "~/.homesick/repos/dotfiles-private"
-
-[[session]]
-name = "dotfiles-macos"
-path = "~/.homesick/repos/dotfiles-macos"
-
-[[session]]
-name = "dotfiles-ai-tools"
-path = "~/.homesick/repos/dotfiles-ai-tools"
+path = "~/.dotfiles-private"
