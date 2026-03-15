@@ -15,9 +15,6 @@ help:
     #!/usr/bin/env bash
     B=$'\e[1m'; D=$'\e[0;90m'; R=$'\e[0m'
     echo ""
-    printf "  ${B}home cd dotfiles${R}          ${D}cd to public source${R}\n"
-    printf "  ${B}home cd dotfiles-private${R}  ${D}cd to private source${R}\n"
-    echo ""
     printf "  ${B}home check${R}               ${D}status + what to do next${R}\n"
     printf "  ${B}home apply${R}               ${D}apply both repos to ~${R}\n"
     printf "  ${B}home pull${R}                ${D}pull + apply both repos${R}\n"
@@ -260,9 +257,9 @@ check:
     HAS_ISSUES=0
     for REPO in public private; do
         if [ "$REPO" = "public" ]; then
-            DIR="$PUB"; CM_SRC=""; CD="home cd dotfiles"; APPLY="home apply"
+            DIR="$PUB"; CM_SRC=""; CD="cd ~/.dotfiles"; APPLY="home apply"
         else
-            DIR="$PRIV"; CM_SRC="--source $PRIV"; CD="home cd dotfiles-private"; APPLY="home apply-private"
+            DIR="$PRIV"; CM_SRC="--source $PRIV"; CD="cd ~/.dotfiles-private"; APPLY="home apply-private"
             if [ ! -d "$DIR" ]; then
                 printf "  ${DIM}%-10s not cloned${RST}\n" "$REPO"
                 continue

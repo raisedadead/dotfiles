@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+
+#-----------------------------------------------------------
+# @raisedadead's config files
+# Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
+# License: ISC
+#
+# File name: home
+# Wrapper for chezmoi + just dotfiles management
+#-----------------------------------------------------------
+
+case "${1:-}" in
+  check|pull|push|status|verify|managed|init|re-add-all|merge-all)
+    just --justfile ~/.dotfiles/justfile --working-directory ~/.dotfiles "$@"
+    ;;
+  *)
+    chezmoi "$@"
+    ;;
+esac

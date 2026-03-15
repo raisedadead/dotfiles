@@ -174,15 +174,15 @@ if [[ -o interactive ]]; then
   cached_evalz atuin "atuin init zsh --disable-up-arrow"
   cached_evalz zoxide "zoxide init --cmd cd --hook pwd zsh"
 
-  # Deferred inits and completions (cached = instant source, no subprocess spawn)
-  zsh-defer -c 'cached_evalz direnv "direnv hook zsh"'
-  zsh-defer -c 'cached_evalz gh "gh completion -s zsh"'
-  zsh-defer -c 'cached_evalz op "op completion zsh" && compdef _op op'
-  zsh-defer -c 'cached_evalz but "but completions zsh"'
-  zsh-defer -c 'cached_evalz wrangler "wrangler complete zsh"'
-  zsh-defer -c 'cached_evalz wt "wt shell-init zsh"'
-  zsh-defer -c 'cached_evalz sesh "sesh completion zsh"'
-  zsh-defer -c 'cached_evalz bd "bd completion zsh"'
+  # Sync completions and tool inits (cached = instant source, no subprocess spawn)
+  cached_evalz direnv "direnv hook zsh"
+  cached_evalz gh "gh completion -s zsh"
+  cached_evalz op "op completion zsh" && compdef _op op
+  cached_evalz wrangler "wrangler complete zsh"
+  cached_evalz wt "wt shell-init zsh"
+  cached_evalz sesh "sesh completion zsh"
+  cached_evalz bd "bd completion zsh"
+  compdef home=chezmoi
   # zsh-defer -c 'cached_evalz pkgx "pkgx --shellcode"'
 fi
 

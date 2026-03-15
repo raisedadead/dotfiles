@@ -1,1 +1,26 @@
 sourceDir = "~/.dotfiles"
+
+[edit]
+    apply = true
+    watch = true
+
+[git]
+    autoCommit = true
+    autoPush = false
+
+{{ if lookPath "delta" -}}
+[diff]
+    pager = "delta"
+{{ end -}}
+
+{{ if lookPath "nvim" -}}
+[merge]
+    command = "nvim"
+    args = ["-d", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
+{{ end -}}
+
+[add]
+    secrets = "error"
+
+[completion]
+    custom = true
