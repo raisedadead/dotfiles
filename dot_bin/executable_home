@@ -23,28 +23,53 @@ ok() { printf "${GRN}dotfiles ·${RST} %s\n" "$1"; }
 
 has_priv() { [[ -d "$PRIV" ]]; }
 
-# Run a chezmoi command against both repos
-both() {
-  chezmoi "$@"
-  has_priv && chezmoi --source "$PRIV" "$@"
+# Run chezmoi for a named repo (public|private)
+# Config template lives in public repo only — suppress stale-config warning on private
+_cm() {
+  local repo="$1"; shift
+  if [[ "$repo" == "private" ]]; then
+    chezmoi --source "$PRIV" "$@" 2> >(grep -v 'config file template' >&2)
+  else
+    chezmoi "$@"
+  fi
 }
+
+# List repos to operate on based on REPO_SEL
+_repos() {
+  case "${REPO_SEL:-}" in
+    public)  echo "public" ;;
+    private) echo "private" ;;
+    *)       echo "public"; has_priv && echo "private" ;;
+  esac
+}
+
+# Parse optional repo selector: home [public|private] <command>
+REPO_SEL=""
+case "${1:-}" in
+  public|pub)   REPO_SEL="public"; shift ;;
+  private|prv)  REPO_SEL="private"; shift ;;
+esac
 
 cmd_help() {
   echo ""
   printf "  ${BLD}home check${RST}               ${DIM}show status and suggested actions${RST}\n"
-  printf "  ${BLD}home apply${RST}               ${DIM}apply both repos to home dir${RST}\n"
+  printf "  ${BLD}home re-add${RST}              ${DIM}sync edited files from ~ back to source${RST}\n"
+  printf "  ${BLD}home apply${RST}               ${DIM}apply source to home dir${RST}\n"
   printf "  ${BLD}home pull${RST}                ${DIM}pull and apply both repos${RST}\n"
   printf "  ${BLD}home push${RST}                ${DIM}push both repos to origin${RST}\n"
   echo ""
   printf "  ${BLD}home status${RST}              ${DIM}show git status for both repos${RST}\n"
-  printf "  ${BLD}home diff${RST}                ${DIM}show pending changes in both repos${RST}\n"
+  printf "  ${BLD}home diff${RST}                ${DIM}show pending changes${RST}\n"
   printf "  ${BLD}home managed${RST}             ${DIM}list all managed files${RST}\n"
   printf "  ${BLD}home verify${RST}              ${DIM}check if home dir is in sync${RST}\n"
   echo ""
   printf "  ${BLD}home init${RST}                ${DIM}clone private repo and apply both${RST}\n"
   echo ""
+  printf "  ${DIM}Prefix with ${RST}${BLD}public${RST}${DIM} or ${RST}${BLD}private${RST}${DIM} to target one repo:${RST}\n"
+  printf "  ${DIM}e.g. home pub re-add, home prv apply${RST}\n"
+  echo ""
   printf "  ${DIM}Anything else is passed through to chezmoi directly.${RST}\n"
-  printf "  ${DIM}e.g. home re-add, home edit, home doctor${RST}\n"
+  printf "  ${DIM}e.g. home edit, home doctor, home cd${RST}\n"
   echo ""
 }
 
@@ -62,25 +87,39 @@ cmd_init() {
     p "private repo found"
   fi
   echo ""
+  p "regenerating config..."
+  chezmoi init
   p "applying public repo..."
   chezmoi apply
   p "applying private repo..."
-  chezmoi --source "$PRIV" apply
+  _cm private apply
   echo ""
   ok "setup complete"
 }
 
+cmd_readd() {
+  echo ""
+  local first=1
+  for repo in $(_repos); do
+    (( first )) || echo ""
+    first=0
+    p "re-adding $repo repo..."
+    _cm "$repo" re-add
+    ok "$repo repo re-added"
+  done
+  echo ""
+}
+
 cmd_apply() {
   echo ""
-  p "applying public repo..."
-  chezmoi apply
-  ok "public repo applied"
-  if has_priv; then
-    echo ""
-    p "applying private repo..."
-    chezmoi --source "$PRIV" apply
-    ok "private repo applied"
-  fi
+  local first=1
+  for repo in $(_repos); do
+    (( first )) || echo ""
+    first=0
+    p "applying $repo repo..."
+    _cm "$repo" apply
+    ok "$repo repo applied"
+  done
   echo ""
 }
 
@@ -93,7 +132,7 @@ cmd_pull() {
     echo ""
     p "pulling private repo..."
     git -C "$PRIV" pull --rebase
-    chezmoi --source "$PRIV" apply
+    _cm private apply
     ok "private repo updated"
   fi
   echo ""
@@ -128,25 +167,28 @@ cmd_status() {
   echo ""
 }
 
-cmd_diff()    { both diff; }
-cmd_managed() { both managed; }
+cmd_diff() {
+  for repo in $(_repos); do
+    _cm "$repo" diff
+  done
+}
+
+cmd_managed() {
+  for repo in $(_repos); do
+    _cm "$repo" managed
+  done
+}
 
 cmd_verify() {
   echo ""
-  printf "  ${BLD}public repo${RST}   "
-  if chezmoi verify 2>/dev/null; then
-    printf "${GRN}in sync${RST}\n"
-  else
-    printf "${YLW}drift detected${RST} — run ${BLD}home diff${RST}\n"
-  fi
-  if has_priv; then
-    printf "  ${BLD}private repo${RST}  "
-    if chezmoi --source "$PRIV" verify 2>/dev/null; then
+  for repo in $(_repos); do
+    printf "  ${BLD}%-14s${RST}" "$repo repo"
+    if _cm "$repo" verify 2>/dev/null; then
       printf "${GRN}in sync${RST}\n"
     else
-      printf "${YLW}drift detected${RST} — run ${BLD}home diff${RST}\n"
+      printf "${YLW}drift detected${RST} — run ${BLD}home diff${RST} or ${BLD}home re-add${RST}\n"
     fi
-  fi
+  done
   echo ""
 }
 
@@ -161,7 +203,7 @@ cmd_check() {
   has_priv && git -C "$PRIV" fetch --quiet 2>/dev/null &
   wait
 
-  local HAS_ISSUES=0 HAS_PULL=0 HAS_APPLY=0 HAS_PUSH=0
+  local HAS_ISSUES=0 HAS_PULL=0 HAS_APPLY=0 HAS_READD=0 HAS_PUSH=0
   local DIR CM_SRC AHEAD BEHIND BR DIRTY DIRTY_N UNAPPLIED S SHORT_DIR
 
   # collect per-repo status + actions
@@ -188,24 +230,85 @@ cmd_check() {
     DIRTY=$(git -C "$DIR" status --porcelain 2>/dev/null)
     DIRTY_N=0; [[ -n "$DIRTY" ]] && DIRTY_N=$(echo "$DIRTY" | wc -l | tr -d ' ')
 
-    UNAPPLIED=$(chezmoi $CM_SRC diff --no-pager 2>&1 | grep -c '^diff' || true)
+    local DRIFT_FILES
+    DRIFT_FILES=$(chezmoi $CM_SRC status 2>/dev/null)
+    UNAPPLIED=0; [[ -n "$DRIFT_FILES" ]] && UNAPPLIED=$(echo "$DRIFT_FILES" | wc -l | tr -d ' ')
+
+    # sync indicator (ahead/behind origin) — no space before paren
+    local SYNC="" VIS_W=${#REPO}
+    if (( AHEAD > 0 || BEHIND > 0 )); then
+      SYNC="${DIM}(${RST}"
+      VIS_W=$(( VIS_W + 1 ))
+      if (( AHEAD > 0 )); then
+        SYNC="${SYNC}${YLW}↑${AHEAD}${RST}"
+        VIS_W=$(( VIS_W + 1 + ${#AHEAD} ))
+      fi
+      if (( AHEAD > 0 && BEHIND > 0 )); then
+        SYNC="${SYNC}${DIM}/${RST}"
+        VIS_W=$(( VIS_W + 1 ))
+      fi
+      if (( BEHIND > 0 )); then
+        SYNC="${SYNC}${CYN}↓${BEHIND}${RST}"
+        VIS_W=$(( VIS_W + 1 + ${#BEHIND} ))
+      fi
+      SYNC="${SYNC}${DIM})${RST}"
+      VIS_W=$(( VIS_W + 1 ))
+    fi
+
+    local COL=22
+    local PAD_N=$(( COL - VIS_W ))
+    (( PAD_N < 2 )) && PAD_N=2
 
     S=""
-    (( BEHIND > 0 ))    && S="${S} ${CYN}${BEHIND} behind${RST}"
-    (( AHEAD > 0 ))     && S="${S} ${YLW}${AHEAD} ahead${RST}"
     (( DIRTY_N > 0 ))   && S="${S} ${RED}${DIRTY_N} dirty${RST}"
-    (( UNAPPLIED > 0 )) && S="${S} ${YLW}${UNAPPLIED} unapplied${RST}"
+    if (( UNAPPLIED > 0 )); then
+      if (( DIRTY_N == 0 )); then
+        S="${S} ${YLW}${UNAPPLIED} edited${RST}"
+      else
+        S="${S} ${YLW}${UNAPPLIED} drifted${RST}"
+      fi
+    fi
 
-    if [[ -z "$S" ]]; then
-      printf "  %-10s ${GRN}✓${RST}\n" "$REPO"
+    # print repo header
+    [[ "$REPO" != "public" ]] && echo ""
+    if [[ -z "$S" && -z "$SYNC" ]]; then
+      printf "  %s%*s${GRN}✓${RST}\n" "$REPO" "$PAD_N" ""
+    elif [[ -z "$S" ]]; then
+      printf "  %s%b%*s${GRN}✓${RST}\n" "$REPO" "$SYNC" "$PAD_N" ""
     else
       HAS_ISSUES=1
-      printf "  %-10s%s\n" "$REPO" "$S"
+      printf "  %s%b%*s%b\n" "$REPO" "$SYNC" "$PAD_N" "" "${S# }"
+
+      # collect all files with signs
+      local -A FILE_SIGNS=()
       if [[ -n "$DIRTY" ]]; then
-        echo "$DIRTY" | while IFS= read -r l; do
-          printf "  ${DIM}           %s${RST}\n" "$l"
-        done
+        while IFS= read -r l; do
+          local code="${l:0:2}" file="${l:3}"
+          case "$code" in
+            "??"|A?|?A) FILE_SIGNS["$file"]="${GRN}+${RST}" ;;
+            D?|?D)      FILE_SIGNS["$file"]="${RED}-${RST}" ;;
+            R?)         FILE_SIGNS["$file"]="${CYN}→${RST}" ;;
+            *)          FILE_SIGNS["$file"]="${YLW}~${RST}" ;;
+          esac
+        done <<< "$DIRTY"
       fi
+      if [[ -n "$DRIFT_FILES" ]]; then
+        while IFS= read -r l; do
+          local dcode="${l:0:2}" dfile="${l:3}"
+          [[ -z "$dfile" ]] && continue
+          if [[ -z "${FILE_SIGNS["$dfile"]+x}" ]]; then
+            case "$dcode" in
+              A*)  FILE_SIGNS["$dfile"]="${GRN}+${RST}" ;;
+              D*)  FILE_SIGNS["$dfile"]="${RED}-${RST}" ;;
+              *)   FILE_SIGNS["$dfile"]="${YLW}~${RST}" ;;
+            esac
+          fi
+        done <<< "$DRIFT_FILES"
+      fi
+
+      for f in $(echo "${!FILE_SIGNS[@]}" | tr ' ' '\n' | sort); do
+        printf "  %*s%b ${DIM}%s${RST}\n" "$COL" "" "${FILE_SIGNS[$f]}" "$f"
+      done
     fi
 
     # per-repo actions (git add/commit only)
@@ -221,33 +324,35 @@ cmd_check() {
 
     # shared actions (deduplicated across repos)
     (( BEHIND > 0 ))    && HAS_PULL=1
-    (( UNAPPLIED > 0 )) && HAS_APPLY=1
+    if (( UNAPPLIED > 0 )); then
+      if (( DIRTY_N == 0 )); then
+        HAS_READD=1
+      else
+        HAS_READD=1; HAS_APPLY=1
+      fi
+    fi
     (( AHEAD > 0 ))     && HAS_PUSH=1
   done
 
   local ANY_REPO_ACTS=$(( ${#REPO_ACTS_pub[@]} + ${#REPO_ACTS_priv[@]} ))
-  local ANY_SHARED=$(( HAS_PULL + HAS_APPLY + HAS_PUSH ))
+  local ANY_SHARED=$(( HAS_PULL + HAS_READD + HAS_APPLY + HAS_PUSH ))
 
   if (( ANY_REPO_ACTS + ANY_SHARED > 0 )); then
-    printf "\n${DIM}suggested next steps →${RST}\n"
+    printf "\n${DIM}suggested next steps →${RST}\n\n"
+    (( HAS_PULL > 0 ))  && printf "    ${CYN}home pull${RST}\n"
+    (( HAS_READD > 0 )) && printf "    ${YLW}home re-add${RST}  ${DIM}# sync edited files from ~${RST}\n"
+    (( HAS_APPLY > 0 )) && printf "    ${YLW}home apply${RST}   ${DIM}# apply source to ~${RST}\n"
     if (( ${#REPO_ACTS_pub[@]} > 0 )); then
-      printf "\n  ${BLD}public${RST}\n"
       for act in "${REPO_ACTS_pub[@]}"; do
         printf "    %b\n" "$act"
       done
     fi
     if (( ${#REPO_ACTS_priv[@]} > 0 )); then
-      printf "\n  ${BLD}private${RST}\n"
       for act in "${REPO_ACTS_priv[@]}"; do
         printf "    %b\n" "$act"
       done
     fi
-    if (( ANY_SHARED > 0 )); then
-      printf "\n  ${BLD}then${RST}\n"
-      (( HAS_PULL > 0 ))  && printf "    ${CYN}home pull${RST}\n"
-      (( HAS_APPLY > 0 )) && printf "    ${YLW}home apply${RST}\n"
-      (( HAS_PUSH > 0 ))  && printf "    ${GRN}home push${RST}\n"
-    fi
+    (( HAS_PUSH > 0 ))  && printf "    ${GRN}home push${RST}\n"
   elif (( HAS_ISSUES == 0 )); then
     printf "\n${GRN}all clear${RST}\n"
   fi
@@ -257,6 +362,7 @@ cmd_check() {
 case "${1:-}" in
   check)   cmd_check ;;
   init)    cmd_init ;;
+  re-add)  cmd_readd ;;
   apply)   cmd_apply ;;
   pull)    cmd_pull ;;
   push)    cmd_push ;;
@@ -265,5 +371,5 @@ case "${1:-}" in
   managed) cmd_managed ;;
   verify)  cmd_verify ;;
   help|"") cmd_help ;;
-  *)       chezmoi "$@" ;;
+  *)       for repo in $(_repos); do _cm "$repo" "$@"; done ;;
 esac
