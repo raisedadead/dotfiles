@@ -53,8 +53,9 @@ esac
 cmd_help() {
   echo ""
   printf "  ${BLD}home check${RST}               ${DIM}show status and suggested actions${RST}\n"
-  printf "  ${BLD}home re-add${RST}              ${DIM}sync edited files from ~ back to source${RST}\n"
-  printf "  ${BLD}home apply${RST}               ${DIM}apply source to home dir${RST}\n"
+  printf "  ${BLD}home sync${RST}                ${DIM}auto-resolve drift + stage for commit${RST}\n"
+  printf "  ${BLD}home re-add${RST}              ${DIM}← capture ~ edits back to source${RST}\n"
+  printf "  ${BLD}home apply${RST}               ${DIM}→ deploy source to ~${RST}\n"
   printf "  ${BLD}home pull${RST}                ${DIM}pull and apply both repos${RST}\n"
   printf "  ${BLD}home push${RST}                ${DIM}push both repos to origin${RST}\n"
   echo ""
@@ -186,7 +187,7 @@ cmd_verify() {
     if _cm "$repo" verify 2>/dev/null; then
       printf "${GRN}in sync${RST}\n"
     else
-      printf "${YLW}drift detected${RST} — run ${BLD}home diff${RST} or ${BLD}home re-add${RST}\n"
+      printf "${YLW}drift detected${RST} — run ${BLD}home sync${RST} or ${BLD}home diff${RST}\n"
     fi
   done
   echo ""
@@ -203,11 +204,9 @@ cmd_check() {
   has_priv && git -C "$PRIV" fetch --quiet 2>/dev/null &
   wait
 
-  local HAS_ISSUES=0 HAS_PULL=0 HAS_APPLY=0 HAS_READD=0 HAS_PUSH=0
-  local DIR CM_SRC AHEAD BEHIND BR DIRTY DIRTY_N UNAPPLIED S SHORT_DIR
-
-  # collect per-repo status + actions
-  declare -a REPO_ACTS_pub=() REPO_ACTS_priv=()
+  local HAS_ISSUES=0 HAS_PULL=0 HAS_CONFLICT=0 HAS_RESOLVABLE=0 HAS_PUSH=0
+  local DIR CM_SRC AHEAD BEHIND BR DIRTY DIRTY_N TRACKED_DIRTY_N UNAPPLIED S SHORT_DIR
+  local NEEDS_COMMIT_pub=0 NEEDS_COMMIT_priv=0
 
   for REPO in public private; do
     if [[ "$REPO" == "public" ]]; then
@@ -229,6 +228,7 @@ cmd_check() {
 
     DIRTY=$(git -C "$DIR" status --porcelain 2>/dev/null)
     DIRTY_N=0; [[ -n "$DIRTY" ]] && DIRTY_N=$(echo "$DIRTY" | wc -l | tr -d ' ')
+    TRACKED_DIRTY_N=0; [[ -n "$DIRTY" ]] && TRACKED_DIRTY_N=$(echo "$DIRTY" | grep -v '^??' | wc -l | tr -d ' ')
 
     local DRIFT_FILES
     DRIFT_FILES=$(chezmoi $CM_SRC status 2>/dev/null)
@@ -260,12 +260,12 @@ cmd_check() {
     (( PAD_N < 2 )) && PAD_N=2
 
     S=""
-    (( DIRTY_N > 0 ))   && S="${S} ${RED}${DIRTY_N} dirty${RST}"
+    (( DIRTY_N > 0 ))   && S="${S} ${RED}→ ${DIRTY_N} source dirty${RST}"
     if (( UNAPPLIED > 0 )); then
-      if (( DIRTY_N == 0 )); then
-        S="${S} ${YLW}${UNAPPLIED} edited${RST}"
+      if (( TRACKED_DIRTY_N == 0 )); then
+        S="${S} ${YLW}← ${UNAPPLIED} edited in ~${RST}"
       else
-        S="${S} ${YLW}${UNAPPLIED} drifted${RST}"
+        S="${S} ${YLW}⇄ ${UNAPPLIED} drifted${RST}"
       fi
     fi
 
@@ -306,52 +306,41 @@ cmd_check() {
         done <<< "$DRIFT_FILES"
       fi
 
-      for f in $(echo "${!FILE_SIGNS[@]}" | tr ' ' '\n' | sort); do
+      readarray -t _sorted < <(printf '%s\n' "${!FILE_SIGNS[@]}" | sort)
+      for f in "${_sorted[@]}"; do
         printf "  %*s%b ${DIM}%s${RST}\n" "$COL" "" "${FILE_SIGNS[$f]}" "$f"
       done
     fi
 
-    # per-repo actions (git add/commit only)
-    local -a REPO_ACTS=()
-    (( DIRTY_N > 0 ))   && REPO_ACTS+=("${YLW}git -C ${SHORT_DIR} add -A${RST}")
-    (( DIRTY_N > 0 ))   && REPO_ACTS+=("${YLW}git -C ${SHORT_DIR} commit${RST}")
-
     if [[ "$REPO" == "public" ]]; then
-      REPO_ACTS_pub=("${REPO_ACTS[@]}")
+      (( DIRTY_N > 0 || UNAPPLIED > 0 )) && NEEDS_COMMIT_pub=1
     else
-      REPO_ACTS_priv=("${REPO_ACTS[@]}")
+      (( DIRTY_N > 0 || UNAPPLIED > 0 )) && NEEDS_COMMIT_priv=1
     fi
 
-    # shared actions (deduplicated across repos)
     (( BEHIND > 0 ))    && HAS_PULL=1
-    if (( UNAPPLIED > 0 )); then
-      if (( DIRTY_N == 0 )); then
-        HAS_READD=1
-      else
-        HAS_READD=1; HAS_APPLY=1
-      fi
+    if (( TRACKED_DIRTY_N > 0 && UNAPPLIED > 0 )); then
+      HAS_CONFLICT=1
+    elif (( DIRTY_N > 0 || UNAPPLIED > 0 )); then
+      HAS_RESOLVABLE=1
     fi
     (( AHEAD > 0 ))     && HAS_PUSH=1
   done
 
-  local ANY_REPO_ACTS=$(( ${#REPO_ACTS_pub[@]} + ${#REPO_ACTS_priv[@]} ))
-  local ANY_SHARED=$(( HAS_PULL + HAS_READD + HAS_APPLY + HAS_PUSH ))
+  local ANY_WORK=$(( NEEDS_COMMIT_pub + NEEDS_COMMIT_priv ))
+  local ANY_SHARED=$(( HAS_PULL + HAS_CONFLICT + HAS_RESOLVABLE + HAS_PUSH ))
 
-  if (( ANY_REPO_ACTS + ANY_SHARED > 0 )); then
+  if (( ANY_WORK + ANY_SHARED > 0 )); then
     printf "\n${DIM}suggested next steps →${RST}\n\n"
     (( HAS_PULL > 0 ))  && printf "    ${CYN}home pull${RST}\n"
-    (( HAS_READD > 0 )) && printf "    ${YLW}home re-add${RST}  ${DIM}# sync edited files from ~${RST}\n"
-    (( HAS_APPLY > 0 )) && printf "    ${YLW}home apply${RST}   ${DIM}# apply source to ~${RST}\n"
-    if (( ${#REPO_ACTS_pub[@]} > 0 )); then
-      for act in "${REPO_ACTS_pub[@]}"; do
-        printf "    %b\n" "$act"
-      done
+    if (( HAS_RESOLVABLE || HAS_CONFLICT )); then
+      printf "    ${YLW}home sync${RST}    ${DIM}# auto-resolve + stage${RST}\n"
     fi
-    if (( ${#REPO_ACTS_priv[@]} > 0 )); then
-      for act in "${REPO_ACTS_priv[@]}"; do
-        printf "    %b\n" "$act"
-      done
+    if (( HAS_CONFLICT )); then
+      printf "    ${RED}home diff${RST}    ${DIM}# ⇄ review conflicts sync can't resolve${RST}\n"
     fi
+    (( NEEDS_COMMIT_pub ))  && printf "    ${YLW}git -C ~/.dotfiles commit${RST}\n"
+    (( NEEDS_COMMIT_priv )) && printf "    ${YLW}git -C ~/.dotfiles-private commit${RST}\n"
     (( HAS_PUSH > 0 ))  && printf "    ${GRN}home push${RST}\n"
   elif (( HAS_ISSUES == 0 )); then
     printf "\n${GRN}all clear${RST}\n"
@@ -359,8 +348,61 @@ cmd_check() {
   echo ""
 }
 
+cmd_sync() {
+  echo ""
+  local had_conflict=0 had_action=0
+
+  for repo in $(_repos); do
+    local dir
+    if [[ "$repo" == "public" ]]; then
+      dir="$PUB"
+    else
+      dir="$PRIV"
+      [[ ! -d "$dir" ]] && continue
+    fi
+
+    local dirty drift dirty_n tracked_dirty_n drift_n
+    dirty=$(git -C "$dir" status --porcelain 2>/dev/null)
+    dirty_n=0; [[ -n "$dirty" ]] && dirty_n=$(echo "$dirty" | wc -l | tr -d ' ')
+    tracked_dirty_n=0; [[ -n "$dirty" ]] && tracked_dirty_n=$(echo "$dirty" | grep -v '^??' | wc -l | tr -d ' ')
+    drift=$(_cm "$repo" status 2>/dev/null)
+    drift_n=0; [[ -n "$drift" ]] && drift_n=$(echo "$drift" | wc -l | tr -d ' ')
+
+    if (( tracked_dirty_n > 0 && drift_n > 0 )); then
+      printf "  ${RED}⇄ $repo${RST}: %d tracked dirty + %d target edited — run ${BLD}home diff${RST} to review\n" "$tracked_dirty_n" "$drift_n"
+      had_conflict=1
+    elif (( drift_n > 0 )); then
+      p "← $repo: re-adding $drift_n file(s) from ~ to source..."
+      if ! _cm "$repo" re-add; then
+        printf "  ${RED}$repo${RST}: re-add failed\n"
+        had_conflict=1
+        continue
+      fi
+      git -C "$dir" add -u
+      ok "← $repo: re-added and staged"
+      had_action=1
+    elif (( dirty_n > 0 )); then
+      p "→ $repo: staging $dirty_n source change(s)..."
+      git -C "$dir" add -u
+      ok "→ $repo: staged for commit"
+      had_action=1
+    else
+      ok "$repo: in sync"
+    fi
+  done
+
+  echo ""
+  if (( had_conflict )); then
+    printf "${YLW}dotfiles ·${RST} conflicts need manual resolution — resolve, then ${BLD}home sync${RST} again\n"
+  elif (( had_action )); then
+    printf "${DIM}dotfiles ·${RST} staged and ready — review with ${BLD}home status${RST}, then commit\n"
+  fi
+  echo ""
+}
+
 case "${1:-}" in
   check)   cmd_check ;;
+  sync)    cmd_sync ;;
   init)    cmd_init ;;
   re-add)  cmd_readd ;;
   apply)   cmd_apply ;;
