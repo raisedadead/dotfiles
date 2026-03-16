@@ -33,6 +33,7 @@ node_modules
 .cursorignore
 
 .claude
+**/.claude/settings.local.json
 .mcp.json
 CLAUDE.md
 
@@ -51,6 +52,7 @@ docs/plans
 .dolt/
 
 .dp-cto
+.dp-spec
 
 # Backup files
 *.bak

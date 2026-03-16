@@ -20,7 +20,6 @@ optimizer = !"git pruner; git repacker; git prune-packed"
 
 [core]
 whitespace = off
-excludesfile = ~/.gitignore
 autocrlf = false
 safecrlf = false
 pager = delta
