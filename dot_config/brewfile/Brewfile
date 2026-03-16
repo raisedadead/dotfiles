@@ -79,6 +79,8 @@ brew "libxext"
 brew "ccache"
 # Mozilla CA bundle for Python
 brew "certifi"
+# Manage your dotfiles across multiple diverse machines, securely
+brew "chezmoi"
 # Cut, copy, and paste anything, anywhere, all from the terminal
 brew "clipboard"
 # HTTP/2 C Library
@@ -191,8 +193,6 @@ brew "gum"
 brew "helm"
 # HTTP load generator, ApacheBench (ab) replacement
 brew "hey"
-# Git dotfiles synchronizer written in bash
-brew "homeshick"
 # Curl statistics made simple
 brew "httpstat"
 # Image format providing lossless and lossy compression for web images
@@ -251,6 +251,8 @@ brew "neovim"
 brew "ninja"
 # Port scanning utility for large networks
 brew "nmap"
+# Modern shell for the GitHub era
+brew "nushell"
 # Prompt theme engine for any shell
 brew "oh-my-posh"
 # Perl compatible regular expressions library
@@ -281,6 +283,8 @@ brew "sesh"
 brew "sevenzip"
 # Cross-shell prompt for astronauts
 brew "starship"
+# General purpose fuzzy finder TUI
+brew "television"
 # User interface to the TELNET protocol
 brew "telnet"
 # Terminal multiplexer

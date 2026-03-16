@@ -143,12 +143,16 @@
     - name: Scroll down (auto-exits at bottom)
       key: Wheel down
 
-- name: sesh picker
+- name: sesh picker (tv)
   keybinds:
-    - name: Next / prev filter
-      key: Tab / S-Tab
+    - name: Cycle sources (all/tmux/config/zoxide/find)
+      key: C-s
     - name: Kill session
       key: C-d
+    - name: Toggle preview
+      key: C-o
+    - name: Toggle remote control
+      key: C-t
 
 - name: ghostty › scrollback
   keybinds:

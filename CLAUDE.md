@@ -14,7 +14,7 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 
 - **keybinds.conf ↔ keyb.yml must stay in sync** — always update both when changing tmux bindings
 - **`_tmux_exit_code` must be first precmd** — captures `$?` before OMP modifies it
-- **tmux mouse selection is disabled** — use Shift+drag for native Ghostty selection, Cmd+C to copy
+- **tmux mouse selection is pane-aware** — drag selects within pane, copies to system clipboard via OSC 52; Shift+drag falls back to native Ghostty selection
 - **tmux names Shift-Tab as `BTab`** (e.g., `M-BTab`), not `M-S-Tab`
 - **`Ctrl+R` is atuin, not fzf** — atuin initialized with `--disable-up-arrow`
 - **Emacs mode default** (`bindkey -e`) with `C-z` toggle to vi — required for Alt keybinds without lag
@@ -43,12 +43,6 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 - **tmux ↔ zsh**: `_tmux_exit_code` precmd → `@last_exit_code` window option → status bar error dot
 - **tmux ↔ ghostty**: terminal features (hyperlinks, clipboard, extkeys) + `macos-option-as-alt` for Alt binds
 - **zsh ↔ yazi**: `C-f` widget opens yazi; `y()` wrapper handles cd-on-exit via temp cwd file
-
-## Known Migration Leftovers
-
-- `sesh.toml` session paths still reference `~/.homesick/repos/*`
-- Yazi `g,.` shortcut still points to `~/.homesick/repos/dotfiles`
-- `.zshrc` still sources homeshick for backward compat
 
 ## Validation
 

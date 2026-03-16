@@ -101,7 +101,7 @@ selected=$({ commands; tmux_commands; } | fzf-tmux -p 40%,45% \
 # Quick shortcut dispatch
 case "$selected" in
   __SESH__)
-    tmux run-shell "$HOME/.config/tmux/scripts/sesh-popup.sh || true"; exit 0 ;;
+    tmux display-popup -E -w 70% -h 80% -b rounded -T '#[align=centre] Sessions ' "tv sesh"; exit 0 ;;
   __LAZYGIT__)
     tmux display-popup -E -w 70% -h 80% -b rounded -T '#[align=centre] Lazygit ' -d "#{pane_current_path}" lazygit; exit 0 ;;
   __SPLIT_H__)
@@ -170,7 +170,7 @@ case "$label" in
   "Kill Session")
     tmux confirm-before -p "kill-session #S? (y/n)" kill-session ;;
   "Sesh Picker")
-    tmux run-shell "$HOME/.config/tmux/scripts/sesh-popup.sh || true" ;;
+    tmux display-popup -E -w 70% -h 80% -b rounded -T '#[align=centre] Sessions ' "tv sesh" ;;
   "Last Session")
     tmux run-shell "sesh last" ;;
   "Choose Tree")
