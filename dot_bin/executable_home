@@ -31,132 +31,154 @@ both() {
 
 cmd_help() {
   echo ""
-  printf "  ${BLD}home check${RST}               ${DIM}status + what to do next${RST}\n"
-  printf "  ${BLD}home apply${RST}               ${DIM}apply both repos to ~${RST}\n"
-  printf "  ${BLD}home pull${RST}                ${DIM}pull + apply both repos${RST}\n"
-  printf "  ${BLD}home push${RST}                ${DIM}push both repos${RST}\n"
-  printf "  ${BLD}home status${RST}              ${DIM}git status both repos${RST}\n"
-  printf "  ${BLD}home diff${RST}                ${DIM}diff both repos${RST}\n"
-  printf "  ${BLD}home managed${RST}             ${DIM}list all managed files${RST}\n"
-  printf "  ${BLD}home verify${RST}              ${DIM}verify sync state${RST}\n"
-  printf "  ${BLD}home init${RST}                ${DIM}first-time setup${RST}\n"
+  printf "  ${BLD}home check${RST}               ${DIM}show status and suggested actions${RST}\n"
+  printf "  ${BLD}home apply${RST}               ${DIM}apply both repos to home dir${RST}\n"
+  printf "  ${BLD}home pull${RST}                ${DIM}pull and apply both repos${RST}\n"
+  printf "  ${BLD}home push${RST}                ${DIM}push both repos to origin${RST}\n"
   echo ""
-  printf "  ${DIM}Everything else passes through to chezmoi:${RST}\n"
-  printf "  ${DIM}home re-add, home edit, home doctor, etc.${RST}\n"
+  printf "  ${BLD}home status${RST}              ${DIM}show git status for both repos${RST}\n"
+  printf "  ${BLD}home diff${RST}                ${DIM}show pending changes in both repos${RST}\n"
+  printf "  ${BLD}home managed${RST}             ${DIM}list all managed files${RST}\n"
+  printf "  ${BLD}home verify${RST}              ${DIM}check if home dir is in sync${RST}\n"
+  echo ""
+  printf "  ${BLD}home init${RST}                ${DIM}clone private repo and apply both${RST}\n"
+  echo ""
+  printf "  ${DIM}Anything else is passed through to chezmoi directly.${RST}\n"
+  printf "  ${DIM}e.g. home re-add, home edit, home doctor${RST}\n"
   echo ""
 }
 
 cmd_init() {
+  echo ""
   if ! has_priv; then
     p "cloning private repo..."
     git clone git@github.com:raisedadead/dotfiles-private.git "$PRIV" || {
+      echo ""
       printf "${YLW}dotfiles ·${RST} clone failed — is SSH configured?\n"
       printf "           run ${BLD}home init${RST} after setting up SSH\n"
       exit 1
     }
   else
-    p "private repo exists"
+    p "private repo found"
   fi
-  p "applying public..."
+  echo ""
+  p "applying public repo..."
   chezmoi apply
-  p "applying private..."
+  p "applying private repo..."
   chezmoi --source "$PRIV" apply
-  ok "done"
+  echo ""
+  ok "setup complete"
 }
 
 cmd_apply() {
-  p "applying public..."
+  echo ""
+  p "applying public repo..."
   chezmoi apply
-  ok "public applied"
+  ok "public repo applied"
   if has_priv; then
-    p "applying private..."
+    echo ""
+    p "applying private repo..."
     chezmoi --source "$PRIV" apply
-    ok "private applied"
+    ok "private repo applied"
   fi
+  echo ""
 }
 
 cmd_pull() {
-  p "pulling public..."
+  echo ""
+  p "pulling public repo..."
   chezmoi update
-  ok "public updated"
+  ok "public repo updated"
   if has_priv; then
-    p "pulling private..."
+    echo ""
+    p "pulling private repo..."
     git -C "$PRIV" pull --rebase
     chezmoi --source "$PRIV" apply
-    ok "private updated"
+    ok "private repo updated"
   fi
+  echo ""
 }
 
 cmd_push() {
   local br
+  echo ""
   br=$(git -C "$PUB" branch --show-current)
-  p "pushing public ($br)..."
+  p "pushing public repo ($br)..."
   git -C "$PUB" push origin "$br"
-  ok "public pushed"
+  ok "public repo pushed"
   if has_priv; then
+    echo ""
     br=$(git -C "$PRIV" branch --show-current)
-    p "pushing private ($br)..."
+    p "pushing private repo ($br)..."
     git -C "$PRIV" push origin "$br"
-    ok "private pushed"
+    ok "private repo pushed"
   fi
+  echo ""
 }
 
 cmd_status() {
-  printf "${DIM}dotfiles ·${RST} ${BLD}public${RST}\n"
+  echo ""
+  printf "${DIM}dotfiles ·${RST} ${BLD}public repo${RST}\n"
   git -C "$PUB" status --short
   if has_priv; then
     echo ""
-    printf "${DIM}dotfiles ·${RST} ${BLD}private${RST}\n"
+    printf "${DIM}dotfiles ·${RST} ${BLD}private repo${RST}\n"
     git -C "$PRIV" status --short
   fi
+  echo ""
 }
 
 cmd_diff()    { both diff; }
 cmd_managed() { both managed; }
 
 cmd_verify() {
-  printf "${DIM}dotfiles ·${RST} ${BLD}public${RST}  "
+  echo ""
+  printf "  ${BLD}public repo${RST}   "
   if chezmoi verify 2>/dev/null; then
     printf "${GRN}in sync${RST}\n"
   else
     printf "${YLW}drift detected${RST} — run ${BLD}home diff${RST}\n"
   fi
   if has_priv; then
-    printf "${DIM}dotfiles ·${RST} ${BLD}private${RST} "
+    printf "  ${BLD}private repo${RST}  "
     if chezmoi --source "$PRIV" verify 2>/dev/null; then
       printf "${GRN}in sync${RST}\n"
     else
       printf "${YLW}drift detected${RST} — run ${BLD}home diff${RST}\n"
     fi
   fi
+  echo ""
 }
 
 cmd_check() {
   local PUB_N PRIV_N
   PUB_N=$(chezmoi managed 2>/dev/null | wc -l | tr -d ' ')
   PRIV_N=$(chezmoi --source "$PRIV" managed 2>/dev/null | wc -l | tr -d ' ')
+  echo ""
   printf "${BLD}dotfiles${RST} ${DIM}· %s public · %s private${RST}\n\n" "$PUB_N" "$PRIV_N"
 
   git -C "$PUB" fetch --quiet 2>/dev/null &
   has_priv && git -C "$PRIV" fetch --quiet 2>/dev/null &
   wait
 
-  local ACT_PULL="" ACT_COMMIT="" ACT_APPLY="" ACT_PUSH="" HAS_ISSUES=0
-  local DIR CM_SRC APPLY AHEAD BEHIND BR DIRTY DIRTY_N UNAPPLIED S
+  local HAS_ISSUES=0 HAS_PULL=0 HAS_APPLY=0 HAS_PUSH=0
+  local DIR CM_SRC AHEAD BEHIND BR DIRTY DIRTY_N UNAPPLIED S SHORT_DIR
 
-  pad() { local n=$((26 - ${#1})); printf '%*s' "$n" ''; }
+  # collect per-repo status + actions
+  declare -a REPO_ACTS_pub=() REPO_ACTS_priv=()
 
   for REPO in public private; do
     if [[ "$REPO" == "public" ]]; then
-      DIR="$PUB"; CM_SRC=""; APPLY="home apply"
+      DIR="$PUB"; CM_SRC=""
     else
-      DIR="$PRIV"; CM_SRC="--source $PRIV"; APPLY="home apply"
+      DIR="$PRIV"; CM_SRC="--source $PRIV"
       if [[ ! -d "$DIR" ]]; then
         printf "  ${DIM}%-10s not cloned${RST}\n" "$REPO"
         continue
       fi
     fi
 
+    SHORT_DIR="${DIR/#$HOME/\~}"
     AHEAD=0; BEHIND=0
     BR=$(git -C "$DIR" branch --show-current 2>/dev/null)
     if git -C "$DIR" rev-parse --verify "origin/$BR" &>/dev/null; then
@@ -169,10 +191,10 @@ cmd_check() {
     UNAPPLIED=$(chezmoi $CM_SRC diff --no-pager 2>&1 | grep -c '^diff' || true)
 
     S=""
-    (( BEHIND > 0 ))    && S="${S} ${CYN}${BEHIND}↓${RST}"
-    (( AHEAD > 0 ))     && S="${S} ${YLW}${AHEAD}↑${RST}"
+    (( BEHIND > 0 ))    && S="${S} ${CYN}${BEHIND} behind${RST}"
+    (( AHEAD > 0 ))     && S="${S} ${YLW}${AHEAD} ahead${RST}"
     (( DIRTY_N > 0 ))   && S="${S} ${RED}${DIRTY_N} dirty${RST}"
-    (( UNAPPLIED > 0 )) && S="${S} ${YLW}${UNAPPLIED} to apply${RST}"
+    (( UNAPPLIED > 0 )) && S="${S} ${YLW}${UNAPPLIED} unapplied${RST}"
 
     if [[ -z "$S" ]]; then
       printf "  %-10s ${GRN}✓${RST}\n" "$REPO"
@@ -186,22 +208,50 @@ cmd_check() {
       fi
     fi
 
-    (( BEHIND > 0 ))    && ACT_PULL="  ${BLD}home pull${RST}$(pad 'home pull')${DIM}pull from origin${RST}\n"
-    if (( DIRTY_N > 0 )); then
-      local SHORT_DIR="${DIR/#$HOME/\~}"
-      ACT_COMMIT="${ACT_COMMIT}  ${DIM}(${REPO})${RST} ${BLD}cd ${SHORT_DIR} && git add -A && git commit${RST}\n"
+    # per-repo actions (git add/commit only)
+    local -a REPO_ACTS=()
+    (( DIRTY_N > 0 ))   && REPO_ACTS+=("${YLW}git -C ${SHORT_DIR} add -A${RST}")
+    (( DIRTY_N > 0 ))   && REPO_ACTS+=("${YLW}git -C ${SHORT_DIR} commit${RST}")
+
+    if [[ "$REPO" == "public" ]]; then
+      REPO_ACTS_pub=("${REPO_ACTS[@]}")
+    else
+      REPO_ACTS_priv=("${REPO_ACTS[@]}")
     fi
-    (( UNAPPLIED > 0 )) && ACT_APPLY="${ACT_APPLY}  ${BLD}${APPLY}${RST}$(pad "$APPLY")${DIM}apply ${UNAPPLIED} files to ~${RST}\n"
-    (( AHEAD > 0 ))     && ACT_PUSH="  ${BLD}home push${RST}$(pad 'home push')${DIM}push to origin${RST}\n"
+
+    # shared actions (deduplicated across repos)
+    (( BEHIND > 0 ))    && HAS_PULL=1
+    (( UNAPPLIED > 0 )) && HAS_APPLY=1
+    (( AHEAD > 0 ))     && HAS_PUSH=1
   done
 
-  local ACTS="${ACT_PULL}${ACT_COMMIT}${ACT_APPLY}${ACT_PUSH}"
-  if [[ -n "$ACTS" ]]; then
-    printf "\n${DIM}next →${RST}\n"
-    printf "%b" "$ACTS"
+  local ANY_REPO_ACTS=$(( ${#REPO_ACTS_pub[@]} + ${#REPO_ACTS_priv[@]} ))
+  local ANY_SHARED=$(( HAS_PULL + HAS_APPLY + HAS_PUSH ))
+
+  if (( ANY_REPO_ACTS + ANY_SHARED > 0 )); then
+    printf "\n${DIM}suggested next steps →${RST}\n"
+    if (( ${#REPO_ACTS_pub[@]} > 0 )); then
+      printf "\n  ${BLD}public${RST}\n"
+      for act in "${REPO_ACTS_pub[@]}"; do
+        printf "    %b\n" "$act"
+      done
+    fi
+    if (( ${#REPO_ACTS_priv[@]} > 0 )); then
+      printf "\n  ${BLD}private${RST}\n"
+      for act in "${REPO_ACTS_priv[@]}"; do
+        printf "    %b\n" "$act"
+      done
+    fi
+    if (( ANY_SHARED > 0 )); then
+      printf "\n  ${BLD}then${RST}\n"
+      (( HAS_PULL > 0 ))  && printf "    ${CYN}home pull${RST}\n"
+      (( HAS_APPLY > 0 )) && printf "    ${YLW}home apply${RST}\n"
+      (( HAS_PUSH > 0 ))  && printf "    ${GRN}home push${RST}\n"
+    fi
   elif (( HAS_ISSUES == 0 )); then
     printf "\n${GRN}all clear${RST}\n"
   fi
+  echo ""
 }
 
 case "${1:-}" in
