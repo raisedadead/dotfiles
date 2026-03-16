@@ -1,5 +1,6 @@
 .beads
 .claude
+.config/brewfile
 .githooks
 README.md
 LICENSE
