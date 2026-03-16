@@ -1,0 +1,2 @@
+# Override global gitignore for chezmoi source
+!CLAUDE.md
