@@ -12,6 +12,7 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 
 ## Rules (non-obvious, not derivable from code)
 
+- **Always edit chezmoi source** (`~/.dotfiles/` or `~/.dotfiles-private/`), then `home apply` — never edit target (`~/.config/`, `~/.*`) directly
 - **keybinds.conf ↔ keyb.yml must stay in sync** — always update both when changing tmux bindings
 - **`_tmux_exit_code` must be first precmd** — captures `$?` before OMP modifies it
 - **tmux mouse selection is pane-aware** — drag selects within pane, copies to system clipboard via OSC 52; Shift+drag falls back to native Ghostty selection
