@@ -2,11 +2,20 @@ tick_rate = 50
 default_channel = "files"
 history_size = 200
 global_history = false
+shell = "zsh"
 
 [ui]
 ui_scale = 100
 orientation = "landscape"
 theme = "default"
+
+[ui.theme_overrides]
+action_picker_mode_fg = "#000000"
+action_picker_mode_bg = "#e0af68"
+remote_control_mode_fg = "#000000"
+remote_control_mode_bg = "#7aa2f7"
+channel_mode_fg = "#000000"
+channel_mode_bg = "#9ece6a"
 
 [ui.input_bar]
 position = "top"

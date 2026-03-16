@@ -1,32 +1,55 @@
 [metadata]
 name = "sesh"
-description = "Session manager integrating tmux sessions, zoxide directories, and config paths"
+description = "All sessions: tmux + config + zoxide"
 requirements = ["sesh", "fd"]
 
 [source]
-command = [
-  "sesh list --icons",
-  "sesh list -t --icons",
-  "sesh list -c --icons",
-  "sesh list -z --icons",
-  "fd -H -d 2 -t d -E .Trash . ~",
-]
+command = "sesh list --icons"
 ansi = true
 output = "{strip_ansi|split: :1..|join: }"
 
 [preview]
 command = "sesh preview '{strip_ansi|split: :1..|join: }'"
+footer = "⏎ Connect  ^E Editor  ^V VS Code  ^D Kill  ^T Switch view"
+
+[ui]
+input_header = "Sessions  ·  all"
+
+[ui.preview_panel]
+word_wrap = true
+
+[ui.remote_control]
+show_channel_descriptions = true
+sort_alphabetically = false
+
+[ui.features]
+preview_panel = { enabled = true, visible = true }
+status_bar = { enabled = true, visible = true }
+help_panel = { enabled = true, visible = false }
+remote_control = { enabled = true, visible = false }
 
 [keybindings]
 enter = "actions:connect"
 ctrl-d = ["actions:kill_session", "reload_source"]
+ctrl-e = "actions:open_in_editor"
+ctrl-v = "actions:open_in_vs_code"
 
 [actions.connect]
-description = "Connect to selected session"
+description = "Connect to session"
 command = "sesh connect '{strip_ansi|split: :1..|join: }'"
 mode = "execute"
 
 [actions.kill_session]
-description = "Kill selected tmux session"
+description = "Kill session"
 command = "tmux kill-session -t '{strip_ansi|split: :1..|join: }'"
 mode = "fork"
+
+[actions.open_in_editor]
+description = "Open in Editor (nvim)"
+command = "~/.config/tmux/scripts/open-project.sh --editor '{strip_ansi|split: :1..|join: }'"
+mode = "execute"
+
+[actions.open_in_vs_code]
+description = "Open in VS Code"
+command = "~/.config/tmux/scripts/open-project.sh --visual '{strip_ansi|split: :1..|join: }'"
+mode = "execute"

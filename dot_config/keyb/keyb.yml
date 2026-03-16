@@ -145,14 +145,20 @@
 
 - name: sesh picker (tv)
   keybinds:
-    - name: Cycle sources (all/tmux/config/zoxide/find)
-      key: C-s
+    - name: Switch view (all/tmux/config/zoxide/find)
+      key: C-t
     - name: Kill session
       key: C-d
+    - name: Open in Editor (nvim)
+      key: C-e
+    - name: Open in VS Code
+      key: C-v
     - name: Toggle preview
       key: C-o
-    - name: Toggle remote control
-      key: C-t
+    - name: Toggle help
+      key: C-h
+    - name: Action picker
+      key: C-x
 
 - name: ghostty › scrollback
   keybinds:
