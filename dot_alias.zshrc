@@ -79,15 +79,4 @@ if can_haz sesh; then
   alias t='sesh connect .'
 fi
 
-#-----------------------------
-# bd (beads) — auto-fix dolt config after init
-#-----------------------------
-bd() {
-  if [[ "$1" == "init" ]]; then
-    command bd init --stealth --skip-hooks "${@:2}"
-    bd-fix-dolt-config "$PWD"
-  else
-    command bd "$@"
-  fi
-}
 
