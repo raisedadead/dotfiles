@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091,SC2034
 
-D=$'\033[90m'  # dim
-R=$'\033[0m'   # reset
-W=$'\033[33m'  # yellow (warning)
+. "$(dirname "$0")/colors.sh"
+
+D="$CLR_DIM"
+R="$CLR_RST"
+W="$CLR_ACCENT"
 
 printf '\n   %s❯%s ' "$D" "$R"
 

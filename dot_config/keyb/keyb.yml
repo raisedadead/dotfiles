@@ -31,7 +31,7 @@
 
 - name: tmux › sessions
   keybinds:
-    - name: Sesh picker
+    - name: Switcher
       key: M-o
     - name: Choose-tree
       key: M-w
@@ -143,22 +143,26 @@
     - name: Scroll down (auto-exits at bottom)
       key: Wheel down
 
-- name: sesh picker (tv)
+- name: switcher (M-o)
   keybinds:
-    - name: Switch view (all/tmux/config/zoxide/find)
-      key: C-t
-    - name: Kill session
-      key: C-d
-    - name: Open in Editor (nvim)
+    - name: Next category
+      key: Tab
+    - name: Previous category
+      key: S-Tab
+    - name: Select entry
+      key: Enter
+    - name: Open in Editor
       key: C-e
     - name: Open in VS Code
       key: C-v
+    - name: Kill session (sessions view)
+      key: C-d
+    - name: Quick select 1-9
+      key: M-1..9
+    - name: Toggle search mode (fd/rg)
+      key: C-s
     - name: Toggle preview
       key: C-o
-    - name: Toggle help
-      key: C-h
-    - name: Action picker
-      key: C-x
 
 - name: ghostty › scrollback
   keybinds:

@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091,SC2034
 
-D=$'\033[90m'  # dim (brightblack)
-Y=$'\033[33m'  # yellow
-R=$'\033[0m'   # reset
+. "$(dirname "$0")/colors.sh"
+
+D="$CLR_DIM"
+Y="$CLR_ACCENT"
+R="$CLR_RST"
 
 W1=22  # label width
 W2=16  # hint width
@@ -23,7 +26,7 @@ action() {
 }
 
 commands() {
-  action "o" "Sesh Picker" "Switch or create session"
+  action "o" "Switcher" "Switch or create session"
   action "g" "Lazygit" "Git TUI popup"
   action "d" "Split Right" "Pane to the right"
   action "D" "Split Down" "Pane below"
@@ -91,7 +94,7 @@ selected=$({ commands; tmux_commands; } | fzf-tmux -p 40%,45% \
   --no-sort --no-info --ansi --border=rounded --border-label=' Commands ' --padding=1,2 \
   --header-first --header-border=line \
   --header "$D  $CTX$R" \
-  --color='header:8,pointer:yellow,prompt:yellow,border:white,label:yellow' \
+  --color="$FZF_MOCHA_COLORS" \
   --prompt '  ' \
   "${BINDS[@]}" \
   --bind 'esc:abort')
@@ -101,7 +104,7 @@ selected=$({ commands; tmux_commands; } | fzf-tmux -p 40%,45% \
 # Quick shortcut dispatch
 case "$selected" in
   __SESH__)
-    tmux display-popup -E -w 70% -h 80% -b rounded -T '#[align=centre] Sessions ' "tv sesh"; exit 0 ;;
+    tmux run-shell "$HOME/.config/tmux/scripts/switcher.sh || true"; exit 0 ;;
   __LAZYGIT__)
     tmux display-popup -E -w 70% -h 80% -b rounded -T '#[align=centre] Lazygit ' -d "#{pane_current_path}" lazygit; exit 0 ;;
   __SPLIT_H__)
@@ -139,7 +142,12 @@ case "$selected" in
 esac
 
 # Normal selection dispatch
-label=$(sed -e 's/\x1b\[[0-9;]*m//g' -e 's/^  //' -e 's/[[:space:]]*$//' -e 's/[[:space:]]\{2,\}.*//' <<< "$selected")
+# Strip ANSI, leading whitespace, then skip the 1-char shortcut key if present
+label=$(sed -e 's/\x1b\[[0-9;]*m//g' \
+            -e 's/^[[:space:]]*//' \
+            -e 's/^[[:alnum:]]\{1\}[[:space:]]\{2,\}//' \
+            -e 's/[[:space:]]*$//' \
+            -e 's/[[:space:]]\{2,\}.*//' <<< "$selected")
 
 case "$label" in
   "──"*) ;;
@@ -169,8 +177,8 @@ case "$label" in
     tmux command-prompt -I "#S" "rename-session -- '%%'" ;;
   "Kill Session")
     tmux confirm-before -p "kill-session #S? (y/n)" kill-session ;;
-  "Sesh Picker")
-    tmux display-popup -E -w 70% -h 80% -b rounded -T '#[align=centre] Sessions ' "tv sesh" ;;
+  "Switcher")
+    tmux run-shell "$HOME/.config/tmux/scripts/switcher.sh || true" ;;
   "Last Session")
     tmux run-shell "sesh last" ;;
   "Choose Tree")

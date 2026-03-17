@@ -1,0 +1,25 @@
+{
+  "baseFolders": ["~/DEV/fCC", "~/DEV/rd", "~/DEV/one-off"],
+  "configDirs": [
+    "~/.dotfiles",
+    "~/.dotfiles-private",
+    "~/.config/tmux",
+    "~/.config/nvim",
+    "~/.config/ghostty",
+    "~/.config/sesh",
+    "~/.config/atuin",
+    "~/.config/yazi"
+  ],
+  "favorites": [
+    {
+      "name": "dotfiles",
+      "rootPath": "~/.dotfiles",
+      "enabled": true
+    },
+    {
+      "name": "dotfiles-private",
+      "rootPath": "~/.dotfiles-private",
+      "enabled": true
+    }
+  ]
+}
