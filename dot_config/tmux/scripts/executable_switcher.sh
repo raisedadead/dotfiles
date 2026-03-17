@@ -6,7 +6,16 @@ SELF="$0"
 . "$(dirname "$0")/colors.sh"
 
 CATEGORIES=(sessions projects config zoxide search)
-LABELS=("Sessions" "Projects" "Config" "Zoxide" "Search")
+# Nerd Font icons via escape sequences (Edit tool drops literal PUA chars)
+_ico_session=$'\U000F018D'   # nf-md-console
+_ico_project=$'\U000F0770'   # nf-md-folder_open
+_ico_config=$'\U000F0493'    # nf-md-cog
+_ico_zoxide=$'\U000F02DA'    # nf-md-history
+_ico_search=$'\U000F0349'    # nf-md-magnify
+_ico_files=$'\U000F0219'     # nf-md-file_multiple
+_ico_text=$'\U000F0284'      # nf-md-file_document
+LABELS=("$_ico_session  Sessions" "$_ico_project  Projects" "$_ico_config  Config" "$_ico_zoxide  Zoxide" "$_ico_search  Search")
+PROMPTS=("$_ico_session  Sessions ❯ " "$_ico_project  Projects ❯ " "$_ico_config  Config ❯ " "$_ico_zoxide  Zoxide ❯ " "$_ico_search  Search ❯ ")
 PROJECTS_JSON="$HOME/.config/switcher/projects.json"
 
 DIM="$CLR_DIM"
@@ -31,7 +40,7 @@ make_header() {
   local idx="$1" first=1
   printf '  '
   for i in "${!CATEGORIES[@]}"; do
-    [ "$first" = "1" ] && first=0 || printf ' %s·%s ' "$DIM" "$RST"
+    [ "$first" = "1" ] && first=0 || printf '  %s◆%s  ' "$DIM" "$RST"
     if [ "$i" -eq "$idx" ]; then
       printf '%s%s%s' "$ACCENT" "${LABELS[$i]}" "$RST"
     else
@@ -199,13 +208,10 @@ do_cycle() {
   if [ "${CATEGORIES[$idx]}" = "search" ]; then
     local mode
     mode=$(get_search_mode)
-    prompt_str="${mode%s}> "
-    [ "$mode" = "files" ] && prompt_str="fd> "
-    [ "$mode" = "text" ] && prompt_str="rg> "
+    [ "$mode" = "text" ] && prompt_str="$_ico_text  Text ❯ " || prompt_str="$_ico_files  Files ❯ "
   else
-    prompt_str="  "
+    prompt_str="${PROMPTS[$idx]}"
   fi
-  # Return fzf transform action string
   printf 'reload(%s --source %s)+change-header(%s)+change-prompt(%s)' \
     "$SELF" "${CATEGORIES[$idx]}" "$header" "$prompt_str"
 }
@@ -339,10 +345,10 @@ case "${1:-}" in
     local_mode=$(get_search_mode)
     if [ "$local_mode" = "files" ]; then
       set_search_mode "text"
-      printf 'reload(%s --source search)+change-prompt(rg> )' "$SELF"
+      printf 'reload(%s --source search)+change-prompt(%s  Text ❯ )' "$SELF" "$_ico_text"
     else
       set_search_mode "files"
-      printf 'reload(%s --source search)+change-prompt(fd> )' "$SELF"
+      printf 'reload(%s --source search)+change-prompt(%s  Files ❯ )' "$SELF" "$_ico_files"
     fi
     exit ;;
   --preview)
@@ -364,7 +370,7 @@ result=$(do_source sessions | fzf-tmux -p 55%,65% \
   --color "$FZF_MOCHA_COLORS" \
   --header "$initial_header" \
   --header-first --header-border=line \
-  --prompt '  ' \
+  --prompt "$_ico_session  Sessions ❯ " \
   --preview "$SELF --preview {}" \
   --preview-window 'right:50%:wrap:hidden' \
   --bind "tab:transform($SELF --cycle next)" \

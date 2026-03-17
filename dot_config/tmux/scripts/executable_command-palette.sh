@@ -7,6 +7,8 @@ D="$CLR_DIM"
 Y="$CLR_ACCENT"
 R="$CLR_RST"
 
+_ico_cmd=$'\uEA8E'  # nf-cod-run_all
+
 W1=22  # label width
 W2=16  # hint width
 
@@ -88,14 +90,11 @@ BINDS=(
   --bind "9:transform:[ -z {q} ] && echo 'become(echo __CMD_PROMPT__)' || echo 'put(9)'"
 )
 
-CTX=$(tmux display-message -p '#S • window #{window_index}/#{session_windows} • #{window_panes} panes')
-
 selected=$({ commands; tmux_commands; } | fzf-tmux -p 40%,45% \
   --no-sort --no-info --ansi --border=rounded --border-label=' Commands ' --padding=1,2 \
-  --header-first --header-border=line \
-  --header "$D  $CTX$R" \
+  --header "$D  press key for quick action, or search$R" \
   --color="$FZF_MOCHA_COLORS" \
-  --prompt '  ' \
+  --prompt "Commands ❯ " \
   "${BINDS[@]}" \
   --bind 'esc:abort')
 
@@ -183,20 +182,6 @@ case "$label" in
     tmux run-shell "sesh last" ;;
   "Choose Tree")
     tmux choose-tree -Zw -F "#{?pane_format,#{pane_current_command} #{pane_current_path},#{?window_format,#{window_name} (#{window_panes} panes),#{session_name} (#{session_windows} win)}}" ;;
-  "Navigate Pane")
-    tmux display-message "Use Ctrl+Alt+h/j/k/l to navigate panes" ;;
-  "Resize Pane")
-    tmux display-message "Use pfx+H/J/K/L to resize panes" ;;
-  "Next Window")
-    tmux next-window ;;
-  "Previous Window")
-    tmux previous-window ;;
-  "Window 1-9")
-    tmux display-message "Use Alt+1..9 for direct window access" ;;
-  "Cycle Session Next")
-    tmux switch-client -n ;;
-  "Cycle Session Prev")
-    tmux switch-client -p ;;
   "Enter Copy Mode")
     tmux copy-mode ;;
   "Paste Buffer")
