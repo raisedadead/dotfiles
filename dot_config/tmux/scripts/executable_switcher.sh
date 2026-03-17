@@ -212,16 +212,24 @@ do_cycle() {
   else
     prompt_str="${PROMPTS[$idx]}"
   fi
-  printf 'reload(%s --source %s)+change-header(%s)+change-prompt(%s)' \
-    "$SELF" "${CATEGORIES[$idx]}" "$header" "$prompt_str"
+  local preview_toggle
+  if [ "${CATEGORIES[$idx]}" = "zoxide" ]; then
+    preview_toggle="+hide-preview"
+  else
+    preview_toggle="+show-preview"
+  fi
+  printf 'reload(%s --source %s)+change-header(%s)+change-prompt(%s)%s' \
+    "$SELF" "${CATEGORIES[$idx]}" "$header" "$prompt_str" "$preview_toggle"
 }
 
 extract_path() {
   cut -f1 <<< "$1"
 }
 
-eza_preview() {
-  eza --all --git --icons --color=always --group-directories-first "$1" 2>/dev/null || ls -la "$1" 2>/dev/null
+eza_tree() {
+  eza --tree --level=2 --icons --color=always --group-directories-first \
+    --ignore-glob='node_modules|.git|__pycache__|.next|dist|build|.cache|.turbo|vendor' \
+    "$1" 2>/dev/null || ls -la "$1" 2>/dev/null
 }
 
 do_preview() {
@@ -231,27 +239,35 @@ do_preview() {
 
   case "$cat" in
     sessions)
-      local target
+      local target session
       target=$(extract_path "$entry")
-      tmux capture-pane -t "$target" -p -e 2>/dev/null || echo "No preview available"
+      session="${target%%:*}"
+      sesh preview "$session" 2>/dev/null || echo "No preview available"
       ;;
-    projects|config|zoxide)
+    projects)
       path=$(extract_path "$entry")
-      eza_preview "$path"
+      local readme=""
+      for f in "$path"/README.md "$path"/readme.md "$path"/README "$path"/README.rst; do
+        [ -f "$f" ] && readme="$f" && break
+      done
+      if [ -n "$readme" ]; then
+        bat -n --color=always --style=plain "$readme" 2>/dev/null
+      else
+        eza_tree "$path"
+      fi
+      ;;
+    config)
+      path=$(extract_path "$entry")
+      eza_tree "$path"
+      ;;
+    zoxide)
       ;;
     search)
-      local stripped mode
-      stripped=$(sed 's/\x1b\[[0-9;]*m//g' <<< "$entry")
+      path=$(extract_path "$entry")
+      local mode
       mode=$(get_search_mode)
-      if [ "$mode" = "text" ]; then
-        local file line
-        file=$(cut -d: -f1 <<< "$stripped")
-        line=$(cut -d: -f2 <<< "$stripped")
-        bat -n --color=always --highlight-line "$line" "$file" 2>/dev/null
-      elif [ -d "$stripped" ]; then
-        eza_preview "$stripped"
-      elif [ -f "$stripped" ]; then
-        bat -n --color=always "$stripped" 2>/dev/null || head -100 "$stripped" 2>/dev/null
+      if [ "$mode" = "files" ] && [ -f "$path" ]; then
+        bat -n --color=always "$path" 2>/dev/null
       fi
       ;;
   esac
@@ -345,10 +361,10 @@ case "${1:-}" in
     local_mode=$(get_search_mode)
     if [ "$local_mode" = "files" ]; then
       set_search_mode "text"
-      printf 'reload(%s --source search)+change-prompt(%s  Text ❯ )' "$SELF" "$_ico_text"
+      printf 'reload(%s --source search)+change-prompt(%s  Text ❯ )+hide-preview' "$SELF" "$_ico_text"
     else
       set_search_mode "files"
-      printf 'reload(%s --source search)+change-prompt(%s  Files ❯ )' "$SELF" "$_ico_files"
+      printf 'reload(%s --source search)+change-prompt(%s  Files ❯ )+show-preview' "$SELF" "$_ico_files"
     fi
     exit ;;
   --preview)
@@ -363,7 +379,7 @@ trap 'rm -f "$SWITCHER_STATE" "$SEARCH_MODE"' EXIT
 
 initial_header=$(make_header 0)
 
-result=$(do_source sessions | fzf-tmux -p 55%,65% \
+result=$(do_source sessions | fzf-tmux -p 75%,80% \
   --ansi --no-sort --no-info --cycle \
   --delimiter '\t' --with-nth '2..' \
   --border rounded --border-label ' Switcher ' --border-label-pos 3 --padding=1,2 \
@@ -372,7 +388,7 @@ result=$(do_source sessions | fzf-tmux -p 55%,65% \
   --header-first --header-border=line \
   --prompt "$_ico_session  Sessions ❯ " \
   --preview "$SELF --preview {}" \
-  --preview-window 'right:50%:wrap:hidden' \
+  --preview-window 'right:50%:wrap' \
   --bind "tab:transform($SELF --cycle next)" \
   --bind "btab:transform($SELF --cycle prev)" \
   --bind 'ctrl-o:toggle-preview' \
