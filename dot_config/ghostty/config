@@ -31,7 +31,7 @@ window-width = 166
 window-height = 54
 
 # Appearance & Transparency
-background-opacity = 0.8
+background-opacity = 0.85
 background-blur = 15
 theme = Catppuccin Mocha
 bold-is-bright = true
