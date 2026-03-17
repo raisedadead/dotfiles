@@ -74,3 +74,5 @@ path = ~/.gitconfig.local
 path = ~/.config/delta/config.gitconfig
 [init]
 	defaultBranch = main
+[beads]
+	role = maintainer
