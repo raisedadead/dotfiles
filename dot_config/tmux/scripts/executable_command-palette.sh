@@ -92,9 +92,10 @@ BINDS=(
 
 selected=$({ commands; tmux_commands; } | fzf-tmux -p 40%,45% \
   --no-sort --no-info --ansi --border=rounded --border-label=' Commands ' --padding=1,2 \
-  --header "$D  press key for quick action, or search$R" \
   --color="$FZF_MOCHA_COLORS" \
   --prompt "Commands ❯ " \
+  --footer "$D  Quick Action [Key] ◆ Search [Type]$R" \
+  --footer-border=line \
   "${BINDS[@]}" \
   --bind 'esc:abort')
 

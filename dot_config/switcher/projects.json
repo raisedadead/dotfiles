@@ -1,5 +1,10 @@
 {
-  "baseFolders": ["~/DEV/fCC", "~/DEV/rd", "~/DEV/one-off"],
+  "baseFolders": [
+    { "path": "~/DEV/fCC", "scope": "Work" },
+    { "path": "~/DEV/fCC-worktrees", "scope": "Work" },
+    { "path": "~/DEV/rd", "scope": "Personal" },
+    { "path": "~/DEV/one-off", "scope": "Experiments" }
+  ],
   "configDirs": [
     "~/.dotfiles",
     "~/.dotfiles-private",

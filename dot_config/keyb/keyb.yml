@@ -19,9 +19,9 @@
     - name: New window
       key: M-t
     - name: Next window
-      key: M-.
+      key: M-"`"
     - name: Previous window
-      key: M-,
+      key: M-"~"
     - name: Window 1-9
       key: M-1..9
     - name: Rename window
@@ -157,8 +157,6 @@
       key: C-v
     - name: Kill session (sessions view)
       key: C-d
-    - name: Quick select 1-9
-      key: M-1..9
     - name: Toggle search mode (fd/rg)
       key: C-s
     - name: Toggle preview

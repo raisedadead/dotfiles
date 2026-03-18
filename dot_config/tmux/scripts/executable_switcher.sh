@@ -16,6 +16,13 @@ _ico_files=$'\U000F0219'     # nf-md-file_multiple
 _ico_text=$'\U000F0284'      # nf-md-file_document
 LABELS=("$_ico_session  Sessions" "$_ico_project  Projects" "$_ico_config  Config" "$_ico_zoxide  Zoxide" "$_ico_search  Search")
 PROMPTS=("$_ico_session  Sessions ❯ " "$_ico_project  Projects ❯ " "$_ico_config  Config ❯ " "$_ico_zoxide  Zoxide ❯ " "$_ico_search  Search ❯ ")
+FOOTERS=(
+  "  Switch [⏎] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
+  "  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
+  "  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
+  "  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
+  "  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Files/Text [Ctrl+S] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
+)
 PROJECTS_JSON="$HOME/.config/switcher/projects.json"
 
 DIM="$CLR_DIM"
@@ -40,14 +47,14 @@ make_header() {
   local idx="$1" first=1
   printf '  '
   for i in "${!CATEGORIES[@]}"; do
-    [ "$first" = "1" ] && first=0 || printf '  %s◆%s  ' "$DIM" "$RST"
+    [ "$first" = "1" ] && first=0 || printf ' %s◆%s ' "$DIM" "$RST"
     if [ "$i" -eq "$idx" ]; then
       printf '%s%s%s' "$ACCENT" "${LABELS[$i]}" "$RST"
     else
       printf '%s%s%s' "$SUB" "${LABELS[$i]}" "$RST"
     fi
   done
-  printf '  %stab ⇥%s' "$DIM" "$RST"
+  printf ''
 }
 
 sesh_connect() {
@@ -84,39 +91,45 @@ source_sessions() {
 }
 
 source_projects() {
-  local base_folders=() favorites=()
+  local raw_lines=()
 
   if [ -f "$PROJECTS_JSON" ] && command -v jq >/dev/null 2>&1; then
-    while IFS= read -r base; do
-      base=$(expand_tilde "$base")
-      [ -d "$base" ] && base_folders+=("$base")
-    done < <(jq -r '.baseFolders[]? // empty' "$PROJECTS_JSON" 2>/dev/null)
+    # Collect scoped entries: scope|path
+    while IFS='|' read -r scope base_path; do
+      base_path=$(expand_tilde "$base_path")
+      [ -d "$base_path" ] || continue
+      local entries
+      if command -v fd >/dev/null 2>&1; then
+        entries=$(fd -d 1 -t d . "$base_path" 2>/dev/null | sort)
+      else
+        entries=$(find "$base_path" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
+      fi
+      while IFS= read -r p; do
+        [ -n "$p" ] && raw_lines+=("$scope|$p")
+      done <<< "$entries"
+    done < <(jq -r '.baseFolders[]? | "\(.scope // "Other")|\(.path)"' "$PROJECTS_JSON" 2>/dev/null)
 
+    # Favorites
     while IFS= read -r fav; do
       fav=$(expand_tilde "$fav")
-      [ -d "$fav" ] && favorites+=("$fav")
+      [ -d "$fav" ] && raw_lines+=("Favorites|$fav")
     done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
   fi
 
-  if [ ${#base_folders[@]} -eq 0 ] && [ ${#favorites[@]} -eq 0 ]; then
-    [ -d "$HOME/DEV" ] && base_folders+=("$HOME/DEV")
-  fi
-
-  {
-    for base in "${base_folders[@]}"; do
-      if command -v fd >/dev/null 2>&1; then
-        fd -d 1 -t d . "$base" 2>/dev/null
-      else
-        find "$base" -maxdepth 1 -mindepth 1 -type d 2>/dev/null
-      fi
-    done
-    for fav in "${favorites[@]}"; do
-      echo "$fav"
-    done
-  } | sort -u | while IFS= read -r p; do
+  # Render with scope headers
+  local last_scope=""
+  for entry in "${raw_lines[@]}"; do
+    local scope="${entry%%|*}"
+    local p="${entry#*|}"
     local name short
     name=$(basename "$p")
     short=$(shorten "$p")
+
+    if [ "$scope" != "$last_scope" ]; then
+      [ -n "$last_scope" ] && printf '\t\n'
+      printf '\t%s── %s ──%s\n' "$SUB" "$scope" "$RST"
+      last_scope="$scope"
+    fi
     printf '%s\t%s%-24s%s %s%s%s\n' "$p" "$HI" "$name" "$RST" "$DIM" "$short" "$RST"
   done
 }
@@ -212,14 +225,9 @@ do_cycle() {
   else
     prompt_str="${PROMPTS[$idx]}"
   fi
-  local preview_toggle
-  if [ "${CATEGORIES[$idx]}" = "zoxide" ]; then
-    preview_toggle="+hide-preview"
-  else
-    preview_toggle="+show-preview"
-  fi
-  printf 'reload(%s --source %s)+change-header(%s)+change-prompt(%s)%s' \
-    "$SELF" "${CATEGORIES[$idx]}" "$header" "$prompt_str" "$preview_toggle"
+  local footer="${DIM}${FOOTERS[$idx]}${RST}"
+  printf 'reload(%s --source %s)+change-header(%s)+change-prompt(%s)+change-footer(%s)+show-preview' \
+    "$SELF" "${CATEGORIES[$idx]}" "$header" "$prompt_str" "$footer"
 }
 
 extract_path() {
@@ -261,6 +269,12 @@ do_preview() {
       eza_tree "$path"
       ;;
     zoxide)
+      path=$(extract_path "$entry")
+      if [ -d "$path" ]; then
+        eza_tree "$path"
+      elif [ -f "$path" ]; then
+        bat -n --color=always "$path" 2>/dev/null
+      fi
       ;;
     search)
       path=$(extract_path "$entry")
@@ -359,12 +373,13 @@ case "${1:-}" in
       exit 0
     fi
     local_mode=$(get_search_mode)
+    _ft="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Files/Text [Ctrl+S] ◆ Preview [Ctrl+O] ◆ Category [Tab]${RST}"
     if [ "$local_mode" = "files" ]; then
       set_search_mode "text"
-      printf 'reload(%s --source search)+change-prompt(%s  Text ❯ )+hide-preview' "$SELF" "$_ico_text"
+      printf 'reload(%s --source search)+change-prompt(%s  Text ❯ )+change-footer(%s)+hide-preview' "$SELF" "$_ico_text" "$_ft"
     else
       set_search_mode "files"
-      printf 'reload(%s --source search)+change-prompt(%s  Files ❯ )+show-preview' "$SELF" "$_ico_files"
+      printf 'reload(%s --source search)+change-prompt(%s  Files ❯ )+change-footer(%s)+show-preview' "$SELF" "$_ico_files" "$_ft"
     fi
     exit ;;
   --preview)
@@ -387,21 +402,14 @@ result=$(do_source sessions | fzf-tmux -p 75%,80% \
   --header "$initial_header" \
   --header-first --header-border=line \
   --prompt "$_ico_session  Sessions ❯ " \
+  --footer "${DIM}${FOOTERS[0]}${RST}" \
+  --footer-border=line \
   --preview "$SELF --preview {}" \
   --preview-window 'right:50%:wrap' \
   --bind "tab:transform($SELF --cycle next)" \
   --bind "btab:transform($SELF --cycle prev)" \
   --bind 'ctrl-o:toggle-preview' \
   --bind "ctrl-s:transform($SELF --toggle-search)" \
-  --bind 'alt-1:pos(1)+accept' \
-  --bind 'alt-2:pos(2)+accept' \
-  --bind 'alt-3:pos(3)+accept' \
-  --bind 'alt-4:pos(4)+accept' \
-  --bind 'alt-5:pos(5)+accept' \
-  --bind 'alt-6:pos(6)+accept' \
-  --bind 'alt-7:pos(7)+accept' \
-  --bind 'alt-8:pos(8)+accept' \
-  --bind 'alt-9:pos(9)+accept' \
   --expect 'ctrl-e,ctrl-v,ctrl-d' \
   --bind 'esc:abort')
 

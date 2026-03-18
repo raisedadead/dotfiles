@@ -28,7 +28,7 @@ make_header() {
   local active="$1" first=1 i=0
   printf '  '
   for cat in "${CATS[@]}"; do
-    [ "$first" = "1" ] && first=0 || printf '  %s◆%s  ' "$CLR_DIM" "$R"
+    [ "$first" = "1" ] && first=0 || printf ' %s◆%s ' "$CLR_DIM" "$R"
     if [ "$cat" = "$active" ]; then
       printf '%s%s  %s%s' "$M" "${CAT_ICONS[$i]}" "$cat" "$R"
     else
@@ -36,7 +36,7 @@ make_header() {
     fi
     (( i++ ))
   done
-  printf '  %stab ⇥%s' "$CLR_DIM" "$R"
+  printf ''
 }
 
 keyb_content() {
@@ -89,6 +89,8 @@ keyb_content "all" | fzf-tmux -p 53%,60% \
   --header "$header" \
   --color="$FZF_MOCHA_COLORS" \
   --prompt "Keybindings ❯ " \
+  --footer "${CLR_DIM}  Category [Tab] ◆ Quit [Q]${CLR_RST}" \
+  --footer-border=line \
   --bind 'enter:ignore' \
   --bind 'esc:abort' --bind 'q:abort' \
   --bind "btab:transform($SELF --cycle prev)" \
