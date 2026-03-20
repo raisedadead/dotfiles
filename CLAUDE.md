@@ -1,14 +1,14 @@
 # Dotfiles
 
-Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfiles-private`). Task runner: just (`justfile`). Bootstrap: `install.sh`.
+Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfiles-private`). Bootstrap: `install.sh`.
 
 ## Chezmoi Conventions
 
 - **Naming**: `dot_` → dotfiles, `executable_` → +x, `private_` → restricted perms, `empty_` → empty files
 - **Apply**: `chezmoi apply` (public), `chezmoi --source ~/.dotfiles-private apply` (private)
-- **`home()` alias** wraps chezmoi + just: `home check|pull|push|status|verify|managed|init` → just; everything else → chezmoi
+- **`home` command** (`dot_bin/executable_home`) wraps chezmoi for both repos: named subcommands (`check`, `sync`, `apply`, `pull`, `push`, `status`, `diff`, `managed`, `verify`, `init`, `re-add`) are custom implementations; everything else falls through to `chezmoi`
 - `.claude/*` lives in the **private** repo
-- Git hooks: `.githooks/` dir, configured via `core.hooksPath`
+- Git hooks: `.githooks/` dir in public repo, configured via `core.hooksPath`
 
 ## Rules (non-obvious, not derivable from code)
 
@@ -26,11 +26,11 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 
 ## Popup Conventions
 
-- Sizes: 70%x80% (lazygit), 53%x60% (fzf-tmux pickers), 40%x45% (command palette), 20%x5 (new session)
+- Sizes: 70%x80% (lazygit), 75%x80% (switcher), 53%x60% (keyb-popup), 40%x45% (command palette), 20%x5 (new session)
 - Border: rounded, white
-- fzf color scheme: `header:8,pointer:yellow,prompt:yellow,border:white,label:yellow`
+- fzf color scheme: catppuccin mocha via `FZF_MOCHA_COLORS` in `colors.sh`
 - Tab/Shift-Tab cycles categories in sesh-popup and keyb-popup
-- Scripts use `fzf-tmux -p` (not `display-popup` + `fzf`) except lazygit
+- Scripts use `fzf-tmux -p` for fzf-based pickers; lazygit and new-session use `display-popup`
 
 ## Status Bar
 
@@ -49,6 +49,6 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 
 - Ghostty: `ghostty +show-config`
 - tmux: `tmux source-file ~/.config/tmux/tmux.conf`
-- Dotfiles health: `just check`
-- Dotfiles sync: `just verify`
+- Dotfiles health: `home check`
+- Dotfiles sync: `home verify`
 - Shell scripts: `shellcheck` (advisory — doesn't support zsh, SC1071 expected)
