@@ -5,7 +5,7 @@ SELF="$0"
 # shellcheck source=colors.sh
 . "$(dirname "$0")/colors.sh"
 
-CATEGORIES=(sessions projects config zoxide search)
+CATEGORIES=(projects sessions config zoxide search)
 # Nerd Font icons via escape sequences (Edit tool drops literal PUA chars)
 _ico_session=$'\U000F018D'   # nf-md-console
 _ico_project=$'\U000F0770'   # nf-md-folder_open
@@ -14,11 +14,11 @@ _ico_zoxide=$'\U000F02DA'    # nf-md-history
 _ico_search=$'\U000F0349'    # nf-md-magnify
 _ico_files=$'\U000F0219'     # nf-md-file_multiple
 _ico_text=$'\U000F0284'      # nf-md-file_document
-LABELS=("$_ico_session  Sessions" "$_ico_project  Projects" "$_ico_config  Config" "$_ico_zoxide  Zoxide" "$_ico_search  Search")
-PROMPTS=("$_ico_session  Sessions ❯ " "$_ico_project  Projects ❯ " "$_ico_config  Config ❯ " "$_ico_zoxide  Zoxide ❯ " "$_ico_search  Search ❯ ")
+LABELS=("$_ico_project  Projects" "$_ico_session  Sessions" "$_ico_config  Config" "$_ico_zoxide  Zoxide" "$_ico_search  Search")
+PROMPTS=("$_ico_project  Projects ❯ " "$_ico_session  Sessions ❯ " "$_ico_config  Config ❯ " "$_ico_zoxide  Zoxide ❯ " "$_ico_search  Search ❯ ")
 FOOTERS=(
-  "  Switch [⏎] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
   "  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
+  "  Switch [⏎] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
   "  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
   "  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
   "  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Files/Text [Ctrl+S] ◆ Preview [Ctrl+O] ◆ Category [Tab]"
@@ -394,14 +394,14 @@ trap 'rm -f "$SWITCHER_STATE" "$SEARCH_MODE"' EXIT
 
 initial_header=$(make_header 0)
 
-result=$(do_source sessions | fzf-tmux -p 75%,80% \
+result=$(do_source projects | fzf-tmux -p 75%,80% \
   --ansi --no-sort --no-info --cycle \
   --delimiter '\t' --with-nth '2..' \
   --border rounded --border-label ' Switcher ' --border-label-pos 3 --padding=1,2 \
   --color "$FZF_MOCHA_COLORS" \
   --header "$initial_header" \
   --header-first --header-border=line \
-  --prompt "$_ico_session  Sessions ❯ " \
+  --prompt "$_ico_project  Projects ❯ " \
   --footer "${DIM}${FOOTERS[0]}${RST}" \
   --footer-border=line \
   --preview "$SELF --preview {}" \
