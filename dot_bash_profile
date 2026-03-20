@@ -1,0 +1,9 @@
+#-----------------------------------------------------------
+# @raisedadead's config files
+# Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
+# License: ISC
+#
+# File name: .bash_profile
+#-----------------------------------------------------------
+
+[[ -f ~/.bashrc ]] && source ~/.bashrc

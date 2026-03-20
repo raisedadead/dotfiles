@@ -228,5 +228,5 @@ foreground_templates = [
   "{{ if .Env.POSH_VI_MODE }}p:mauve{{ end }}",
   "{{ if gt .Code 0 }}p:red{{ end }}",
 ]
-template = "{{ if .Env.POSH_VI_MODE }}\u276E{{ else }}\u276F{{ end }}"
+template = "{{ if eq .Shell \"nu\" }}{{ if .Env.POSH_VI_MODE }}\u00AB{{ else }}\u00BB{{ end }}{{ else if eq .Shell \"bash\" }}{{ if .Env.POSH_VI_MODE }}!${{ else }}${{ end }}{{ else }}{{ if .Env.POSH_VI_MODE }}\u276E{{ else }}\u276F{{ end }}{{ end }}"
 options.always_enabled = true
