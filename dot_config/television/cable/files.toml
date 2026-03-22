@@ -1,0 +1,29 @@
+[metadata]
+name = "files"
+description = "Browse and open files"
+requirements = ["fd", "bat"]
+
+[source]
+command = ["fd -t f", "fd -t f -H"]
+display = "{split:/:-1}"
+
+[preview]
+command = "bat -n --color=always '{}'"
+footer = "\u23ce Edit  ^V VS Code  ^S Toggle hidden  ^O Preview"
+
+[ui.preview_panel]
+scrollbar = true
+
+[keybindings]
+enter = "actions:edit"
+ctrl-v = "actions:visual"
+
+[actions.edit]
+description = "Open in editor"
+command = "${EDITOR:-nvim} '{}'"
+mode = "execute"
+
+[actions.visual]
+description = "Open in VS Code"
+command = "${VISUAL:-code} '{}'"
+mode = "execute"

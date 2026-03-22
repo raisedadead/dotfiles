@@ -1,0 +1,36 @@
+[metadata]
+name = "projects"
+description = "Browse project directories from projects.json, git repos, and config dirs"
+requirements = ["jq", "fd"]
+
+[source]
+command = [
+  "jq -r '(.baseFolders[].path), (.favorites[] | select(.enabled != false) | .rootPath)' ~/.config/switcher/projects.json | sort -u | sed \"s|^~|$HOME|\"",
+  "fd -g .git -HL -t d -d 10 --prune ~ -E Library -E 'Application Support' --exec dirname '{}'",
+  "jq -r '.configDirs[]' ~/.config/switcher/projects.json | sed \"s|^~|$HOME|\"",
+]
+display = "{split:/:-1}"
+
+[preview]
+command = "eza --tree --level=2 --icons --color=always --group-directories-first '{}' 2>/dev/null || ls -la --color=always '{}'"
+footer = "⏎ Connect  ^E Editor  ^V Visual"
+
+[keybindings]
+enter = "actions:connect"
+ctrl-e = "actions:editor"
+ctrl-v = "actions:visual"
+
+[actions.connect]
+description = "Connect via sesh"
+command = "sesh connect '{}'"
+mode = "execute"
+
+[actions.editor]
+description = "Open in $EDITOR"
+command = "$EDITOR '{}'"
+mode = "execute"
+
+[actions.visual]
+description = "Open in $VISUAL"
+command = "$VISUAL '{}'"
+mode = "execute"

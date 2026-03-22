@@ -7,7 +7,6 @@ shell = "zsh"
 [ui]
 ui_scale = 100
 orientation = "landscape"
-theme = "default"
 
 [ui.theme_overrides]
 action_picker_mode_fg = "#000000"
@@ -23,8 +22,8 @@ prompt = ">"
 border_type = "rounded"
 
 [ui.status_bar]
-separator_open = ""
-separator_close = ""
+separator_open = "\ue0b6"
+separator_close = "\ue0b4"
 hidden = false
 
 [ui.results_panel]
@@ -35,9 +34,9 @@ size = 50
 scrollbar = true
 border_type = "rounded"
 hidden = false
+word_wrap = false
 
 [ui.help_panel]
-show_categories = true
 hidden = true
 
 [ui.remote_control]
