@@ -66,7 +66,7 @@ macos-titlebar-proxy-icon = hidden
 macos-option-as-alt = left
 
 # Keybindings
-keybind = shift+enter=text:\n
+# keybind = shift+enter=text:\n
 keybind = ctrl+enter=text:\r
 
 # Scrollback
