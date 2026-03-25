@@ -29,9 +29,9 @@ can_haz lazygit && alias g="lazygit"
 can_haz lazydocker && alias d="lazydocker"
 
 #----------------------------
-# Code (VS Code, or others)
+# Claude
 #----------------------------
-alias c="$VISUAL ."
+alias c="claude --dangerously-skip-permissions ."
 
 #-----------------------------
 # VM lists from Azure and DO
