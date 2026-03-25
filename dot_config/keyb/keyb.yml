@@ -84,8 +84,6 @@
       key: i
     - name: Reload config
       key: r
-    - name: Enter copy mode
-      key: "["
     - name: Paste buffer
       key: "]"
     - name: Command prompt
@@ -94,10 +92,6 @@
       key: d
     - name: New window
       key: c
-    - name: Rename window
-      key: ","
-    - name: Rename session
-      key: "$"
     - name: List keybindings
       key: "?"
     - name: Display pane numbers
@@ -125,7 +119,7 @@
       key: v
     - name: Rectangle toggle
       key: C-v
-    - name: Copy and cancel
+    - name: Copy and cancel (tmux-yank)
       key: y
     - name: Navigate panes
       key: C-M-h / C-M-j / C-M-k / C-M-l
