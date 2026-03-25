@@ -31,7 +31,7 @@ can_haz lazydocker && alias d="lazydocker"
 #----------------------------
 # Claude
 #----------------------------
-alias c="claude --dangerously-skip-permissions ."
+alias c="claude --dangerously-skip-permissions"
 
 #-----------------------------
 # VM lists from Azure and DO
