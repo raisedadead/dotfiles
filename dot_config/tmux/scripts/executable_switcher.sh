@@ -58,18 +58,18 @@ make_header() {
 }
 
 sesh_connect() {
-  local path="$1"
-  if command -v sesh >/dev/null 2>&1; then
-    sesh connect "$path"
+  local path="$1" scope="${2:-}"
+  local name
+  if [ -n "$scope" ]; then
+    name="${scope}/$(basename "$path")"
   else
-    local name
     name=$(basename "$path")
-    if tmux has-session -t "=$name" 2>/dev/null; then
-      tmux switch-client -t "=$name"
-    else
-      tmux new-session -d -s "$name" -c "$path"
-      tmux switch-client -t "=$name"
-    fi
+  fi
+  if tmux has-session -t "=$name" 2>/dev/null; then
+    tmux switch-client -t "=$name"
+  else
+    tmux new-session -d -s "$name" -c "$path"
+    tmux switch-client -t "=$name"
   fi
 }
 
@@ -130,7 +130,7 @@ source_projects() {
       printf '\t%s── %s ──%s\n' "$SUB" "$scope" "$RST"
       last_scope="$scope"
     fi
-    printf '%s\t%s%-24s%s %s%s%s\n' "$p" "$HI" "$name" "$RST" "$DIM" "$short" "$RST"
+    printf '%s|%s\t%s%-24s%s %s%s%s\n' "$scope" "$p" "$HI" "$name" "$RST" "$DIM" "$short" "$RST"
   done
 }
 
@@ -253,7 +253,9 @@ do_preview() {
       sesh preview "$session" 2>/dev/null || echo "No preview available"
       ;;
     projects)
-      path=$(extract_path "$entry")
+      local raw
+      raw=$(extract_path "$entry")
+      path="${raw#*|}"
       local readme=""
       for f in "$path"/README.md "$path"/readme.md "$path"/README "$path"/README.rst; do
         [ -f "$f" ] && readme="$f" && break
@@ -293,12 +295,12 @@ open_in_editor() {
   if [ -f "$path" ]; then
     dir=$(dirname "$path")
     if [ -n "$line" ]; then
-      tmux new-window -c "$dir" -n "${EDITOR##*/}" "${EDITOR:-nvim}" "+$line" "$path"
+      tmux new-window -c "$dir" "${EDITOR:-nvim}" "+$line" "$path"
     else
-      tmux new-window -c "$dir" -n "${EDITOR##*/}" "${EDITOR:-nvim}" "$path"
+      tmux new-window -c "$dir" "${EDITOR:-nvim}" "$path"
     fi
   else
-    tmux new-window -c "$path" -n "${EDITOR##*/}" "${EDITOR:-nvim}"
+    tmux new-window -c "$path" "${EDITOR:-nvim}"
   fi
 }
 
@@ -322,7 +324,18 @@ do_action() {
           ;;
       esac
       ;;
-    projects|config|zoxide)
+    projects)
+      local raw scope
+      raw=$(extract_path "$entry")
+      scope="${raw%%|*}"
+      path="${raw#*|}"
+      case "$key" in
+        ctrl-e) open_in_editor "$path" ;;
+        ctrl-v) "${VISUAL:-code}" "$path" ;;
+        *)      sesh_connect "$path" "$scope" ;;
+      esac
+      ;;
+    config|zoxide)
       path=$(extract_path "$entry")
       case "$key" in
         ctrl-e) open_in_editor "$path" ;;

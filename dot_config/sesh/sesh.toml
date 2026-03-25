@@ -3,25 +3,12 @@
 # Prefer tmux sessions first, then configured, then zoxide
 sort_order = ["tmux", "config", "zoxide"]
 
-# Show 2 path components in session names (e.g. "fCC/freeCodeCamp")
-dir_length = 2
-
 # Enable caching for faster listing
 cache = true
 
 # Default session behavior
 [default_session]
 preview_command = "eza --all --git --icons --color=always {}"
-
-# Project wildcards — auto-match any project under these dirs
-[[wildcard]]
-pattern = "~/DEV/fCC/*"
-
-[[wildcard]]
-pattern = "~/DEV/rd/*"
-
-[[wildcard]]
-pattern = "~/DEV/one-off/*"
 
 # Chezmoi source dirs
 [[session]]
