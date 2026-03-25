@@ -39,6 +39,28 @@ function y() {
 # autoload -Uz add-zsh-hook
 # add-zsh-hook precmd _set_terminal_title
 
+home() {
+  if [[ "$1" == "cd" ]]; then
+    case "${2:-}" in
+      public|pub)   builtin cd -- ~/.dotfiles ;;
+      private|prv)  builtin cd -- ~/.dotfiles-private ;;
+      *)            echo "usage: home cd [public|private]" ;;
+    esac
+  else
+    command home "$@"
+  fi
+}
+
+_home() {
+  if (( CURRENT == 3 )) && [[ "${words[2]}" == "cd" ]]; then
+    local -a repos=('public:~/.dotfiles' 'private:~/.dotfiles-private')
+    _describe 'repo' repos
+    return
+  fi
+  _chezmoi "$@"
+}
+compdef _home home
+
 # create convenient aliases for commonly used functions
 alias git_commit_past='_mrgsh_gcp'           # commit with past date
 alias ssh_host_select='_mrgsh_ssh'           # select ssh host from config

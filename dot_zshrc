@@ -182,7 +182,7 @@ if [[ -o interactive ]]; then
   cached_evalz wt "wt shell-init zsh"
   cached_evalz sesh "sesh completion zsh"
   cached_evalz bd "bd completion zsh"
-  compdef home=chezmoi
+  compdef _home home
   # zsh-defer -c 'cached_evalz pkgx "pkgx --shellcode"'
 fi
 
