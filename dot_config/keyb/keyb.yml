@@ -52,8 +52,6 @@
       key: M-?
     - name: Command palette
       key: M-p
-    - name: SuperMenu (tv)
-      key: M-m
 
 - name: tmux › prefix (C-Space)
   prefix: C-Space

@@ -72,7 +72,7 @@ show_preview = true
 # exit_mode = "return-original"
 
 ## possible values: emacs, vim-normal, auto
-keymap_mode = "vim-normal"
+keymap_mode = "emacs"
 
 ## possible values: emacs, subl
 # word_jump_mode = "emacs"
