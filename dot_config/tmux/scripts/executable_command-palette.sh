@@ -166,7 +166,7 @@ case "$label" in
   "Kill Pane")
     tmux kill-pane ;;
   "Sync Panes")
-    tmux setw synchronize-panes ;;
+    tmux setw synchronize-panes \; if -F "#{pane_synchronized}" "set pane-active-border-style fg=#F38BA8 ; set pane-border-status bottom" "set pane-active-border-style fg=white ; set pane-border-status off" ;;
   "New Window")
     tmux new-window -c "#{pane_current_path}" ;;
   "Rename Window")
