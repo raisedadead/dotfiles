@@ -85,7 +85,7 @@ source_sessions() {
   tmux list-windows -a -F '#{session_name}:#{window_index}|#{window_name}|#{pane_current_path}' 2>/dev/null | while IFS='|' read -r target wname wpath; do
     local session="${target%%:*}"
     wpath=$(shorten "$wpath")
-    printf '%s\t%s%-20s%s %s%-16s%s %s%s%s\n' \
+    printf '%s\t%s%-20s%s\t%s%-16s%s %s%s%s\n' \
       "$target" "$HI" "$session" "$RST" "$SUB" "$wname" "$RST" "$DIM" "$wpath" "$RST"
   done
 }
@@ -130,7 +130,7 @@ source_projects() {
       printf '\t%s── %s ──%s\n' "$SUB" "$scope" "$RST"
       last_scope="$scope"
     fi
-    printf '%s|%s\t%s%-24s%s %s%s%s\n' "$scope" "$p" "$HI" "$name" "$RST" "$DIM" "$short" "$RST"
+    printf '%s|%s\t%s%-24s%s\t%s%s%s\n' "$scope" "$p" "$HI" "$name" "$RST" "$DIM" "$short" "$RST"
   done
 }
 
@@ -150,7 +150,7 @@ source_config() {
     local name short
     name=$(basename "$d")
     short=$(shorten "$d")
-    printf '%s\t%s%-20s%s %s%s%s\n' "$d" "$HI" "$name" "$RST" "$DIM" "$short" "$RST"
+    printf '%s\t%s%-20s%s\t%s%s%s\n' "$d" "$HI" "$name" "$RST" "$DIM" "$short" "$RST"
   done
 }
 
@@ -161,7 +161,7 @@ source_zoxide() {
       display = $0; sub("^" home, "~", display)
       n = split(display, parts, "/")
       dir = ""; for (i=1; i<n; i++) dir = dir parts[i] "/"
-      printf "%s\t%s%s%s%s%s\n", $0, dim, dir, hi, parts[n], rst
+      printf "%s\t%s%-20s%s\t%s%s%s\n", $0, hi, parts[n], rst, dim, dir, rst
     }'
   fi
 }
@@ -189,7 +189,7 @@ source_search() {
       display = $0; sub("^" home, "~", display)
       n = split(display, parts, "/")
       dir = ""; for (i=1; i<n; i++) dir = dir parts[i] "/"
-      printf "%s\t%s%s%s%s%s\n", $0, dim, dir, hi, parts[n], rst
+      printf "%s\t%s%-20s%s\t%s%s%s\n", $0, hi, parts[n], rst, dim, dir, rst
     }'
   fi
 }
@@ -409,7 +409,7 @@ initial_header=$(make_header 0)
 
 result=$(do_source projects | fzf-tmux -p 75%,80% \
   --ansi --no-sort --no-info --cycle \
-  --delimiter '\t' --with-nth '2..' \
+  --delimiter '\t' --with-nth '2..' --nth '1' \
   --border rounded --border-label ' Switcher ' --border-label-pos 3 --padding=1,2 \
   --color "$FZF_MOCHA_COLORS" \
   --header "$initial_header" \
