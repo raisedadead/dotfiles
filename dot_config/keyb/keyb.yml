@@ -13,6 +13,10 @@
       key: M-S-D
     - name: Zoom pane
       key: M-S-Enter
+    - name: Break pane → new window
+      key: C-Space "!"
+    - name: Break pane → new session
+      key: C-Space "@"
 
 - name: tmux › windows
   keybinds:

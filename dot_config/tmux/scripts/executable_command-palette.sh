@@ -55,6 +55,8 @@ commands() {
   entry "Kill Session" "" "Destroy with confirm"
   entry "Yank Command Line" "pfx+y" "Copy cmdline to clipboard"
   entry "Yank Pane CWD" "pfx+Y" "Copy cwd to clipboard"
+  entry "Break Pane to Window" "pfx+!" "Pane → new window"
+  entry "Break Pane to Session" "pfx+@" "Pane → new session"
   entry "Display Pane Numbers" "pfx+q" "Show pane indices"
   entry "Detach" "pfx+d" "Detach from session"
 }
@@ -205,6 +207,10 @@ case "$label" in
     tmux source-file "$HOME/.config/tmux/tmux.conf" \; display-message "Tmux config reloaded" ;;
   "Detach")
     tmux detach-client ;;
+  "Break Pane to Window")
+    tmux break-pane ;;
+  "Break Pane to Session")
+    tmux command-prompt -p "Break to session:" "run-shell \"$HOME/.config/tmux/scripts/break-pane-to-session.sh '#{pane_id}' '#{pane_current_path}' '%%'\"" ;;
   *)
     cmd=$(awk '{print $1}' <<< "$label")
     [ -n "$cmd" ] && tmux command-prompt -I "$cmd" ;;
