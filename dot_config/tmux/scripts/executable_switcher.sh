@@ -57,22 +57,6 @@ make_header() {
   printf ''
 }
 
-sesh_connect() {
-  local path="$1" scope="${2:-}"
-  local name
-  if [ -n "$scope" ]; then
-    name="${scope}/$(basename "$path")"
-  else
-    name=$(basename "$path")
-  fi
-  if tmux has-session -t "=$name" 2>/dev/null; then
-    tmux switch-client -t "=$name"
-  else
-    tmux new-session -d -s "$name" -c "$path"
-    tmux switch-client -t "=$name"
-  fi
-}
-
 expand_tilde() {
   echo "${1/#\~/$HOME}"
 }
@@ -325,14 +309,13 @@ do_action() {
       esac
       ;;
     projects)
-      local raw scope
+      local raw
       raw=$(extract_path "$entry")
-      scope="${raw%%|*}"
       path="${raw#*|}"
       case "$key" in
         ctrl-e) open_in_editor "$path" ;;
         ctrl-v) "${VISUAL:-code}" "$path" ;;
-        *)      sesh_connect "$path" "$scope" ;;
+        *)      sesh connect "$path" ;;
       esac
       ;;
     config|zoxide)
@@ -340,7 +323,7 @@ do_action() {
       case "$key" in
         ctrl-e) open_in_editor "$path" ;;
         ctrl-v) "${VISUAL:-code}" "$path" ;;
-        *)      sesh_connect "$path" ;;
+        *)      sesh connect "$path" ;;
       esac
       ;;
     search)
@@ -359,7 +342,7 @@ do_action() {
         case "$key" in
           ctrl-e) open_in_editor "$stripped" ;;
           ctrl-v) "${VISUAL:-code}" "$stripped" ;;
-          *)      sesh_connect "$stripped" ;;
+          *)      sesh connect "$stripped" ;;
         esac
       elif [ -f "$stripped" ]; then
         case "$key" in
