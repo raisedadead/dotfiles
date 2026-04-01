@@ -28,6 +28,17 @@ action() {
 }
 
 commands() {
+  action "1" "Equalize Vertical" "Stack panes evenly"
+  action "2" "Equalize Horizontal" "Tile panes evenly"
+  action "3" "Sync Panes" "Toggle input sync"
+  action "4" "Break Pane to Window" "Pane → new window"
+  action "5" "Break Pane to Session" "Pane → new session"
+  action "6" "New Window" "Open in cwd"
+  action "7" "Last Session" "Toggle previous session"
+  action "8" "URL Picker" "Open URLs from scrollback"
+  action "9" "Command Prompt" "tmux command line"
+
+  section "Quick Actions"
   action "o" "Switcher" "Switch or create session"
   action "g" "Lazygit" "Git TUI popup"
   action "d" "Split Right" "Pane to the right"
@@ -37,26 +48,17 @@ commands() {
   action "n" "New Session" "Named session prompt"
   action "k" "Keybindings" "Search all keybinds"
   action "r" "Reload Config" "Re-source tmux.conf"
-  section "More"
-  action "1" "Kill Pane" "Close active pane"
-  action "2" "New Window" "Open in cwd"
-  action "3" "Rename Window" "Set window title"
-  action "4" "Kill Window" "Close with confirm"
-  action "5" "Last Session" "Toggle previous session"
-  action "6" "Enter Copy Mode" "Vi-style selection"
-  action "7" "Paste Buffer" "Paste last copied text"
-  action "8" "URL Picker" "Open URLs from scrollback"
-  action "9" "Command Prompt" "tmux command line"
+
   section "Other"
-  entry "Equalize Vertical" "pfx+e" "Stack panes evenly"
-  entry "Equalize Horizontal" "pfx+E" "Tile panes evenly"
-  entry "Sync Panes" "pfx+i" "Toggle input sync"
-  entry "Rename Session" "pfx+\$" "Set session title"
+  entry "Kill Pane" "pfx+x" "Close active pane"
+  entry "Kill Window" "" "Close with confirm"
+  entry "Rename Window" "M-R" "Set window title"
+  entry "Rename Session" "M-r" "Set session title"
   entry "Kill Session" "" "Destroy with confirm"
+  entry "Enter Copy Mode" "pfx+[" "Vi-style selection"
+  entry "Paste Buffer" "pfx+]" "Paste last copied text"
   entry "Yank Command Line" "pfx+y" "Copy cmdline to clipboard"
   entry "Yank Pane CWD" "pfx+Y" "Copy cwd to clipboard"
-  entry "Break Pane to Window" "pfx+!" "Pane → new window"
-  entry "Break Pane to Session" "pfx+@" "Pane → new session"
   entry "Display Pane Numbers" "pfx+q" "Show pane indices"
   entry "Detach" "pfx+d" "Detach from session"
 }
@@ -81,13 +83,13 @@ BINDS=(
   --bind "n:transform:[ -z {q} ] && echo 'become(echo __NEW_SESSION__)' || echo 'put(n)'"
   --bind "r:transform:[ -z {q} ] && echo 'become(echo __RELOAD__)' || echo 'put(r)'"
   --bind "k:transform:[ -z {q} ] && echo 'become(echo __KEYBINDINGS__)' || echo 'put(k)'"
-  --bind "1:transform:[ -z {q} ] && echo 'become(echo __KILL_PANE__)' || echo 'put(1)'"
-  --bind "2:transform:[ -z {q} ] && echo 'become(echo __NEW_WINDOW__)' || echo 'put(2)'"
-  --bind "3:transform:[ -z {q} ] && echo 'become(echo __RENAME_WINDOW__)' || echo 'put(3)'"
-  --bind "4:transform:[ -z {q} ] && echo 'become(echo __KILL_WINDOW__)' || echo 'put(4)'"
-  --bind "5:transform:[ -z {q} ] && echo 'become(echo __LAST_SESSION__)' || echo 'put(5)'"
-  --bind "6:transform:[ -z {q} ] && echo 'become(echo __COPY_MODE__)' || echo 'put(6)'"
-  --bind "7:transform:[ -z {q} ] && echo 'become(echo __PASTE__)' || echo 'put(7)'"
+  --bind "1:transform:[ -z {q} ] && echo 'become(echo __EQUALIZE_V__)' || echo 'put(1)'"
+  --bind "2:transform:[ -z {q} ] && echo 'become(echo __EQUALIZE_H__)' || echo 'put(2)'"
+  --bind "3:transform:[ -z {q} ] && echo 'become(echo __SYNC_PANES__)' || echo 'put(3)'"
+  --bind "4:transform:[ -z {q} ] && echo 'become(echo __BREAK_WINDOW__)' || echo 'put(4)'"
+  --bind "5:transform:[ -z {q} ] && echo 'become(echo __BREAK_SESSION__)' || echo 'put(5)'"
+  --bind "6:transform:[ -z {q} ] && echo 'become(echo __NEW_WINDOW__)' || echo 'put(6)'"
+  --bind "7:transform:[ -z {q} ] && echo 'become(echo __LAST_SESSION__)' || echo 'put(7)'"
   --bind "8:transform:[ -z {q} ] && echo 'become(echo __URL_PICKER__)' || echo 'put(8)'"
   --bind "9:transform:[ -z {q} ] && echo 'become(echo __CMD_PROMPT__)' || echo 'put(9)'"
 )
@@ -123,20 +125,20 @@ case "$selected" in
     tmux source-file "$HOME/.config/tmux/tmux.conf" \; display-message "Tmux config reloaded"; exit 0 ;;
   __KEYBINDINGS__)
     tmux run-shell "$HOME/.config/tmux/scripts/keyb-popup.sh || true"; exit 0 ;;
-  __KILL_PANE__)
-    tmux kill-pane; exit 0 ;;
+  __EQUALIZE_V__)
+    tmux select-layout even-vertical; exit 0 ;;
+  __EQUALIZE_H__)
+    tmux select-layout even-horizontal; exit 0 ;;
+  __SYNC_PANES__)
+    tmux setw synchronize-panes \; if -F "#{pane_synchronized}" "set pane-active-border-style fg=#F38BA8 ; set pane-border-status bottom" "set pane-active-border-style fg=white ; set pane-border-status off"; exit 0 ;;
+  __BREAK_WINDOW__)
+    tmux break-pane; exit 0 ;;
+  __BREAK_SESSION__)
+    tmux command-prompt -p "Break to session:" "run-shell \"$HOME/.config/tmux/scripts/break-pane-to-session.sh '#{pane_id}' '#{pane_current_path}' '%%'\""; exit 0 ;;
   __NEW_WINDOW__)
     tmux new-window -c "#{pane_current_path}"; exit 0 ;;
-  __RENAME_WINDOW__)
-    tmux command-prompt -I "#W" "rename-window -- '%%'"; exit 0 ;;
-  __KILL_WINDOW__)
-    tmux confirm-before -p "kill-window #W? (y/n)" kill-window; exit 0 ;;
   __LAST_SESSION__)
     tmux run-shell "sesh last"; exit 0 ;;
-  __COPY_MODE__)
-    tmux copy-mode; exit 0 ;;
-  __PASTE__)
-    tmux paste-buffer; exit 0 ;;
   __URL_PICKER__)
     tmux run-shell -b "$HOME/.config/tmux/plugins/tmux-fzf-url/fzf-url.sh '' 2000 'open' ''"; exit 0 ;;
   __CMD_PROMPT__)

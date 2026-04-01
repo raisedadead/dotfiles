@@ -28,9 +28,9 @@
       key: M-"~"
     - name: Window 1-9
       key: M-1..9
-    - name: Rename window
-      key: M-r
     - name: Rename session
+      key: M-r
+    - name: Rename window
       key: M-R
 
 - name: tmux › sessions
@@ -56,6 +56,27 @@
       key: M-?
     - name: Command palette
       key: M-p
+
+- name: tmux › command palette (M-p)
+  keybinds:
+    - name: Equalize vertical
+      key: "1"
+    - name: Equalize horizontal
+      key: "2"
+    - name: Sync panes
+      key: "3"
+    - name: Break pane → window
+      key: "4"
+    - name: Break pane → session
+      key: "5"
+    - name: New window
+      key: "6"
+    - name: Last session
+      key: "7"
+    - name: URL picker
+      key: "8"
+    - name: Command prompt
+      key: "9"
 
 - name: tmux › prefix (C-Space)
   prefix: C-Space
