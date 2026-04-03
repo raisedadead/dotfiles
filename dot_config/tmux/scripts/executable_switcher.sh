@@ -218,6 +218,14 @@ extract_path() {
   cut -f1 <<< "$1"
 }
 
+tmux_connect() {
+  local path="$1"
+  local name
+  name=$(basename "$path" | sed 's/^\.//')
+  tmux new-session -d -s "$name" -c "$path" 2>/dev/null
+  tmux switch-client -t "=$name"
+}
+
 eza_tree() {
   eza --tree --level=2 --icons --color=always --group-directories-first \
     --ignore-glob='node_modules|.git|__pycache__|.next|dist|build|.cache|.turbo|vendor' \
@@ -234,7 +242,7 @@ do_preview() {
       local target session
       target=$(extract_path "$entry")
       session="${target%%:*}"
-      sesh preview "$session" 2>/dev/null || echo "No preview available"
+      tmux capture-pane -t "=$session" -p 2>/dev/null || echo "No preview available"
       ;;
     projects)
       local raw
@@ -315,7 +323,7 @@ do_action() {
       case "$key" in
         ctrl-e) open_in_editor "$path" ;;
         ctrl-v) "${VISUAL:-code}" "$path" ;;
-        *)      sesh connect "$path" ;;
+        *)      tmux_connect "$path" ;;
       esac
       ;;
     config|zoxide)
@@ -323,7 +331,7 @@ do_action() {
       case "$key" in
         ctrl-e) open_in_editor "$path" ;;
         ctrl-v) "${VISUAL:-code}" "$path" ;;
-        *)      sesh connect "$path" ;;
+        *)      tmux_connect "$path" ;;
       esac
       ;;
     search)
@@ -342,7 +350,7 @@ do_action() {
         case "$key" in
           ctrl-e) open_in_editor "$stripped" ;;
           ctrl-v) "${VISUAL:-code}" "$stripped" ;;
-          *)      sesh connect "$stripped" ;;
+          *)      tmux_connect "$stripped" ;;
         esac
       elif [ -f "$stripped" ]; then
         case "$key" in

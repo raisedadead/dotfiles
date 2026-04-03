@@ -138,7 +138,7 @@ case "$selected" in
   __NEW_WINDOW__)
     tmux new-window -c "#{pane_current_path}"; exit 0 ;;
   __LAST_SESSION__)
-    tmux run-shell "sesh last"; exit 0 ;;
+    tmux switch-client -l; exit 0 ;;
   __URL_PICKER__)
     tmux run-shell -b "$HOME/.config/tmux/plugins/tmux-fzf-url/fzf-url.sh '' 2000 'open' ''"; exit 0 ;;
   __CMD_PROMPT__)
@@ -184,7 +184,7 @@ case "$label" in
   "Switcher")
     tmux run-shell "$HOME/.config/tmux/scripts/switcher.sh || true" ;;
   "Last Session")
-    tmux run-shell "sesh last" ;;
+    tmux switch-client -l ;;
   "Choose Tree")
     tmux choose-tree -Zw -F "#{?pane_format,#{pane_current_command} #{pane_current_path},#{?window_format,#{window_name} (#{window_panes} panes),#{session_name} (#{session_windows} win)}}" ;;
   "Enter Copy Mode")
