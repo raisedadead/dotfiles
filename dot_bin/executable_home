@@ -372,6 +372,9 @@ case "${1:-}" in
       printf '%s\n' "$PUB"
     fi
     ;;
+  push|pull|status|managed|verify)
+    printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for suggested commands\n"
+    ;;
   help|"") cmd_help ;;
   *)       cmd_passthrough "$@" ;;
 esac
