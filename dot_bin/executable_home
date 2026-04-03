@@ -56,7 +56,7 @@ cmd_help() {
   printf "  ${BLD}home sync${RST}                ${DIM}auto-resolve drift + stage for commit${RST}\n"
   printf "  ${BLD}home apply${RST}               ${DIM}→ deploy source to ~${RST}\n"
   printf "  ${BLD}home re-add${RST}              ${DIM}← capture ~ edits back to source${RST}\n"
-  printf "  ${BLD}home pull${RST}                ${DIM}pull + apply both repos${RST}\n"
+  printf "  ${BLD}home pull${RST}                ${DIM}pull both repos${RST}\n"
   printf "  ${BLD}home push${RST}                ${DIM}push both repos to origin${RST}\n"
   printf "  ${BLD}home init${RST}                ${DIM}clone private repo and apply both${RST}\n"
   printf "  ${BLD}home cd${RST}                  ${DIM}cd to public source dir${RST}\n"
@@ -149,7 +149,7 @@ cmd_check() {
   wait
 
   local HAS_ISSUES=0 HAS_CONFLICT=0 HAS_RESOLVABLE=0
-  local DIR CM_SRC AHEAD BEHIND BR DIRTY DIRTY_N TRACKED_DIRTY_N UNAPPLIED S SHORT_DIR
+  local DIR CM_SRC AHEAD BEHIND BR DIRTY DIRTY_N TRACKED_DIRTY_N UNAPPLIED S
   local NEEDS_COMMIT_pub=0 NEEDS_COMMIT_priv=0
   local AHEAD_pub=0 AHEAD_priv=0 BEHIND_pub=0 BEHIND_priv=0
   local CONFLICT_pub=0 CONFLICT_priv=0
@@ -165,7 +165,6 @@ cmd_check() {
       fi
     fi
 
-    SHORT_DIR="${DIR/#$HOME/\~}"
     AHEAD=0; BEHIND=0
     BR=$(git -C "$DIR" branch --show-current 2>/dev/null)
     if git -C "$DIR" rev-parse --verify "origin/$BR" &>/dev/null; then
