@@ -20,6 +20,12 @@ quick-terminal-animation-duration = 0.1
 clipboard-read = allow
 copy-on-select = false
 
+# Scrollbar
+scrollbar = never
+
+# Progress
+progress-style = false
+
 # Window & Display
 window-save-state = always
 window-theme = system
@@ -36,6 +42,9 @@ background-blur = 15
 theme = Catppuccin Mocha
 bold-is-bright = true
 faint-opacity=1
+
+# Splits
+split-preserve-zoom = navigation
 
 # Mouse & Selection
 focus-follows-mouse = true
