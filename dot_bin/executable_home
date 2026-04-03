@@ -24,7 +24,6 @@ ok() { printf "${GRN}dotfiles ·${RST} %s\n" "$1"; }
 has_priv() { [[ -d "$PRIV" ]]; }
 
 # Run chezmoi for a named repo (public|private)
-# Config template lives in public repo only — suppress stale-config warning on private
 _cm() {
   local repo="$1"; shift
   if [[ "$repo" == "private" ]]; then
@@ -52,25 +51,17 @@ esac
 
 cmd_help() {
   echo ""
+  printf "  ${BLD}Custom commands (both repos):${RST}\n\n"
   printf "  ${BLD}home check${RST}               ${DIM}show status and suggested actions${RST}\n"
   printf "  ${BLD}home sync${RST}                ${DIM}auto-resolve drift + stage for commit${RST}\n"
-  printf "  ${BLD}home re-add${RST}              ${DIM}← capture ~ edits back to source${RST}\n"
   printf "  ${BLD}home apply${RST}               ${DIM}→ deploy source to ~${RST}\n"
-  printf "  ${BLD}home pull${RST}                ${DIM}pull and apply both repos${RST}\n"
-  printf "  ${BLD}home push${RST}                ${DIM}push both repos to origin${RST}\n"
-  echo ""
-  printf "  ${BLD}home status${RST}              ${DIM}show git status for both repos${RST}\n"
-  printf "  ${BLD}home diff${RST}                ${DIM}show pending changes${RST}\n"
-  printf "  ${BLD}home managed${RST}             ${DIM}list all managed files${RST}\n"
-  printf "  ${BLD}home verify${RST}              ${DIM}check if home dir is in sync${RST}\n"
-  echo ""
+  printf "  ${BLD}home re-add${RST}              ${DIM}← capture ~ edits back to source${RST}\n"
   printf "  ${BLD}home init${RST}                ${DIM}clone private repo and apply both${RST}\n"
+  printf "  ${BLD}home cd${RST}                  ${DIM}cd to public source dir${RST}\n"
   echo ""
-  printf "  ${DIM}Prefix with ${RST}${BLD}public${RST}${DIM} or ${RST}${BLD}private${RST}${DIM} to target one repo:${RST}\n"
-  printf "  ${DIM}e.g. home pub re-add, home prv apply${RST}\n"
-  echo ""
-  printf "  ${DIM}Anything else is passed through to chezmoi directly.${RST}\n"
-  printf "  ${DIM}e.g. home edit, home doctor, home cd${RST}\n"
+  printf "  ${BLD}Chezmoi passthrough (requires pub/prv):${RST}\n\n"
+  printf "  ${DIM}home ${RST}${BLD}pub${RST}${DIM}|${RST}${BLD}prv${RST} ${DIM}<command>${RST}     ${DIM}runs chezmoi with the correct --source${RST}\n"
+  printf "  ${DIM}e.g. home pub edit, home prv diff, home pub managed${RST}\n"
   echo ""
 }
 
@@ -100,96 +91,47 @@ cmd_init() {
 
 cmd_readd() {
   echo ""
-  local first=1
+  local first=1 failed=0
   for repo in $(_repos); do
     (( first )) || echo ""
     first=0
     p "re-adding $repo repo..."
-    _cm "$repo" re-add
-    ok "$repo repo re-added"
+    if _cm "$repo" re-add; then
+      ok "$repo repo re-added"
+    else
+      printf "${RED}dotfiles ·${RST} $repo re-add failed\n"
+      failed=1; break
+    fi
   done
+  echo ""
+  if (( failed )); then
+    printf "${YLW}dotfiles ·${RST} run ${BLD}home check${RST} to see what went wrong\n"
+  else
+    printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for next steps\n"
+  fi
   echo ""
 }
 
 cmd_apply() {
   echo ""
-  local first=1
+  local first=1 failed=0
   for repo in $(_repos); do
     (( first )) || echo ""
     first=0
     p "applying $repo repo..."
-    _cm "$repo" apply
-    ok "$repo repo applied"
-  done
-  echo ""
-}
-
-cmd_pull() {
-  echo ""
-  p "pulling public repo..."
-  chezmoi update
-  ok "public repo updated"
-  if has_priv; then
-    echo ""
-    p "pulling private repo..."
-    git -C "$PRIV" pull --rebase
-    _cm private apply
-    ok "private repo updated"
-  fi
-  echo ""
-}
-
-cmd_push() {
-  local br
-  echo ""
-  br=$(git -C "$PUB" branch --show-current)
-  p "pushing public repo ($br)..."
-  git -C "$PUB" push origin "$br"
-  ok "public repo pushed"
-  if has_priv; then
-    echo ""
-    br=$(git -C "$PRIV" branch --show-current)
-    p "pushing private repo ($br)..."
-    git -C "$PRIV" push origin "$br"
-    ok "private repo pushed"
-  fi
-  echo ""
-}
-
-cmd_status() {
-  echo ""
-  printf "${DIM}dotfiles ·${RST} ${BLD}public repo${RST}\n"
-  git -C "$PUB" status --short
-  if has_priv; then
-    echo ""
-    printf "${DIM}dotfiles ·${RST} ${BLD}private repo${RST}\n"
-    git -C "$PRIV" status --short
-  fi
-  echo ""
-}
-
-cmd_diff() {
-  for repo in $(_repos); do
-    _cm "$repo" diff
-  done
-}
-
-cmd_managed() {
-  for repo in $(_repos); do
-    _cm "$repo" managed
-  done
-}
-
-cmd_verify() {
-  echo ""
-  for repo in $(_repos); do
-    printf "  ${BLD}%-14s${RST}" "$repo repo"
-    if _cm "$repo" verify 2>/dev/null; then
-      printf "${GRN}in sync${RST}\n"
+    if _cm "$repo" apply; then
+      ok "$repo repo applied"
     else
-      printf "${YLW}drift detected${RST} — run ${BLD}home sync${RST} or ${BLD}home diff${RST}\n"
+      printf "${RED}dotfiles ·${RST} $repo apply failed\n"
+      failed=1; break
     fi
   done
+  echo ""
+  if (( failed )); then
+    printf "${YLW}dotfiles ·${RST} run ${BLD}home check${RST} to see what went wrong\n"
+  else
+    printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for next steps\n"
+  fi
   echo ""
 }
 
@@ -204,9 +146,11 @@ cmd_check() {
   has_priv && git -C "$PRIV" fetch --quiet 2>/dev/null &
   wait
 
-  local HAS_ISSUES=0 HAS_PULL=0 HAS_CONFLICT=0 HAS_RESOLVABLE=0 HAS_PUSH=0
+  local HAS_ISSUES=0 HAS_CONFLICT=0 HAS_RESOLVABLE=0
   local DIR CM_SRC AHEAD BEHIND BR DIRTY DIRTY_N TRACKED_DIRTY_N UNAPPLIED S SHORT_DIR
   local NEEDS_COMMIT_pub=0 NEEDS_COMMIT_priv=0
+  local AHEAD_pub=0 AHEAD_priv=0 BEHIND_pub=0 BEHIND_priv=0
+  local CONFLICT_pub=0 CONFLICT_priv=0
 
   for REPO in public private; do
     if [[ "$REPO" == "public" ]]; then
@@ -314,34 +258,38 @@ cmd_check() {
 
     if [[ "$REPO" == "public" ]]; then
       (( DIRTY_N > 0 || UNAPPLIED > 0 )) && NEEDS_COMMIT_pub=1
+      AHEAD_pub=$AHEAD; BEHIND_pub=$BEHIND
     else
       (( DIRTY_N > 0 || UNAPPLIED > 0 )) && NEEDS_COMMIT_priv=1
+      AHEAD_priv=$AHEAD; BEHIND_priv=$BEHIND
     fi
 
-    (( BEHIND > 0 ))    && HAS_PULL=1
     if (( TRACKED_DIRTY_N > 0 && UNAPPLIED > 0 )); then
       HAS_CONFLICT=1
+      [[ "$REPO" == "public" ]] && CONFLICT_pub=1 || CONFLICT_priv=1
     elif (( DIRTY_N > 0 || UNAPPLIED > 0 )); then
       HAS_RESOLVABLE=1
     fi
-    (( AHEAD > 0 ))     && HAS_PUSH=1
   done
 
+  local HAS_PULL=$(( (BEHIND_pub > 0) + (BEHIND_priv > 0) ))
+  local HAS_PUSH=$(( (AHEAD_pub > 0) + (AHEAD_priv > 0) ))
   local ANY_WORK=$(( NEEDS_COMMIT_pub + NEEDS_COMMIT_priv ))
   local ANY_SHARED=$(( HAS_PULL + HAS_CONFLICT + HAS_RESOLVABLE + HAS_PUSH ))
 
   if (( ANY_WORK + ANY_SHARED > 0 )); then
-    printf "\n${DIM}suggested next steps →${RST}\n\n"
-    (( HAS_PULL > 0 ))  && printf "    ${CYN}home pull${RST}\n"
-    if (( HAS_RESOLVABLE || HAS_CONFLICT )); then
-      printf "    ${YLW}home sync${RST}    ${DIM}# auto-resolve + stage${RST}\n"
-    fi
-    if (( HAS_CONFLICT )); then
-      printf "    ${RED}home diff${RST}    ${DIM}# ⇄ review conflicts sync can't resolve${RST}\n"
-    fi
-    (( NEEDS_COMMIT_pub ))  && printf "    ${YLW}git -C ~/.dotfiles commit${RST}\n"
-    (( NEEDS_COMMIT_priv )) && printf "    ${YLW}git -C ~/.dotfiles-private commit${RST}\n"
-    (( HAS_PUSH > 0 ))  && printf "    ${GRN}home push${RST}\n"
+    printf "\n${DIM}next →${RST}\n\n"
+    (( BEHIND_pub > 0 ))  && printf "    ${CYN}git -C ~/.dotfiles pull${RST}\n"
+    (( BEHIND_priv > 0 )) && printf "    ${CYN}git -C ~/.dotfiles-private pull${RST}\n"
+    (( HAS_RESOLVABLE || HAS_CONFLICT )) && printf "    ${YLW}home sync${RST}\n"
+    (( CONFLICT_pub ))  && printf "    ${RED}home pub diff${RST}\n"
+    (( CONFLICT_priv )) && printf "    ${RED}home prv diff${RST}\n"
+    local WILL_COMMIT_pub=$(( NEEDS_COMMIT_pub ))
+    local WILL_COMMIT_priv=$(( NEEDS_COMMIT_priv ))
+    (( WILL_COMMIT_pub ))  && printf "    ${YLW}git -C ~/.dotfiles commit${RST}\n"
+    (( WILL_COMMIT_priv )) && printf "    ${YLW}git -C ~/.dotfiles-private commit${RST}\n"
+    (( WILL_COMMIT_pub || AHEAD_pub > 0 ))  && printf "    ${GRN}git -C ~/.dotfiles push${RST}\n"
+    (( WILL_COMMIT_priv || AHEAD_priv > 0 )) && printf "    ${GRN}git -C ~/.dotfiles-private push${RST}\n"
   elif (( HAS_ISSUES == 0 )); then
     printf "\n${GRN}all clear${RST}\n"
   fi
@@ -369,7 +317,8 @@ cmd_sync() {
     drift_n=0; [[ -n "$drift" ]] && drift_n=$(echo "$drift" | wc -l | tr -d ' ')
 
     if (( tracked_dirty_n > 0 && drift_n > 0 )); then
-      printf "  ${RED}⇄ $repo${RST}: %d tracked dirty + %d target edited — run ${BLD}home diff${RST} to review\n" "$tracked_dirty_n" "$drift_n"
+      local prefix; [[ "$repo" == "public" ]] && prefix="pub" || prefix="prv"
+      printf "  ${RED}⇄ $repo${RST}: %d source dirty + %d target edited — run ${BLD}home %s diff${RST} to review\n" "$tracked_dirty_n" "$drift_n" "$prefix"
       had_conflict=1
     elif (( drift_n > 0 )); then
       p "← $repo: re-adding $drift_n file(s) from ~ to source..."
@@ -393,25 +342,36 @@ cmd_sync() {
 
   echo ""
   if (( had_conflict )); then
-    printf "${YLW}dotfiles ·${RST} conflicts need manual resolution — resolve, then ${BLD}home sync${RST} again\n"
+    printf "${YLW}dotfiles ·${RST} run ${BLD}home check${RST} to see what needs resolving\n"
   elif (( had_action )); then
-    printf "${DIM}dotfiles ·${RST} staged and ready — review with ${BLD}home status${RST}, then commit\n"
+    printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for next steps\n"
   fi
   echo ""
+}
+
+# Passthrough requires explicit repo selector
+cmd_passthrough() {
+  if [[ -z "${REPO_SEL:-}" ]]; then
+    printf "${RED}dotfiles ·${RST} chezmoi commands require a repo selector\n"
+    printf "  ${DIM}e.g. home ${RST}${BLD}pub${RST} %s${DIM}, home ${RST}${BLD}prv${RST} %s\n" "$1" "$1"
+    exit 1
+  fi
+  _cm "$REPO_SEL" "$@"
 }
 
 case "${1:-}" in
   check)   cmd_check ;;
   sync)    cmd_sync ;;
   init)    cmd_init ;;
-  re-add)  cmd_readd ;;
   apply)   cmd_apply ;;
-  pull)    cmd_pull ;;
-  push)    cmd_push ;;
-  status)  cmd_status ;;
-  diff)    cmd_diff ;;
-  managed) cmd_managed ;;
-  verify)  cmd_verify ;;
+  re-add)  cmd_readd ;;
+  cd)
+    if [[ "${REPO_SEL:-}" == "private" ]]; then
+      printf '%s\n' "$PRIV"
+    else
+      printf '%s\n' "$PUB"
+    fi
+    ;;
   help|"") cmd_help ;;
-  *)       for repo in $(_repos); do _cm "$repo" "$@"; done ;;
+  *)       cmd_passthrough "$@" ;;
 esac

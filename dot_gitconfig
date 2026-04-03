@@ -76,3 +76,5 @@ path = ~/.config/delta/config.gitconfig
 	defaultBranch = main
 [beads]
 	role = maintainer
+[coderabbit]
+	machineId = cli/8e804d04952e46e58c434baa4049d11f

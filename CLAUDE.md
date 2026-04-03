@@ -5,9 +5,8 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 ## Chezmoi Conventions
 
 - **Naming**: `dot_` → dotfiles, `executable_` → +x, `private_` → restricted perms, `empty_` → empty files
-- **Apply**: `chezmoi apply` (public), `chezmoi --source ~/.dotfiles-private apply` (private)
-- **`home` command** (`dot_bin/executable_home`) wraps chezmoi for both repos: named subcommands (`check`, `sync`, `apply`, `pull`, `push`, `status`, `diff`, `managed`, `verify`, `init`, `re-add`) are custom implementations; everything else falls through to `chezmoi`
-- `.claude/*` lives in the **private** repo
+- **Boundary rule**: secrets, auth tokens, or personal tooling config → private repo. Everything else → public repo.
+- `.claude/*` lives in the **private** repo (`dot_claude/`)
 - Git hooks: `.githooks/` dir in public repo, configured via `core.hooksPath`
 
 ## Rules (non-obvious, not derivable from code)
@@ -34,8 +33,10 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 
 ## Status Bar
 
-- Three-zone layout via `status-format[0]` — theme.conf header comments are the canonical reference
-- Left: window dots, Centre: session // windows, Right: session squares
+- Three-zone slant layout via `status-format[0]` — theme.conf header comments are the canonical reference
+- Left (surface1 bg + slant): window dots with names, zoom/prefix indicators
+- Centre (transparent, rounded pill): session name only
+- Right (slant + surface1 bg): session squares
 - Update theme.conf header comments when changing indicator logic
 
 ## Cross-Tool Integration
