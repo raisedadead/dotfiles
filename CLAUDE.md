@@ -16,6 +16,7 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 - **`_tmux_exit_code` must be first precmd** — captures `$?` before OMP modifies it
 - **tmux mouse selection is pane-aware** — drag selects within pane, copies to system clipboard via OSC 52; Shift+drag falls back to native Ghostty selection
 - **tmux names Shift-Tab as `BTab`** (e.g., `M-BTab`), not `M-S-Tab`
+- **Shifted punctuation in tmux binds needs `M-S-`** — with `extended-keys on`, `M-?` won't fire; use `M-S-?`. Same for `M-S-~` etc. Letters (`M-S-D`, `M-S-R`) work as-is
 - **`Ctrl+R` is atuin, not fzf** — atuin initialized with `--disable-up-arrow`
 - **Emacs mode default** (`bindkey -e`) with `C-z` toggle to vi — required for Alt keybinds without lag
 - **Popup scripts live in `dot_config/tmux/scripts/`**, not `dot_bin/`
@@ -25,7 +26,7 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 
 ## Popup Conventions
 
-- Sizes: 70%x80% (lazygit), 75%x80% (switcher), 53%x60% (keyb-popup), 40%x45% (command palette), 20%x5 (new session)
+- Sizes: 70%x80% (lazygit), 75%x80% (switcher), 53%x60% (keyb-popup), 24%x22% (command palette), 20%x5 (new session)
 - Border: rounded, white
 - fzf color scheme: catppuccin mocha via `FZF_MOCHA_COLORS` in `colors.sh`
 - Tab/Shift-Tab cycles categories in switcher and keyb-popup

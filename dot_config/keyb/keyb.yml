@@ -25,7 +25,7 @@
     - name: Next window
       key: M-"`"
     - name: Previous window
-      key: M-"~"
+      key: M-S-"~"
     - name: Window 1-9
       key: M-1..9
     - name: Rename session
@@ -53,7 +53,7 @@
     - name: Lazygit
       key: M-g
     - name: Keybindings
-      key: M-?
+      key: M-S-?
     - name: Command palette
       key: M-p
 
