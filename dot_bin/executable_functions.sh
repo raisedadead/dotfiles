@@ -52,10 +52,35 @@ home() {
 }
 
 _home() {
-  if (( CURRENT == 3 )) && [[ "${words[2]}" == "cd" ]]; then
-    local -a repos=('public:~/.dotfiles' 'private:~/.dotfiles-private')
-    _describe 'repo' repos
+  local -a cmds=(
+    'check:show status and suggested actions'
+    'sync:auto-resolve drift + stage for commit'
+    'apply:deploy source to ~'
+    're-add:capture ~ edits back to source'
+    'pull:pull both repos'
+    'push:push both repos to origin'
+    'init:clone private repo and apply both'
+    'cd:cd to source dir'
+    'pub:target public repo'
+    'prv:target private repo'
+    'help:show help'
+  )
+  if (( CURRENT == 2 )); then
+    _describe 'command' cmds
     return
+  fi
+  if (( CURRENT == 3 )); then
+    case "${words[2]}" in
+      cd)
+        local -a repos=('public:~/.dotfiles' 'private:~/.dotfiles-private')
+        _describe 'repo' repos
+        return
+        ;;
+      pub|prv)
+        _describe 'command' cmds
+        return
+        ;;
+    esac
   fi
   _chezmoi "$@"
 }
