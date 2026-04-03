@@ -56,6 +56,8 @@ cmd_help() {
   printf "  ${BLD}home sync${RST}                ${DIM}auto-resolve drift + stage for commit${RST}\n"
   printf "  ${BLD}home apply${RST}               ${DIM}→ deploy source to ~${RST}\n"
   printf "  ${BLD}home re-add${RST}              ${DIM}← capture ~ edits back to source${RST}\n"
+  printf "  ${BLD}home pull${RST}                ${DIM}pull + apply both repos${RST}\n"
+  printf "  ${BLD}home push${RST}                ${DIM}push both repos to origin${RST}\n"
   printf "  ${BLD}home init${RST}                ${DIM}clone private repo and apply both${RST}\n"
   printf "  ${BLD}home cd${RST}                  ${DIM}cd to public source dir${RST}\n"
   echo ""
@@ -279,17 +281,13 @@ cmd_check() {
 
   if (( ANY_WORK + ANY_SHARED > 0 )); then
     printf "\n${DIM}next →${RST}\n\n"
-    (( BEHIND_pub > 0 ))  && printf "    ${CYN}git -C ~/.dotfiles pull${RST}\n"
-    (( BEHIND_priv > 0 )) && printf "    ${CYN}git -C ~/.dotfiles-private pull${RST}\n"
+    (( HAS_PULL ))  && printf "    ${CYN}home pull${RST}\n"
     (( HAS_RESOLVABLE || HAS_CONFLICT )) && printf "    ${YLW}home sync${RST}\n"
     (( CONFLICT_pub ))  && printf "    ${RED}home pub diff${RST}\n"
     (( CONFLICT_priv )) && printf "    ${RED}home prv diff${RST}\n"
-    local WILL_COMMIT_pub=$(( NEEDS_COMMIT_pub ))
-    local WILL_COMMIT_priv=$(( NEEDS_COMMIT_priv ))
-    (( WILL_COMMIT_pub ))  && printf "    ${YLW}git -C ~/.dotfiles commit${RST}\n"
-    (( WILL_COMMIT_priv )) && printf "    ${YLW}git -C ~/.dotfiles-private commit${RST}\n"
-    (( WILL_COMMIT_pub || AHEAD_pub > 0 ))  && printf "    ${GRN}git -C ~/.dotfiles push${RST}\n"
-    (( WILL_COMMIT_priv || AHEAD_priv > 0 )) && printf "    ${GRN}git -C ~/.dotfiles-private push${RST}\n"
+    (( NEEDS_COMMIT_pub ))  && printf "    ${YLW}git -C ~/.dotfiles commit${RST}\n"
+    (( NEEDS_COMMIT_priv )) && printf "    ${YLW}git -C ~/.dotfiles-private commit${RST}\n"
+    (( NEEDS_COMMIT_pub || NEEDS_COMMIT_priv || HAS_PUSH )) && printf "    ${GRN}home push${RST}\n"
   elif (( HAS_ISSUES == 0 )); then
     printf "\n${GRN}all clear${RST}\n"
   fi
@@ -349,6 +347,43 @@ cmd_sync() {
   echo ""
 }
 
+cmd_push() {
+  echo ""
+  for repo in $(_repos); do
+    local dir br
+    [[ "$repo" == "public" ]] && dir="$PUB" || dir="$PRIV"
+    [[ ! -d "$dir" ]] && continue
+    br=$(git -C "$dir" branch --show-current)
+    p "pushing $repo ($br)..."
+    if git -C "$dir" push origin "$br"; then
+      ok "$repo pushed"
+    else
+      printf "${RED}dotfiles ·${RST} $repo push failed\n"
+      break
+    fi
+  done
+  echo ""
+}
+
+cmd_pull() {
+  echo ""
+  for repo in $(_repos); do
+    local dir
+    [[ "$repo" == "public" ]] && dir="$PUB" || dir="$PRIV"
+    [[ ! -d "$dir" ]] && continue
+    p "pulling $repo..."
+    if git -C "$dir" pull --rebase; then
+      ok "$repo pulled"
+    else
+      printf "${RED}dotfiles ·${RST} $repo pull failed\n"
+      break
+    fi
+  done
+  echo ""
+  printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for next steps\n"
+  echo ""
+}
+
 # Passthrough requires explicit repo selector
 cmd_passthrough() {
   if [[ -z "${REPO_SEL:-}" ]]; then
@@ -372,7 +407,9 @@ case "${1:-}" in
       printf '%s\n' "$PUB"
     fi
     ;;
-  push|pull|status|managed|verify)
+  push)   cmd_push ;;
+  pull)   cmd_pull ;;
+  status|managed|verify)
     printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for suggested commands\n"
     ;;
   help|"") cmd_help ;;
