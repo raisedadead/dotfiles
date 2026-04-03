@@ -73,10 +73,10 @@ fi
 
 
 #-----------------------------
-# Sesh
+# Tmux
 #-----------------------------
-if can_haz sesh; then
-  alias t='sesh connect .'
+if can_haz tmux; then
+  alias t='tmux new-session -A -s "$(basename "$PWD" | sed "s/^\.//")" -c "$PWD"'
 fi
 
 
