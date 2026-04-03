@@ -29,7 +29,7 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 - Sizes: 70%x80% (lazygit), 75%x80% (switcher), 53%x60% (keyb-popup), 40%x45% (command palette), 20%x5 (new session)
 - Border: rounded, white
 - fzf color scheme: catppuccin mocha via `FZF_MOCHA_COLORS` in `colors.sh`
-- Tab/Shift-Tab cycles categories in sesh-popup and keyb-popup
+- Tab/Shift-Tab cycles categories in switcher and keyb-popup
 - Scripts use `fzf-tmux -p` for fzf-based pickers; lazygit and new-session use `display-popup`
 
 ## Status Bar

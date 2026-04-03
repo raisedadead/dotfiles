@@ -7,7 +7,7 @@ SELF="$0"
 CACHE="/tmp/keyb-popup-cache"
 STATE="/tmp/keyb-popup-state"
 
-CATS=(all tmux ghostty yazi fzf atuin zsh sesh)
+CATS=(all tmux ghostty yazi fzf atuin zsh)
 
 # Nerd Font icons via escape sequences
 _ico_all=$'\U000F0AB6'       # nf-md-format_list_bulleted_square
@@ -17,8 +17,7 @@ _ico_yazi=$'\U000F024B'      # nf-md-folder
 _ico_fzf=$'\U000F0349'       # nf-md-magnify
 _ico_atuin=$'\U000F02DA'     # nf-md-history
 _ico_zsh=$'\U000F018D'       # nf-md-console (same as tmux)
-_ico_sesh=$'\U000F0493'      # nf-md-link_variant
-CAT_ICONS=("$_ico_all" "$_ico_tmux" "$_ico_ghostty" "$_ico_yazi" "$_ico_fzf" "$_ico_atuin" "$_ico_zsh" "$_ico_sesh")
+CAT_ICONS=("$_ico_all" "$_ico_tmux" "$_ico_ghostty" "$_ico_yazi" "$_ico_fzf" "$_ico_atuin" "$_ico_zsh")
 
 D="$CLR_DIM"
 M="$CLR_ACCENT"
@@ -43,14 +42,14 @@ keyb_content() {
   local cat="$1"
   if [ "$cat" = "all" ]; then
     awk -v d="$CLR_DIM" -v r="$CLR_RST" '
-      /^(tmux|ghostty|sesh|yazi|fzf|atuin|zsh)/ { printf "%s%s%s\n", d, $0, r; next }
+      /^(tmux|ghostty|yazi|fzf|atuin|zsh)/ { printf "%s%s%s\n", d, $0, r; next }
       /^[[:space:]]*$/ { next }
       { print }
     ' "$CACHE"
   else
     awk -v cat="$cat" -v d="$CLR_DIM" -v r="$CLR_RST" '
       $0 ~ "^"cat { f=1; printf "%s%s%s\n", d, $0, r; next }
-      /^(tmux|ghostty|sesh|yazi|fzf|atuin|zsh)/ { f=0 }
+      /^(tmux|ghostty|yazi|fzf|atuin|zsh)/ { f=0 }
       f && /^[[:space:]]*$/ { next }
       f
     ' "$CACHE"

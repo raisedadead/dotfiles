@@ -127,7 +127,7 @@
       key: "{ / }"
     - name: Resize left / down / up / right
       key: H / J / K / L
-    - name: Last session (sesh)
+    - name: Last session
       key: S
     - name: Yank command line
       key: "y"
