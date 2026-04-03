@@ -82,7 +82,7 @@ trap 'rm -f "$CACHE" "$STATE"' EXIT
 header=$(make_header "all")
 
 keyb_content "all" | fzf-tmux -p 53%,60% \
-  --no-sort --no-info --ansi --disabled \
+  --no-sort --no-info --ansi \
   --border=rounded --border-label=' Keybindings ' --padding=1,2 \
   --header-first --header-border=line \
   --header "$header" \

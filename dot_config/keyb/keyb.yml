@@ -77,6 +77,8 @@
       key: "8"
     - name: Command prompt
       key: "9"
+    - name: Keybindings
+      key: "0"
 
 - name: tmux › prefix (C-Space)
   prefix: C-Space
