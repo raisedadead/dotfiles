@@ -16,7 +16,7 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 - **`_tmux_exit_code` must be first precmd** — captures `$?` before OMP modifies it
 - **tmux mouse selection is pane-aware** — drag selects within pane, copies to system clipboard via OSC 52; Shift+drag falls back to native Ghostty selection
 - **tmux names Shift-Tab as `BTab`** (e.g., `M-BTab`), not `M-S-Tab`
-- **Shifted punctuation in tmux binds needs `M-S-`** — with `extended-keys on`, `M-?` won't fire; use `M-S-?`. Same for `M-S-~` etc. Letters (`M-S-D`, `M-S-R`) work as-is
+- **`extended-keys on` requires explicit `M-S-` for shifted keys** — `M-S-D` not `M-D`, `M-S-?` not `M-?`, `M-S-~` not `M-~`. The `S-` denotes the Shift modifier for both letters and punctuation
 - **`Ctrl+R` is atuin, not fzf** — atuin initialized with `--disable-up-arrow`
 - **Emacs mode default** (`bindkey -e`) with `C-z` toggle to vi — required for Alt keybinds without lag
 - **Popup scripts live in `dot_config/tmux/scripts/`**, not `dot_bin/`
