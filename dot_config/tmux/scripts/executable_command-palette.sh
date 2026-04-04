@@ -66,7 +66,7 @@ case "$selected" in
   eq-h)
     tmux select-layout even-horizontal ;;
   sync)
-    tmux setw synchronize-panes \; if -F "#{pane_synchronized}" "set pane-active-border-style fg=#F38BA8 ; set pane-border-lines single ; set pane-border-status bottom" "set pane-active-border-style fg=#f5e0dc ; set pane-border-lines single ; set pane-border-status off" ;;
+    tmux setw synchronize-panes \; run 'W=#{window_id}; P=#{window_panes}; if [ #{pane_synchronized} -eq 1 ]; then tmux set -t $W pane-active-border-style fg=#{@clr_red}; tmux set -t $W pane-border-lines single; tmux set -t $W pane-border-status bottom; else tmux set -t $W pane-active-border-style fg=#{@clr_sapphire}; tmux set -t $W pane-border-lines single; if [ $P -gt 1 ]; then tmux set -t $W pane-border-status bottom; else tmux set -t $W pane-border-status off; fi; fi' ;;
   break-win)
     tmux break-pane ;;
   break-ses)
