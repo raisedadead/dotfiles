@@ -7,74 +7,86 @@ D="$CLR_DIM"
 Y="$CLR_ACCENT"
 R="$CLR_RST"
 
-_ico_cmd=$'\uEA8E'  # nf-cod-run_all
+W1=24  # label width
 
-W1=22  # label width
-
-# Quick actions: shortcut key shown prominently on each line
 action() {
-  local key="$1" label="$2" desc="$3"
-  printf "  ${Y}%s${R}  %-${W1}s ${D}%s${R}\n" "$key" "$label" "$desc"
+  local tag="$1" key="$2" label="$3" desc="$4"
+  printf "%s\t  ${Y}%s${R}  %-${W1}s ${D}%s${R}\n" "$tag" "$key" "$label" "$desc"
 }
 
 commands() {
-  action "1" "Equalize Vertical" "Stack panes evenly"
-  action "2" "Equalize Horizontal" "Tile panes evenly"
-  action "3" "Sync Panes" "Toggle input sync"
-  action "4" "Break Pane to Window" "Pane → new window"
-  action "5" "Break Pane to Session" "Pane → new session"
-  action "6" "New Window" "Open in cwd"
-  action "7" "Last Session" "Toggle previous session"
-  action "8" "URL Picker" "Open URLs from scrollback"
-  action "9" "Command Prompt" "tmux command line"
-  action "0" "Keybindings" "Search all keybinds"
+  action "park"      "1" "Park Session"         "Save and remove session"
+  action "unpark"    "2" "Unpark Session"        "Restore a parked session"
+  action "sync"      "3" "Sync Panes"            "Toggle input sync"
+  action "break-win" "4" "Break Pane to Window"  "Pane → new window"
+  action "break-ses" "5" "Break Pane to Session" "Pane → new session"
+  action "eq-v"      "6" "Equalize Vertical"     "Stack panes evenly"
+  action "eq-h"      "7" "Equalize Horizontal"   "Tile panes evenly"
+  action "save"      "8" "Save Sessions"         "Resurrect save all"
+  action "restore"   "9" "Restore Sessions"      "Resurrect restore all"
+  action "beads"     "0" "Beads"                 "Watch beads in cwd"
+  action "url"       " " "URL Picker"            "Open URLs from scrollback"
+  action "new-win"   " " "New Window"            "Open in cwd"
+  action "last-ses"  " " "Last Session"          "Toggle previous session"
+  action "cmd"       " " "Command Prompt"        "tmux command line"
+  action "keys"      " " "Keybindings"           "Search all keybinds"
 }
 
-# Quick shortcuts: single key fires immediately (search disabled)
 BINDS=(
-  --bind "1:become(echo __EQUALIZE_V__)"
-  --bind "2:become(echo __EQUALIZE_H__)"
-  --bind "3:become(echo __SYNC_PANES__)"
-  --bind "4:become(echo __BREAK_WINDOW__)"
-  --bind "5:become(echo __BREAK_SESSION__)"
-  --bind "6:become(echo __NEW_WINDOW__)"
-  --bind "7:become(echo __LAST_SESSION__)"
-  --bind "8:become(echo __URL_PICKER__)"
-  --bind "9:become(echo __CMD_PROMPT__)"
-  --bind "0:become(echo __KEYBINDINGS__)"
+  --bind "1:become(echo park)"
+  --bind "2:become(echo unpark)"
+  --bind "3:become(echo sync)"
+  --bind "4:become(echo break-win)"
+  --bind "5:become(echo break-ses)"
+  --bind "6:become(echo eq-v)"
+  --bind "7:become(echo eq-h)"
+  --bind "8:become(echo save)"
+  --bind "9:become(echo restore)"
+  --bind "0:become(echo beads)"
+  --bind "enter:become(echo {1})"
 )
 
-selected=$(commands | fzf-tmux -p 24%,22% \
-  --no-sort --no-info --ansi --disabled --border=rounded --border-label=' Commands ' --padding=1,2 \
+selected=$(commands | fzf-tmux -p 24%,28% \
+  --no-sort --no-info --ansi --border=rounded --border-label=' Commands ' --padding=1,2 \
   --color="$FZF_MOCHA_COLORS" \
   --no-input \
-  --footer "$D  Quick Action [Key] ◆ Quit [Esc]$R" \
+  --delimiter='\t' --with-nth=2 \
+  --footer "$D  Quick Action [Key] ◆ Navigate [j/k] ◆ Quit [Esc]$R" \
   --footer-border=line \
   "${BINDS[@]}" \
   --bind 'esc:abort' --bind 'q:abort')
 
 [ -z "$selected" ] && exit 0
 
-# Quick shortcut dispatch
 case "$selected" in
-  __EQUALIZE_V__)
-    tmux select-layout even-vertical; exit 0 ;;
-  __EQUALIZE_H__)
-    tmux select-layout even-horizontal; exit 0 ;;
-  __SYNC_PANES__)
-    tmux setw synchronize-panes \; if -F "#{pane_synchronized}" "set pane-active-border-style fg=#F38BA8 ; set pane-border-status bottom" "set pane-active-border-style fg=white ; set pane-border-status off"; exit 0 ;;
-  __BREAK_WINDOW__)
-    tmux break-pane; exit 0 ;;
-  __BREAK_SESSION__)
-    tmux command-prompt -p "Break to session:" "run-shell \"$HOME/.config/tmux/scripts/break-pane-to-session.sh '#{pane_id}' '#{pane_current_path}' '%%'\""; exit 0 ;;
-  __NEW_WINDOW__)
-    tmux new-window -c "#{pane_current_path}"; exit 0 ;;
-  __LAST_SESSION__)
-    tmux switch-client -l; exit 0 ;;
-  __URL_PICKER__)
-    tmux run-shell -b "$HOME/.config/tmux/plugins/tmux-fzf-url/fzf-url.sh '' 2000 'open' ''"; exit 0 ;;
-  __CMD_PROMPT__)
-    tmux command-prompt; exit 0 ;;
-  __KEYBINDINGS__)
-    tmux run-shell "$HOME/.config/tmux/scripts/keyb-popup.sh || true"; exit 0 ;;
+  park)
+    tmux run-shell "$HOME/.config/tmux/scripts/park-session.sh || true" ;;
+  unpark)
+    tmux display-popup -E -w 40% -h 40% -b rounded -T '#[align=centre] Unpark Session ' "$HOME/.config/tmux/scripts/unpark-session.sh" ;;
+  eq-v)
+    tmux select-layout even-vertical ;;
+  eq-h)
+    tmux select-layout even-horizontal ;;
+  sync)
+    tmux setw synchronize-panes \; if -F "#{pane_synchronized}" "set pane-active-border-style fg=#F38BA8 ; set pane-border-lines single ; set pane-border-status bottom" "set pane-active-border-style fg=#f5e0dc ; set pane-border-lines single ; set pane-border-status off" ;;
+  break-win)
+    tmux break-pane ;;
+  break-ses)
+    tmux command-prompt -p "Break to session:" "run-shell \"$HOME/.config/tmux/scripts/break-pane-to-session.sh '#{pane_id}' '#{pane_current_path}' '%%'\"" ;;
+  new-win)
+    tmux new-window -c "#{pane_current_path}" ;;
+  last-ses)
+    tmux switch-client -l ;;
+  beads)
+    tmux display-popup -E -w 48% -h 54% -b rounded -T '#[align=centre] Beads ' -d "#{pane_current_path}" "$HOME/.config/tmux/scripts/beads-popup.sh" ;;
+  url)
+    tmux run-shell -b "$HOME/.config/tmux/plugins/tmux-fzf-url/fzf-url.sh '' 2000 'open' ''" ;;
+  save)
+    tmux run-shell "$HOME/.config/tmux/plugins/tmux-resurrect/scripts/save.sh" ;;
+  restore)
+    tmux run-shell "$HOME/.config/tmux/plugins/tmux-resurrect/scripts/restore.sh" ;;
+  cmd)
+    tmux command-prompt ;;
+  keys)
+    tmux run-shell "$HOME/.config/tmux/scripts/keyb-popup.sh || true" ;;
 esac

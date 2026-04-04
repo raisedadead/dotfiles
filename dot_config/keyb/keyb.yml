@@ -14,9 +14,9 @@
     - name: Zoom pane
       key: M-S-Enter
     - name: Break pane → new window
-      key: C-Space "!"
+      key: M-p → 4
     - name: Break pane → new session
-      key: C-Space "@"
+      key: M-p → 5
 
 - name: tmux › windows
   keybinds:
@@ -46,22 +46,20 @@
     - name: Previous session
       key: M-S-Tab
     - name: Last session
-      key: C-Space S
+      key: M-p → j/k
 
 - name: tmux › popups
   keybinds:
     - name: Lazygit
       key: M-g
-    - name: Keybindings
-      key: M-S-?
     - name: Command palette
       key: M-p
 
 - name: tmux › command palette (M-p)
   keybinds:
-    - name: Equalize vertical
+    - name: Park session
       key: "1"
-    - name: Equalize horizontal
+    - name: Unpark session
       key: "2"
     - name: Sync panes
       key: "3"
@@ -69,16 +67,26 @@
       key: "4"
     - name: Break pane → session
       key: "5"
-    - name: New window
+    - name: Equalize vertical
       key: "6"
-    - name: Last session
+    - name: Equalize horizontal
       key: "7"
-    - name: URL picker
+    - name: Save sessions (resurrect)
       key: "8"
-    - name: Command prompt
+    - name: Restore sessions (resurrect)
       key: "9"
-    - name: Keybindings
+    - name: Beads
       key: "0"
+    - name: URL picker
+      key: j/k
+    - name: New window
+      key: j/k
+    - name: Last session
+      key: j/k
+    - name: Command prompt
+      key: j/k
+    - name: Keybindings
+      key: j/k
 
 - name: tmux › prefix (C-Space)
   prefix: C-Space
@@ -129,8 +137,6 @@
       key: "{ / }"
     - name: Resize left / down / up / right
       key: H / J / K / L
-    - name: Last session
-      key: S
     - name: Yank command line
       key: "y"
     - name: Yank pane cwd
