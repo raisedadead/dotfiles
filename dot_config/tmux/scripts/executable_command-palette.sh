@@ -23,8 +23,7 @@ commands() {
   action "eq-v"      "6" "Equalize Vertical"     "Stack panes evenly"
   action "eq-h"      "7" "Equalize Horizontal"   "Tile panes evenly"
   action "save"      "8" "Save Session"          "Snapshot session (keep alive)"
-  action "beads"     "0" "Beads"                 "Watch beads in cwd"
-  action "url"       " " "URL Picker"            "Open URLs from scrollback"
+  action "url"       "0" "URL Picker"            "Open URLs from scrollback"
   action "new-win"   " " "New Window"            "Open in cwd"
   action "last-ses"  " " "Last Session"          "Toggle previous session"
   action "cmd"       " " "Command Prompt"        "tmux command line"
@@ -40,7 +39,7 @@ BINDS=(
   --bind "6:become(echo eq-v)"
   --bind "7:become(echo eq-h)"
   --bind "8:become(echo save)"
---bind "0:become(echo beads)"
+  --bind "0:become(echo url)"
   --bind "enter:become(echo {1})"
 )
 
@@ -77,8 +76,6 @@ case "$selected" in
     tmux new-window -c "#{pane_current_path}" ;;
   last-ses)
     tmux switch-client -l ;;
-  beads)
-    tmux display-popup -E -w 48% -h 54% -b rounded -T '#[align=centre] Beads ' -d "#{pane_current_path}" "$HOME/.config/tmux/scripts/beads-popup.sh" ;;
   url)
     tmux run-shell -b "$HOME/.config/tmux/plugins/tmux-fzf-url/fzf-url.sh '' 2000 'open' ''" ;;
   cmd)

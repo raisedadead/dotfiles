@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# shellcheck disable=SC1091
+# shellcheck disable=SC1091,SC2034
 
 . "$(dirname "$0")/colors.sh"
-
-PARK_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/parked"
+. "$(dirname "$0")/session-lib.sh"
 
 if [[ ! -d "$PARK_DIR" ]] || [[ -z "$(ls -A "$PARK_DIR"/*.park 2>/dev/null)" ]]; then
   tmux display-message "Unpark: no parked sessions"
