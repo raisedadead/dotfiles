@@ -71,10 +71,6 @@
       key: "6"
     - name: Equalize horizontal
       key: "7"
-    - name: Save sessions (resurrect)
-      key: "8"
-    - name: Restore sessions (resurrect)
-      key: "9"
     - name: Beads
       key: "0"
     - name: URL picker

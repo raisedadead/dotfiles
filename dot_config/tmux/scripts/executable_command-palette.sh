@@ -22,8 +22,6 @@ commands() {
   action "break-ses" "5" "Break Pane to Session" "Pane → new session"
   action "eq-v"      "6" "Equalize Vertical"     "Stack panes evenly"
   action "eq-h"      "7" "Equalize Horizontal"   "Tile panes evenly"
-  action "save"      "8" "Save Sessions"         "Resurrect save all"
-  action "restore"   "9" "Restore Sessions"      "Resurrect restore all"
   action "beads"     "0" "Beads"                 "Watch beads in cwd"
   action "url"       " " "URL Picker"            "Open URLs from scrollback"
   action "new-win"   " " "New Window"            "Open in cwd"
@@ -81,10 +79,6 @@ case "$selected" in
     tmux display-popup -E -w 48% -h 54% -b rounded -T '#[align=centre] Beads ' -d "#{pane_current_path}" "$HOME/.config/tmux/scripts/beads-popup.sh" ;;
   url)
     tmux run-shell -b "$HOME/.config/tmux/plugins/tmux-fzf-url/fzf-url.sh '' 2000 'open' ''" ;;
-  save)
-    tmux run-shell "$HOME/.config/tmux/plugins/tmux-resurrect/scripts/save.sh" ;;
-  restore)
-    tmux run-shell "$HOME/.config/tmux/plugins/tmux-resurrect/scripts/restore.sh" ;;
   cmd)
     tmux command-prompt ;;
   keys)
