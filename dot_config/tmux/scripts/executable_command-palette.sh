@@ -22,6 +22,7 @@ commands() {
   action "break-ses" "5" "Break Pane to Session" "Pane → new session"
   action "eq-v"      "6" "Equalize Vertical"     "Stack panes evenly"
   action "eq-h"      "7" "Equalize Horizontal"   "Tile panes evenly"
+  action "save"      "8" "Save Session"          "Snapshot session (keep alive)"
   action "beads"     "0" "Beads"                 "Watch beads in cwd"
   action "url"       " " "URL Picker"            "Open URLs from scrollback"
   action "new-win"   " " "New Window"            "Open in cwd"
@@ -39,8 +40,7 @@ BINDS=(
   --bind "6:become(echo eq-v)"
   --bind "7:become(echo eq-h)"
   --bind "8:become(echo save)"
-  --bind "9:become(echo restore)"
-  --bind "0:become(echo beads)"
+--bind "0:become(echo beads)"
   --bind "enter:become(echo {1})"
 )
 
@@ -61,6 +61,8 @@ case "$selected" in
     tmux run-shell "$HOME/.config/tmux/scripts/park-session.sh || true" ;;
   unpark)
     tmux display-popup -E -w 40% -h 40% -b rounded -T '#[align=centre] Unpark Session ' "$HOME/.config/tmux/scripts/unpark-session.sh" ;;
+  save)
+    tmux run-shell "$HOME/.config/tmux/scripts/save-session.sh || true" ;;
   eq-v)
     tmux select-layout even-vertical ;;
   eq-h)

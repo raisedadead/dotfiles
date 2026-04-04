@@ -3,7 +3,7 @@
     - name: Navigate left / down / up / right
       key: C-M-h / C-M-j / C-M-k / C-M-l
     - name: Resize left / down / up / right
-      key: C-Space H / J / K / L
+      key: M-Space H / J / K / L
 
 - name: tmux › panes
   keybinds:
@@ -71,30 +71,28 @@
       key: "6"
     - name: Equalize horizontal
       key: "7"
+    - name: Save session (snapshot)
+      key: "8"
     - name: Beads
       key: "0"
     - name: URL picker
-      key: j/k
+      key: Enter
     - name: New window
-      key: j/k
+      key: Enter
     - name: Last session
-      key: j/k
+      key: Enter
     - name: Command prompt
-      key: j/k
+      key: Enter
     - name: Keybindings
-      key: j/k
+      key: Enter
 
-- name: tmux › prefix (C-Space)
-  prefix: C-Space
+- name: tmux › prefix (M-Space)
+  prefix: M-Space
   keybinds:
     - name: URL picker (fzf)
       key: u
     - name: Pane left / down / up / right
       key: h / j / k / l
-    - name: Clear screen (passthrough)
-      key: C-l
-    - name: Kill line (passthrough)
-      key: C-k
     - name: Split right
       key: "|"
     - name: Split down
