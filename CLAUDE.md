@@ -26,7 +26,8 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 
 ## Popup Conventions
 
-- Sizes: 70%x80% (lazygit), 75%x80% (switcher), 53%x60% (keyb-popup), 24%x22% (command palette), 20%x5 (new session)
+- Sizes: 70%x80% (lazygit), 75%x80% (switcher), 37%x60% (keyb-popup), 20%x5 (new session)
+- Command palette uses native `display-menu` (no popup size — tmux auto-sizes)
 - Border: rounded, white
 - fzf color scheme: catppuccin mocha via `FZF_MOCHA_COLORS` in `colors.sh`
 - Tab/Shift-Tab cycles categories in switcher and keyb-popup

@@ -45,7 +45,6 @@ set_index() {
 
 make_header() {
   local idx="$1" first=1
-  printf '  '
   for i in "${!CATEGORIES[@]}"; do
     [ "$first" = "1" ] && first=0 || printf ' %s◆%s ' "$DIM" "$RST"
     if [ "$i" -eq "$idx" ]; then
@@ -391,14 +390,14 @@ case "${1:-}" in
     exit ;;
 esac
 
-# Main entry: launch fzf-tmux
+# Main entry: launch fzf --tmux
 set_index 0
 set_search_mode "files"
 trap 'rm -f "$SWITCHER_STATE" "$SEARCH_MODE"' EXIT
 
 initial_header=$(make_header 0)
 
-result=$(do_source projects | fzf-tmux -p 75%,80% \
+result=$(do_source projects | fzf --tmux center,75%,80% \
   --ansi --no-sort --no-info --cycle \
   --delimiter '\t' --with-nth '2..' --nth '1' \
   --border rounded --border-label ' Switcher ' --border-label-pos 3 --padding=1,2 \

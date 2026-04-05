@@ -25,13 +25,12 @@ R="$CLR_RST"
 
 make_header() {
   local active="$1" first=1 i=0
-  printf '  '
   for cat in "${CATS[@]}"; do
     [ "$first" = "1" ] && first=0 || printf ' %s◆%s ' "$CLR_DIM" "$R"
     if [ "$cat" = "$active" ]; then
-      printf '%s%s  %s%s' "$M" "${CAT_ICONS[$i]}" "$cat" "$R"
+      printf '%s%s%s%s' "$M" "${CAT_ICONS[$i]}" "$cat" "$R"
     else
-      printf '%s%s  %s%s' "$CLR_SUB" "${CAT_ICONS[$i]}" "$cat" "$R"
+      printf '%s%s%s%s' "$CLR_SUB" "${CAT_ICONS[$i]}" "$cat" "$R"
     fi
     (( i++ ))
   done
@@ -81,7 +80,7 @@ trap 'rm -f "$CACHE" "$STATE"' EXIT
 
 header=$(make_header "all")
 
-keyb_content "all" | fzf-tmux -p 53%,60% \
+keyb_content "all" | fzf --tmux center,37%,60% \
   --no-sort --no-info --ansi \
   --border=rounded --border-label=' Keybindings ' --padding=1,2 \
   --header-first --header-border=line \

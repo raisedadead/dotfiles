@@ -50,12 +50,14 @@
 
 - name: tmux › popups
   keybinds:
+    - name: Scratch terminal
+      key: M-s
     - name: Lazygit
       key: M-g
-    - name: Command palette
+    - name: Command menu
       key: M-p
 
-- name: tmux › command palette (M-p)
+- name: tmux › command menu (M-p)
   keybinds:
     - name: Park session
       key: "1"
@@ -73,18 +75,16 @@
       key: "7"
     - name: Save session (snapshot)
       key: "8"
-    - name: Beads
-      key: "0"
     - name: URL picker
-      key: Enter
+      key: "0"
     - name: New window
-      key: Enter
+      key: w
     - name: Last session
-      key: Enter
+      key: l
     - name: Command prompt
-      key: Enter
+      key: ":"
     - name: Keybindings
-      key: Enter
+      key: "?"
 
 - name: tmux › prefix (M-Space)
   prefix: M-Space
@@ -97,7 +97,7 @@
       key: "|"
     - name: Split down
       key: "-"
-    - name: Kill pane
+    - name: Kill pane (confirm)
       key: x
     - name: Kill window
       key: "&"
