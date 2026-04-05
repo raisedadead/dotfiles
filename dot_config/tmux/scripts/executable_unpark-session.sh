@@ -25,7 +25,7 @@ pick_session() {
     local panes
     panes=$(grep -c '^PANE=' "$f")
     printf '%s\t%s win, %s panes\n' "$name" "$wins" "$panes"
-  done | fzf-tmux -p 40%x40% \
+  done | fzf \
     --border rounded --border-label=" Unpark Session " \
     --padding=1,2 \
     --color="$FZF_MOCHA_COLORS" \
