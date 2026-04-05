@@ -65,7 +65,7 @@ shorten() {
 }
 
 source_sessions() {
-  tmux list-windows -a -F '#{session_name}:#{window_index}|#{window_name}|#{pane_current_path}' 2>/dev/null | while IFS='|' read -r target wname wpath; do
+  tmux list-windows -a -f '#{!=:#{@parked},1}' -F '#{session_name}:#{window_index}|#{window_name}|#{pane_current_path}' 2>/dev/null | while IFS='|' read -r target wname wpath; do
     local session="${target%%:*}"
     wpath=$(shorten "$wpath")
     printf '%s\t%s%-20s%s\t%s%-16s%s %s%s%s\n' \

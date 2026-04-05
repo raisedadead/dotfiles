@@ -1,34 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# shellcheck disable=SC1091,SC2034
 
-. "$(dirname "$0")/session-lib.sh"
-
-session="${1:-}"
-
-if [[ -z "$session" ]]; then
-  session="$(tmux display-message -p '#{session_name}')"
-fi
+session="${1:-$(tmux display-message -p '#{session_name}')}"
 
 if ! tmux has-session -t "$session" 2>/dev/null; then
   tmux display-message "Park: session '$session' not found"
   exit 1
 fi
 
-mkdir -p "$PARK_DIR"
-serialize_session "$session" "$PARK_DIR/${session}.park"
+if [[ "$(tmux show -t "$session" -v @parked 2>/dev/null)" == "1" ]]; then
+  tmux display-message "Park: '$session' is already parked"
+  exit 0
+fi
 
-others=$(tmux list-sessions -F '#{session_name}' | grep -cv "^${session}$" || true)
-current="$(tmux display-message -p '#{client_session}')"
+# Tag session as parked — processes keep running
+tmux set -t "$session" @parked 1
 
-if [[ "$others" -eq 0 ]]; then
+# Count non-parked sessions (excluding the one we just parked)
+visible=$(tmux list-sessions -f '#{!=:#{@parked},1}' -F '#{session_name}' | wc -l | tr -d ' ')
+
+if [[ "$visible" -eq 0 ]]; then
   tmux new-session -d -s scratch
 fi
 
+current="$(tmux display-message -p '#{client_session}')"
 if [[ "$current" == "$session" ]]; then
-  next=$(tmux list-sessions -F '#{session_name}' | grep -v "^${session}$" | head -1)
+  next=$(tmux list-sessions -f '#{!=:#{@parked},1}' -F '#{session_name}' | head -1)
   tmux switch-client -t "$next"
 fi
 
-tmux kill-session -t "$session"
-tmux display-message "Parked: $session"
+tmux display-message "Parked: $session (still running)"

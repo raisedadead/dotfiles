@@ -59,9 +59,9 @@
 
 - name: tmux › command menu (M-p)
   keybinds:
-    - name: Park session
+    - name: Park session (hide, keeps running)
       key: "1"
-    - name: Unpark session
+    - name: Unpark session (restore)
       key: "2"
     - name: Sync panes
       key: "3"
