@@ -14,9 +14,9 @@
     - name: Zoom pane
       key: M-S-Enter
     - name: Break pane → new window
-      key: M-p → 4
+      key: M-\ → 2
     - name: Break pane → new session
-      key: M-p → 5
+      key: M-\ → 3
 
 - name: tmux › windows
   keybinds:
@@ -45,8 +45,12 @@
       key: M-Tab
     - name: Previous session
       key: M-S-Tab
+    - name: Park session
+      key: M-p
+    - name: Unpark session
+      key: M-u
     - name: Last session
-      key: M-p → j/k
+      key: M-\ → l
 
 - name: tmux › popups
   keybinds:
@@ -55,26 +59,24 @@
     - name: Lazygit
       key: M-g
     - name: Command menu
-      key: M-p
+      key: M-\
 
-- name: tmux › command menu (M-p)
+- name: tmux › command menu (M-\)
   keybinds:
-    - name: Park session (hide, keeps running)
-      key: "1"
-    - name: Unpark session (restore)
-      key: "2"
     - name: Sync panes
-      key: "3"
+      key: "1"
     - name: Break pane → window
-      key: "4"
+      key: "2"
     - name: Break pane → session
-      key: "5"
+      key: "3"
     - name: Equalize vertical
-      key: "6"
+      key: "4"
     - name: Equalize horizontal
-      key: "7"
+      key: "5"
     - name: Save session (snapshot)
-      key: "8"
+      key: "6"
+    - name: Scratch terminal
+      key: "7"
     - name: URL picker
       key: "0"
     - name: New window
