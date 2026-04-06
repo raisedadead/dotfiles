@@ -3,7 +3,7 @@
     - name: Navigate left / down / up / right
       key: C-M-h / C-M-j / C-M-k / C-M-l
     - name: Resize left / down / up / right
-      key: M-Space H / J / K / L
+      key: C-Space H / J / K / L
 
 - name: tmux › panes
   keybinds:
@@ -86,8 +86,8 @@
     - name: Keybindings
       key: "?"
 
-- name: tmux › prefix (M-Space)
-  prefix: M-Space
+- name: tmux › prefix (C-Space)
+  prefix: C-Space
   keybinds:
     - name: URL picker (fzf)
       key: u
