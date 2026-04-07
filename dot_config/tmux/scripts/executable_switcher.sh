@@ -42,7 +42,8 @@ render_line() {
   local name short icon cat_label cat_color
   short=$(shorten "$path")
   case "$cat" in
-    tmux) name="${target%%:*}"; icon="$_ico_session"; cat_label="session"; cat_color="$_CLR_TMUX" ;;
+    tmux)   name="${target%%:*}"; icon="$_ico_session"; cat_label="session"; cat_color="$_CLR_TMUX" ;;
+    parked) name="${target%%:*}"; icon="$_ico_session"; cat_label="parked";  cat_color="$DIM" ;;
     proj) name=$(basename "$path"); icon="$_ico_project"; cat_label="project"; cat_color="$_CLR_PROJ" ;;
     conf) name=$(basename "$path"); icon="$_ico_config";  cat_label="config";  cat_color="$_CLR_CONF" ;;
     zox)  name=$(basename "$path"); icon="$_ico_zoxide";  cat_label="zoxide";  cat_color="$_CLR_ZOX" ;;
@@ -120,16 +121,21 @@ _source_all_raw() {
     tmux list-windows -a \
       -F '#{session_last_attached}|#{session_name}:#{window_index}|#{pane_current_path}|#{@parked}|#{window_active}' 2>/dev/null |
     while IFS='|' read -r last_attached target path parked active; do
-      [[ "$parked" == "1" ]] && continue
       [[ "$active" != "1" ]] && continue
-      local age=$(( now - last_attached ))
-      local tmux_score
-      if   (( age <   3600 )); then tmux_score=8000   # last hour
-      elif (( age <  86400 )); then tmux_score=4000   # last day
-      elif (( age < 604800 )); then tmux_score=1500   # last week
-      else                          tmux_score=500
+      if [[ "$parked" == "1" ]]; then
+        # Tier 2: always below active sessions, always above everything else
+        printf '50000|1|parked|%s|%s\n' "$target" "$path"
+      else
+        # Tier 1: active sessions always on top
+        local age=$(( now - last_attached ))
+        local tmux_score
+        if   (( age <   3600 )); then tmux_score=108000  # last hour
+        elif (( age <  86400 )); then tmux_score=104000  # last day
+        elif (( age < 604800 )); then tmux_score=101500  # last week
+        else                          tmux_score=100500
+        fi
+        printf '%s|1|tmux|%s|%s\n' "$tmux_score" "$target" "$path"
       fi
-      printf '%s|1|tmux|%s|%s\n' "$tmux_score" "$target" "$path"
     done
   } >> "$tmpfile"
 
@@ -160,16 +166,19 @@ source_tmux() {
   tmux list-windows -a \
     -F '#{session_last_attached}|#{session_name}:#{window_index}|#{pane_current_path}|#{@parked}|#{window_active}' 2>/dev/null |
   while IFS='|' read -r last_attached target path parked active; do
-    [[ "$parked" == "1" ]] && continue
     [[ "$active" != "1" ]] && continue
-    local age=$(( now - last_attached ))
-    local score
-    if   (( age <   3600 )); then score=8000
-    elif (( age <  86400 )); then score=4000
-    elif (( age < 604800 )); then score=1500
-    else                          score=500
+    if [[ "$parked" == "1" ]]; then
+      printf '300|parked|%s|%s\n' "$target" "$path"
+    else
+      local age=$(( now - last_attached ))
+      local score
+      if   (( age <   3600 )); then score=8000
+      elif (( age <  86400 )); then score=4000
+      elif (( age < 604800 )); then score=1500
+      else                          score=500
+      fi
+      printf '%s|tmux|%s|%s\n' "$score" "$target" "$path"
     fi
-    printf '%s|tmux|%s|%s\n' "$score" "$target" "$path"
   done | sort -t'|' -k1,1 -rn | while IFS='|' read -r _score cat target path; do
     render_line "$cat" "$target" "$path"
   done
@@ -289,7 +298,7 @@ do_preview() {
   path=$(extract_path "$entry")
 
   case "$cat" in
-    tmux)
+    tmux|parked)
       local session="${target%%:*}"
       tmux capture-pane -t "=$session" -p 2>/dev/null || echo "No preview available"
       ;;
@@ -346,11 +355,12 @@ do_action() {
   path=$(extract_path "$entry")
 
   case "$cat" in
-    tmux)
+    tmux|parked)
       local session="${target%%:*}" window="${target#*:}"
       case "$key" in
         ctrl-d) tmux kill-session -t "=$session" ;;
-        *)      tmux switch-client -t "=$session"
+        *)      [[ "$cat" == "parked" ]] && tmux set -t "=$session" -u @parked
+                tmux switch-client -t "=$session"
                 tmux select-window -t "${session}:${window}" ;;
       esac
       ;;

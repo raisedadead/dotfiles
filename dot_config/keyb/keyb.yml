@@ -20,8 +20,8 @@
 
 - name: tmux › windows
   keybinds:
-    - name: New window
-      key: M-t
+    - name: New window (prompt)
+      key: M-m
     - name: Next window
       key: M-"`"
     - name: Previous window
@@ -47,6 +47,8 @@
       key: M-S-Tab
     - name: Park session
       key: M-p
+    - name: Session menu
+      key: M-s
     - name: Unpark session
       key: M-u
     - name: Last session
@@ -55,7 +57,7 @@
 - name: tmux › popups
   keybinds:
     - name: Scratch terminal
-      key: M-s
+      key: M-t
     - name: Lazygit
       key: M-g
     - name: Command menu
