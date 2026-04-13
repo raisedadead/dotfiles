@@ -26,8 +26,10 @@ has_priv() { [[ -d "$PRIV" ]]; }
 # Run chezmoi for a named repo (public|private)
 _cm() {
   local repo="$1"; shift
+  local extra=()
   if [[ "$repo" == "private" ]]; then
-    chezmoi --source "$PRIV" "$@" 2> >(grep -v 'config file template' >&2)
+    [[ "${1:-}" == "re-add" ]] && extra+=(--secrets ignore)
+    chezmoi --source "$PRIV" "${extra[@]}" "$@" 2> >(grep -v 'config file template' >&2)
   else
     chezmoi "$@"
   fi
