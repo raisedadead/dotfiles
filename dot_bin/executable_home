@@ -23,13 +23,24 @@ ok() { printf "${GRN}dotfiles ·${RST} %s\n" "$1"; }
 
 has_priv() { [[ -d "$PRIV" ]]; }
 
-# Run chezmoi for a named repo (public|private)
+# Run chezmoi for a named repo (public|private).
+# re-add honors [add].secrets via config only — no CLI flag, no env var.
+# For private re-add we inject an ephemeral config so the scan stays off
+# there while the host config keeps severity=error for the public repo.
 _cm() {
   local repo="$1"; shift
-  local extra=()
+  local extra=() tmpcfg=""
   if [[ "$repo" == "private" ]]; then
-    [[ "${1:-}" == "re-add" ]] && extra+=(--secrets ignore)
+    if [[ "${1:-}" == "re-add" ]]; then
+      tmpcfg=$(mktemp) || return 1
+      printf '[add]\nsecrets = "ignore"\n' > "$tmpcfg"
+      extra=(--config "$tmpcfg" --config-format toml)
+    fi
+    local rc
     chezmoi --source "$PRIV" "${extra[@]}" "$@" 2> >(grep -v 'config file template' >&2)
+    rc=$?
+    [[ -n "$tmpcfg" ]] && rm -f "$tmpcfg"
+    return $rc
   else
     chezmoi "$@"
   fi
