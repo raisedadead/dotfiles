@@ -18,7 +18,8 @@ handles credentials and sensitive configuration.
 
 ## Packages and tools
 
-Brewfile for Homebrew on macOS is included at `.config/brewfile/Brewfile`.
+Homebrew package management lives in a separate repo by design. When that repo is
+applied, it provides `~/.config/brewfile/Brewfile`.
 
 ```bash
 brew bundle --file=~/.config/brewfile/Brewfile
@@ -60,7 +61,7 @@ git clone git@github.com:raisedadead/dotfiles.git ~/.dotfiles
 └────────────┬─────────────┘
              ▼
 ┌──────────────────────────┐
-│  5. just check           │
+│  5. home check           │
 └──────────────────────────┘
 ```
 
@@ -94,7 +95,8 @@ git clone git@github.com:raisedadead/dotfiles.git ~/.dotfiles
    chezmoi --source ~/.dotfiles-private apply
    ```
 
-6. Install packages:
+6. Install packages (optional, if your separate Brewfile repo is already
+   applied):
 
    ```bash
    brew bundle --file=~/.config/brewfile/Brewfile
@@ -103,76 +105,70 @@ git clone git@github.com:raisedadead/dotfiles.git ~/.dotfiles
 7. Verify:
 
    ```bash
-   just check
+   home check
    ```
 
 ## Daily workflow
 
-Two commands cover everything. `chezmoi` for public, add `--source
-~/.dotfiles-private` for private. A `justfile` handles multi-repo operations
-(`just pull`, `just push`).
+`home` is the day-to-day entrypoint. It wraps the public + private chezmoi
+repos and gives you status, sync, apply, pull, and push commands that work
+across both.
 
 ### Editing a managed file
 
 ```bash
-# Edit in place, then sync back to source
-vim ~/.zshrc
-chezmoi re-add ~/.zshrc
+# Edit chezmoi source directly, then apply
+$EDITOR ~/.dotfiles/dot_zshrc
+home apply
 
-# Or edit via chezmoi (opens in $EDITOR, applies on save)
-chezmoi edit ~/.zshrc
+# Or edit via chezmoi without touching the target file
+home pub edit ~/.zshrc
 ```
 
 ### Adding a new file
 
 ```bash
-chezmoi add ~/.config/foo/config.toml                            # public
-chezmoi --source ~/.dotfiles-private add ~/.config/foo/secret.yml # private
+home pub add ~/.config/foo/config.toml
+home prv add ~/.config/foo/secret.yml
 ```
 
 ### Syncing across machines
 
 ```bash
-chezmoi update                                    # pull + apply public
-
-git -C ~/.dotfiles-private pull --rebase           # pull private
-chezmoi --source ~/.dotfiles-private apply          # apply private
-
-# Or both at once:
-just pull
+home pull
+home apply
 ```
 
 ### Checking status
 
 ```bash
-chezmoi diff                                      # public drift
-chezmoi --source ~/.dotfiles-private diff           # private drift
-chezmoi doctor                                     # health check
+home check
 ```
 
 ### Pushing changes
 
 ```bash
-cd ~/.dotfiles && git add -A && git commit -m "chore: update configs"
-git push
+git -C ~/.dotfiles add -A && git -C ~/.dotfiles commit -m "chore: update configs"
 
-# Or both repos at once:
-just push
+# If private repo changed too:
+git -C ~/.dotfiles-private add -A && git -C ~/.dotfiles-private commit -m "chore: update configs"
+
+home push
 ```
 
 ### Quick reference
 
-| Task             | chezmoi                                           |
-| ---------------- | ------------------------------------------------- |
-| Add a file       | `chezmoi add <file>`                              |
-| Add (private)    | `chezmoi --source ~/.dotfiles-private add <file>` |
-| Apply            | `chezmoi apply`                                   |
-| Apply (private)  | `chezmoi --source ~/.dotfiles-private apply`      |
-| Pull from remote | `chezmoi update`                                  |
-| Check for drift  | `chezmoi diff`                                    |
-| Edit a file      | `chezmoi edit <file>`                             |
-| Re-sync a file   | `chezmoi re-add <file>`                           |
-| List managed     | `chezmoi managed`                                 |
+| Task                      | Command                         |
+| ------------------------- | ------------------------------- |
+| Add a file (public)       | `home pub add <file>`           |
+| Add a file (private)      | `home prv add <file>`           |
+| Edit a file (public)      | `home pub edit <file>`          |
+| Edit a file (private)     | `home prv edit <file>`          |
+| Apply both repos          | `home apply`                    |
+| Pull both repos           | `home pull`                     |
+| Check status and drift    | `home check`                    |
+| Recover target-side edits | `home re-add`                   |
+| List managed files        | `home pub managed` / `home prv managed` |
 
 ## License
 
