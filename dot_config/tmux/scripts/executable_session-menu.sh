@@ -28,7 +28,8 @@ idx=0
 
 for entry in "${active_lines[@]}"; do
   IFS='|' read -r name wins <<< "$entry"
-  cmd+=("$name ($wins win)" "${KEYS:$idx:1}" "switch-client -t '$name'")
+  escaped_name="${name//\'/\'\\\'\'}"
+  cmd+=("$name ($wins win)" "${KEYS:$idx:1}" "switch-client -t '$escaped_name'")
   idx=$((idx + 1))
 done
 
@@ -36,7 +37,8 @@ if [[ ${#parked_lines[@]} -gt 0 ]]; then
   cmd+=("" "" "")
   for entry in "${parked_lines[@]}"; do
     IFS='|' read -r name wins <<< "$entry"
-    cmd+=("$name ($wins win) [parked]" "${KEYS:$idx:1}" "set -t '$name' -u @parked ; switch-client -t '$name' ; display-message 'Unparked: $name'")
+    escaped_name="${name//\'/\'\\\'\'}"
+    cmd+=("$name ($wins win) [parked]" "${KEYS:$idx:1}" "set -t '$escaped_name' -u @parked ; switch-client -t '$escaped_name' ; display-message 'Unparked: $escaped_name'")
     idx=$((idx + 1))
   done
 fi

@@ -4,8 +4,9 @@
 SELF="$0"
 . "$(dirname "$0")/colors.sh"
 
-CACHE="/tmp/keyb-popup-cache"
-STATE="/tmp/keyb-popup-state"
+_KEYB_TTY=$(tty 2>/dev/null || echo "none")
+CACHE="/tmp/keyb-popup-cache.$(basename "$_KEYB_TTY")"
+STATE="/tmp/keyb-popup-state.$(basename "$_KEYB_TTY")"
 
 CATS=(all tmux ghostty yazi fzf atuin zsh)
 

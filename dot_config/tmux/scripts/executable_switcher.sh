@@ -341,9 +341,23 @@ open_in_editor() {
 }
 
 tmux_connect() {
-  local path="$1" name
+  local path="$1" name suffix
   name=$(basename "$path" | sed 's/^\.//')
-  tmux new-session -d -s "$name" -c "$path" 2>/dev/null
+
+  # Handle collision: if session exists but points to a different path, append suffix
+  if tmux has-session -t "=$name" 2>/dev/null; then
+    local existing_path
+    existing_path=$(tmux list-panes -t "=${name}:" -F '#{pane_current_path}' 2>/dev/null | head -1 || true)
+    if [[ "$existing_path" != "$path" ]]; then
+      suffix=2
+      while tmux has-session -t "=${name}-${suffix}" 2>/dev/null; do
+        ((suffix++))
+      done
+      name="${name}-${suffix}"
+    fi
+  fi
+
+  tmux new-session -d -s "$name" -c "$path" 2>/dev/null || true
   tmux switch-client -t "=$name"
 }
 
@@ -421,7 +435,7 @@ esac
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-trap 'rm -f /tmp/switcher-merge.* 2>/dev/null' EXIT
+# Exact tmpfile cleanup is handled inside _source_all_raw; no broad wildcard trap.
 
 FOOTER_NAV="${DIM}  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+O]${RST}"
 FOOTER_TMUX="${DIM}  Switch [⏎] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+O]${RST}"

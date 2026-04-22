@@ -44,7 +44,7 @@
     - name: Next session
       key: M-Tab
     - name: Previous session
-      key: M-S-Tab
+      key: M-BTab
     - name: Park session
       key: M-p
     - name: Session menu

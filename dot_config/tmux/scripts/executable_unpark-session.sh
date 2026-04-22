@@ -11,7 +11,8 @@ fi
 cmd=(display-menu -T '#[align=centre] Unpark Session ' -x C -y C -b rounded)
 idx=1
 while IFS='|' read -r name wins; do
-  cmd+=("$name ($wins win)" "$idx" "set -t '$name' -u @parked ; switch-client -t '$name' ; display-message 'Unparked: $name'")
+  escaped_name="${name//\'/\'\\\'\'}"
+  cmd+=("$name ($wins win)" "$idx" "set -t '$escaped_name' -u @parked ; switch-client -t '$escaped_name' ; display-message 'Unparked: $escaped_name'")
   ((idx++))
 done <<< "$parked"
 

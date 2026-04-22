@@ -4,7 +4,7 @@
 . "$(dirname "$0")/colors.sh"
 . "$(dirname "$0")/input-lib.sh"
 
-cwd="$1"
+cwd="$(tmux display-message -p '#{pane_current_path}')"
 
 printf '\n   %s❯%s ' "$CLR_DIM" "$CLR_RST"
 
