@@ -58,3 +58,4 @@ docs/plans
 *.bak
 .env
 *.asc
+.cocoindex_code/
