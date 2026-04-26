@@ -2,13 +2,6 @@
 
 Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfiles-private`). Bootstrap: `install.sh`.
 
-## Chezmoi Conventions
-
-- **Naming**: `dot_` → dotfiles, `executable_` → +x, `private_` → restricted perms, `empty_` → empty files
-- **Boundary rule**: secrets, auth tokens, or personal tooling config → private repo. Everything else → public repo.
-- `.claude/*` lives in the **private** repo (`dot_claude/`)
-- Git hooks: `.githooks/` dir in public repo, configured via `core.hooksPath`
-
 ## Rules (non-obvious, not derivable from code)
 
 - **Always edit chezmoi source** (`~/.dotfiles/` or `~/.dotfiles-private/`), then `home apply` — never edit target (`~/.config/`, `~/.*`) directly
@@ -23,23 +16,6 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 - **OMP v29+ manages its own cache** — no custom `cached_evalz` for prompt init
 - **`cached_evalz` invalidates on binary mtime only** — if a tool needs config-based invalidation, use custom cache logic
 - **Shell integration**: cursor + sudo only (not command_status — exit codes handled by zsh precmd)
-
-## Popup Conventions
-
-- Sizes: 70%x80% (lazygit), 75%x80% (switcher), 37%x60% (keyb-popup), 20%x5 (new session)
-- Command palette uses native `display-menu` (no popup size — tmux auto-sizes)
-- Border: rounded, white
-- fzf color scheme: catppuccin mocha via `FZF_MOCHA_COLORS` in `colors.sh`
-- Tab/Shift-Tab cycles categories in switcher and keyb-popup
-- Scripts use `fzf-tmux -p` for fzf-based pickers; lazygit and new-session use `display-popup`
-
-## Status Bar
-
-- Three-zone slant layout via `status-format[0]` — theme.conf header comments are the canonical reference
-- Left (surface1 bg + slant): window dots with names, zoom/prefix indicators
-- Centre (transparent, rounded pill): session name only
-- Right (slant + surface1 bg): session squares
-- Update theme.conf header comments when changing indicator logic
 
 ## Cross-Tool Integration
 
