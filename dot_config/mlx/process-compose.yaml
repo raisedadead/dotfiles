@@ -1,12 +1,18 @@
 version: "0.5"
 
 # Foreground process-compose config for the local MLX inference server.
-# Runs Apple's mlx_lm.server with the Gemma 4 E4B 4-bit model preloaded on
-# 127.0.0.1:8080 (OpenAI-compatible). No boot persistence — start with
-# `mlx-up` (TUI) or `mlx-up-bg` (detached), stop with `mlx-down` or Ctrl-C.
+# Runs Apple's mlx_lm.server with Qwen2.5-7B-Instruct-4bit (flat
+# `Qwen2ForCausalLM`, text-only) preloaded on 127.0.0.1:8080 (OpenAI-compat).
+# No boot persistence — start with `mlx-up` (TUI) or `mlx-up-bg` (detached),
+# stop with `mlx-down`.
 #
-# RAM cost: ~3 GB resident once the model loads. First request takes ~10 s
-# while weights are loaded; subsequent requests are streamed at MLX speeds.
+# Model choice rationale: Gemma 4 and the entire Qwen3.5 family on
+# mlx-community are multimodal (`language_model.*` weight prefix), which
+# mlx_lm.server cannot load. Qwen2.5 is the canonical text-only Apple-Silicon
+# inference target — flat architecture, well-supported.
+#
+# RAM cost: ~5 GB resident once weights load. First completion is slow
+# (~10 s) due to weight load; subsequent requests stream at MLX speeds.
 
 processes:
   mlx-server:
@@ -14,7 +20,7 @@ processes:
       mlx_lm.server
       --host 127.0.0.1
       --port 8080
-      --model mlx-community/gemma-4-e4b-it-4bit
+      --model mlx-community/Qwen2.5-7B-Instruct-4bit
       --log-level INFO
     availability:
       restart: on_failure

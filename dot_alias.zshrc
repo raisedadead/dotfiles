@@ -107,10 +107,12 @@ searchwisdom() {
 }
 
 # MLX server lifecycle (process-compose foreground)
+# -p 9999: move pc's own management port off 8080 (mlx_lm.server owns 8080)
 if can_haz process-compose && [[ -f "$HOME/.config/mlx/process-compose.yaml" ]]; then
-  alias mlx-up='process-compose --config "$HOME/.config/mlx/process-compose.yaml" up'
-  alias mlx-up-bg='process-compose --config "$HOME/.config/mlx/process-compose.yaml" up --tui=false --detached-with-logs'
-  alias mlx-down='process-compose --config "$HOME/.config/mlx/process-compose.yaml" down'
+  alias mlx-up='process-compose -f "$HOME/.config/mlx/process-compose.yaml" -p 9999 up'
+  alias mlx-up-bg='process-compose -f "$HOME/.config/mlx/process-compose.yaml" -p 9999 up -D'
+  # pc's `down` REST endpoint 404s in detached mode (v1.110); pkill is reliable
+  alias mlx-down='pkill -f "mlx_lm.server\|process-compose .* mlx" 2>/dev/null; echo "mlx: stopped"'
 fi
 # Quick liveness check — no daemon poke required
 alias mlx-status='curl -sf http://127.0.0.1:8080/v1/models >/dev/null && echo "mlx: up" || echo "mlx: down"'

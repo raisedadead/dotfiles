@@ -115,10 +115,14 @@ typeset -U PATH path
 export BROWSER=w3m
 
 # Fabric model selection — used as `-m $FABRIC_LOCAL` etc.
-# Local: Gemma 4 4B-edge via mlx_lm.server on 127.0.0.1:8080
+# Local: Qwen2.5-7B-Instruct-4bit via mlx_lm.server on 127.0.0.1:8080
+#        Flat Qwen2ForCausalLM architecture — text-only, ~5 GB RAM.
+#        (Gemma 4, Qwen3.5 family, and the cached Claude-distilled are all
+#         multimodal; their `language_model.*`-prefixed weights are rejected
+#         by mlx_lm.server.)
 # Fast cloud: Groq Llama 3.1 8B (low latency, free tier)
 # Smart cloud: Groq Llama 3.3 70B (GPT-4o-class, free tier)
-export FABRIC_LOCAL="mlx-community/gemma-4-e4b-it-4bit"
+export FABRIC_LOCAL="mlx-community/Qwen2.5-7B-Instruct-4bit"
 export FABRIC_FAST="llama-3.1-8b-instant"
 export FABRIC_SMART="llama-3.3-70b-versatile"
 
