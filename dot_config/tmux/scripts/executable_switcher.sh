@@ -347,7 +347,7 @@ tmux_connect() {
   # Handle collision: if session exists but points to a different path, append suffix
   if tmux has-session -t "=$name" 2>/dev/null; then
     local existing_path
-    existing_path=$(tmux list-panes -t "=${name}:" -F '#{pane_current_path}' 2>/dev/null | head -1 || true)
+    existing_path=$(tmux display-message -t "=${name}" -p '#{session_path}' 2>/dev/null || true)
     if [[ "$existing_path" != "$path" ]]; then
       suffix=2
       while tmux has-session -t "=${name}-${suffix}" 2>/dev/null; do
@@ -373,6 +373,8 @@ do_action() {
       local session="${target%%:*}" window="${target#*:}"
       case "$key" in
         ctrl-d) tmux kill-session -t "=$session" ;;
+        ctrl-e) open_in_editor "$path" ;;
+        ctrl-v) "${VISUAL:-code}" "$path" ;;
         *)      [[ "$cat" == "parked" ]] && tmux set -t "=$session" -u @parked
                 tmux switch-client -t "=$session"
                 tmux select-window -t "${session}:${window}" ;;
