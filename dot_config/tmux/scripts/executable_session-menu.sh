@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sessions=$(tmux list-sessions -F '#{session_name}|#{session_windows}|#{@parked}|#{session_last_attached}' 2>/dev/null)
+# Use #{session_id} ($N) as the switch target — guaranteed quote-safe.
+# Avoids fragile bash-style escaping of session names that may contain
+# apostrophes, quotes, or other tmux-quoting hazards (audit B2).
+sessions=$(tmux list-sessions -F '#{session_id}|#{session_name}|#{session_windows}|#{@parked}|#{session_last_attached}' 2>/dev/null)
 
 if [[ -z "$sessions" ]]; then
   tmux display-message "No sessions"
@@ -16,29 +19,27 @@ cmd=(display-menu -T '#[align=centre] Sessions ' -x C -y C -b rounded \
 active_lines=()
 parked_lines=()
 
-while IFS='|' read -r name wins parked _last; do
+while IFS='|' read -r sid name wins parked _last; do
   if [[ "$parked" == "1" ]]; then
-    parked_lines+=("$name|$wins")
+    parked_lines+=("$sid|$name|$wins")
   else
-    active_lines+=("$name|$wins")
+    active_lines+=("$sid|$name|$wins")
   fi
-done < <(sort -t'|' -k4 -rn <<< "$sessions")
+done < <(sort -t'|' -k5 -rn <<< "$sessions")
 
 idx=0
 
 for entry in "${active_lines[@]}"; do
-  IFS='|' read -r name wins <<< "$entry"
-  escaped_name="${name//\'/\'\\\'\'}"
-  cmd+=("$name ($wins win)" "${KEYS:$idx:1}" "switch-client -t '$escaped_name'")
+  IFS='|' read -r sid name wins <<< "$entry"
+  cmd+=("$name ($wins win)" "${KEYS:$idx:1}" "switch-client -t $sid")
   idx=$((idx + 1))
 done
 
 if [[ ${#parked_lines[@]} -gt 0 ]]; then
   cmd+=("" "" "")
   for entry in "${parked_lines[@]}"; do
-    IFS='|' read -r name wins <<< "$entry"
-    escaped_name="${name//\'/\'\\\'\'}"
-    cmd+=("$name ($wins win) [parked]" "${KEYS:$idx:1}" "set -t '$escaped_name' -u @parked ; switch-client -t '$escaped_name' ; display-message 'Unparked: $escaped_name'")
+    IFS='|' read -r sid name wins <<< "$entry"
+    cmd+=("$name ($wins win) [parked]" "${KEYS:$idx:1}" "set -t $sid -u @parked ; switch-client -t $sid ; display-message 'Unparked'")
     idx=$((idx + 1))
   done
 fi
