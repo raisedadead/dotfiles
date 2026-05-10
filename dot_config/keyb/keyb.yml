@@ -135,9 +135,9 @@
       key: "{ / }"
     - name: Resize left / down / up / right
       key: H / J / K / L
-    - name: Yank command line
+    - name: Yank command line (tmux-yank plugin)
       key: "y"
-    - name: Yank pane cwd
+    - name: Yank pane cwd (tmux-yank plugin)
       key: "Y"
 
 - name: tmux › copy mode (vi)
@@ -170,10 +170,10 @@
 
 - name: switcher (M-o)
   keybinds:
-    - name: Next category
-      key: Tab
-    - name: Previous category
-      key: S-Tab
+    - name: All / Sessions / Projects / Zoxide
+      key: C-a / C-t / C-p / C-z
+    - name: Files / Grep search
+      key: C-f / C-g
     - name: Select entry
       key: Enter
     - name: Open in Editor
@@ -182,10 +182,17 @@
       key: C-v
     - name: Kill session (sessions view)
       key: C-d
-    - name: Toggle search mode (fd/rg)
-      key: C-s
     - name: Toggle preview
       key: C-o
+
+- name: keybindings popup (M-\ → ?)
+  keybinds:
+    - name: Next category
+      key: Tab
+    - name: Previous category
+      key: S-Tab
+    - name: Quit
+      key: Q / Esc
 
 - name: ghostty › scrollback
   keybinds:
