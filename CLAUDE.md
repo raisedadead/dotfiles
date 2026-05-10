@@ -16,6 +16,9 @@ Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfil
 - **OMP v29+ manages its own cache** — no custom `cached_evalz` for prompt init
 - **`cached_evalz` invalidates on binary mtime only** — if a tool needs config-based invalidation, use custom cache logic
 - **Shell integration**: cursor + sudo only (not command_status — exit codes handled by zsh precmd)
+- **`set -g detach-on-destroy off`** — required for park/save/unpark UX; keeps client attached to a remaining session when the current one is destroyed
+- **Session persistence is intentionally manual** — park/save/unpark scripts replace tmux-resurrect/continuum; no auto-restore on boot
+- **Switcher/menu use `#{session_id}` not `#{session_name}`** — tmux session names can contain apostrophes/quotes that break shell-style escaping in `display-menu` command strings; numeric `$N` IDs are quote-safe
 
 ## Cross-Tool Integration
 
