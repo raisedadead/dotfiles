@@ -1,0 +1,33 @@
+version: "0.5"
+
+# Foreground process-compose config for the local MLX inference server.
+# Runs Apple's mlx_lm.server with the Gemma 4 E4B 4-bit model preloaded on
+# 127.0.0.1:8080 (OpenAI-compatible). No boot persistence — start with
+# `mlx-up` (TUI) or `mlx-up-bg` (detached), stop with `mlx-down` or Ctrl-C.
+#
+# RAM cost: ~3 GB resident once the model loads. First request takes ~10 s
+# while weights are loaded; subsequent requests are streamed at MLX speeds.
+
+processes:
+  mlx-server:
+    command: >-
+      mlx_lm.server
+      --host 127.0.0.1
+      --port 8080
+      --model mlx-community/gemma-4-e4b-it-4bit
+      --log-level INFO
+    availability:
+      restart: on_failure
+      max_restarts: 3
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 8080
+        path: /v1/models
+      initial_delay_seconds: 5
+      period_seconds: 5
+      timeout_seconds: 3
+      failure_threshold: 24
+    shutdown:
+      signal: 15
+      timeout_seconds: 10
