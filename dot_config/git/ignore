@@ -47,8 +47,6 @@ AGENTS.md
 docs/plans
 .worktrees
 .sidecar
-.beads/
-.dolt/
 
 .dp-cto
 .dp-spec
