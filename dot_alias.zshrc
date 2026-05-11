@@ -79,4 +79,9 @@ if can_haz tmux; then
   alias t='tmux new-session -A -s "$(basename "$PWD" | sed "s/^\.//")" -c "$PWD"'
 fi
 
+#-----------------------------
+# Universe CLI, dev mode
+#-----------------------------
+alias unidev='node /Users/mrugesh/DEV/fCC-U/universe-cli/dist/index.js'
+
 
