@@ -84,4 +84,8 @@ fi
 #-----------------------------
 alias unidev='node /Users/mrugesh/DEV/fCC-U/universe-cli/dist/index.js'
 
-
+#-----------------------------
+# Format markdown
+#-----------------------------
+alias md-fmt='git ls-files -z "*.md" "*.markdown" | xargs -0 mdformat --wrap no'
+alias md-check='git ls-files -z "*.md" "*.markdown" | xargs -0 mdformat --check --wrap no'
