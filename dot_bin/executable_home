@@ -65,18 +65,21 @@ esac
 cmd_help() {
   echo ""
   printf "  ${BLD}Custom commands (both repos):${RST}\n\n"
-  printf "  ${BLD}home check${RST}               ${DIM}show status and suggested actions${RST}\n"
-  printf "  ${BLD}home sync${RST}                ${DIM}auto-resolve drift + stage for commit${RST}\n"
-  printf "  ${BLD}home apply${RST}               ${DIM}→ deploy source to ~${RST}\n"
-  printf "  ${BLD}home re-add${RST}              ${DIM}← capture ~ edits back to source${RST}\n"
-  printf "  ${BLD}home pull${RST}                ${DIM}pull both repos${RST}\n"
-  printf "  ${BLD}home push${RST}                ${DIM}push both repos to origin${RST}\n"
-  printf "  ${BLD}home init${RST}                ${DIM}clone private repo and apply both${RST}\n"
-  printf "  ${BLD}home cd${RST}                  ${DIM}cd to public source dir${RST}\n"
+  printf "  ${BLD}home check${RST}                  ${DIM}show status and suggested actions${RST}\n"
+  printf "  ${BLD}home sync${RST}                   ${DIM}auto-resolve drift + stage for commit${RST}\n"
+  printf "  ${BLD}home apply${RST}                  ${DIM}→ deploy source to ~${RST}\n"
+  printf "  ${BLD}home re-add${RST}                 ${DIM}← capture ~ edits back to source${RST}\n"
+  printf "  ${BLD}home pull${RST}                   ${DIM}pull both repos${RST}\n"
+  printf "  ${BLD}home push${RST}                   ${DIM}push both repos to origin${RST}\n"
+  printf "  ${BLD}home init${RST}                   ${DIM}clone private repo and apply both${RST}\n"
+  printf "  ${BLD}home cd${RST}                     ${DIM}cd to public source dir${RST}\n"
   echo ""
-  printf "  ${BLD}Chezmoi passthrough (requires pub/prv):${RST}\n\n"
-  printf "  ${DIM}home ${RST}${BLD}pub${RST}${DIM}|${RST}${BLD}prv${RST} ${DIM}<command>${RST}     ${DIM}runs chezmoi with the correct --source${RST}\n"
-  printf "  ${DIM}e.g. home pub edit, home prv diff, home pub managed${RST}\n"
+  printf "  ${BLD}Per-repo commands (require pub/prv):${RST}\n\n"
+  printf "  ${BLD}home pub|prv diff${RST} ${DIM}[path]${RST}     ${DIM}drift, apply-direction (source → target)${RST}\n"
+  printf "  ${BLD}home pub|prv diff --readd${RST} ${DIM}[path]${RST}\n"
+  printf "  %-32s ${DIM}drift, re-add-direction (target → source)${RST}\n" ""
+  printf "  ${BLD}home pub|prv${RST} ${DIM}<chezmoi-cmd>${RST}    ${DIM}passthrough — runs chezmoi with the correct --source${RST}\n"
+  printf "  ${DIM}e.g. home pub edit .config/zsh/.zshrc, home prv managed, home prv re-add${RST}\n"
   echo ""
 }
 
@@ -406,12 +409,65 @@ cmd_passthrough() {
   _cm "$REPO_SEL" "$@"
 }
 
+# Direction-aware diff wrapper.
+#
+# `chezmoi diff` always shows source → target (apply direction) — `+` lines
+# would be written by `apply`, `-` lines would be removed by `apply`. When
+# the operator edited the target (not the source), reading those signs in
+# the apply frame is backwards. This wrapper:
+#
+#   - prints an explicit direction header (apply | re-add)
+#   - re-labels +/- semantics in the chosen frame
+#   - supports `--readd` / `--reverse` to flip via `chezmoi diff --reverse`
+#   - reports "no drift" cleanly when chezmoi output is empty
+cmd_diff() {
+  if [[ -z "${REPO_SEL:-}" ]]; then
+    printf "${RED}dotfiles ·${RST} diff requires a repo selector\n"
+    printf "  ${DIM}e.g. home ${RST}${BLD}prv${RST}${DIM} diff [--readd] [path]${RST}\n"
+    exit 1
+  fi
+
+  local direction="apply" extra_args=() pos=()
+  for arg in "$@"; do
+    case "$arg" in
+      --readd|--re-add|--reverse)
+        direction="readd"
+        extra_args+=(--reverse)
+        ;;
+      *) pos+=("$arg") ;;
+    esac
+  done
+
+  local out short
+  [[ "$REPO_SEL" == "public" ]] && short=pub || short=prv
+  out=$(_cm "$REPO_SEL" diff "${extra_args[@]}" "${pos[@]}")
+
+  echo ""
+  if [[ "$direction" == "apply" ]]; then
+    printf "  ${DIM}direction${RST}  ${BLD}apply${RST} ${DIM}(source → target)${RST}\n"
+    printf "  ${DIM}meaning${RST}    ${GRN}+${RST} would be written · ${RED}-${RST} would be removed ${DIM}by${RST} ${BLD}home ${short} apply${RST}\n"
+    printf "  ${DIM}flip${RST}       ${BLD}home ${short} diff --readd${RST} ${DIM}(target → source — what re-add would write)${RST}\n"
+  else
+    printf "  ${DIM}direction${RST}  ${BLD}re-add${RST} ${DIM}(target → source)${RST}\n"
+    printf "  ${DIM}meaning${RST}    ${GRN}+${RST} would be written · ${RED}-${RST} would be removed ${DIM}by${RST} ${BLD}home ${short} re-add${RST}\n"
+    printf "  ${DIM}flip${RST}       ${BLD}home ${short} diff${RST} ${DIM}(default — source → target — what apply would write)${RST}\n"
+  fi
+  echo ""
+
+  if [[ -z "$out" ]]; then
+    printf "  ${GRN}✓${RST} no drift\n\n"
+  else
+    printf "%s\n" "$out"
+  fi
+}
+
 case "${1:-}" in
   check)   cmd_check ;;
   sync)    cmd_sync ;;
   init)    cmd_init ;;
   apply)   cmd_apply ;;
   re-add)  cmd_readd ;;
+  diff)    shift; cmd_diff "$@" ;;
   cd)
     if [[ "${REPO_SEL:-}" == "private" ]]; then
       printf '%s\n' "$PRIV"
