@@ -2,6 +2,8 @@
 
 Managed by chezmoi. Two-repo setup: public (`~/.dotfiles`) + private (`~/.dotfiles-private`). Bootstrap: `install.sh`.
 
+This half holds shell / tmux / ghostty / nvim / OMP and cross-tool integration. The Claude Code rig, every other agent rig, secrets, and personal tooling live in the private half — see [`~/.dotfiles-private/CLAUDE.md`](~/.dotfiles-private/CLAUDE.md). The split is by audit surface, not by importance: this repo's `.chezmoiignore` excludes `.claude` and `CLAUDE.md` so the private half is the sole source of truth for agent config.
+
 ## Rules (non-obvious, not derivable from code)
 
 - **Always edit chezmoi source** (`~/.dotfiles/` or `~/.dotfiles-private/`), then `home apply` — never edit target (`~/.config/`, `~/.*`) directly
