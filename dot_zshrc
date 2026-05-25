@@ -44,10 +44,27 @@ timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
 cached_evalz() {
   local tool=$1 cmd=$2 cache_dir="$HOME/.cache/zsh-eval-cache"
   can_haz "$tool" || return 1
-  local bin="$(whence -p "$tool")" cache="$cache_dir/$tool.zsh"
+  local bin="$(whence -p "$tool")" cache="$cache_dir/$tool.zsh" tmp
   [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
   if [[ ! -f "$cache" ]] || [[ "$bin" -nt "$cache" ]]; then
-    eval "$cmd" > "$cache" 2>/dev/null && zcompile "$cache" 2>/dev/null
+    tmp="$(mktemp "$cache_dir/.${tool}.XXXXXX")"
+    if eval "$cmd" > "$tmp" 2>/dev/null; then
+      # Validate first non-blank line looks like zsh script, not a banner.
+      # Accept: comments (#...), shebangs, common zsh declarations, block openers.
+      local first
+      first="$(awk 'NF{print;exit}' "$tmp")"
+      case "$first" in
+        '#'*|'{'*|'('*|compdef\ *|function\ *|typeset\ *|export\ *|alias\ *|setopt\ *|autoload\ *|local\ *|zstyle\ *|bindkey\ *|source\ *|eval\ *|_*\(\)*)
+          mv "$tmp" "$cache" && zcompile "$cache" 2>/dev/null ;;
+        *)
+          rm -f "$tmp"
+          print -u2 "cached_evalz: $tool: output does not look like zsh (first line: ${first:0:60}...) — cache skipped"
+          return 1 ;;
+      esac
+    else
+      rm -f "$tmp"
+      return 1
+    fi
   fi
   source "$cache"
 }
@@ -182,7 +199,7 @@ if [[ -o interactive ]]; then
   cached_evalz direnv "direnv hook zsh"
   cached_evalz gh "gh completion -s zsh"
   cached_evalz op "op completion zsh" && compdef _op op
-  cached_evalz wrangler "wrangler complete zsh"
+  cached_evalz wrangler "wrangler complete zsh | sed -n '/^#compdef/,\$p'"  # strip pre-#compdef banner (wrangler 4.94+ leaks skills-install nag to stdout)
   cached_evalz wt "wt shell-init zsh"
 
   cached_evalz bd "bd completion zsh"
