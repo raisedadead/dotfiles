@@ -24,6 +24,11 @@ alias gut="git"
 can_haz lazygit && alias g="lazygit"
 
 #----------------------------
+# Brewfile
+#----------------------------
+can_haz brew && alias bu="cd ~/.config/brewfile && just update && just save"
+
+#----------------------------
 # LazyDocker
 #----------------------------
 can_haz lazydocker && alias d="lazydocker"
