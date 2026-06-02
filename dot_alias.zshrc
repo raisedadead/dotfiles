@@ -87,7 +87,7 @@ fi
 #-----------------------------
 # Universe CLI, dev mode
 #-----------------------------
-alias unidev='node /Users/mrugesh/DEV/fCC-U/universe-cli/dist/index.js'
+alias unidev='node /Users/mrugesh/DEV/fCC-U/universe-cli/dist/index.cjs'
 
 #-----------------------------
 # Format markdown
