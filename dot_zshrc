@@ -191,20 +191,20 @@ zinit wait"2b" silent for \
 #-----------------------------------------------------------
 
 if [[ -o interactive ]]; then
-  # Sync inits (hooks in place before first prompt — no post-prompt re-renders)
+  # Sync inits — keybinds/cd/prompt hooks must be live before first prompt
   cached_evalz atuin "atuin init zsh --disable-up-arrow"
   cached_evalz zoxide "zoxide init --cmd cd --hook pwd zsh"
-
-  # Sync completions and tool inits (cached = instant source, no subprocess spawn)
   cached_evalz direnv "direnv hook zsh"
-  cached_evalz gh "gh completion -s zsh"
-  cached_evalz op "op completion zsh" && compdef _op op
-  cached_evalz wrangler "wrangler complete zsh | sed -n '/^#compdef/,\$p'"  # strip pre-#compdef banner (wrangler 4.94+ leaks skills-install nag to stdout)
-  cached_evalz wt "wt shell-init zsh"
 
-  cached_evalz bd "bd completion zsh"
-  compdef _home home
-  # zsh-defer -c 'cached_evalz pkgx "pkgx --shellcode"'
+  # Completions only matter at first Tab, not first keystroke — defer off the
+  # critical path. zsh-defer (q)-quotes each arg and evals it verbatim on zle idle.
+  zsh-defer cached_evalz gh "gh completion -s zsh"
+  zsh-defer cached_evalz op "op completion zsh"
+  zsh-defer compdef _op op
+  zsh-defer cached_evalz wrangler "wrangler complete zsh | sed -n '/^#compdef/,\$p'"  # strip pre-#compdef banner (wrangler 4.94+ leaks skills-install nag to stdout)
+  zsh-defer cached_evalz wt "wt shell-init zsh"
+  zsh-defer cached_evalz bd "bd completion zsh"
+  zsh-defer compdef _home home
 fi
 
 # File sourcing
@@ -219,6 +219,10 @@ zsh-defer -c '
     [[ -f "$f" ]] && [[ ! -f "$f.zwc" || "$f" -nt "$f.zwc" ]] && zcompile "$f"
   done
 '
+
+# OMP writes a per-session shell.<uuid>.omp.cache and never prunes them — they
+# accumulate to hundreds. Reap stale ones off the critical path.
+zsh-defer -c 'find ~/.cache/oh-my-posh -name "shell.*.omp.cache" -mtime +3 -delete 2>/dev/null'
 
 # Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
 # fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
