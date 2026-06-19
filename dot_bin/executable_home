@@ -14,6 +14,8 @@ set -uo pipefail
 PUB="$HOME/.dotfiles"
 PRIV="$HOME/.dotfiles-private"
 
+PRIV_RUNTIME_OWNED=("$HOME/.claude/settings.json")
+
 # Colors
 DIM=$'\e[0;90m'; GRN=$'\e[0;32m'; RED=$'\e[0;31m'; YLW=$'\e[0;33m'
 CYN=$'\e[0;36m'; BLD=$'\e[1m'; RST=$'\e[0m'
@@ -44,6 +46,17 @@ _cm() {
   else
     chezmoi "$@"
   fi
+}
+
+_capture_runtime_owned() {
+  has_priv || return 0
+  local f sp
+  for f in "${PRIV_RUNTIME_OWNED[@]}"; do
+    [[ -e "$f" ]] || continue
+    sp=$(chezmoi --source "$PRIV" source-path "$f" 2>/dev/null) || continue
+    [[ -n "$(git -C "$PRIV" status --porcelain -- "$sp" 2>/dev/null)" ]] && continue
+    _cm private re-add "$f" >/dev/null 2>&1
+  done
 }
 
 # List repos to operate on based on REPO_SEL
@@ -137,6 +150,7 @@ cmd_apply() {
     (( first )) || echo ""
     first=0
     p "applying $repo repo..."
+    [[ "$repo" == "private" ]] && _capture_runtime_owned
     if _cm "$repo" apply; then
       ok "$repo repo applied"
     else
