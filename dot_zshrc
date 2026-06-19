@@ -222,7 +222,7 @@ zsh-defer -c '
 
 # OMP writes a per-session shell.<uuid>.omp.cache and never prunes them — they
 # accumulate to hundreds. Reap stale ones off the critical path.
-zsh-defer -c 'find ~/.cache/oh-my-posh -name "shell.*.omp.cache" -mtime +3 -delete 2>/dev/null'
+zsh-defer -c 'find ~/.cache/oh-my-posh -name "shell.*.omp.cache" -mtime +1 -delete 2>/dev/null'
 
 # Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
 # fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.

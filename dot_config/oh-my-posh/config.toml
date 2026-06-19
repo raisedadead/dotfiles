@@ -32,9 +32,12 @@ base = '#1e1e2e'
 mantle = '#181825'
 crust = '#11111b'
 
+# Disabled: upgrade check fires a GitHub network call on prompt render
+# (auto also self-downloads the binary) — multi-second prompt lag when
+# network is slow. Upgrade OMP via brew instead.
 [upgrade]
-auto = true
-notice = true
+auto = false
+notice = false
 
 # Main prompt
 [[blocks]]
