@@ -458,7 +458,7 @@ BIND_ZOX="reload($SELF --source zox)+change-prompt($_ico_zoxide  Zoxide ❯ )+ch
 BIND_FSRCH="reload($SELF --source search files)+change-prompt($_ico_files  Files ❯ )+change-header($HDR_FSRCH)+change-footer($FOOTER_FSRCH)"
 BIND_GSRCH="reload($SELF --source search text)+change-prompt($_ico_text  Grep ❯ )+change-header($HDR_GSRCH)+change-footer($FOOTER_GSRCH)+hide-preview"
 
-result=$(source_all | fzf --tmux center,37%,60% \
+result=$(source_all | fzf --tmux center,55%,60% \
   --ansi --no-info --cycle --tiebreak=begin,index \
   --delimiter $'\t' --with-nth '2..' --nth '1' \
   --border rounded --border-label ' Switcher ' --border-label-pos 3 --padding=1,2 \
