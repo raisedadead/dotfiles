@@ -2,10 +2,6 @@
 version = 4
 final_space = true
 async = true
-# Non-blocking render: prompt shows instantly with a placeholder for slow
-# segments (git status on huge/cold monorepos) instead of blocking the shell.
-# 'async' alone is a no-op in OMP v29 — 'streaming' is the key that enables it.
-streaming = 200
 
 # --- Catppuccin Mocha (red from Tokyo Night) ---
 [palette]
