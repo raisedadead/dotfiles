@@ -73,7 +73,10 @@ foreground_templates = [
 ]
 timeout = 200
 template = "{{ if .IsBare }}on \U000F0645 worktrees {{ else }}on {{ if .IsWorkTree }}\U000F0645 {{ else }}\uE725 {{ end }}{{ .Ref }}{{ if .Merge }} (merge){{ end }}{{ if .Rebase }} (rebase {{ .Rebase.Current }}/{{ .Rebase.Total }}){{ end }}{{ if .CherryPick }} (cherry-pick){{ end }}{{ if .Revert }} (revert){{ end }}{{ if or .Working.Changed .Staging.Changed }} [{{ if .Staging.Changed }}+{{ end }}{{ if .Working.Changed }}!{{ end }}{{ if gt .Working.Untracked 0 }}?{{ end }}{{ if gt .Working.Deleted 0 }}\u2718{{ end }}]{{ end }}{{ if gt .StashCount 0 }} ${{ end }} {{ end }}"
-options = { fetch_status = true, fetch_bare_info = true, branch_icon = "", commit_icon = "\uF417 ", tag_icon = "\uF412 " }
+# untracked_modes: skip git's untracked-file worktree walk in named monorepos \u2014
+# that scan costs seconds on a cold cache. Key = exact repo root (no trailing
+# slash). Loses the '?' untracked marker in those repos only. GA feature.
+options = { fetch_status = true, fetch_bare_info = true, branch_icon = "", commit_icon = "\uF417 ", tag_icon = "\uF412 ", untracked_modes = { "/Users/mrugesh/DEV/fCC/freeCodeCamp" = "no" } }
 
 # Kubernetes context (only in k8s/k3s project dirs)
 [[blocks.segments]]
