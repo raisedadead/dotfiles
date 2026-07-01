@@ -166,15 +166,23 @@ _tti zinit-sync
 # Add custom completions to FPATH (highest priority - added last so it's first)
 [[ -d ~/.zfunc ]] && FPATH="$HOME/.zfunc:$FPATH"
 
-# Load completion system (full rebuild once daily, cached otherwise)
+# Load completions. Critical path ALWAYS uses the cached -C load (~12ms); the
+# full rebuild (compaudit fpath scan, ~344ms) is deferred off the prompt path.
+# Stale dump costs a fast shell now + a freshly-rebuilt dump next shell.
 autoload -Uz compinit
 local zcomp="$HOME/.zcompdump"
-if [[ ! -f "$zcomp" ]] || [[ $(( $(date +%s) - $(stat -f%m "$zcomp" 2>/dev/null || echo 0) )) -gt 86400 ]]; then
-  compinit
+if [[ -f "$zcomp" ]]; then
+  compinit -C -d "$zcomp"
 else
-  compinit -C
+  compinit -d "$zcomp"
 fi
 _tti compinit
+zsh-defer -c '
+  local zcomp="$HOME/.zcompdump"
+  if [[ ! -f "$zcomp" ]] || (( $(date +%s) - $(stat -f%m "$zcomp" 2>/dev/null || echo 0) > 86400 )); then
+    autoload -Uz compinit && compinit -d "$zcomp"
+  fi
+'
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
 zinit wait"0a" silent for \
