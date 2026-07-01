@@ -17,10 +17,14 @@
 # dialect = "us"
 
 ## enable or disable automatic sync
-auto_sync = true
+## false: sync is handled by the background daemon (see [daemon]) instead of the
+## foreground shell — keeps network sync off the interactive startup path.
+auto_sync = false
 
 ## enable or disable automatic update checks
-update_check = true
+## false: skips a per-launch network call to the update server — a documented
+## cause of first-shell startup lag (blocks on cold boot before network is up).
+update_check = false
 
 ## address of the sync server
 # sync_address = "https://api.atuin.sh"
@@ -144,3 +148,10 @@ enter_accept = false
 # 
 # Set commands that should be totally stripped and ignored from stats
 #common_prefix = ["sudo"]
+
+## Background daemon (experimental): moves history writes + sync into a persistent
+## process so the interactive shell writes over a socket instead of forking atuin
+## after each command. autostart lets the shell hook manage it — no launchd needed.
+[daemon]
+enabled = true
+autostart = true

@@ -227,8 +227,10 @@ if [[ -o interactive ]]; then
   # execs that stall seconds. Hooks go live on first zle-idle, before any keystroke.
   # Trade: a shell opened inside a direnv dir loads .envrc one precmd late.
   zsh-defer cached_evalz atuin "atuin init zsh --disable-up-arrow"
+  zsh-defer _tti d-atuin
   zsh-defer cached_evalz zoxide "zoxide init --cmd cd --hook pwd zsh"
   zsh-defer cached_evalz direnv "direnv hook zsh"
+  zsh-defer _tti d-cd-hooks
 
   # Completions only matter at first Tab, not first keystroke — defer off the
   # critical path. zsh-defer (q)-quotes each arg and evals it verbatim on zle idle.
@@ -239,6 +241,7 @@ if [[ -o interactive ]]; then
   zsh-defer cached_evalz wt "wt shell-init zsh"
   zsh-defer cached_evalz bd "bd completion zsh"
   zsh-defer compdef _home home
+  zsh-defer _tti d-completions
 fi
 
 # File sourcing
@@ -258,6 +261,7 @@ zsh-defer -c '
 # prunes them — they leak to thousands. Reap stale ones off the critical path.
 # Pattern must cover both prefixes or the zsh.* half never gets collected.
 zsh-defer -c 'find ~/.cache/oh-my-posh \( -name "shell.*.omp.cache" -o -name "zsh.*.omp.cache" \) -mtime +1 -delete 2>/dev/null'
+zsh-defer _tti d-done
 
 # Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
 # fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
