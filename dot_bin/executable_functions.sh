@@ -1,4 +1,3 @@
-
 #!/usr/bin/env zsh
 
 #-----------------------------------------------------------
@@ -23,13 +22,14 @@ source ~/.bin/ssh-helpers.sh
 
 # load search functions
 source ~/.bin/search.sh
+source ~/.bin/fnm.sh
 
 # yazi wrapper: q to cd on exit, Q to quit in place
 function y() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
 	command yazi "$@" --cwd-file="$tmp"
 	local cwd
-	IFS= read -r -d '' cwd < "$tmp"
+	IFS= read -r -d '' cwd <"$tmp"
 	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
 }
@@ -40,61 +40,66 @@ function y() {
 # add-zsh-hook precmd _set_terminal_title
 
 home() {
-  if [[ "$1" == "cd" ]]; then
-    case "${2:-}" in
-      public|pub)   builtin cd -- ~/.dotfiles ;;
-      private|prv)  builtin cd -- ~/.dotfiles-private ;;
-      *)            echo "usage: home cd [public|private]" ;;
-    esac
-  else
-    command home "$@"
-  fi
+	if [[ "$1" == "cd" ]]; then
+		case "${2:-}" in
+		public | pub) builtin cd -- ~/.dotfiles ;;
+		private | prv) builtin cd -- ~/.dotfiles-private ;;
+		*) echo "usage: home cd [public|private]" ;;
+		esac
+	else
+		command home "$@"
+	fi
 }
 
 _home() {
-  local -a cmds=(
-    'check:show status and suggested actions'
-    'sync:auto-resolve drift + stage for commit'
-    'apply:deploy source to ~'
-    're-add:capture ~ edits back to source'
-    'pull:pull both repos'
-    'push:push both repos to origin'
-    'init:clone private repo and apply both'
-    'cd:cd to source dir'
-    'pub:target public repo'
-    'prv:target private repo'
-    'help:show help'
-  )
-  if (( CURRENT == 2 )); then
-    _describe 'command' cmds
-    return
-  fi
-  if (( CURRENT == 3 )); then
-    case "${words[2]}" in
-      cd)
-        local -a repos=('public:~/.dotfiles' 'private:~/.dotfiles-private')
-        _describe 'repo' repos
-        return
-        ;;
-      pub|prv)
-        _describe 'command' cmds
-        return
-        ;;
-    esac
-  fi
-  _chezmoi "$@"
+	local -a cmds=(
+		'check:show status and suggested actions'
+		'sync:auto-resolve drift + stage for commit'
+		'apply:deploy source to ~'
+		're-add:capture ~ edits back to source'
+		'pull:pull both repos'
+		'push:push both repos to origin'
+		'init:clone private repo and apply both'
+		'cd:cd to source dir'
+		'pub:target public repo'
+		'prv:target private repo'
+		'help:show help'
+	)
+	if ((CURRENT == 2)); then
+		_describe 'command' cmds
+		return
+	fi
+	if ((CURRENT == 3)); then
+		case "${words[2]}" in
+		cd)
+			local -a repos=('public:~/.dotfiles' 'private:~/.dotfiles-private')
+			_describe 'repo' repos
+			return
+			;;
+		pub | prv)
+			_describe 'command' cmds
+			return
+			;;
+		esac
+	fi
+	_chezmoi "$@"
 }
 compdef _home home
 
 # create convenient aliases for commonly used functions
-alias git_commit_past='_mrgsh_gcp'           # commit with past date
-alias ssh_host_select='_mrgsh_ssh'           # select ssh host from config
-alias ssh_host_remove='_mrgsh_rkh'           # remove host from known_hosts
-alias rgs='_mrgsh_sg'                        # search file contents (ripgrep)
-alias fds='_mrgsh_sf'                        # search filenames (fd)
-alias rkh='_mrgsh_rkh'                       # remove host from known_hosts
-alias cleanup='_mrgsh_cleanup'               # cleanup macOS junk files
+alias git_commit_past='_mrgsh_gcp'             # commit with past date
+alias ssh_host_select='_mrgsh_ssh'             # select ssh host from config
+alias ssh_host_remove='_mrgsh_rkh'             # remove host from known_hosts
+alias rgs='_mrgsh_sg'                          # search file contents (ripgrep)
+alias fds='_mrgsh_sf'                          # search filenames (fd)
+alias rkh='_mrgsh_rkh'                         # remove host from known_hosts
+alias cleanup='_mrgsh_cleanup'                 # cleanup macOS junk files
 alias set_default_app='_mrgsh_set_default_app' # set default app for dev files
+alias node_globals='_mrgsh_node_globals'
+alias node_use='_mrgsh_fnm_use'
+alias node_default='_mrgsh_fnm_default'
+alias node_rm='_mrgsh_fnm_rm'
+alias node_install='_mrgsh_fnm_install'
 
 # completion descriptions
 compdef '_describe "commit in the past" "(git_commit_past:\"commit with past date\")"' git_commit_past
