@@ -8,7 +8,7 @@ window_id="$(aerospace list-windows --focused --format '%{window-id}' 2>/dev/nul
 [[ -z "$window_id" ]] && exit 0
 state_file="$STATE_DIR/$window_id"
 
-stages=(0.40 0.60 0.78 0.94)
+stages=(0.40 0.60 0.75 1)
 idx=0
 [[ -f "$state_file" ]] && idx="$(cat "$state_file")"
 [[ "$idx" =~ ^[0-9]+$ ]] && ((idx < ${#stages[@]})) || idx=0
