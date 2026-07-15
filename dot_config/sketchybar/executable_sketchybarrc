@@ -40,14 +40,18 @@ sketchybar --add event aerospace_workspace_change
 
 for sid in "${WORKSPACES[@]}"; do
   sketchybar --add item "space.$sid" left \
-    --subscribe "space.$sid" aerospace_workspace_change \
+    --subscribe "space.$sid" aerospace_workspace_change front_app_switched \
     --set "space.$sid" \
-      icon.drawing=off \
-      label="$sid" \
-      label.font="$FONT:Bold:14.0" \
+      icon="$sid" \
+      icon.font="$FONT:Bold:14.0" \
+      icon.color="$OVERLAY2" \
+      icon.padding_left=9 \
+      icon.padding_right=4 \
+      label.font="sketchybar-app-font:Regular:14.0" \
       label.color="$OVERLAY2" \
-      label.padding_left=8 \
-      label.padding_right=8 \
+      label.padding_left=0 \
+      label.padding_right=9 \
+      update_freq=10 \
       background.color="$MAUVE" \
       background.corner_radius=6 \
       background.height=24 \
@@ -59,7 +63,10 @@ done
 sketchybar --add item front_app center \
   --subscribe front_app front_app_switched \
   --set front_app \
-    icon.drawing=off \
+    icon.font="sketchybar-app-font:Regular:16.0" \
+    icon.color="$MAUVE" \
+    icon.padding_left=10 \
+    icon.padding_right=4 \
     label.font="$FONT:Bold:13.0" \
     label.color="$TEXT" \
     background.color="$SURFACE1" \

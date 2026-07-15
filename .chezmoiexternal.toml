@@ -2,3 +2,13 @@
     type = "git-repo"
     url = "https://github.com/tmux-plugins/tpm.git"
     refreshPeriod = "168h"
+
+["Library/Fonts/sketchybar-app-font.ttf"]
+    type = "file"
+    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf"
+    refreshPeriod = "720h"
+
+[".config/sketchybar/icon_map.sh"]
+    type = "file"
+    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/icon_map.sh"
+    refreshPeriod = "720h"
