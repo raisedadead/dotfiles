@@ -3,6 +3,7 @@
 CONFIG_DIR="$HOME/.config/sketchybar"
 PLUGIN_DIR="$CONFIG_DIR/plugins"
 source "$CONFIG_DIR/colors.sh"
+source "$CONFIG_DIR/icons.sh"
 
 AEROSPACE="$(command -v aerospace || echo /opt/homebrew/bin/aerospace)"
 WORKSPACES=(1 2 3 4 5 6)
@@ -61,12 +62,13 @@ for sid in "${WORKSPACES[@]}"; do
       script="$PLUGIN_DIR/aerospace.sh $sid"
 done
 
+__nerd_icon service
 sketchybar --add item mode_indicator left \
   --subscribe mode_indicator aerospace_mode_change \
   --set mode_indicator \
     updates=on \
     drawing=off \
-    icon="$ICON_SERVICE" \
+    icon="$icon_result" \
     icon.font="$ICON_FONT:Regular:13.0" \
     icon.color="$CRUST" \
     icon.padding_left=9 \
@@ -94,10 +96,11 @@ sketchybar --add item front_app center \
     background.height=26 \
     script="$PLUGIN_DIR/front_app.sh"
 
+__nerd_icon clock
 sketchybar --add item clock right \
   --set clock \
     update_freq=10 \
-    icon="$ICON_CLOCK" \
+    icon="$icon_result" \
     icon.color="$SAPPHIRE" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
@@ -112,38 +115,42 @@ sketchybar --add item clock right \
     script="$PLUGIN_DIR/clock.sh" \
     click_script="$PLUGIN_DIR/calendar_popup.sh"
 
+__nerd_icon calendar
 sketchybar --add item calendar right \
   --set calendar \
     update_freq=120 \
-    icon="$ICON_CALENDAR" \
+    icon="$icon_result" \
     icon.color="$PEACH" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
     script="$PLUGIN_DIR/calendar.sh"
 
+__nerd_icon weather
 sketchybar --add item weather right \
   --set weather \
     update_freq=900 \
-    icon="$ICON_WEATHER" \
+    icon="$icon_result" \
     icon.color="$SKY" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
     script="$PLUGIN_DIR/weather.sh"
 
+__nerd_icon net
 sketchybar --add item tailscale right \
   --subscribe tailscale system_woke \
   --set tailscale \
     update_freq=15 \
-    icon="$ICON_NET" \
+    icon="$icon_result" \
     icon.color="$GREEN" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
     script="$PLUGIN_DIR/tailscale.sh"
 
+__nerd_icon cpu
 sketchybar --add item cpu right \
   --set cpu \
     update_freq=5 \
-    icon="$ICON_CPU" \
+    icon="$icon_result" \
     icon.color="$GREEN" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \

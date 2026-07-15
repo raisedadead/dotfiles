@@ -34,10 +34,3 @@ export BAR_COLOR=0xe61e1e2e
 
 export FONT="Berkeley Mono"
 export ICON_FONT="Symbols Nerd Font"
-
-export ICON_CPU="$(printf '\357\213\233')"
-export ICON_NET="$(printf '\357\204\262')"
-export ICON_WEATHER="$(printf '\357\206\205')"
-export ICON_CALENDAR="$(printf '\357\201\263')"
-export ICON_CLOCK="$(printf '\357\200\227')"
-export ICON_SERVICE="$(printf '\357\200\223')"

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 source "$HOME/.config/sketchybar/colors.sh"
+source "$HOME/.config/sketchybar/icons.sh"
+__nerd_icon net
+NET_ICON="$icon_result"
 
 TS="$(command -v tailscale || echo /Applications/Tailscale.app/Contents/MacOS/Tailscale)"
 STATE="$("$TS" status --json 2>/dev/null | jq -r '.BackendState // "Unknown"' 2>/dev/null)"
@@ -10,15 +13,15 @@ Running)
 		jq -r 'first((.Peer // {})[] | select(.ExitNode == true) | .DNSName) // empty' 2>/dev/null |
 		cut -d. -f1)"
 	if [ -n "$EXIT_NODE" ]; then
-		sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$MAUVE" label="$EXIT_NODE"
+		sketchybar --set "$NAME" icon="$NET_ICON" icon.color="$MAUVE" label="$EXIT_NODE"
 	else
-		sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$GREEN" label="on"
+		sketchybar --set "$NAME" icon="$NET_ICON" icon.color="$GREEN" label="on"
 	fi
 	;;
 Stopped | NeedsLogin | NoState | "")
-	sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$OVERLAY0" label="off"
+	sketchybar --set "$NAME" icon="$NET_ICON" icon.color="$OVERLAY0" label="off"
 	;;
 *)
-	sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$YELLOW" label="$STATE"
+	sketchybar --set "$NAME" icon="$NET_ICON" icon.color="$YELLOW" label="$STATE"
 	;;
 esac
