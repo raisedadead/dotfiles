@@ -34,7 +34,7 @@ inner.vertical = 12
 outer.left = 12
 outer.right = 12
 outer.bottom = 48
-outer.top = 48
+outer.top = 12
 
 [mode.main.binding]
 cmd-ctrl-h = 'focus left'
@@ -97,14 +97,16 @@ test %{app-bundle-id} = com.apple.systempreferences \
   || test %{app-bundle-id} = com.apple.calculator \
   || test %{app-bundle-id} = com.apple.ActivityMonitor \
   || test %{app-bundle-id} = com.apple.finder \
-  || test %{app-bundle-id} = us.zoom.xos
+  || test %{app-bundle-id} = us.zoom.xos \
+  || test %{app-bundle-id} = com.1password.1password
 '''
 run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
+# Menu-bar popover apps: float in place so the catch-all rule can't yank them
+# to workspace 1 on every click. No centering — keep them under their anchor.
 [[on-window-detected]]
-if.app-id = 'com.1password.1password'
-if.window-title-regex-substring = 'Quick Access'
-run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
+if = 'test %{app-bundle-id} = com.sindresorhus.Dato'
+run = 'layout floating'
 
 [[on-window-detected]]
 if = 'test %{app-bundle-id} = net.imput.helium'
@@ -126,6 +128,9 @@ run = 'move-node-to-workspace 5'
 if = 'test %{app-name} ~= "Google Chat|Discord"'
 run = 'move-node-to-workspace 4'
 
+# Startup-only catch-all: gather any unassigned window into workspace 1 when
+# AeroSpace launches. Post-startup, unmatched windows stay on the current
+# workspace (no yank on menu-bar clicks, dialogs, transient panels).
 [[on-window-detected]]
-if = 'true'
+if.during-aerospace-startup = true
 run = 'move-node-to-workspace 1'
