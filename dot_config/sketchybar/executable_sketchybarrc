@@ -45,6 +45,7 @@ for sid in "${WORKSPACES[@]}"; do
   sketchybar --add item "space.$sid" left \
     --subscribe "space.$sid" aerospace_workspace_change front_app_switched \
     --set "space.$sid" \
+      updates=on \
       drawing="$space_draw" \
       icon="$sid" \
       icon.font="$FONT:Bold:14.0" \
