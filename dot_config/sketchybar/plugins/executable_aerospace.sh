@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 source "$HOME/.config/sketchybar/colors.sh"
 source "$HOME/.config/sketchybar/icon_map.sh"
+source "$HOME/.config/sketchybar/icon_override.sh"
 
 SID="${1:-${NAME#space.}}"
 FOCUSED="${FOCUSED_WORKSPACE:-$(aerospace list-workspaces --focused 2>/dev/null)}"
@@ -10,6 +11,7 @@ strip=""
 while IFS= read -r app; do
 	[ -z "$app" ] && continue
 	__icon_map "$app"
+	__icon_override "$app"
 	strip+="${icon_result} "
 done <<<"$apps"
 
