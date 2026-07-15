@@ -37,6 +37,7 @@ sketchybar --default \
   icon.padding_right=4
 
 sketchybar --add event aerospace_workspace_change
+sketchybar --add event aerospace_mode_change
 
 for sid in "${WORKSPACES[@]}"; do
   sketchybar --add item "space.$sid" left \
@@ -59,6 +60,25 @@ for sid in "${WORKSPACES[@]}"; do
       click_script="$AEROSPACE workspace $sid" \
       script="$PLUGIN_DIR/aerospace.sh $sid"
 done
+
+sketchybar --add item mode_indicator left \
+  --subscribe mode_indicator aerospace_mode_change \
+  --set mode_indicator \
+    updates=on \
+    drawing=off \
+    icon="$ICON_SERVICE" \
+    icon.font="$ICON_FONT:Regular:13.0" \
+    icon.color="$CRUST" \
+    icon.padding_left=9 \
+    icon.padding_right=4 \
+    label="SERVICE" \
+    label.font="$FONT:Bold:12.0" \
+    label.color="$CRUST" \
+    label.padding_right=9 \
+    background.color="$RED" \
+    background.corner_radius=6 \
+    background.height=24 \
+    script="$PLUGIN_DIR/mode.sh"
 
 sketchybar --add item front_app center \
   --subscribe front_app front_app_switched \

@@ -17,6 +17,7 @@ accordion-padding = 0
 default-root-container-layout = 'accordion'
 default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+on-mode-changed = ['exec-and-forget /bin/bash -c "/opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)"']
 automatically-unhide-macos-hidden-apps = false
 
 [key-mapping]
