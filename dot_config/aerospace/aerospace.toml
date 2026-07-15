@@ -23,7 +23,7 @@ on-mode-changed = [
 ]
 automatically-unhide-macos-hidden-apps = false
 
-persistent-workspaces = ['1', '2', '3', '4', '5', '6']
+persistent-workspaces = ['1', '2', '3', '4']
 
 [key-mapping]
 preset = 'qwerty'
@@ -66,6 +66,7 @@ cmd-ctrl-leftSquareBracket = 'workspace prev'
 cmd-ctrl-rightSquareBracket = 'workspace next'
 cmd-ctrl-m = 'fullscreen'
 cmd-ctrl-t = 'layout tiles accordion'
+cmd-ctrl-f = 'layout floating tiling'
 cmd-ctrl-c = 'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh'
 cmd-ctrl-minus = 'resize smart -50'
 cmd-ctrl-equal = 'resize smart +50'
@@ -117,15 +118,15 @@ if = 'test %{app-bundle-id} = com.mitchellh.ghostty'
 run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
+if = 'test %{app-bundle-id} = com.microsoft.VSCode'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
 if = 'test %{app-bundle-id} = com.readdle.SparkDesktop'
 run = 'move-node-to-workspace 4'
 
 [[on-window-detected]]
 if = 'test %{app-bundle-id} = com.spotify.client'
-run = 'move-node-to-workspace 5'
-
-[[on-window-detected]]
-if = 'test %{app-name} ~= "Google Chat|Discord"'
 run = 'move-node-to-workspace 4'
 
 # Startup-only catch-all: gather any unassigned window into workspace 1 when
