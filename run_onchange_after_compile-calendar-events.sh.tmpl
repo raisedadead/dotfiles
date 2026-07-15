@@ -7,7 +7,7 @@ set -euo pipefail
 DIR="$HOME/.config/sketchybar/bin"
 SRC="$DIR/calendar_events.swift"
 PLIST="$DIR/calendar_events.plist"
-OUT="$DIR/calendar_events"
+APP="$DIR/calendar_events.app"
 
 [ -f "$SRC" ] || exit 0
 command -v swiftc >/dev/null 2>&1 || {
@@ -15,6 +15,9 @@ command -v swiftc >/dev/null 2>&1 || {
 	exit 0
 }
 
-swiftc "$SRC" -O -o "$OUT" \
-	-framework EventKit -framework Foundation \
-	-Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$PLIST"
+rm -f "$DIR/calendar_events"
+mkdir -p "$APP/Contents/MacOS"
+cp "$PLIST" "$APP/Contents/Info.plist"
+swiftc "$SRC" -O -o "$APP/Contents/MacOS/calendar_events" \
+	-framework EventKit -framework Foundation
+codesign --force --sign - "$APP" >/dev/null 2>&1 || true

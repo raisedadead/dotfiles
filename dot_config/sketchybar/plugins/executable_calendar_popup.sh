@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source "$HOME/.config/sketchybar/colors.sh"
 
-BIN="$HOME/.config/sketchybar/bin/calendar_events"
+BIN="$HOME/.config/sketchybar/bin/calendar_events.app/Contents/MacOS/calendar_events"
 
 sketchybar --remove '/clock.agenda\..*/' 2>/dev/null
 
