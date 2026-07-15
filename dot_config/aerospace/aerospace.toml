@@ -6,7 +6,8 @@ after-startup-command = [
 ]
 
 exec-on-workspace-change = [
-  '/bin/bash', '-c',
+  '/bin/bash',
+  '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
@@ -14,22 +15,26 @@ start-at-login = true
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
 accordion-padding = 0
-default-root-container-layout = 'accordion'
+default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
-on-mode-changed = ['exec-and-forget /bin/bash -c "/opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)"']
+on-mode-changed = [
+  'exec-and-forget /bin/bash -c "/opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)"',
+]
 automatically-unhide-macos-hidden-apps = false
+
+persistent-workspaces = ['1', '2', '3', '4', '5', '6']
 
 [key-mapping]
 preset = 'qwerty'
 
 [gaps]
-inner.horizontal = 8
-inner.vertical = 8
-outer.left = 8
-outer.right = 8
-outer.bottom = 46
-outer.top = 8
+inner.horizontal = 12
+inner.vertical = 12
+outer.left = 12
+outer.right = 12
+outer.bottom = 48
+outer.top = 48
 
 [mode.main.binding]
 cmd-ctrl-h = 'focus left'
@@ -61,7 +66,7 @@ cmd-ctrl-leftSquareBracket = 'workspace prev'
 cmd-ctrl-rightSquareBracket = 'workspace next'
 cmd-ctrl-m = 'fullscreen'
 cmd-ctrl-t = 'layout tiles accordion'
-cmd-ctrl-c = 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh'
+cmd-ctrl-c = 'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh'
 cmd-ctrl-minus = 'resize smart -50'
 cmd-ctrl-equal = 'resize smart +50'
 cmd-ctrl-semicolon = 'mode service'
@@ -80,29 +85,20 @@ l = ['join-with right', 'mode main']
 minus = 'resize smart -50'
 equal = 'resize smart +50'
 
-[[on-window-detected]]
-if.app-id = 'com.apple.systempreferences'
-run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
+# ============================================================================
+# Window rules. First matching callback wins (check-further-callbacks = false
+# by default), so ordering is: float allowlist, then per-app workspace
+# assignment, then catch-all. Anything not floated tiles by default.
+# ============================================================================
 
 [[on-window-detected]]
-if.app-id = 'com.apple.SystemPreferences'
-run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
-
-[[on-window-detected]]
-if.app-id = 'com.apple.calculator'
-run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
-
-[[on-window-detected]]
-if.app-id = 'com.apple.ActivityMonitor'
-run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
-
-[[on-window-detected]]
-if.app-id = 'com.apple.finder'
-if.window-title-regex-substring = 'Info|Copy|Move|Delete'
-run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
-
-[[on-window-detected]]
-if.app-id = 'us.zoom.xos'
+if = '''
+test %{app-bundle-id} = com.apple.systempreferences \
+  || test %{app-bundle-id} = com.apple.calculator \
+  || test %{app-bundle-id} = com.apple.ActivityMonitor \
+  || test %{app-bundle-id} = com.apple.finder \
+  || test %{app-bundle-id} = us.zoom.xos
+'''
 run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
@@ -111,25 +107,25 @@ if.window-title-regex-substring = 'Quick Access'
 run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
-if.app-id = 'net.imput.helium'
+if = 'test %{app-bundle-id} = net.imput.helium'
 run = 'move-node-to-workspace 2'
 
 [[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
+if = 'test %{app-bundle-id} = com.mitchellh.ghostty'
 run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
-if.app-id = 'com.readdle.SparkDesktop'
+if = 'test %{app-bundle-id} = com.readdle.SparkDesktop'
 run = 'move-node-to-workspace 4'
 
 [[on-window-detected]]
-if.app-id = 'com.spotify.client'
+if = 'test %{app-bundle-id} = com.spotify.client'
 run = 'move-node-to-workspace 5'
 
 [[on-window-detected]]
-if.app-name-regex-substring = 'Google Chat|Discord'
+if = 'test %{app-name} ~= "Google Chat|Discord"'
 run = 'move-node-to-workspace 4'
 
 [[on-window-detected]]
-if.app-name-regex-substring = '.*'
+if = 'true'
 run = 'move-node-to-workspace 1'
