@@ -60,6 +60,7 @@ cmd-ctrl-leftSquareBracket = 'workspace prev'
 cmd-ctrl-rightSquareBracket = 'workspace next'
 cmd-ctrl-m = 'fullscreen'
 cmd-ctrl-t = 'layout tiles accordion'
+cmd-ctrl-c = 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh'
 cmd-ctrl-minus = 'resize smart -50'
 cmd-ctrl-equal = 'resize smart +50'
 cmd-ctrl-semicolon = 'mode service'
@@ -80,33 +81,33 @@ equal = 'resize smart +50'
 
 [[on-window-detected]]
 if.app-id = 'com.apple.systempreferences'
-run = 'layout floating'
+run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
 if.app-id = 'com.apple.SystemPreferences'
-run = 'layout floating'
+run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
 if.app-id = 'com.apple.calculator'
-run = 'layout floating'
+run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
 if.app-id = 'com.apple.ActivityMonitor'
-run = 'layout floating'
+run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
 if.app-id = 'com.apple.finder'
 if.window-title-regex-substring = 'Info|Copy|Move|Delete'
-run = 'layout floating'
+run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
 if.app-id = 'us.zoom.xos'
-run = 'layout floating'
+run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
 if.app-id = 'com.1password.1password'
 if.window-title-regex-substring = 'Quick Access'
-run = 'layout floating'
+run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
 
 [[on-window-detected]]
 if.app-id = 'net.imput.helium'
