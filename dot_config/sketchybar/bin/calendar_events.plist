@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>dev.mrugesh.calendar-events</string>
+	<key>CFBundleName</key>
+	<string>calendar_events</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>SketchyBar displays your upcoming calendar events in the status bar.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>SketchyBar displays your upcoming calendar events in the status bar.</string>
+</dict>
+</plist>

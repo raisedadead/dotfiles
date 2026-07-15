@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 source "$HOME/.config/sketchybar/colors.sh"
 
-sketchybar --remove '/clock.agenda\..*/' 2>/dev/null
+BIN="$HOME/.config/sketchybar/bin/calendar_events"
 
-raw="$(timeout 10 icalBuddy -nc -nrd -eep "notes,url,location,attendees" -iep "datetime,title" -po "datetime,title" -df "" -tf "%H:%M" -b "" -li 8 eventsToday 2>/dev/null)"
+sketchybar --remove '/clock.agenda\..*/' 2>/dev/null
 
 add_row() {
 	sketchybar --add item "clock.agenda.$1" popup.clock \
@@ -16,20 +16,13 @@ add_row() {
 }
 
 i=0
-dt=""
-while IFS= read -r line; do
-	trimmed="${line#"${line%%[![:space:]]*}"}"
-	[ -z "$trimmed" ] && continue
-	case "$line" in
-	[[:space:]]*)
-		add_row "$i" "$PEACH" "${dt:+$dt  }$trimmed" "$TEXT"
+if [ -x "$BIN" ]; then
+	while IFS= read -r line; do
+		[ -z "$line" ] && continue
+		add_row "$i" "$PEACH" "$line" "$TEXT"
 		i=$((i + 1))
-		;;
-	*)
-		dt="${trimmed%% *}"
-		;;
-	esac
-done <<<"$raw"
+	done < <(timeout 8 "$BIN" 2>/dev/null)
+fi
 
 [ "$i" -eq 0 ] && add_row 0 "$OVERLAY0" "No events today" "$OVERLAY2"
 

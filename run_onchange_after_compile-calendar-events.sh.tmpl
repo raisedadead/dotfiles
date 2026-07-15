@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# swift: {{ include "dot_config/sketchybar/bin/calendar_events.swift" | sha256sum }}
+# plist: {{ include "dot_config/sketchybar/bin/calendar_events.plist" | sha256sum }}
+
+DIR="$HOME/.config/sketchybar/bin"
+SRC="$DIR/calendar_events.swift"
+PLIST="$DIR/calendar_events.plist"
+OUT="$DIR/calendar_events"
+
+[ -f "$SRC" ] || exit 0
+command -v swiftc >/dev/null 2>&1 || {
+	printf 'swiftc not found; skipping calendar_events build\n' >&2
+	exit 0
+}
+
+swiftc "$SRC" -O -o "$OUT" \
+	-framework EventKit -framework Foundation \
+	-Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$PLIST"

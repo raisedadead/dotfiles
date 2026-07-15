@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
 source "$HOME/.config/sketchybar/colors.sh"
 
+BIN="$HOME/.config/sketchybar/bin/calendar_events"
 NEXT=""
-if command -v icalBuddy >/dev/null 2>&1; then
-	NEXT="$(timeout 10 icalBuddy \
-		-eep "notes,url,location,attendees" \
-		-iep "datetime,title" \
-		-df "" -tf "%H:%M" \
-		-b "" -nc -nrd \
-		-li 1 \
-		eventsToday+1 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g' | cut -c1-30 | xargs)"
-fi
-
+[ -x "$BIN" ] && NEXT="$(timeout 8 "$BIN" --next 2>/dev/null | head -1 | cut -c1-30)"
 [ -z "$NEXT" ] && NEXT="No events"
 
 sketchybar --set "$NAME" label="$NEXT"
