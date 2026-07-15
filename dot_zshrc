@@ -214,6 +214,27 @@ zinit wait"2b" silent for \
 #-----------------------------------------------------------
 
 if [[ -o interactive ]]; then
+  # Page-cache prewarm, once per boot. zsh-defer drains its queue on the zle-idle
+  # hook and CANNOT preempt a running task, so the first cold shell after boot
+  # freezes the keyboard for seconds while atuin/completions cold-exec (worst on a
+  # fresh tmux server). The first interactive shell reads those binaries + eval
+  # caches into the OS page cache (detached &!, never blocks) so every later shell's
+  # drain hits warm cache. Boot-scoped guard: marker mtime vs kern.boottime epoch.
+  () {
+    local marker="${TMPDIR:-/tmp}/.zsh-prewarm.$UID" boot
+    boot=$(sysctl -n kern.boottime 2>/dev/null); boot=${boot#*sec = }; boot=${boot%%,*}
+    (( ${$(stat -f%m "$marker" 2>/dev/null):-0} > ${boot:-0} )) && return
+    : >| "$marker"
+    {
+      setopt null_glob
+      local t p
+      for t in atuin zoxide direnv gh op wrangler wt fnm; do
+        p=$(whence -p "$t" 2>/dev/null) && [[ -n "$p" ]] && cat "$p"
+      done
+      cat ~/.cache/zsh-eval-cache/*.zwc ~/.zcompdump
+    } </dev/null >/dev/null 2>&1 &!
+  }
+
   # Async inits: first prompt renders before these spawn their per-shell binaries
   # (atuin sources $(atuin uuid); direnv's precmd spawns `direnv export`) — cold-cache
   # execs that stall seconds. Hooks go live on first zle-idle, before any keystroke.
