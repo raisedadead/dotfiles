@@ -41,9 +41,11 @@ sketchybar --add event aerospace_workspace_change
 sketchybar --add event aerospace_mode_change
 
 for sid in "${WORKSPACES[@]}"; do
+  if [ "$sid" -ge 5 ]; then space_draw=off; else space_draw=on; fi
   sketchybar --add item "space.$sid" left \
     --subscribe "space.$sid" aerospace_workspace_change front_app_switched \
     --set "space.$sid" \
+      drawing="$space_draw" \
       icon="$sid" \
       icon.font="$FONT:Bold:14.0" \
       icon.color="$OVERLAY2" \
