@@ -3,7 +3,7 @@ source "$HOME/.config/sketchybar/colors.sh"
 
 NEXT=""
 if command -v icalBuddy >/dev/null 2>&1; then
-	NEXT="$(icalBuddy \
+	NEXT="$(timeout 10 icalBuddy \
 		-eep "notes,url,location,attendees" \
 		-iep "datetime,title" \
 		-df "" -tf "%H:%M" \

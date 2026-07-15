@@ -82,7 +82,15 @@ sketchybar --add item clock right \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
     label.font.features=tnum \
-    script="$PLUGIN_DIR/clock.sh"
+    popup.background.color="$SURFACE0" \
+    popup.background.corner_radius=8 \
+    popup.background.border_width=2 \
+    popup.background.border_color="$SURFACE2" \
+    popup.horizontal=off \
+    popup.align=right \
+    popup.y_offset=2 \
+    script="$PLUGIN_DIR/clock.sh" \
+    click_script="$PLUGIN_DIR/calendar_popup.sh"
 
 sketchybar --add item calendar right \
   --set calendar \
