@@ -10,15 +10,15 @@ Running)
 		jq -r 'first((.Peer // {})[] | select(.ExitNode == true) | .DNSName) // empty' 2>/dev/null |
 		cut -d. -f1)"
 	if [ -n "$EXIT_NODE" ]; then
-		sketchybar --set "$NAME" icon= icon.color="$MAUVE" label="$EXIT_NODE"
+		sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$MAUVE" label="$EXIT_NODE"
 	else
-		sketchybar --set "$NAME" icon= icon.color="$GREEN" label="on"
+		sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$GREEN" label="on"
 	fi
 	;;
 Stopped | NeedsLogin | NoState | "")
-	sketchybar --set "$NAME" icon= icon.color="$OVERLAY0" label="off"
+	sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$OVERLAY0" label="off"
 	;;
 *)
-	sketchybar --set "$NAME" icon= icon.color="$YELLOW" label="$STATE"
+	sketchybar --set "$NAME" icon="$ICON_NET" icon.color="$YELLOW" label="$STATE"
 	;;
 esac

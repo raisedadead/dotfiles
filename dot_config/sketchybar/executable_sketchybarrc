@@ -77,7 +77,7 @@ sketchybar --add item front_app center \
 sketchybar --add item clock right \
   --set clock \
     update_freq=10 \
-    icon= \
+    icon="$ICON_CLOCK" \
     icon.color="$SAPPHIRE" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
@@ -94,8 +94,8 @@ sketchybar --add item clock right \
 
 sketchybar --add item calendar right \
   --set calendar \
-    update_freq=300 \
-    icon= \
+    update_freq=120 \
+    icon="$ICON_CALENDAR" \
     icon.color="$PEACH" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
@@ -104,7 +104,7 @@ sketchybar --add item calendar right \
 sketchybar --add item weather right \
   --set weather \
     update_freq=900 \
-    icon= \
+    icon="$ICON_WEATHER" \
     icon.color="$SKY" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
@@ -114,7 +114,7 @@ sketchybar --add item tailscale right \
   --subscribe tailscale system_woke \
   --set tailscale \
     update_freq=15 \
-    icon= \
+    icon="$ICON_NET" \
     icon.color="$GREEN" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
@@ -123,7 +123,7 @@ sketchybar --add item tailscale right \
 sketchybar --add item cpu right \
   --set cpu \
     update_freq=5 \
-    icon= \
+    icon="$ICON_CPU" \
     icon.color="$GREEN" \
     icon.font="$ICON_FONT:Regular:13.0" \
     label.font="$FONT:Regular:12.0" \
