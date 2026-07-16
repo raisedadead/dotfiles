@@ -9,26 +9,6 @@
 # Performance profiling (set ZPROF=true to enable)
 [[ "$ZPROF" = true ]] && zmodload zsh/zprof
 
-# TEMPORARY cold-start TTI trace. Enable: touch ~/.tti-trace-on — logs per-segment
-# ms to /tmp/tti.log. No-op (single empty fn call) when marker absent. Remove block
-# after diagnosis.
-if [[ -f ~/.tti-trace-on ]]; then
-  zmodload zsh/datetime
-  autoload -Uz add-zsh-hook
-  typeset -g _TTI_T0=$EPOCHREALTIME _TTI_TP=$EPOCHREALTIME
-  _tti() {
-    printf '%8.1f +%7.1f  %s\n' \
-      $(( (EPOCHREALTIME-_TTI_T0)*1000 )) $(( (EPOCHREALTIME-_TTI_TP)*1000 )) "$1" >> /tmp/tti.log
-    _TTI_TP=$EPOCHREALTIME
-  }
-  _tti_prompt_ready() { _tti prompt-ready; add-zsh-hook -d precmd _tti_prompt_ready; unfunction _tti_prompt_ready; }
-  add-zsh-hook precmd _tti_prompt_ready
-  print -r -- "---- $(strftime '%Y-%m-%d %H:%M:%S' $EPOCHSECONDS) tmux=${TMUX:+1} ----" >> /tmp/tti.log
-  _tti start
-else
-  _tti() { }
-fi
-
 #-----------------------------------------------------------
 # Core Settings
 #-----------------------------------------------------------
@@ -128,7 +108,6 @@ bindkey '^[[1;4D' beginning-of-line # Alt+Shift+Left: beginning of line
 if can_haz oh-my-posh; then
   eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
 fi
-_tti omp-init
 
 #-----------------------------------------------------------
 # Plugin Manager
@@ -155,7 +134,6 @@ zsh-defer source ~/.fzf.zshrc
 # Load completions before compinit (per zsh-completions guidelines)
 zinit light zsh-users/zsh-completions
 zinit light wbingli/zsh-claudecode-completion
-_tti zinit-sync
 
 # Add Homebrew completions to FPATH before compinit
 [[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"
@@ -173,7 +151,6 @@ if [[ -f "$zcomp" ]]; then
 else
   compinit -d "$zcomp"
 fi
-_tti compinit
 # (deferred full rebuild moved to the background maintenance block below)
 
 # FZF tab (must load after compinit but before widget-wrapping plugins)
@@ -222,8 +199,12 @@ if [[ -o interactive ]]; then
   # drain hits warm cache. Boot-scoped guard: marker mtime vs kern.boottime epoch.
   () {
     local marker="${TMPDIR:-/tmp}/.zsh-prewarm.$UID" boot
-    boot=$(sysctl -n kern.boottime 2>/dev/null); boot=${boot#*sec = }; boot=${boot%%,*}
-    (( ${$(stat -f%m "$marker" 2>/dev/null):-0} > ${boot:-0} )) && return
+    local -a _mt
+    zmodload -F zsh/stat b:zstat 2>/dev/null
+    if zstat -A _mt +mtime "$marker" 2>/dev/null; then
+      boot=$(sysctl -n kern.boottime 2>/dev/null); boot=${boot#*sec = }; boot=${boot%%,*}
+      (( _mt[1] > ${boot:-0} )) && return
+    fi
     : >| "$marker"
     {
       setopt null_glob
@@ -240,10 +221,8 @@ if [[ -o interactive ]]; then
   # execs that stall seconds. Hooks go live on first zle-idle, before any keystroke.
   # Trade: a shell opened inside a direnv dir loads .envrc one precmd late.
   zsh-defer cached_evalz atuin "atuin init zsh --disable-up-arrow"
-  zsh-defer _tti d-atuin
   zsh-defer cached_evalz zoxide "zoxide init --cmd cd --hook pwd zsh"
   zsh-defer cached_evalz direnv "direnv hook zsh"
-  zsh-defer _tti d-cd-hooks
 
   # Completions only matter at first Tab, not first keystroke — defer off the
   # critical path. zsh-defer (q)-quotes each arg and evals it verbatim on zle idle.
@@ -254,7 +233,6 @@ if [[ -o interactive ]]; then
   zsh-defer cached_evalz wt "wt shell-init zsh"
   zsh-defer cached_evalz bd "bd completion zsh"
   zsh-defer compdef _home home
-  zsh-defer _tti d-completions
 fi
 
 # File sourcing
@@ -284,12 +262,11 @@ zsh-defer -c '[[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh'
   local -a _c=( ~/.cache/oh-my-posh/(shell|zsh).*.omp.cache(om) )
   (( $#_c > 50 )) && rm -f "${_c[51,-1]}"
 } >/dev/null 2>&1 &!
-zsh-defer _tti d-done
 
 # Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
 # fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
 export PATH="/opt/homebrew/bin:$PATH"
-cached_evalz fnm "fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet"; _tti fnm
+zsh-defer cached_evalz fnm "fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet"
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
