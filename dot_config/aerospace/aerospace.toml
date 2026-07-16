@@ -23,7 +23,7 @@ on-mode-changed = [
 ]
 automatically-unhide-macos-hidden-apps = false
 
-persistent-workspaces = ['1', '2', '3', '4']
+persistent-workspaces = ['1', '2', '3', '4', '5']
 
 [key-mapping]
 preset = 'qwerty'
@@ -33,8 +33,8 @@ inner.horizontal = 12
 inner.vertical = 12
 outer.left = 12
 outer.right = 12
-outer.bottom = 48
 outer.top = 12
+outer.bottom = 60
 
 [mode.main.binding]
 # Disable macOS hide: aerospace moves workspace-inactive windows off-screen
@@ -58,14 +58,12 @@ cmd-ctrl-2 = 'workspace 2'
 cmd-ctrl-3 = 'workspace 3'
 cmd-ctrl-4 = 'workspace 4'
 cmd-ctrl-5 = 'workspace 5'
-cmd-ctrl-6 = 'workspace 6'
 
 cmd-ctrl-shift-1 = 'move-node-to-workspace 1 --focus-follows-window'
 cmd-ctrl-shift-2 = 'move-node-to-workspace 2 --focus-follows-window'
 cmd-ctrl-shift-3 = 'move-node-to-workspace 3 --focus-follows-window'
 cmd-ctrl-shift-4 = 'move-node-to-workspace 4 --focus-follows-window'
 cmd-ctrl-shift-5 = 'move-node-to-workspace 5 --focus-follows-window'
-cmd-ctrl-shift-6 = 'move-node-to-workspace 6 --focus-follows-window'
 
 cmd-ctrl-tab = 'workspace-back-and-forth'
 cmd-ctrl-leftSquareBracket = 'workspace prev'
@@ -92,22 +90,18 @@ l = ['join-with right', 'mode main']
 minus = 'resize smart -50'
 equal = 'resize smart +50'
 
-# ============================================================================
-# Window rules. First matching callback wins (check-further-callbacks = false
-# by default), so ordering is: float allowlist, then per-app workspace
-# assignment, then catch-all. Anything not floated tiles by default.
-# ============================================================================
-
 [[on-window-detected]]
 if = '''
 test %{app-bundle-id} = com.apple.systempreferences \
   || test %{app-bundle-id} = com.apple.calculator \
   || test %{app-bundle-id} = com.apple.ActivityMonitor \
   || test %{app-bundle-id} = com.apple.finder \
-  || test %{app-bundle-id} = us.zoom.xos \
   || test %{app-bundle-id} = com.1password.1password
 '''
-run = ['layout floating', 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh']
+run = [
+  'layout floating',
+  'exec-and-forget ~/.config/aerospace/scripts/center-window.sh',
+]
 
 # Menu-bar popover apps: float in place so the catch-all rule can't yank them
 # to workspace 1 on every click. No centering — keep them under their anchor.
@@ -120,19 +114,17 @@ if = 'test %{app-bundle-id} = net.imput.helium'
 run = 'move-node-to-workspace 2'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} = com.mitchellh.ghostty'
+if = '''
+test %{app-bundle-id} = com.mitchellh.ghostty \
+  || test %{app-bundle-id} = com.microsoft.VSCode
+'''
 run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} = com.microsoft.VSCode'
-run = 'move-node-to-workspace 3'
-
-[[on-window-detected]]
-if = 'test %{app-bundle-id} = com.readdle.SparkDesktop'
-run = 'move-node-to-workspace 4'
-
-[[on-window-detected]]
-if = 'test %{app-bundle-id} = com.spotify.client'
+if = '''
+test %{app-bundle-id} = com.readdle.SparkDesktop \
+  || test %{app-bundle-id} = com.spotify.client
+'''
 run = 'move-node-to-workspace 4'
 
 # Startup-only catch-all: gather any unassigned window into workspace 1 when
