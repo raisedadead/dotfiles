@@ -1,170 +1,55 @@
-#!/usr/bin/env bash
+#!/usr/bin/env lua
+local home = os.getenv("HOME")
+package.cpath = package.cpath .. ";" .. home .. "/.local/share/sketchybar_lua/?.so"
+package.path = package.path .. ";" .. home .. "/.config/sketchybar/lua/?.lua"
 
-CONFIG_DIR="$HOME/.config/sketchybar"
-PLUGIN_DIR="$CONFIG_DIR/plugins"
-source "$CONFIG_DIR/colors.sh"
-source "$CONFIG_DIR/icons.sh"
+sbar = require("sketchybar")
+local colors = require("colors")
 
-AEROSPACE="$(command -v aerospace || echo /opt/homebrew/bin/aerospace)"
-WORKSPACES=(1 2 3 4 5 6)
+sbar.begin_config()
+sbar.hotload(true)
 
-sketchybar --bar \
-  position=bottom \
-  height=38 \
-  blur_radius=30 \
-  color="$BAR_COLOR" \
-  padding_left=8 \
-  padding_right=8 \
-  corner_radius=0 \
-  y_offset=0 \
-  margin=0 \
-  topmost=window \
-  sticky=on \
-  display=all
+sbar.bar({
+	position = "bottom",
+	height = 38,
+	blur_radius = 30,
+	color = colors.bar,
+	padding_left = 8,
+	padding_right = 8,
+	corner_radius = 0,
+	y_offset = 0,
+	margin = 0,
+	topmost = "window",
+	sticky = "on",
+	display = "all",
+})
 
-sketchybar --default \
-  updates=when_shown \
-  icon.font="$ICON_FONT:Regular:15.0" \
-  icon.color="$TEXT" \
-  label.font="$FONT:Regular:13.0" \
-  label.color="$TEXT" \
-  background.height=24 \
-  background.corner_radius=6 \
-  padding_left=3 \
-  padding_right=3 \
-  label.padding_left=4 \
-  label.padding_right=8 \
-  icon.padding_left=8 \
-  icon.padding_right=4
+sbar.default({
+	updates = "when_shown",
+	icon = {
+		font = { family = colors.icon_font, style = "Regular", size = 15.0 },
+		color = colors.text,
+		padding_left = 8,
+		padding_right = 4,
+	},
+	label = {
+		font = { family = colors.font, style = "Regular", size = 13.0 },
+		color = colors.text,
+		padding_left = 4,
+		padding_right = 8,
+	},
+	background = { height = 24, corner_radius = 6 },
+	padding_left = 3,
+	padding_right = 3,
+})
 
-sketchybar --add event aerospace_workspace_change
-sketchybar --add event aerospace_mode_change
+sbar.add("event", "aerospace_workspace_change")
+sbar.add("event", "aerospace_mode_change")
 
-for sid in "${WORKSPACES[@]}"; do
-  if [ "$sid" -ge 5 ]; then space_draw=off; else space_draw=on; fi
-  sketchybar --add item "space.$sid" left \
-    --subscribe "space.$sid" aerospace_workspace_change front_app_switched \
-    --set "space.$sid" \
-      updates=on \
-      drawing="$space_draw" \
-      icon="$sid" \
-      icon.font="$FONT:Bold:14.0" \
-      icon.color="$OVERLAY2" \
-      icon.padding_left=9 \
-      icon.padding_right=4 \
-      label.font="sketchybar-app-font:Regular:14.0" \
-      label.color="$OVERLAY2" \
-      label.padding_left=0 \
-      label.padding_right=9 \
-      update_freq=10 \
-      background.color="$MAUVE" \
-      background.corner_radius=6 \
-      background.height=24 \
-      background.drawing=off \
-      click_script="$AEROSPACE workspace $sid" \
-      script="$PLUGIN_DIR/aerospace.sh $sid"
-done
+require("items.spaces")
+require("items.mode")
+require("items.front_app")
+require("items.widgets")
 
-__nerd_icon service
-sketchybar --add item mode_indicator left \
-  --subscribe mode_indicator aerospace_mode_change \
-  --set mode_indicator \
-    updates=on \
-    drawing=off \
-    icon="$icon_result" \
-    icon.font="$ICON_FONT:Regular:13.0" \
-    icon.color="$CRUST" \
-    icon.padding_left=9 \
-    icon.padding_right=4 \
-    label="SERVICE" \
-    label.font="$FONT:Bold:12.0" \
-    label.color="$CRUST" \
-    label.padding_right=9 \
-    background.color="$RED" \
-    background.corner_radius=6 \
-    background.height=24 \
-    script="$PLUGIN_DIR/mode.sh"
-
-sketchybar --add item front_app center \
-  --subscribe front_app front_app_switched \
-  --set front_app \
-    icon.font="sketchybar-app-font:Regular:16.0" \
-    icon.color="$MAUVE" \
-    icon.padding_left=10 \
-    icon.padding_right=4 \
-    label.font="$FONT:Bold:13.0" \
-    label.color="$TEXT" \
-    background.color="$SURFACE1" \
-    background.corner_radius=6 \
-    background.height=26 \
-    script="$PLUGIN_DIR/front_app.sh"
-
-__nerd_icon clock
-sketchybar --add item clock right \
-  --set clock \
-    update_freq=10 \
-    icon="$icon_result" \
-    icon.color="$SAPPHIRE" \
-    icon.font="$ICON_FONT:Regular:13.0" \
-    label.font="$FONT:Regular:12.0" \
-    label.font.features=tnum \
-    popup.background.color="$SURFACE0" \
-    popup.background.corner_radius=8 \
-    popup.background.border_width=2 \
-    popup.background.border_color="$SURFACE2" \
-    popup.horizontal=off \
-    popup.align=right \
-    popup.y_offset=2 \
-    script="$PLUGIN_DIR/clock.sh" \
-    click_script="$PLUGIN_DIR/calendar_popup.sh"
-
-__nerd_icon calendar
-sketchybar --add item calendar right \
-  --set calendar \
-    update_freq=120 \
-    icon="$icon_result" \
-    icon.color="$PEACH" \
-    icon.font="$ICON_FONT:Regular:13.0" \
-    label.font="$FONT:Regular:12.0" \
-    script="$PLUGIN_DIR/calendar.sh"
-
-__nerd_icon weather
-sketchybar --add item weather right \
-  --set weather \
-    update_freq=900 \
-    icon="$icon_result" \
-    icon.color="$SKY" \
-    icon.font="$ICON_FONT:Regular:13.0" \
-    label.font="$FONT:Regular:12.0" \
-    script="$PLUGIN_DIR/weather.sh"
-
-__nerd_icon net
-sketchybar --add item tailscale right \
-  --subscribe tailscale system_woke \
-  --set tailscale \
-    update_freq=15 \
-    icon="$icon_result" \
-    icon.color="$GREEN" \
-    icon.font="$ICON_FONT:Regular:13.0" \
-    label.font="$FONT:Regular:12.0" \
-    script="$PLUGIN_DIR/tailscale.sh"
-
-__nerd_icon cpu
-sketchybar --add item cpu right \
-  --set cpu \
-    update_freq=5 \
-    icon="$icon_result" \
-    icon.color="$GREEN" \
-    icon.font="$ICON_FONT:Regular:13.0" \
-    label.font="$FONT:Regular:12.0" \
-    script="$PLUGIN_DIR/cpu.sh"
-
-sketchybar --add bracket status cpu tailscale weather calendar clock \
-  --set status \
-    background.color="$SURFACE0" \
-    background.corner_radius=8 \
-    background.height=28
-
-sketchybar --hotload on
-
-sketchybar --update
+sbar.end_config()
+sbar.event_loop()

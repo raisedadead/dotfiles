@@ -8,7 +8,7 @@
     url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf"
     refreshPeriod = "720h"
 
-[".config/sketchybar/icon_map.sh"]
+[".config/sketchybar/lua/icon_map.lua"]
     type = "file"
-    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/icon_map.sh"
+    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/icon_map.lua"
     refreshPeriod = "720h"
