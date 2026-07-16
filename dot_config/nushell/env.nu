@@ -10,7 +10,6 @@ $env.LC_CTYPE = "en_US.UTF-8"
 $env.LC_ALL = "en_US.UTF-8"
 $env.XDG_CONFIG_HOME = ($env.HOME | path join ".config")
 $env.RIPGREP_CONFIG_PATH = ($env.XDG_CONFIG_HOME | path join "ripgrep" "config")
-$env.STARSHIP_LOG = "error"
 
 $env.HOMEBREW_PREFIX = "/opt/homebrew"
 $env.HOMEBREW_CELLAR = "/opt/homebrew/Cellar"
