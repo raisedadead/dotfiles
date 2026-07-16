@@ -37,6 +37,12 @@ outer.bottom = 48
 outer.top = 12
 
 [mode.main.binding]
+# Disable macOS hide: aerospace moves workspace-inactive windows off-screen
+# instead of hiding; cmd-h breaks that bookkeeping.
+# https://nikitabobko.github.io/AeroSpace/goodies#disable-hide-app
+cmd-h = []
+cmd-alt-h = []
+
 cmd-ctrl-h = 'focus left'
 cmd-ctrl-j = 'focus down'
 cmd-ctrl-k = 'focus up'
