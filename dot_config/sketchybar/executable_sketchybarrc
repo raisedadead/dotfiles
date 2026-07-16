@@ -57,7 +57,6 @@ sbar.add("bracket", "left_island", {
 	"space.3",
 	"space.4",
 	"space.5",
-	"space.6",
 	"mode_indicator",
 }, {
 	background = {
