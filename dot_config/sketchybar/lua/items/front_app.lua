@@ -13,7 +13,13 @@ local front_app = sbar.add("item", "front_app", {
 		font = { family = colors.font, style = "Bold", size = 13.0 },
 		color = colors.text,
 	},
-	background = { color = colors.surface1, corner_radius = 6, height = 26 },
+	background = {
+		color = colors.island,
+		corner_radius = 12,
+		height = 32,
+		border_width = 1,
+		border_color = colors.island_border,
+	},
 })
 
 front_app:subscribe("front_app_switched", function(env)

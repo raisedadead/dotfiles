@@ -11,14 +11,14 @@ sbar.hotload(true)
 
 sbar.bar({
 	position = "bottom",
-	height = 38,
-	blur_radius = 30,
+	height = 40,
+	blur_radius = 0,
 	color = colors.bar,
-	padding_left = 8,
-	padding_right = 8,
+	padding_left = 10,
+	padding_right = 10,
 	corner_radius = 0,
-	y_offset = 0,
-	margin = 0,
+	y_offset = 6,
+	margin = 10,
 	topmost = "window",
 	sticky = "on",
 	display = "all",
@@ -50,6 +50,24 @@ require("items.spaces")
 require("items.mode")
 require("items.front_app")
 require("items.widgets")
+
+sbar.add("bracket", "left_island", {
+	"space.1",
+	"space.2",
+	"space.3",
+	"space.4",
+	"space.5",
+	"space.6",
+	"mode_indicator",
+}, {
+	background = {
+		color = colors.island,
+		corner_radius = 12,
+		height = 32,
+		border_width = 1,
+		border_color = colors.island_border,
+	},
+})
 
 sbar.end_config()
 sbar.event_loop()

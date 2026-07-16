@@ -16,10 +16,7 @@ local function style(space, sid, strip, n)
 			label = { string = strip, color = colors.crust },
 		})
 	else
-		local draw = "on"
-		if not persistent[sid] and n == 0 then
-			draw = "off"
-		end
+		local draw = n > 0 and "on" or "off"
 		space:set({
 			drawing = draw,
 			background = { drawing = "off" },

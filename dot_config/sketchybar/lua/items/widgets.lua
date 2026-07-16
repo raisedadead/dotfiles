@@ -155,5 +155,11 @@ cpu:subscribe({ "routine", "forced" }, function()
 end)
 
 sbar.add("bracket", "status", { "cpu", "tailscale", "weather", "calendar", "clock" }, {
-	background = { color = colors.surface0, corner_radius = 8, height = 28 },
+	background = {
+		color = colors.island,
+		corner_radius = 12,
+		height = 32,
+		border_width = 1,
+		border_color = colors.island_border,
+	},
 })

@@ -27,7 +27,9 @@ return {
 	mantle = 0xff181825,
 	crust = 0xff11111b,
 
-	bar = 0xe61e1e2e,
+	bar = 0x00000000,
+	island = 0xf0181825,
+	island_border = 0xff313244,
 
 	font = "Berkeley Mono",
 	icon_font = "Symbols Nerd Font",
