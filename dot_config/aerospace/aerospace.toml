@@ -2,7 +2,7 @@ config-version = 2
 
 after-startup-command = [
   'exec-and-forget /opt/homebrew/bin/sketchybar',
-  'exec-and-forget /opt/homebrew/bin/borders active_color=0xffcba6f7 inactive_color=0xff585b70 width=5.0 style=round hidpi=on',
+  'exec-and-forget /opt/homebrew/bin/borders',
 ]
 
 exec-on-workspace-change = [
