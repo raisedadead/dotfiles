@@ -207,8 +207,6 @@
   keybinds:
     - name: Quick terminal (global)
       key: C-"`"
-    - name: Literal newline
-      key: S-Enter
     - name: Literal CR
       key: C-Enter
     - name: Copy URL
