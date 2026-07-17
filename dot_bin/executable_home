@@ -48,14 +48,52 @@ _cm() {
   fi
 }
 
+# Runtime-owned settings sync. SOURCE is canonical: only keys the CLI writes at
+# runtime (RUNTIME_KEYS, e.g. `model` via /model) flow live->source; everything
+# else flows source->live via force-apply (headless apply skips these files on a
+# TTY-confirm prompt otherwise). Dirty-guard: an uncommitted source edit means an
+# operator is mid-change — back off entirely rather than race the apply order
+# (the blanket full-file re-add used to stomp such edits with pre-apply live state).
 _capture_runtime_owned() {
   has_priv || return 0
+  command -v python3 >/dev/null 2>&1 || { p "warn: python3 missing, skipping runtime-owned sync"; return 0; }
   local f sp
   for f in "${PRIV_RUNTIME_OWNED[@]}"; do
     [[ -e "$f" ]] || continue
     sp=$(chezmoi --source "$PRIV" source-path "$f" 2>/dev/null) || continue
-    [[ -n "$(git -C "$PRIV" status --porcelain -- "$sp" 2>/dev/null)" ]] && continue
-    _cm private re-add "$f" >/dev/null 2>&1
+    if [[ -n "$(git -C "$PRIV" status --porcelain -- "$sp" 2>/dev/null)" ]]; then
+      p "skip runtime-owned sync: $(basename "$f") has uncommitted source edits"
+      continue
+    fi
+    python3 - "$f" "$sp" <<'PYEOF'
+import json, sys
+
+RUNTIME_KEYS = ["model"]
+live_path, src_path = sys.argv[1], sys.argv[2]
+try:
+    src = json.load(open(src_path, encoding="utf-8"))
+except (OSError, ValueError):
+    sys.stderr.write("dotfiles · warn: source %s invalid/unreadable, skipping apply\n" % src_path)
+    sys.exit(2)
+try:
+    live = json.load(open(live_path, encoding="utf-8"))
+except (OSError, ValueError):
+    sys.stderr.write("dotfiles · warn: live %s corrupt, healing from source\n" % live_path)
+    sys.exit(0)
+changed = False
+for key in RUNTIME_KEYS:
+    v = live.get(key)
+    if isinstance(v, str) and v and v != src.get(key):
+        src[key] = v
+        changed = True
+if changed:
+    with open(src_path, "w") as fh:
+        json.dump(src, fh, indent=2)
+        fh.write("\n")
+PYEOF
+    [[ $? -eq 2 ]] && continue
+    _cm private apply --force "$f" >/dev/null 2>&1 ||
+      p "warn: force-apply of $(basename "$f") failed — run 'home apply' manually"
   done
 }
 
