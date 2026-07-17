@@ -48,12 +48,12 @@ _cm() {
   fi
 }
 
-# Runtime-owned settings sync. SOURCE is canonical: only keys the CLI writes at
-# runtime (RUNTIME_KEYS, e.g. `model` via /model) flow live->source; everything
-# else flows source->live via force-apply (headless apply skips these files on a
-# TTY-confirm prompt otherwise). Dirty-guard: an uncommitted source edit means an
-# operator is mid-change — back off entirely rather than race the apply order
-# (the blanket full-file re-add used to stomp such edits with pre-apply live state).
+# Runtime-owned settings sync. SOURCE is fully canonical: force-apply source->live
+# for files the CLI mutates at runtime (headless apply skips them on a TTY-confirm
+# prompt otherwise). RUNTIME_KEYS is the harvest allow-list for live->source
+# write-back; kept empty because harvesting `model` fought the pinned value every
+# apply (/model stores a short alias that overwrote the full pinned id). Manage
+# model in source; /model is session-only. Dirty-guard: skip if source uncommitted.
 _capture_runtime_owned() {
   has_priv || return 0
   command -v python3 >/dev/null 2>&1 || { p "warn: python3 missing, skipping runtime-owned sync"; return 0; }
@@ -68,7 +68,7 @@ _capture_runtime_owned() {
     python3 - "$f" "$sp" <<'PYEOF'
 import json, sys
 
-RUNTIME_KEYS = ["model"]
+RUNTIME_KEYS = []
 live_path, src_path = sys.argv[1], sys.argv[2]
 try:
     src = json.load(open(src_path, encoding="utf-8"))
