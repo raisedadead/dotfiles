@@ -14,7 +14,7 @@ set -uo pipefail
 PUB="$HOME/.dotfiles"
 PRIV="$HOME/.dotfiles-private"
 
-PRIV_RUNTIME_OWNED=("$HOME/.claude/settings.json")
+PRIV_RUNTIME_OWNED=("$HOME/.claude/settings.json" "$HOME/.pi/agent/settings.json")
 
 # Colors
 DIM=$'\e[0;90m'; GRN=$'\e[0;32m'; RED=$'\e[0;31m'; YLW=$'\e[0;33m'
