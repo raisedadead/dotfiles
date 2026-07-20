@@ -6,7 +6,7 @@ This half holds shell / tmux / ghostty / nvim / OMP and cross-tool integration. 
 
 ## Rules (non-obvious, not derivable from code)
 
-- **Always edit chezmoi source** (`~/.dotfiles/` or `~/.dotfiles-private/`), then `home apply` — never edit target (`~/.config/`, `~/.*`) directly
+- **Source-first re-add loop** — never edit the runtime target (`~/.config/`, `~/.*`) as the source of truth. The loop is: (1) edit chezmoi source (`~/.dotfiles/` or `~/.dotfiles-private/`); (2) `home apply` to deploy source to the runtime target; (3) validate the live/runtime config with the tool's own validator (see Validation section); (4) `home re-add` to capture the validated runtime back into source. Source stays canonical; re-add closes the loop and captures any normalization the tool applied to its own config
 - **keybinds.conf ↔ keyb.yml must stay in sync** — always update both when changing tmux bindings
 - **`_tmux_exit_code` must be first precmd** — captures `$?` before OMP modifies it
 - **tmux mouse selection is pane-aware** — drag selects within pane, copies to system clipboard via OSC 52; Shift+drag falls back to native Ghostty selection
