@@ -14,9 +14,6 @@ exec-on-workspace-change = [
 start-at-login = true
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
-accordion-padding = 0
-default-root-container-layout = 'tiles'
-default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 on-mode-changed = [
   'exec-and-forget /bin/bash -c "/opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)"',
@@ -71,7 +68,8 @@ cmd-ctrl-rightSquareBracket = 'workspace next'
 cmd-ctrl-m = 'fullscreen'
 cmd-ctrl-t = 'layout tiles accordion'
 cmd-ctrl-f = 'layout floating tiling'
-cmd-ctrl-c = 'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh'
+cmd-ctrl-c = 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh'
+cmd-ctrl-r = 'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh'
 cmd-ctrl-minus = 'resize smart -50'
 cmd-ctrl-equal = 'resize smart +50'
 cmd-ctrl-semicolon = 'mode service'
@@ -123,7 +121,9 @@ run = 'move-node-to-workspace 3'
 [[on-window-detected]]
 if = '''
 test %{app-bundle-id} = com.readdle.SparkDesktop \
-  || test %{app-bundle-id} = com.spotify.client
+  || test %{app-bundle-id} = com.spotify.client \
+  || test %{app-bundle-id} = ru.keepcoder.Telegram \
+  || test %{app-bundle-id} = net.whatsapp.WhatsApp
 '''
 run = 'move-node-to-workspace 4'
 
