@@ -88,29 +88,38 @@ l = ['join-with right', 'mode main']
 minus = 'resize smart -50'
 equal = 'resize smart +50'
 
+# Floating and Centered
 [[on-window-detected]]
 if = '''
 test %{app-bundle-id} = com.apple.systempreferences \
-  || test %{app-bundle-id} = com.apple.calculator \
+  || test %{app-bundle-id} = cc.ffitch.shottr \
+  || test %{app-bundle-id} = com.1password.1password \
   || test %{app-bundle-id} = com.apple.ActivityMonitor \
+  || test %{app-bundle-id} = com.apple.calculator \
   || test %{app-bundle-id} = com.apple.finder \
-  || test %{app-bundle-id} = com.1password.1password
+  || test %{app-bundle-id} = com.apple.MobileSMS \
+  || test %{app-bundle-id} = com.elgato.StreamDeck \
+  || test %{app-bundle-id} = com.tw93.MoleApp
 '''
 run = [
   'layout floating',
   'exec-and-forget ~/.config/aerospace/scripts/center-window.sh',
 ]
 
-# Menu-bar popover apps: float in place so the catch-all rule can't yank them
-# to workspace 1 on every click. No centering — keep them under their anchor.
+# Floating and (non-centered)
 [[on-window-detected]]
-if = 'test %{app-bundle-id} = com.sindresorhus.Dato'
+if = '''
+test %{app-bundle-id} = com.sindresorhus.Dato \
+|| test %{app-bundle-id} = com.apple.ScreenContinuity
+'''
 run = 'layout floating'
 
+# Workspace 2: Helium
 [[on-window-detected]]
 if = 'test %{app-bundle-id} = net.imput.helium'
 run = 'move-node-to-workspace 2'
 
+# Workspace 3: Development
 [[on-window-detected]]
 if = '''
 test %{app-bundle-id} = com.mitchellh.ghostty \
@@ -118,6 +127,7 @@ test %{app-bundle-id} = com.mitchellh.ghostty \
 '''
 run = 'move-node-to-workspace 3'
 
+# Workspace 4: Communication
 [[on-window-detected]]
 if = '''
 test %{app-bundle-id} = com.readdle.SparkDesktop \
