@@ -1,7 +1,7 @@
 - name: tmux › navigation (smart-splits)
   keybinds:
     - name: Navigate left / down / up / right
-      key: C-M-h / C-M-j / C-M-k / C-M-l
+      key: M-H / M-J / M-K / M-L
     - name: Resize left / down / up / right
       key: C-Space H / J / K / L
 
@@ -151,7 +151,7 @@
     - name: Copy and cancel (tmux-yank)
       key: y
     - name: Navigate panes
-      key: C-M-h / C-M-j / C-M-k / C-M-l
+      key: M-H / M-J / M-K / M-L
 
 - name: tmux › mouse
   keybinds:
@@ -270,7 +270,7 @@
     - name: Forward / backward word
       key: M-l / M-h
     - name: Beginning / end of line
-      key: M-L / M-H
+      key: M-a / M-e
     - name: Beginning / end of line
       key: C-a / C-e
     - name: Forward / backward char

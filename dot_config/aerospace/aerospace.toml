@@ -40,53 +40,58 @@ outer.bottom = 60
 cmd-h = []
 cmd-alt-h = []
 
-cmd-ctrl-h = 'focus left'
-cmd-ctrl-j = 'focus down'
-cmd-ctrl-k = 'focus up'
-cmd-ctrl-l = 'focus right'
+ctrl-alt-h = 'focus left'
+ctrl-alt-j = 'focus down'
+ctrl-alt-k = 'focus up'
+ctrl-alt-l = 'focus right'
+ctrl-alt-left = 'focus left'
+ctrl-alt-down = 'focus down'
+ctrl-alt-up = 'focus up'
+ctrl-alt-right = 'focus right'
 
-cmd-ctrl-shift-h = 'move left'
-cmd-ctrl-shift-j = 'move down'
-cmd-ctrl-shift-k = 'move up'
-cmd-ctrl-shift-l = 'move right'
+ctrl-alt-shift-h = 'move left'
+ctrl-alt-shift-j = 'move down'
+ctrl-alt-shift-k = 'move up'
+ctrl-alt-shift-l = 'move right'
+ctrl-alt-shift-left = 'move left'
+ctrl-alt-shift-down = 'move down'
+ctrl-alt-shift-up = 'move up'
+ctrl-alt-shift-right = 'move right'
 
-cmd-ctrl-1 = 'workspace 1'
-cmd-ctrl-2 = 'workspace 2'
-cmd-ctrl-3 = 'workspace 3'
-cmd-ctrl-4 = 'workspace 4'
-cmd-ctrl-5 = 'workspace 5'
+ctrl-alt-1 = 'workspace 1'
+ctrl-alt-2 = 'workspace 2'
+ctrl-alt-3 = 'workspace 3'
+ctrl-alt-4 = 'workspace 4'
+ctrl-alt-5 = 'workspace 5'
 
-cmd-ctrl-shift-1 = 'move-node-to-workspace 1 --focus-follows-window'
-cmd-ctrl-shift-2 = 'move-node-to-workspace 2 --focus-follows-window'
-cmd-ctrl-shift-3 = 'move-node-to-workspace 3 --focus-follows-window'
-cmd-ctrl-shift-4 = 'move-node-to-workspace 4 --focus-follows-window'
-cmd-ctrl-shift-5 = 'move-node-to-workspace 5 --focus-follows-window'
+ctrl-alt-shift-1 = 'move-node-to-workspace 1 --focus-follows-window'
+ctrl-alt-shift-2 = 'move-node-to-workspace 2 --focus-follows-window'
+ctrl-alt-shift-3 = 'move-node-to-workspace 3 --focus-follows-window'
+ctrl-alt-shift-4 = 'move-node-to-workspace 4 --focus-follows-window'
+ctrl-alt-shift-5 = 'move-node-to-workspace 5 --focus-follows-window'
 
-cmd-ctrl-tab = 'workspace-back-and-forth'
-cmd-ctrl-leftSquareBracket = 'workspace prev'
-cmd-ctrl-rightSquareBracket = 'workspace next'
-cmd-ctrl-m = 'fullscreen'
-cmd-ctrl-t = 'layout tiles accordion'
-cmd-ctrl-f = 'layout floating tiling'
-cmd-ctrl-c = 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh'
-cmd-ctrl-r = 'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh'
-cmd-ctrl-minus = 'resize smart -50'
-cmd-ctrl-equal = 'resize smart +50'
-cmd-ctrl-semicolon = 'mode service'
+ctrl-alt-tab = 'workspace-back-and-forth'
+ctrl-alt-leftSquareBracket = 'workspace prev'
+ctrl-alt-rightSquareBracket = 'workspace next'
+ctrl-alt-enter = 'fullscreen'
+ctrl-alt-c = 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh'
+ctrl-alt-f = 'layout floating tiling'
+ctrl-alt-slash = 'layout tiles horizontal vertical'
+ctrl-alt-comma = 'layout accordion horizontal vertical'
+ctrl-alt-r = 'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh'
+ctrl-alt-minus = 'resize smart -50'
+ctrl-alt-equal = 'resize smart +50'
+ctrl-alt-semicolon = 'mode service'
 
 [mode.service.binding]
 esc = ['reload-config', 'mode main']
 r = ['flatten-workspace-tree', 'mode main']
-f = ['layout floating tiling', 'mode main']
 backspace = ['close-all-windows-but-current', 'mode main']
 
 h = ['join-with left', 'mode main']
 j = ['join-with down', 'mode main']
 k = ['join-with up', 'mode main']
 l = ['join-with right', 'mode main']
-
-minus = 'resize smart -50'
-equal = 'resize smart +50'
 
 # Floating and Centered
 [[on-window-detected]]
