@@ -104,7 +104,8 @@ test %{app-bundle-id} = com.apple.systempreferences \
   || test %{app-bundle-id} = com.apple.finder \
   || test %{app-bundle-id} = com.apple.MobileSMS \
   || test %{app-bundle-id} = com.elgato.StreamDeck \
-  || test %{app-bundle-id} = com.tw93.MoleApp
+  || test %{app-bundle-id} = com.tw93.MoleApp \
+  || test %{app-bundle-id} = dev.kdrag0n.MacVirt
 '''
 run = [
   'layout floating',
