@@ -19,46 +19,6 @@ clock:subscribe({ "routine", "forced", "system_woke" }, function()
 	clock:set({ label = { string = os.date("%a %d %b  %H:%M") } })
 end)
 
-local battery = sbar.add("item", "battery", {
-	position = "right",
-	update_freq = 120,
-	icon = { color = colors.green, font = { size = 13.0 } },
-	label = { font = { size = 12.0 } },
-})
-
-local function battery_icon(pct)
-	if pct >= 90 then
-		return icons.bat_full
-	elseif pct >= 60 then
-		return icons.bat_75
-	elseif pct >= 35 then
-		return icons.bat_50
-	elseif pct >= 15 then
-		return icons.bat_25
-	end
-	return icons.bat_empty
-end
-
-battery:subscribe({ "routine", "forced", "power_source_change", "system_woke" }, function()
-	sbar.exec("pmset -g batt", function(out)
-		local s = tostring(out or "")
-		local pct = tonumber(s:match("(%d+)%%")) or 0
-		local charging = s:find("AC Power") ~= nil
-		local icon = charging and icons.bolt or battery_icon(pct)
-		local col = colors.green
-		if not charging then
-			if pct <= 15 then
-				col = colors.red
-			elseif pct <= 30 then
-				col = colors.yellow
-			else
-				col = colors.text
-			end
-		end
-		battery:set({ icon = { string = icon, color = col }, label = { string = pct .. "%" } })
-	end)
-end)
-
 local function agenda_row(i, icon_color, text, label_color)
 	sbar.add("item", "calendar.agenda." .. i, {
 		position = "popup.calendar",
@@ -165,66 +125,7 @@ end
 tailscale:subscribe({ "routine", "forced", "system_woke" }, tailscale_refresh)
 tailscale:subscribe("mouse.clicked", tailscale_refresh)
 
-local net = sbar.add("item", "net", {
-	position = "right",
-	updates = "on",
-	icon = { string = icons.speed, color = colors.sky, font = { size = 13.0 } },
-	label = { font = { size = 12.0, features = "tnum" } },
-})
-
-net:subscribe("system_stats", function(env)
-	local mbps = tonumber(env.NET_LINK) or 0
-	local label
-	if mbps >= 1000 then
-		label = string.format("%.1fG", mbps / 1000)
-	elseif mbps > 0 then
-		label = mbps .. "M"
-	else
-		label = "—"
-	end
-	net:set({
-		icon = { color = mbps > 0 and colors.sky or colors.overlay0 },
-		label = { string = label },
-	})
-end)
-
-local mem = sbar.add("item", "mem", {
-	position = "right",
-	updates = "on",
-	icon = { string = icons.mem, color = colors.teal, font = { size = 13.0 } },
-	label = { font = { size = 12.0 } },
-})
-
-mem:subscribe("system_stats", function(env)
-	local pct = tonumber(env.MEM) or 0
-	local col = colors.teal
-	if pct >= 85 then
-		col = colors.red
-	elseif pct >= 70 then
-		col = colors.yellow
-	end
-	mem:set({ icon = { color = col }, label = { string = pct .. "%" } })
-end)
-
-local cpu = sbar.add("item", "cpu", {
-	position = "right",
-	updates = "on",
-	icon = { string = icons.cpu, color = colors.green, font = { size = 13.0 } },
-	label = { font = { size = 12.0 } },
-})
-
-cpu:subscribe("system_stats", function(env)
-	local pct = tonumber(env.CPU) or 0
-	local col = colors.green
-	if pct >= 80 then
-		col = colors.red
-	elseif pct >= 50 then
-		col = colors.yellow
-	end
-	cpu:set({ icon = { color = col }, label = { string = pct .. "%" } })
-end)
-
-sbar.add("bracket", "status", { "cpu", "mem", "net", "tailscale", "calendar", "battery", "clock" }, {
+sbar.add("bracket", "status", { "tailscale", "calendar", "clock" }, {
 	background = {
 		color = colors.island,
 		corner_radius = 12,

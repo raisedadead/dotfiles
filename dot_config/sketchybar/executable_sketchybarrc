@@ -45,7 +45,6 @@ sbar.default({
 
 sbar.add("event", "aerospace_workspace_change")
 sbar.add("event", "aerospace_mode_change")
-sbar.add("event", "system_stats")
 
 require("items.spaces")
 require("items.mode")
@@ -70,5 +69,4 @@ sbar.add("bracket", "left_island", {
 })
 
 sbar.end_config()
-sbar.exec("pkill -x cpu_load >/dev/null 2>&1; " .. home .. "/.config/sketchybar/bin/cpu_load 5 &")
 sbar.event_loop()
