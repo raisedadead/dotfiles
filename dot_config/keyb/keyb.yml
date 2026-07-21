@@ -10,7 +10,7 @@
     - name: Split right
       key: M-d
     - name: Split down
-      key: M-S-D
+      key: M-D
     - name: Zoom pane
       key: M-S-Enter
     - name: Break pane → new window
@@ -25,7 +25,7 @@
     - name: Next window
       key: M-"`"
     - name: Previous window
-      key: M-S-"~"
+      key: M-"~"
     - name: Window 1-9
       key: M-1..9
     - name: Rename session
@@ -267,10 +267,10 @@
       key: C-f
     - name: Toggle vi mode
       key: C-z
-    - name: Forward / backward word
-      key: M-l / M-h
-    - name: Beginning / end of line
+    - name: Beginning / end of word
       key: M-a / M-e
+    - name: Beginning / end of line
+      key: M-A / M-E
     - name: Beginning / end of line
       key: C-a / C-e
     - name: Forward / backward char

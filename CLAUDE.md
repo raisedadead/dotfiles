@@ -24,7 +24,7 @@ This half holds shell / tmux / ghostty / nvim / OMP and cross-tool integration. 
 
 ## Cross-Tool Integration
 
-- **tmux ↔ neovim**: `C-M-h/j/k/l` forwarded via `@pane-is-vim` (requires smart-splits.nvim)
+- **tmux ↔ neovim**: `M-H/J/K/L` forwarded via `@pane-is-vim` (requires smart-splits.nvim)
 - **tmux ↔ zsh**: `_tmux_exit_code` precmd → `@last_exit_code` window option → status bar error dot
 - **tmux ↔ ghostty**: terminal features (hyperlinks, clipboard — no extkeys) + `macos-option-as-alt` for Alt binds. `terminal-features` reset with `set -su` before appending to prevent duplicates on config reload
 - **zsh ↔ yazi**: `C-f` widget opens yazi; `y()` wrapper handles cd-on-exit via temp cwd file
