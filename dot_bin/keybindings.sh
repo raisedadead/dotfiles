@@ -11,19 +11,3 @@ if command -v yazi &>/dev/null; then
 	zle -N _yazi_widget
 	bindkey '^f' _yazi_widget
 fi
-
-if command -v fzf &>/dev/null; then
-	# zle widget for ssh host selection
-	function _mrgsh_ssh_widget() {
-		local selected_host=$(_mrgsh_ssh "$LBUFFER")
-		if [ -n "$selected_host" ]; then
-			BUFFER="ssh ${selected_host}"
-			zle accept-line
-		fi
-		zle reset-prompt
-	}
-
-	# register zle widgets
-	zle -N _mrgsh_ssh_widget
-
-fi
