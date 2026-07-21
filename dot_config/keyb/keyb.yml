@@ -14,9 +14,9 @@
     - name: Zoom pane
       key: M-S-Enter
     - name: Break pane → new window
-      key: M-\ → 2
+      key: M-; → 2
     - name: Break pane → new session
-      key: M-\ → 3
+      key: M-; → 3
 
 - name: tmux › windows
   keybinds:
@@ -52,7 +52,7 @@
     - name: Unpark session
       key: M-u
     - name: Last session
-      key: M-\ → l
+      key: M-; → l
 
 - name: tmux › popups
   keybinds:
@@ -61,9 +61,9 @@
     - name: Lazygit
       key: M-g
     - name: Command menu
-      key: M-\
+      key: M-;
 
-- name: tmux › command menu (M-\)
+- name: tmux › command menu (M-;)
   keybinds:
     - name: Sync panes
       key: "1"
@@ -185,7 +185,7 @@
     - name: Toggle preview
       key: C-o
 
-- name: keybindings popup (M-\ → ?)
+- name: keybindings popup (M-; → ?)
   keybinds:
     - name: Next category
       key: Tab
