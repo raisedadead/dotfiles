@@ -6,7 +6,6 @@ show_hidden    = true
 show_symlink   = true
 scrolloff      = 5
 linemode       = "size"
-title_format   = "yazi: {cwd}"
 
 [preview]
 wrap         = "no"
@@ -17,26 +16,26 @@ image_filter = "triangle"
 image_quality = 75
 
 [[plugin.prepend_fetchers]]
-id   = "mime"
-url  = "local://*"
-run  = "mime-ext.local"
-prio = "high"
+group = "mime"
+url   = "local://*"
+run   = "mime-ext.local"
+prio  = "high"
 
 [[plugin.prepend_fetchers]]
-id   = "mime"
-url  = "remote://*"
-run  = "mime-ext.remote"
-prio = "high"
+group = "mime"
+url   = "remote://*"
+run   = "mime-ext.remote"
+prio  = "high"
 
 [[plugin.prepend_fetchers]]
-id  = "git"
-url = "*"
-run = "git"
+group = "git"
+url   = "*"
+run   = "git"
 
 [[plugin.prepend_fetchers]]
-id  = "git"
-url = "*/"
-run = "git"
+group = "git"
+url   = "*/"
+run   = "git"
 
 [[plugin.prepend_previewers]]
 mime = "text/markdown"
