@@ -2,12 +2,11 @@ local colors = require("colors")
 local icons = require("icons")
 
 local aerospace = "/opt/homebrew/bin/aerospace"
-local workspaces = { "1", "2", "3", "4", "5", "6" }
-local persistent = { ["1"] = true, ["2"] = true, ["3"] = true, ["4"] = true }
+local workspaces = { "1", "2", "3", "4", "5" }
 local focused = ""
 local spaces = {}
 
-local function style(space, sid, strip, n)
+local function style(space, sid, strip)
 	if sid == focused then
 		space:set({
 			drawing = "on",
@@ -16,9 +15,8 @@ local function style(space, sid, strip, n)
 			label = { string = strip, color = colors.crust },
 		})
 	else
-		local draw = n > 0 and "on" or "off"
 		space:set({
-			drawing = draw,
+			drawing = strip ~= "" and "on" or "off",
 			background = { drawing = "off" },
 			icon = { color = colors.overlay2 },
 			label = { string = strip, color = colors.overlay2 },
@@ -26,24 +24,25 @@ local function style(space, sid, strip, n)
 	end
 end
 
-local function refresh(space, sid)
-	sbar.exec(aerospace .. " list-windows --workspace " .. sid .. " --format '%{app-name}'", function(out)
-		local strip = ""
-		local n = 0
-		for app in tostring(out or ""):gmatch("[^\r\n]+") do
-			strip = strip .. icons.app(app) .. " "
-			n = n + 1
+local function refresh_all()
+	sbar.exec(aerospace .. " list-windows --all --format '%{workspace}|%{app-name}'", function(out)
+		local strips = {}
+		for line in tostring(out or ""):gmatch("[^\r\n]+") do
+			local ws, app = line:match("^([^|]+)|(.*)$")
+			if ws and spaces[ws] then
+				strips[ws] = (strips[ws] or "") .. icons.app(app) .. " "
+			end
 		end
-		style(space, sid, strip, n)
+		for sid, space in pairs(spaces) do
+			style(space, sid, strips[sid] or "")
+		end
 	end)
 end
 
 for _, sid in ipairs(workspaces) do
 	local space = sbar.add("item", "space." .. sid, {
 		position = "left",
-		drawing = persistent[sid] and "on" or "off",
-		updates = "on",
-		update_freq = 10,
+		drawing = "off",
 		icon = {
 			string = sid,
 			font = { family = colors.font, style = "Bold", size = 14.0 },
@@ -61,20 +60,28 @@ for _, sid in ipairs(workspaces) do
 		click_script = aerospace .. " workspace " .. sid,
 	})
 	spaces[sid] = space
-
-	space:subscribe("aerospace_workspace_change", function(env)
-		focused = env.FOCUSED_WORKSPACE
-		refresh(space, sid)
-	end)
-
-	space:subscribe({ "routine", "front_app_switched", "system_woke" }, function()
-		refresh(space, sid)
-	end)
 end
+
+local updater = sbar.add("item", "spaces_sync", {
+	position = "left",
+	drawing = "off",
+	updates = "on",
+	update_freq = 60,
+})
+
+updater:subscribe("aerospace_workspace_change", function(env)
+	focused = env.FOCUSED_WORKSPACE
+	refresh_all()
+end)
+
+updater:subscribe({ "routine", "forced", "front_app_switched", "system_woke" }, function()
+	sbar.exec(aerospace .. " list-workspaces --focused", function(out)
+		focused = tostring(out or ""):match("%S+") or focused
+		refresh_all()
+	end)
+end)
 
 sbar.exec(aerospace .. " list-workspaces --focused", function(out)
 	focused = tostring(out or ""):match("%S+") or ""
-	for sid, space in pairs(spaces) do
-		refresh(space, sid)
-	end
+	refresh_all()
 end)

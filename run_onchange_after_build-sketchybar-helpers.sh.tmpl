@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# swift: {{ include "dot_config/sketchybar/bin/calendar_events.swift" | sha256sum }}
+# plist: {{ include "dot_config/sketchybar/bin/calendar_events.plist" | sha256sum }}
+# cpu: {{ include "dot_config/sketchybar/bin/cpu_load.swift" | sha256sum }}
+
+DIR="$HOME/.config/sketchybar/bin"
+SRC="$DIR/calendar_events.swift"
+PLIST="$DIR/calendar_events.plist"
+APP="$DIR/calendar_events.app"
+CPU_SRC="$DIR/cpu_load.swift"
+
+command -v swiftc >/dev/null 2>&1 || {
+	printf 'swiftc not found; skipping sketchybar helper build\n' >&2
+	exit 0
+}
+
+if [ -f "$SRC" ]; then
+	rm -f "$DIR/calendar_events"
+	mkdir -p "$APP/Contents/MacOS"
+	cp "$PLIST" "$APP/Contents/Info.plist"
+	swiftc "$SRC" -O -o "$APP/Contents/MacOS/calendar_events" \
+		-framework EventKit -framework Foundation
+	codesign --force --sign - "$APP" >/dev/null 2>&1 || true
+fi
+
+if [ -f "$CPU_SRC" ]; then
+	swiftc "$CPU_SRC" -O -o "$DIR/cpu_load"
+	pkill -x cpu_load 2>/dev/null || true
+	("$DIR/cpu_load" 5 >/dev/null 2>&1 &)
+fi
