@@ -74,7 +74,9 @@ updater:subscribe("aerospace_workspace_change", function(env)
 	refresh_all()
 end)
 
-updater:subscribe({ "routine", "forced", "front_app_switched", "system_woke" }, function()
+updater:subscribe("front_app_switched", refresh_all)
+
+updater:subscribe({ "routine", "forced", "system_woke" }, function()
 	sbar.exec(aerospace .. " list-workspaces --focused", function(out)
 		focused = tostring(out or ""):match("%S+") or focused
 		refresh_all()

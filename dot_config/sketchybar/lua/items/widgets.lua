@@ -10,7 +10,7 @@ end
 
 local clock = sbar.add("item", "clock", {
 	position = "right",
-	update_freq = 10,
+	update_freq = 30,
 	icon = { string = icons.clock, color = colors.sapphire, font = { size = 13.0 } },
 	label = { font = { size = 12.0, features = "tnum" } },
 })
@@ -86,7 +86,7 @@ end)
 
 local tailscale = sbar.add("item", "tailscale", {
 	position = "right",
-	update_freq = 60,
+	update_freq = 180,
 	icon = { string = icons.app("Tailscale"), color = colors.green, font = { family = colors.app_font, style = "Regular", size = 16.0 } },
 	label = { font = { size = 12.0 }, max_chars = 28 },
 })

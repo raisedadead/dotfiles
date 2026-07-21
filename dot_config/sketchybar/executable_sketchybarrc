@@ -7,7 +7,7 @@ sbar = require("sketchybar")
 local colors = require("colors")
 
 sbar.begin_config()
-sbar.hotload(true)
+sbar.hotload(false)
 
 sbar.bar({
 	position = "bottom",
