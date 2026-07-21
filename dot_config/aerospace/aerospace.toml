@@ -155,7 +155,11 @@ if = '''
 test %{app-bundle-id} = com.valvesoftware.steam \
   || test %{app-bundle-id} = com.valvesoftware.steam.helper
 '''
-run = 'move-node-to-workspace 5'
+run = [
+  'move-node-to-workspace 5',
+  'layout floating',
+  'exec-and-forget ~/.config/aerospace/scripts/center-window.sh',
+]
 
 # Catch-all: any window unmatched by the rules above lands in workspace 1.
 [[on-window-detected]]
