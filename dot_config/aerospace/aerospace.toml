@@ -2,7 +2,6 @@ config-version = 2
 
 after-startup-command = [
   'exec-and-forget /opt/homebrew/bin/sketchybar',
-  'exec-and-forget /opt/homebrew/bin/borders',
 ]
 
 exec-on-workspace-change = [
