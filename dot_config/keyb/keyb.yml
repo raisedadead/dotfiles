@@ -214,32 +214,26 @@
 
 - name: yazi
   keybinds:
-    - name: Open dir in editor
-      key: E
-    - name: Open file in editor
-      key: S-Enter
-    - name: Smart enter
-      key: Enter / l
+    - name: Smart enter (dir or open)
+      key: Enter
     - name: Jump to char
       key: C-f
     - name: Smart filter
-      key: f
-    - name: Search contents (rg)
-      key: S
-    - name: Lazygit
-      key: g,i
-    - name: Copy file contents
-      key: M-y
-    - name: Parent directory
-      key: Backspace
-    - name: Trash files
-      key: Delete
+      key: F
+    - name: Toggle preview pane
+      key: T
     - name: Quit (no cd / cd)
       key: q / Q
+    - name: Open shell here
+      key: "!"
+    - name: Go to git root / Downloads / DEV / dotfiles
+      key: g,r / g,d / g,D / g,.
+    - name: Quick Look preview
+      key: C-p
+    - name: Enter / leave skip single-child dirs
+      key: L / H
     - name: Copy file path
       key: C-y
-    - name: Help
-      key: "?"
 
 - name: fzf (shell)
   keybinds:
