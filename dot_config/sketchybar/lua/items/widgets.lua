@@ -1,13 +1,6 @@
 local colors = require("colors")
 local icons = require("icons")
 
-local home = os.getenv("HOME")
-local cal_app = home .. "/.config/sketchybar/bin/calendar_events.app"
-
-local function cal_cmd(args)
-	return 'f=$(mktemp); /usr/bin/open -W --stdout "$f" ' .. cal_app .. (args or "") .. '; cat "$f"; rm -f "$f"'
-end
-
 local clock = sbar.add("item", "clock", {
 	position = "right",
 	update_freq = 30,
@@ -19,69 +12,15 @@ clock:subscribe({ "routine", "forced", "system_woke" }, function()
 	clock:set({ label = { string = os.date("%a %d %b  %H:%M") } })
 end)
 
-local function agenda_row(i, icon_color, text, label_color)
-	sbar.add("item", "calendar.agenda." .. i, {
-		position = "popup.calendar",
-		icon = {
-			string = icons.calendar,
-			color = icon_color,
-			font = { family = colors.icon_font, style = "Regular", size = 11.0 },
-			padding_left = 10,
-			padding_right = 6,
-		},
-		label = {
-			string = text,
-			font = { family = colors.font, style = "Regular", size = 12.0 },
-			color = label_color,
-			max_chars = 36,
-			padding_right = 12,
-		},
-		background = { drawing = "off" },
-	})
-end
-
-local calendar = sbar.add("item", "calendar", {
+local utc_clock = sbar.add("item", "utc_clock", {
 	position = "right",
-	update_freq = 300,
-	icon = { string = icons.calendar, color = colors.peach, font = { size = 13.0 } },
-	label = { font = { size = 12.0 } },
-	popup = {
-		background = {
-			color = colors.surface0,
-			corner_radius = 8,
-			border_width = 2,
-			border_color = colors.surface2,
-		},
-		horizontal = "off",
-		align = "right",
-		y_offset = 2,
-	},
+	update_freq = 30,
+	icon = { string = icons.utc, color = colors.teal, font = { size = 13.0 } },
+	label = { font = { size = 12.0, features = "tnum" } },
 })
 
-calendar:subscribe({ "routine", "forced", "system_woke" }, function()
-	sbar.exec(cal_cmd(" --args --next"), function(out)
-		local next_event = tostring(out or ""):match("[^\r\n]+") or ""
-		next_event = next_event:sub(1, 30)
-		if next_event == "" then
-			next_event = "No events"
-		end
-		calendar:set({ label = { string = next_event } })
-	end)
-end)
-
-calendar:subscribe("mouse.clicked", function()
-	sbar.remove("/calendar\\.agenda\\..*/")
-	sbar.exec(cal_cmd(), function(out)
-		local i = 0
-		for line in tostring(out or ""):gmatch("[^\r\n]+") do
-			agenda_row(i, colors.peach, line, colors.text)
-			i = i + 1
-		end
-		if i == 0 then
-			agenda_row(0, colors.overlay0, "No events today", colors.overlay2)
-		end
-		calendar:set({ popup = { drawing = "toggle" } })
-	end)
+utc_clock:subscribe({ "routine", "forced", "system_woke" }, function()
+	utc_clock:set({ label = { string = "UTC " .. os.date("!%H:%M") } })
 end)
 
 local tailscale = sbar.add("item", "tailscale", {
@@ -125,7 +64,7 @@ end
 tailscale:subscribe({ "routine", "forced", "system_woke" }, tailscale_refresh)
 tailscale:subscribe("mouse.clicked", tailscale_refresh)
 
-sbar.add("bracket", "status", { "tailscale", "calendar", "clock" }, {
+sbar.add("bracket", "status", { "tailscale", "utc_clock", "clock" }, {
 	background = {
 		color = colors.island,
 		corner_radius = 12,

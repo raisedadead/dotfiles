@@ -3,7 +3,7 @@ local override = require("icon_override")
 
 local M = {
 	clock = "\u{F017}",
-	calendar = "\u{F073}",
+	utc = "\u{F0AC}",
 	service = "\u{F013}",
 	default = "\u{F069}",
 }
