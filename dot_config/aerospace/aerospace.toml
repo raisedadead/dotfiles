@@ -74,11 +74,17 @@ ctrl-alt-tab = 'workspace-back-and-forth'
 ctrl-alt-leftSquareBracket = 'workspace prev'
 ctrl-alt-rightSquareBracket = 'workspace next'
 ctrl-alt-enter = 'fullscreen'
-ctrl-alt-c = 'exec-and-forget ~/.config/aerospace/scripts/center-window.sh'
+ctrl-alt-c = [
+  'layout floating',
+  'exec-and-forget ~/.config/aerospace/scripts/center-window.sh',
+]
 ctrl-alt-f = 'layout floating tiling'
 ctrl-alt-slash = 'layout tiles horizontal vertical'
 ctrl-alt-comma = 'layout accordion horizontal vertical'
-ctrl-alt-r = 'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh'
+ctrl-alt-r = [
+  'layout floating',
+  'exec-and-forget ~/.config/aerospace/scripts/size-cycle.sh',
+]
 ctrl-alt-minus = 'resize smart -50'
 ctrl-alt-equal = 'resize smart +50'
 ctrl-alt-semicolon = 'mode service'
@@ -143,9 +149,15 @@ test %{app-bundle-id} = com.readdle.SparkDesktop \
 '''
 run = 'move-node-to-workspace 4'
 
-# Startup-only catch-all: gather any unassigned window into workspace 1 when
-# AeroSpace launches. Post-startup, unmatched windows stay on the current
-# workspace (no yank on menu-bar clicks, dialogs, transient panels).
+# Workspace 5: Gaming
 [[on-window-detected]]
-if.during-aerospace-startup = true
+if = '''
+test %{app-bundle-id} = com.valvesoftware.steam \
+  || test %{app-bundle-id} = com.valvesoftware.steam.helper
+'''
+run = 'move-node-to-workspace 5'
+
+# Catch-all: any window unmatched by the rules above lands in workspace 1.
+[[on-window-detected]]
+if = 'true'
 run = 'move-node-to-workspace 1'
