@@ -102,10 +102,10 @@ function zle-keymap-select {
   zle .reset-prompt
 }
 zle -N zle-keymap-select
-bindkey '^[l' forward-word          # Alt+L: forward word
-bindkey '^[h' backward-word         # Alt+H: backward word
-bindkey '^[a' beginning-of-line     # Alt+A: beginning of line
-bindkey '^[e' end-of-line           # Alt+E: end of line
+bindkey '^[a' backward-word         # Alt+a: beginning of word
+bindkey '^[A' beginning-of-line     # Alt+Shift+a: beginning of line
+bindkey '^[e' emacs-forward-word    # Alt+e: end of word
+bindkey '^[E' end-of-line           # Alt+Shift+e: end of line
 bindkey '^[[1;3C' forward-word      # Alt+Right: forward word
 bindkey '^[[1;3D' backward-word     # Alt+Left: backward word
 bindkey '^[[1;4C' end-of-line       # Alt+Shift+Right: end of line
