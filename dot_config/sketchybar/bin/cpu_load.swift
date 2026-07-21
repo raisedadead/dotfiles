@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import CoreWLAN
 
 func cpuTicks() -> (busy: UInt64, total: UInt64)? {
     var size = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info_data_t>.size / MemoryLayout<integer_t>.size)
@@ -38,30 +39,32 @@ func memUsedPct(total: UInt64) -> Int? {
     return Int((Double(used) / Double(total) * 100).rounded())
 }
 
-func netBytes() -> (rx: UInt64, tx: UInt64) {
+func linkMbps() -> Int {
+    if let wifi = CWWiFiClient.shared().interface() {
+        let rate = wifi.transmitRate()
+        if rate > 0 { return Int(rate.rounded()) }
+    }
     var addrs: UnsafeMutablePointer<ifaddrs>?
-    guard getifaddrs(&addrs) == 0 else { return (0, 0) }
+    guard getifaddrs(&addrs) == 0 else { return 0 }
     defer { freeifaddrs(addrs) }
-    var rx: UInt64 = 0
-    var tx: UInt64 = 0
+    var best: UInt64 = 0
     var p = addrs
     while let cur = p {
         let ifa = cur.pointee
         if ifa.ifa_addr?.pointee.sa_family == UInt8(AF_LINK),
             let data = ifa.ifa_data?.assumingMemoryBound(to: if_data.self),
-            String(cString: ifa.ifa_name).hasPrefix("en") {
-            rx &+= UInt64(data.pointee.ifi_ibytes)
-            tx &+= UInt64(data.pointee.ifi_obytes)
+            String(cString: ifa.ifa_name).hasPrefix("en"),
+            (ifa.ifa_flags & UInt32(IFF_RUNNING)) != 0 {
+            best = max(best, UInt64(data.pointee.ifi_baudrate))
         }
         p = ifa.ifa_next
     }
-    return (rx, tx)
+    return Int(best / 1_000_000)
 }
 
 let interval = CommandLine.arguments.count > 1 ? (Double(CommandLine.arguments[1]) ?? 5) : 5
 let total = memTotal()
 var prev = cpuTicks()
-var prevNet = netBytes()
 while true {
     Thread.sleep(forTimeInterval: interval)
     guard let cur = cpuTicks() else { continue }
@@ -72,13 +75,9 @@ while true {
     guard dt > 0 else { continue }
     let cpu = Int((Double(db) / Double(dt) * 100).rounded())
     let mem = memUsedPct(total: total) ?? 0
-    let net = netBytes()
-    let rxRate = net.rx >= prevNet.rx ? UInt64(Double(net.rx - prevNet.rx) / interval) : 0
-    let txRate = net.tx >= prevNet.tx ? UInt64(Double(net.tx - prevNet.tx) / interval) : 0
-    prevNet = net
     let task = Process()
     task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/sketchybar")
-    task.arguments = ["--trigger", "system_stats", "CPU=\(cpu)", "MEM=\(mem)", "NET_RX=\(rxRate)", "NET_TX=\(txRate)"]
+    task.arguments = ["--trigger", "system_stats", "CPU=\(cpu)", "MEM=\(mem)", "NET_LINK=\(linkMbps())"]
     try? task.run()
     task.waitUntilExit()
 }

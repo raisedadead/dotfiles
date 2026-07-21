@@ -165,15 +165,6 @@ end
 tailscale:subscribe({ "routine", "forced", "system_woke" }, tailscale_refresh)
 tailscale:subscribe("mouse.clicked", tailscale_refresh)
 
-local function human_rate(bps)
-	if bps >= 1048576 then
-		return string.format("%.1fM", bps / 1048576)
-	elseif bps >= 1024 then
-		return string.format("%.0fK", bps / 1024)
-	end
-	return bps .. "B"
-end
-
 local net = sbar.add("item", "net", {
 	position = "right",
 	updates = "on",
@@ -182,11 +173,18 @@ local net = sbar.add("item", "net", {
 })
 
 net:subscribe("system_stats", function(env)
-	local rx = tonumber(env.NET_RX) or 0
-	local tx = tonumber(env.NET_TX) or 0
+	local mbps = tonumber(env.NET_LINK) or 0
+	local label
+	if mbps >= 1000 then
+		label = string.format("%.1fG", mbps / 1000)
+	elseif mbps > 0 then
+		label = mbps .. "M"
+	else
+		label = "—"
+	end
 	net:set({
-		icon = { color = (rx + tx) > 1024 and colors.sky or colors.overlay0 },
-		label = { string = "↓" .. human_rate(rx) .. " ↑" .. human_rate(tx) },
+		icon = { color = mbps > 0 and colors.sky or colors.overlay0 },
+		label = { string = label },
 	})
 end)
 

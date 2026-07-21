@@ -26,7 +26,7 @@ if [ -f "$SRC" ]; then
 fi
 
 if [ -f "$CPU_SRC" ]; then
-	swiftc "$CPU_SRC" -O -o "$DIR/cpu_load"
+	swiftc "$CPU_SRC" -O -o "$DIR/cpu_load" -framework CoreWLAN
 	pkill -x cpu_load 2>/dev/null || true
 	("$DIR/cpu_load" 5 >/dev/null 2>&1 &)
 fi
