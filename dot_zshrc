@@ -39,50 +39,9 @@ stty -ixon -ixoff 2>/dev/null
 can_haz() { whence -p "$1" >/dev/null 2>&1 }
 timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
 
-# Cache and source tool-generated shell code (regenerates when binary updates,
-# or when any extra dep file passed after <command> is newer than the cache)
-# Usage: cached_evalz <tool> "<command>" [dep-file...]
-cached_evalz() {
-  local tool=$1 cmd=$2 cache_dir="$HOME/.cache/zsh-eval-cache"
-  shift 2
-  can_haz "$tool" || return 1
-  local bin="$(whence -p "$tool")" cache="$cache_dir/$tool.zsh" tmp
-  [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
-  local dep stale=0
-  if [[ ! -f "$cache" || "$bin" -nt "$cache" ]]; then
-    stale=1
-  else
-    for dep in "$@"; do
-      [[ -e "$dep" && "$dep" -nt "$cache" ]] && { stale=1; break; }
-    done
-  fi
-  if (( stale )); then
-    tmp="$(mktemp "$cache_dir/.${tool}.XXXXXX")"
-    if eval "$cmd" > "$tmp" 2>/dev/null; then
-      # Validate first non-blank line looks like zsh script, not a banner.
-      # Accept: comments (#...), shebangs, common zsh declarations, block openers.
-      local first
-      first="$(awk 'NF{print;exit}' "$tmp")"
-      case "$first" in
-        '#'*|'{'*|'('*|compdef\ *|function\ *|typeset\ *|export\ *|alias\ *|setopt\ *|autoload\ *|local\ *|zstyle\ *|bindkey\ *|source\ *|eval\ *|_*\(\)*)
-          mv "$tmp" "$cache" && zcompile "$cache" 2>/dev/null ;;
-        *)
-          rm -f "$tmp"
-          print -u2 "cached_evalz: $tool: output does not look like zsh (first line: ${first:0:60}...) — cache skipped"
-          return 1 ;;
-      esac
-    else
-      rm -f "$tmp"
-      return 1
-    fi
-  fi
-  source "$cache"
-}
-
 # Tmux exit code indicator (must be first precmd to capture $? before OMP)
 _tmux_exit_code() { [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code $?; }
 precmd_functions=(_tmux_exit_code $precmd_functions)
-
 
 # Keybindings
 bindkey -e  # Emacs mode
@@ -112,175 +71,101 @@ bindkey '^[[1;4C' end-of-line       # Alt+Shift+Right: end of line
 bindkey '^[[1;4D' beginning-of-line # Alt+Shift+Left: beginning of line
 
 # Prompt (oh-my-posh)
-# v29+ uses a two-stage init: bootstrap sets a precmd that sources the real
-# init from ~/.cache/oh-my-posh/init.HASH.zsh on first prompt. OMP manages
-# that cache; the ~45ms bootstrap generation is cached here (keyed on binary
-# + config mtime). POSH_SESSION_ID must stay unique per shell — OMP keys its
-# session cache (segment state, transient prompt) on it, so the cached value
-# is replaced with a fresh UUID after sourcing.
-if can_haz oh-my-posh; then
-  cached_evalz oh-my-posh "oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml" ~/.config/oh-my-posh/config.toml
-  export POSH_SESSION_ID="$(uuidgen)"
-fi
+can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
 
 #-----------------------------------------------------------
-# Plugin Manager
+# Plugins
 #-----------------------------------------------------------
-ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
-[[ ! -d $ZINIT_HOME ]] && mkdir -p "$(dirname $ZINIT_HOME)" && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
-source "$ZINIT_HOME/zinit.zsh"
-#-----------------------------------------------------------
+ZPLUGDIR="$HOME/.local/share/zsh/plugins"
+ZPLUGS=(
+  zsh-users/zsh-completions
+  wbingli/zsh-claudecode-completion
+  Aloxaf/fzf-tab
+  zdharma-continuum/fast-syntax-highlighting
+  zsh-users/zsh-autosuggestions
+  raisedadead/zsh-smartinput
+  g-plane/pnpm-shell-completion
+  raisedadead/zsh-touchplus
+  sobolevn/wakatime-zsh-plugin
+)
+local _repo
+for _repo in $ZPLUGS; do
+  [[ -d "$ZPLUGDIR/${_repo:t}" ]] || git clone --depth=1 "https://github.com/$_repo" "$ZPLUGDIR/${_repo:t}"
+done
+# pnpm-shell-completion ships a helper binary; zplug.zsh fetches the prebuilt release
+[[ -x "$ZPLUGDIR/pnpm-shell-completion/pnpm-shell-completion" ]] || (cd "$ZPLUGDIR/pnpm-shell-completion" && ./zplug.zsh) >/dev/null 2>&1
 
-# Load zsh-defer first
-zinit light romkatv/zsh-defer
+zsh-plugin-update() {
+  local d
+  for d in "$ZPLUGDIR"/*(/); do git -C "$d" pull --ff-only; done
+  (cd "$ZPLUGDIR/pnpm-shell-completion" && ./zplug.zsh)
+}
 
-# FZF - core setup (DO NOT DEFER, need immediate availability)
+# FZF
 source ~/.fzf.zsh
-# FZF styling (can be deferred)
-zsh-defer source ~/.fzf.zshrc
+source ~/.fzf.zshrc
 
-# zinit compile, compinit rebuild, rc zcompile, and OMP cache reap run together in
-# one disowned background block near the end (see "Daily maintenance"). They used to
-# be tail-of-queue zsh-defer tasks that starved: a pane opened straight into a
-# long-running command (claude/nvim) never idles at the prompt, so the queue never
-# drained that far — leaving the compdump 3+ days stale and the OMP cache unreaped.
+#-----------------------------------------------------------
+# Completions
+#-----------------------------------------------------------
+fpath+=("$ZPLUGDIR/zsh-completions/src" "$ZPLUGDIR/zsh-claudecode-completion")
+[[ -n "$HOMEBREW_PREFIX" ]] && fpath+=("$HOMEBREW_PREFIX/share/zsh/site-functions")
+[[ -d ~/.zfunc ]] && fpath=("$HOME/.zfunc" $fpath)
 
-# Load completions before compinit (per zsh-completions guidelines)
-zinit light zsh-users/zsh-completions
-zinit light wbingli/zsh-claudecode-completion
-
-# Add Homebrew completions to FPATH before compinit
-[[ -n "$HOMEBREW_PREFIX" ]] && FPATH="$HOMEBREW_PREFIX/share/zsh/site-functions:$FPATH"
-
-# Add custom completions to FPATH (highest priority - added last so it's first)
-[[ -d ~/.zfunc ]] && FPATH="$HOME/.zfunc:$FPATH"
-
-# Load completions. Critical path ALWAYS uses the cached -C load (~12ms); the
-# full rebuild (compaudit fpath scan, ~344ms) is deferred off the prompt path.
-# Stale dump costs a fast shell now + a freshly-rebuilt dump next shell.
 autoload -Uz compinit
-local zcomp="$HOME/.zcompdump"
-if [[ -f "$zcomp" ]]; then
-  compinit -C -d "$zcomp"
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit -d ~/.zcompdump
 else
-  compinit -d "$zcomp"
+  compinit -C -d ~/.zcompdump
 fi
-# (deferred full rebuild moved to the background maintenance block below)
 
-# FZF tab (must load after compinit but before widget-wrapping plugins)
-zinit wait"0a" silent for \
-    Aloxaf/fzf-tab
+# Regenerate static completions in ~/.zfunc after upgrading these tools
+update-completions() {
+  mkdir -p ~/.zfunc
+  can_haz gh && gh completion -s zsh > ~/.zfunc/_gh
+  can_haz op && op completion zsh > ~/.zfunc/_op
+  can_haz bd && bd completion zsh > ~/.zfunc/_bd
+  can_haz wrangler && wrangler complete zsh | sed -n '/^#compdef/,$p' > ~/.zfunc/_wrangler  # strip pre-#compdef banner (wrangler 4.94+ leaks skills-install nag to stdout)
+  rm -f ~/.zcompdump && autoload -Uz compinit && compinit -d ~/.zcompdump
+}
 
-zsh-defer -c "
-  zstyle ':fzf-tab:*' use-fzf-default-opts yes
-  zstyle ':fzf-tab:*' fzf-flags --height=~60%
-"
+# fzf-tab must load after compinit, before widget-wrapping plugins
+source "$ZPLUGDIR/fzf-tab/fzf-tab.plugin.zsh"
+zstyle ':fzf-tab:*' use-fzf-default-opts yes
+zstyle ':fzf-tab:*' fzf-flags --height=~60%
 
-# Fast Syntax Highlighting
-zinit wait"1a" silent atload"fast-theme -q XDG:catppuccin-mocha" for \
-    zdharma-continuum/fast-syntax-highlighting
-
-# Suggestions
-zinit wait"1b" silent atload"!_zsh_autosuggest_start" for \
-    zsh-users/zsh-autosuggestions
-
-# Pair matching
-zinit wait"1c" silent for \
-    raisedadead/zsh-smartinput
-
-# PNPM completions
-zinit wait"1d" silent atload"zpcdreplay" atclone"./zplug.zsh" atpull"%atclone" for \
-    g-plane/pnpm-shell-completion
-
-# Touch file with paths
-zinit wait"2a" silent for \
-    raisedadead/zsh-touchplus
-
-# Wakatime
-zinit wait"2b" silent for \
-    sobolevn/wakatime-zsh-plugin
+source "$ZPLUGDIR/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+source "$ZPLUGDIR/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh"
+source "$ZPLUGDIR/zsh-smartinput/smartinput.plugin.zsh"
+source "$ZPLUGDIR/pnpm-shell-completion/pnpm-shell-completion.plugin.zsh"
+source "$ZPLUGDIR/zsh-touchplus/touchplus.plugin.zsh"
+source "$ZPLUGDIR/wakatime-zsh-plugin/wakatime.plugin.zsh"
 
 #-----------------------------------------------------------
 # Tool Integrations
 #-----------------------------------------------------------
-
-if [[ -o interactive ]]; then
-  # Page-cache prewarm, once per boot. zsh-defer drains its queue on the zle-idle
-  # hook and CANNOT preempt a running task, so the first cold shell after boot
-  # freezes the keyboard for seconds while atuin/completions cold-exec (worst on a
-  # fresh tmux server). The first interactive shell reads those binaries + eval
-  # caches into the OS page cache (detached &!, never blocks) so every later shell's
-  # drain hits warm cache. Boot-scoped guard: marker mtime vs kern.boottime epoch.
-  () {
-    local marker="${TMPDIR:-/tmp}/.zsh-prewarm.$UID" boot
-    local -a _mt
-    zmodload -F zsh/stat b:zstat 2>/dev/null
-    if zstat -A _mt +mtime "$marker" 2>/dev/null; then
-      boot=$(sysctl -n kern.boottime 2>/dev/null); boot=${boot#*sec = }; boot=${boot%%,*}
-      (( _mt[1] > ${boot:-0} )) && return
-    fi
-    : >| "$marker"
-    {
-      setopt null_glob
-      local t p
-      for t in atuin zoxide direnv gh op wrangler wt fnm; do
-        p=$(whence -p "$t" 2>/dev/null) && [[ -n "$p" ]] && cat "$p"
-      done
-      cat ~/.cache/zsh-eval-cache/*.zwc ~/.zcompdump
-    } </dev/null >/dev/null 2>&1 &!
-  }
-
-  # Async inits: first prompt renders before these spawn their per-shell binaries
-  # (atuin sources $(atuin uuid); direnv's precmd spawns `direnv export`) — cold-cache
-  # execs that stall seconds. Hooks go live on first zle-idle, before any keystroke.
-  # Trade: a shell opened inside a direnv dir loads .envrc one precmd late.
-  zsh-defer cached_evalz atuin "atuin init zsh --disable-up-arrow"
-  zsh-defer cached_evalz zoxide "zoxide init --cmd cd --hook pwd zsh"
-  zsh-defer cached_evalz direnv "direnv hook zsh"
-
-  # Completions only matter at first Tab, not first keystroke — defer off the
-  # critical path. zsh-defer (q)-quotes each arg and evals it verbatim on zle idle.
-  zsh-defer cached_evalz gh "gh completion -s zsh"
-  zsh-defer cached_evalz op "op completion zsh"
-  zsh-defer compdef _op op
-  zsh-defer cached_evalz wrangler "wrangler complete zsh | sed -n '/^#compdef/,\$p'"  # strip pre-#compdef banner (wrangler 4.94+ leaks skills-install nag to stdout)
-  zsh-defer cached_evalz wt "wt shell-init zsh"
-  zsh-defer cached_evalz bd "bd completion zsh"
-  zsh-defer compdef _home home
-fi
+can_haz atuin  && eval "$(atuin init zsh --disable-up-arrow)"
+can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"
+can_haz direnv && eval "$(direnv hook zsh)"
+can_haz wt     && eval "$(wt shell-init zsh)"
 
 # File sourcing
-zsh-defer source ~/.alias.zshrc
-zsh-defer source ~/.private.zshrc
-zsh-defer -c '[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"'
-zsh-defer -c '[[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh'
-
-# Daily maintenance — disowned background subshell (&!) so it completes regardless of
-# whether the shell ever idles at the prompt. Guards keep the heavy work to ~once/day;
-# on most shells every branch is skipped and the subshell exits immediately. Output is
-# silenced so async completion never bleeds onto the terminal. None of this feeds the
-# current shell (the critical-path `compinit -C` already ran), so background is safe.
-{
-  local _now=$(date +%s)
-  local _stamp="$HOME/.cache/zinit-compile-stamp" _zcomp="$HOME/.zcompdump"
-  if [[ ! -f "$_stamp" ]] || (( _now - $(stat -f%m "$_stamp" 2>/dev/null || echo 0) > 86400 )); then
-    zinit compile --all 2>/dev/null; touch "$_stamp"
-  fi
-  if [[ ! -f "$_zcomp" ]] || (( _now - $(stat -f%m "$_zcomp" 2>/dev/null || echo 0) > 86400 )); then
-    autoload -Uz compinit && compinit -d "$_zcomp"
-  fi
-  for f in ~/.zshrc ~/.zshenv ~/.alias.zshrc; do
-    [[ -f "$f" && ( ! -f "$f.zwc" || "$f" -nt "$f.zwc" ) ]] && zcompile "$f"
-  done
-  setopt extended_glob null_glob
-  local -a _c=( ~/.cache/oh-my-posh/(shell|zsh).*.omp.cache(om) )
-  (( $#_c > 50 )) && rm -f "${_c[51,-1]}"
-} >/dev/null 2>&1 &!
+source ~/.alias.zshrc
+source ~/.private.zshrc
+[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
+[[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh
 
 # Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
 # fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
 export PATH="/opt/homebrew/bin:$PATH"
-zsh-defer cached_evalz fnm "fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet"
+can_haz fnm && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet)"
+
+# OMP writes one session-cache file per shell and never reaps them — keep newest 50
+() {
+  setopt local_options extended_glob null_glob
+  local -a _c=( ~/.cache/oh-my-posh/(shell|zsh).*.omp.cache(om) )
+  (( $#_c > 50 )) && rm -f -- "${_c[51,-1]}"
+} >/dev/null 2>&1 &!
 
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
