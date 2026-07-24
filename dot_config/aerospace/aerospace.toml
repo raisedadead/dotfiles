@@ -144,7 +144,8 @@ if = '''
 test %{app-bundle-id} = com.readdle.SparkDesktop \
   || test %{app-bundle-id} = com.spotify.client \
   || test %{app-bundle-id} = ru.keepcoder.Telegram \
-  || test %{app-bundle-id} = net.whatsapp.WhatsApp
+  || test %{app-bundle-id} = net.whatsapp.WhatsApp \
+  || test %{app-bundle-id} = com.meetfranz.franz
 '''
 run = 'move-node-to-workspace 4'
 
