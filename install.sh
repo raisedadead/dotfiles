@@ -7,8 +7,10 @@ set -euo pipefail
 
 DOTFILES_REPO="git@github.com:raisedadead/dotfiles.git"
 PRIVATE_REPO="git@github.com:raisedadead/dotfiles-private.git"
+BREWFILE_REPO="git@github.com:raisedadead/Brewfile.git"
 DOTFILES_DIR="$HOME/.dotfiles"
 PRIVATE_DIR="$HOME/.dotfiles-private"
+BREWFILE_DIR="$HOME/.config/brewfile"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -129,7 +131,22 @@ fi
 # 6. Packages
 # ─────────────────────────────────────────────────────────────────────────────
 
-BREWFILE="$HOME/.config/brewfile/Brewfile"
+info "Setting up Brewfile repo..."
+if [ -d "$BREWFILE_DIR" ]; then
+  ok "Brewfile repo already exists at $BREWFILE_DIR"
+elif ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+  info "Cloning Brewfile repo..."
+  git clone "$BREWFILE_REPO" "$BREWFILE_DIR"
+  ok "Brewfile repo cloned."
+else
+  warn "SSH not configured — skipping Brewfile repo clone."
+  ask "Set up 1Password SSH agent, then run:"
+  echo ""
+  echo "  git clone $BREWFILE_REPO $BREWFILE_DIR"
+  echo ""
+fi
+
+BREWFILE="$BREWFILE_DIR/Brewfile"
 if [ -f "$BREWFILE" ]; then
   ask "Install packages from Brewfile? [y/N]"
   read -r reply
