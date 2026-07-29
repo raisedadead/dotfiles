@@ -6,7 +6,9 @@ This half holds shell / tmux / ghostty / nvim / OMP and cross-tool integration. 
 
 ## Rules (non-obvious, not derivable from code)
 
-- **Source-first re-add loop** — never edit the runtime target (`~/.config/`, `~/.*`) as the source of truth. The loop is: (1) edit chezmoi source (`~/.dotfiles/` or `~/.dotfiles-private/`); (2) `home apply` to deploy source to the runtime target; (3) validate the live/runtime config with the tool's own validator (see Validation section); (4) `home re-add` to capture the validated runtime back into source. Source stays canonical; re-add closes the loop and captures any normalization the tool applied to its own config
+- **Source-first re-add loop** — edit chezmoi source → `home apply` → validate the runtime with the tool's own validator (see Validation) → `home re-add`. Source stays canonical; re-add captures normalization the tool applied to its own config. Never treat the runtime target as the source of truth. Operational form is injected per-edit by `~/.claude/rules/10-chezmoi.md`
+- **`RUNTIME_KEYS` is empty by design** — `_capture_runtime_owned` harvests nothing live→source, because harvesting `model` fought the pinned value every apply. Consequence: a `/model` or `/config` change not mirrored into source is silently wiped on the next apply. `PRIV_RUNTIME_OWNED` force-applies two files (`~/.claude/settings.json`, `~/.pi/agent/settings.json`); mechanism in [`~/.dotfiles-private/ARCHI.md`](~/.dotfiles-private/ARCHI.md) §2.1
+- **chezmoi never prunes** — deleting a source file leaves the deployed target in place. `rm` it manually after `apply`, or it becomes an unmanaged orphan nothing will ever flag
 - **keybinds.conf ↔ keyb.yml must stay in sync** — always update both when changing tmux bindings
 - **`_tmux_exit_code` must be first precmd** — captures `$?` before OMP modifies it
 - **tmux mouse selection is pane-aware** — drag selects within pane, copies to system clipboard via OSC 52; Shift+drag falls back to native Ghostty selection
