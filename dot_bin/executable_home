@@ -243,9 +243,17 @@ cmd_check() {
     DIRTY_N=0; [[ -n "$DIRTY" ]] && DIRTY_N=$(echo "$DIRTY" | wc -l | tr -d ' ')
     TRACKED_DIRTY_N=0; [[ -n "$DIRTY" ]] && TRACKED_DIRTY_N=$(echo "$DIRTY" | grep -v '^??' | wc -l | tr -d ' ')
 
-    local DRIFT_FILES
-    DRIFT_FILES=$(chezmoi $CM_SRC status 2>/dev/null)
+    # chezmoi status col-2 'R' = a run_ script that fires every apply, not an
+    # editable target drift; splitting it out stops the "edited in ~" mislabel.
+    local DRIFT_RAW DRIFT_FILES SCRIPT_RUNS SCRIPT_N=0
+    DRIFT_RAW=$(chezmoi $CM_SRC status 2>/dev/null)
+    DRIFT_FILES=""; SCRIPT_RUNS=""
+    if [[ -n "$DRIFT_RAW" ]]; then
+      DRIFT_FILES=$(printf '%s\n' "$DRIFT_RAW" | grep -vE '^.R ' || true)
+      SCRIPT_RUNS=$(printf '%s\n' "$DRIFT_RAW" | grep -E '^.R ' || true)
+    fi
     UNAPPLIED=0; [[ -n "$DRIFT_FILES" ]] && UNAPPLIED=$(echo "$DRIFT_FILES" | wc -l | tr -d ' ')
+    [[ -n "$SCRIPT_RUNS" ]] && SCRIPT_N=$(echo "$SCRIPT_RUNS" | wc -l | tr -d ' ')
 
     # sync indicator (ahead/behind origin) — no space before paren
     local SYNC="" VIS_W=${#REPO}
@@ -325,6 +333,8 @@ cmd_check() {
       done
     fi
 
+    (( SCRIPT_N > 0 )) && printf "  %*s${DIM}↻ %d will run on apply${RST}\n" "$COL" "" "$SCRIPT_N"
+
     if [[ "$REPO" == "public" ]]; then
       (( DIRTY_N > 0 || UNAPPLIED > 0 )) && NEEDS_COMMIT_pub=1
       AHEAD_pub=$AHEAD; BEHIND_pub=$BEHIND
@@ -378,7 +388,7 @@ cmd_sync() {
     dirty=$(git -C "$dir" status --porcelain 2>/dev/null)
     dirty_n=0; [[ -n "$dirty" ]] && dirty_n=$(echo "$dirty" | wc -l | tr -d ' ')
     tracked_dirty_n=0; [[ -n "$dirty" ]] && tracked_dirty_n=$(echo "$dirty" | grep -v '^??' | wc -l | tr -d ' ')
-    drift=$(_cm "$repo" status 2>/dev/null)
+    drift=$(_cm "$repo" status 2>/dev/null | grep -vE '^.R ' || true)
     drift_n=0; [[ -n "$drift" ]] && drift_n=$(echo "$drift" | wc -l | tr -d ' ')
 
     if (( tracked_dirty_n > 0 && drift_n > 0 )); then
