@@ -145,7 +145,8 @@ test %{app-bundle-id} = com.readdle.SparkDesktop \
   || test %{app-bundle-id} = com.spotify.client \
   || test %{app-bundle-id} = ru.keepcoder.Telegram \
   || test %{app-bundle-id} = net.whatsapp.WhatsApp \
-  || test %{app-bundle-id} = com.automattic.beeper.desktop
+  || test %{app-bundle-id} = com.automattic.beeper.desktop \
+  || test %{app-bundle-id} = com.flexibits.fantastical2.mac
 '''
 run = 'move-node-to-workspace 4'
 
