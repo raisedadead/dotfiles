@@ -43,10 +43,3 @@ export GOPATH="$HOME/go"
 export POSH_THEME="$XDG_CONFIG_HOME/oh-my-posh/config.toml"
 command -v oh-my-posh >/dev/null 2>&1 && eval "$(oh-my-posh init bash --config "$POSH_THEME")"
 
-# --- tmux exit code (must be after OMP to prepend into its PROMPT_COMMAND) ---
-__tmux_exit_code() {
-  local ec=$?
-  [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"
-  return $ec
-}
-PROMPT_COMMAND="__tmux_exit_code;${PROMPT_COMMAND}"

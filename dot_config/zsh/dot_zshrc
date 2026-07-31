@@ -41,10 +41,6 @@ stty -ixon -ixoff 2>/dev/null
 can_haz() { whence -p "$1" >/dev/null 2>&1 }
 timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
 
-# Tmux exit code indicator (must be first precmd to capture $? before OMP)
-_tmux_exit_code() { local ec=$?; [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"; }
-precmd_functions=(_tmux_exit_code $precmd_functions)
-
 # Keybindings
 bindkey -e  # Emacs mode
 bindkey '^z' vi-cmd-mode
