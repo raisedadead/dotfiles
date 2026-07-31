@@ -71,7 +71,9 @@ All zsh config lives in `$XDG_CONFIG_HOME/zsh`. `$HOME` holds a two-line stub an
 
 ```
 ~/.zshenv                     stub: sets ZDOTDIR, sources the real .zshenv
-~/.config/zsh/.zshenv         environment, XDG vars, PATH composition
+~/.config/zsh/.zshenv         environment, XDG vars; calls _mrgsh_compose_path
+~/.config/zsh/.zprofile       re-asserts PATH after macOS path_helper (login shells)
+~/.config/zsh/path.zsh        PATH composition, single source of truth
 ~/.config/zsh/.zshrc          interactive: prompt, plugins, completions, keybinds
 ~/.config/zsh/alias.zsh       aliases
 ~/.config/zsh/fzf.zsh         fzf options + theme
@@ -102,17 +104,51 @@ Verified across all four modes — `zsh -c`, `zsh -i -c`, `zsh -l -i -c`, and pl
 
 `.zprofile` does not exist. It was a pure placeholder with no content; macOS `/etc/zprofile` already runs `path_helper` for login shells. Do not re-add an empty one.
 
-### PATH composition
+### PATH composition, and the `path_helper` trap
 
-PATH is built **once**, in `.zshenv`, in a deliberate order, and deduplicated at the end:
+**This is the single most misunderstood part of the rig. Read it before touching PATH.**
+
+macOS `/etc/zprofile` runs `/usr/libexec/path_helper`, which does **not** append politely. It:
+
+1. emits `/etc/paths` first — `/usr/local/bin`, `/usr/bin`, `/bin`, `/usr/sbin`, `/sbin`
+1. then every fragment in `/etc/paths.d/*` (Homebrew's own fragment lands here, sorted **last**)
+1. then appends whatever was already in `$PATH` — **at the tail**
+
+So anything `.zshenv` carefully arranged gets demoted. Measured, login shell, before the fix:
 
 ```
-Homebrew  →  language toolchains (cargo, go)  →  ~/.local/bin, ~/.bin  →  typeset -U PATH path
+usrlocal=2   usrbin=4   ...   brew=17   dotbin=18   localbin=19
 ```
 
-Homebrew must precede `/usr/bin` so its binaries beat the system ones. Local bins go last so they override everything. `typeset -U` collapses duplicates while **preserving first-occurrence order** — which means re-exporting an existing entry later *reorders* it rather than being a no-op. Do not "clean up" an apparently redundant PATH export without diffing `print -l $path` before and after.
+`/usr/bin` beating Homebrew is exactly what the config was trying to prevent, and `~/.bin` — meant to override everything — ended up dead last.
 
-`fnm` is the exception: it must load in `.zshrc` *after* Homebrew, so fnm-managed Node beats Homebrew's Node.
+**The fix is `.zprofile`, and this is precisely what `.zprofile` is for on macOS.** It is the only user file that runs *after* `/etc/zprofile`. PATH composition therefore lives in one file, `path.zsh`, sourced from **both**:
+
+```
+~/.zshenv  →  $ZDOTDIR/.zshenv  →  path.zsh::_mrgsh_compose_path   (non-login shells)
+              /etc/zprofile     →  path_helper reorders everything
+              $ZDOTDIR/.zprofile → path.zsh::_mrgsh_compose_path   (re-assert, login shells)
+```
+
+`_mrgsh_compose_path` prepends each directory that exists, then `typeset -gU PATH path` dedupes. Prepending an entry that is already present **reorders** it rather than being a no-op — that is the mechanism, not a side effect. It is idempotent, so running it twice is safe and correct.
+
+Result, all three modes:
+
+| mode                | `~/.bin` | `~/.local/bin` | brew | `/usr/local/bin` | `/usr/bin` |
+| ------------------- | -------- | -------------- | ---- | ---------------- | ---------- |
+| login + interactive | 2        | 3              | 6    | 8                | 10         |
+| interactive         | 2        | —              | 6    | —                | 11         |
+| non-interactive     | 1        | —              | 5    | —                | 10         |
+
+**Never verify a PATH change with `zsh -i -c` alone.** That is a non-login shell, so `/etc/zprofile` never runs and `path_helper` never fires — the exact bug above is invisible. Always test all three:
+
+```sh
+for m in "-l -i" "-i" ""; do zsh $=m -c 'print "brew=${path[(i)/opt/homebrew/bin]} usrbin=${path[(i)/usr/bin]}"'; done
+```
+
+An earlier audit of this repo concluded a Homebrew re-prepend in `.zshrc` was "redundant and harmful" — measured only in a non-login shell. It was in fact a workaround for `path_helper`; deleting it broke login shells silently. The workaround was in the wrong file, not wrong.
+
+`fnm` is the remaining exception: it loads in `.zshrc` *after* Homebrew, so fnm-managed Node wins.
 
 ### XDG variables
 
@@ -184,7 +220,7 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
 | Wiring         | Mechanism                                                                          |
 | -------------- | ---------------------------------------------------------------------------------- |
 | tmux ↔ nvim    | `M-H/J/K/L` forwarded via `@pane-is-vim` (needs smart-splits.nvim)                 |
-| tmux ↔ zsh     | `_tmux_exit_code` precmd → `@last_exit_code` window option (see caveat below)      |
+| tmux ↔ zsh     | *(removed — see §9; the exit-code indicator had no consumer)*                      |
 | tmux ↔ ghostty | terminal features (hyperlinks, clipboard — **no** extkeys) + `macos-option-as-alt` |
 | zsh ↔ yazi     | `C-f` widget opens yazi; `y()` wrapper handles cd-on-exit via temp cwd file        |
 | zsh ↔ atuin    | `C-r` is atuin, not fzf (`--disable-up-arrow`)                                     |
@@ -199,19 +235,13 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
 
 - **Switcher/menu use `#{session_id}`, not `#{session_name}`.** Session names can contain apostrophes and quotes, which break shell-style escaping inside `display-menu` command strings. Numeric `$N` IDs are quote-safe by construction.
 
-- **`_tmux_exit_code` is the first precmd** because it must read `$?` before OMP's own precmd overwrites it. Order here is the entire mechanism, not a preference. **It must also capture `$?` into a local as the function's very first statement** — this form is silently broken:
+- **If you ever re-add a `$?`-capturing precmd, capture into a local as the first statement.** This form looks right and is silently always-zero:
 
   ```zsh
   _tmux_exit_code() { [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code $?; }   # always 0
   ```
 
-  `$?` is expanded *after* the `[[ ]]` test has run, so it records the test's status, not the command's. Being first in `precmd_functions` is necessary but not sufficient. Correct form:
-
-  ```zsh
-  _tmux_exit_code() { local ec=$?; [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"; }
-  ```
-
-  **Known gap:** nothing currently *reads* `@last_exit_code`. Both shells set it (zsh and bash) and no tmux config consumes it — the "status bar error dot" this was built for was never implemented. Either wire a `status-right` segment on `#{@last_exit_code}` or drop the producers; do not leave it as a documented feature that does not exist.
+  `$?` is expanded *after* the `[[ ]]` test runs, so it records the test's status. Being first in `precmd_functions` is necessary but not sufficient. The correct shape is `local ec=$?` on line one, then use `"$ec"`. See §9 for why the real one was removed.
 
 - **Session persistence is deliberately manual** (park/save/unpark, no resurrect/continuum). Auto restore-on-boot resurrects panes whose working directories and processes have moved on, which is worse than starting clean.
 
@@ -275,6 +305,23 @@ Each of these was deliberately deleted. Re-adding one means re-litigating the re
 | `wt-dev` / `w` dev-build block     | Pointed at `~/DEV/rd/wt/main/bin/wt`, which no longer exists. The released `wt` is installed and wired separately.                                                                                                                                                         |
 | `dot_config/nushell/`              | `nu` not installed, zero references in either repo — 8.5K of config for a shell that never runs.                                                                                                                                                                           |
 | `~/.fzf/`                          | A 1.6M git clone left by fzf's manual install script (Jan 2024). Unreferenced; fzf comes from Homebrew.                                                                                                                                                                    |
+
+| `@last_exit_code` wiring | Producers in zsh + bash precmd with **no consumer**. Commit `9b4f131` ("catppuccin status bar redesign") deleted the reader; the producers were left behind and both docs kept claiming a "status bar error dot" that did not exist. Restore recipe below. | | `[[ -o no_global_rcs ]] && return` | Not dead — **actively wrong**. Under `zsh -d` the option is set, the guard fired, and the rest of `.zshenv` never ran: no PATH, no XDG, no GOPATH. `-d` means "skip `/etc/z*` global rcs", not "skip the user's own config". | | `CLAUDE_GIT_PASSPHRASE` *(private repo)* | Exported from `private.zsh` with **zero consumers** in either repo or `~/.claude`. Unrelated to git signing — signing is SSH via 1Password `op-ssh-sign`. Value remains in 3 commits of private history; purge + rotate is a separate operator task. |
+
+To restore the exit-code indicator, **both halves are required**. Producer (zsh):
+
+```zsh
+_tmux_exit_code() { local ec=$?; [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"; }
+precmd_functions=(_tmux_exit_code $precmd_functions)
+```
+
+Consumer — the window-list fragment deleted by `9b4f131`, recoverable via `git show 9b4f131^`:
+
+```tmux
+#{?#{&&:#{@last_exit_code},#{!=:#{@last_exit_code},0}},#[fg=red],...}●
+```
+
+Never add one half without the other. That asymmetry is precisely how this became orphaned config plus two false doc claims that survived for months.
 
 Two lessons worth generalising from that list:
 
