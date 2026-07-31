@@ -157,7 +157,7 @@ can_haz fnm && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --r
 # OMP writes one session-cache file per shell and never reaps them — keep newest 50
 () {
   setopt local_options extended_glob null_glob
-  local -a _c=( ~/.cache/oh-my-posh/(*.*-*-*-*-*.omp.cache|init.*.zsh)(om) )
+  local -a _c=( ~/.cache/oh-my-posh/*.*-*-*-*-*.omp.cache(om) )
   (( $#_c > 50 )) && rm -f -- "${(@)_c[51,-1]}"
 } >/dev/null 2>&1 &!
 
