@@ -40,7 +40,6 @@ The global agent kernels are the files that *should* deploy:
 ```
 ~/.claude/CLAUDE.md   ←  ~/.dotfiles-private/dot_claude/CLAUDE.md
 ~/.config/AGENTS.md   ←  ~/.dotfiles-private/dot_config/AGENTS.md      canonical
-~/.codex/AGENTS.md    →  symlink to ../.config/AGENTS.md
 ```
 
 **`~/.config/AGENTS.md` is deliberately tool-neutral.** The AGENTS.md spec itself defines *no* user-level location — it is strictly repo-root and nested-directory scoped. But tool vendors converged on `~/.config/…` independently, even on macOS where the native convention would be `~/Library/Application Support/`:
@@ -55,17 +54,17 @@ The global agent kernels are the files that *should* deploy:
 | Cursor      | no global AGENTS.md path documented at all                                |
 | Claude Code | `~/.claude/CLAUDE.md` — reads `CLAUDE.md`, never `AGENTS.md`              |
 
-Bare `~/.config/AGENTS.md` is the only location any tool reads without a vendor subdirectory, so it is the canonical file; everything else symlinks to it. To add a tool later:
+Bare `~/.config/AGENTS.md` is the only location any tool reads without a vendor subdirectory, so it is the canonical file. **No tool-specific copies or symlinks exist today** — none of these tools is currently installed. Add one only when you actually adopt the tool:
 
 ```sh
 ln -s ../.config/AGENTS.md ~/.config/opencode/AGENTS.md
 ```
 
-**Symlink targets are relative to the symlink's own directory, not `$HOME`.** From `~/.codex/` the target must be `../.config/AGENTS.md`; a bare `.config/AGENTS.md` would resolve to `~/.codex/.config/AGENTS.md` and dangle. (`~/.prettierignore → .config/git/ignore` works only because it sits directly in `$HOME`.)
+**Symlink targets are relative to the symlink's own directory, not `$HOME`.** From a vendor subdirectory the target must be `../.config/AGENTS.md`; a bare `.config/AGENTS.md` would resolve to `<vendordir>/.config/AGENTS.md` and dangle. (`~/.prettierignore → .config/git/ignore` works only because it sits directly in `$HOME`.)
 
-Only Claude Code and Codex have direct evidence of symlink support; for opencode, Zed, Amp and Gemini CLI it is untested — verify when you actually adopt one, don't assume.
+Symlink support is *evidenced* only for Claude Code (officially documented recipe) and Codex. For opencode, Zed, Amp and Gemini CLI it is untested — verify when you adopt one, don't assume.
 
-`~/.codex/config.toml` stays **unmanaged on purpose**: it is runtime state (marketplace revisions, hook trust hashes, desktop preferences), not config-as-code.
+Corollary, learned the hard way: **do not pre-create vendor directories for tools you have not installed.** A symlink farm for six agents you don't run is exactly the dead config this rig exists to avoid. One canonical file, links added on adoption.
 
 ## 2. The deploy loop
 
