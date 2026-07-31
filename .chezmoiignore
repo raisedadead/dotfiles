@@ -8,3 +8,4 @@ LICENSE
 LICENSE.md
 justfile
 install.sh
+/AGENTS.md

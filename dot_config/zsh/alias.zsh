@@ -29,11 +29,6 @@ can_haz lazygit && alias g="lazygit"
 can_haz brew && alias bu="cd ~/.config/brewfile && just update && just save && cd -"
 
 #----------------------------
-# LazyDocker
-#----------------------------
-can_haz lazydocker && alias d="lazydocker"
-
-#----------------------------
 # Claude
 #----------------------------
 alias c="claude --dangerously-skip-permissions"
@@ -41,8 +36,7 @@ alias c="claude --dangerously-skip-permissions"
 #-----------------------------
 # VM lists from Azure and DO
 #-----------------------------
-alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
-alias azvms="az vm list-ip-addresses --output table"
+can_haz doctl && alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
 
 #-----------------------------
 # Neovim
@@ -55,16 +49,6 @@ can_haz nvim && alias vim="nvim"
 #-----------------------------
 alias genrand='openssl rand -base64 32'
 alias genpass='openssl rand -hex 32'
-
-#-----------------------------
-# wt (dev build)
-#-----------------------------
-if can_haz "$HOME/DEV/rd/wt/main/bin/wt"; then
-  wt_bin="$HOME/DEV/rd/wt/main/bin/wt"
-  alias wt-dev="$wt_bin"
-  alias w="$wt_bin"
-  unset wt_bin
-fi
 
 #-----------------------------
 # Eza
