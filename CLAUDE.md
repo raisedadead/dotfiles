@@ -29,7 +29,7 @@ This half holds shell / tmux / ghostty / nvim / OMP and cross-tool integration. 
 ## Cross-Tool Integration
 
 - **tmux ↔ neovim**: `M-H/J/K/L` forwarded via `@pane-is-vim` (requires smart-splits.nvim)
-- **tmux ↔ zsh**: `_tmux_exit_code` precmd → `@last_exit_code` window option → status bar error dot
+- **tmux ↔ zsh**: `_tmux_exit_code` precmd → `@last_exit_code` window option. Must capture `$?` into a local **before** any test runs, or it records the test's status (always 0). **No consumer exists** — nothing in `dot_config/tmux/` reads the option; the "status bar error dot" is unimplemented
 - **tmux ↔ ghostty**: terminal features (hyperlinks, clipboard — no extkeys) + `macos-option-as-alt` for Alt binds. `terminal-features` reset with `set -su` before appending to prevent duplicates on config reload
 - **zsh ↔ yazi**: `C-f` widget opens yazi; `y()` wrapper handles cd-on-exit via temp cwd file
 

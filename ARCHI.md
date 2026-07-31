@@ -29,6 +29,21 @@ The public `.chezmoiignore` excludes `.claude` and `CLAUDE.md` so the private ha
 
 Both repos deploy into the same `$HOME`. A single logical config can therefore span both — the zsh setup does exactly this (`private.zsh` ships from the private repo into `$ZDOTDIR`). **Any move of a shared path needs a coordinated change in both repos**, or the source line breaks.
 
+### Repo docs must not deploy
+
+`README.md`, `CLAUDE.md`, `ARCHI.md` and `AGENTS.md` are *documentation about the repo*, not dotfiles. Every one must be listed in `.chezmoiignore` or chezmoi will happily deploy it into `$HOME`.
+
+This is easy to get wrong and hard to notice, because **`.gitignore` does not protect you** — chezmoi reads the source directory, not git's index. `AGENTS.md` was globally gitignored (so it never reached GitHub) yet still deployed to `~/AGENTS.md` from *both* repos for exactly that reason.
+
+The global agent kernels are the files that *should* deploy, and they live beside each other:
+
+```
+~/.claude/CLAUDE.md   ←  ~/.dotfiles-private/dot_claude/CLAUDE.md
+~/.codex/AGENTS.md    ←  UNMANAGED by either repo  (known gap)
+```
+
+`~/.codex/AGENTS.md` having no source of truth is a real gap, recorded here rather than quietly tolerated.
+
 ## 2. The deploy loop
 
 chezmoi source is canonical. The runtime target is downstream and disposable.
@@ -169,7 +184,7 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
 | Wiring         | Mechanism                                                                          |
 | -------------- | ---------------------------------------------------------------------------------- |
 | tmux ↔ nvim    | `M-H/J/K/L` forwarded via `@pane-is-vim` (needs smart-splits.nvim)                 |
-| tmux ↔ zsh     | `_tmux_exit_code` precmd → `@last_exit_code` window option → status bar error dot  |
+| tmux ↔ zsh     | `_tmux_exit_code` precmd → `@last_exit_code` window option (see caveat below)      |
 | tmux ↔ ghostty | terminal features (hyperlinks, clipboard — **no** extkeys) + `macos-option-as-alt` |
 | zsh ↔ yazi     | `C-f` widget opens yazi; `y()` wrapper handles cd-on-exit via temp cwd file        |
 | zsh ↔ atuin    | `C-r` is atuin, not fzf (`--disable-up-arrow`)                                     |
@@ -177,10 +192,27 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
 `CLAUDE.md` carries the enforceable one-line form of these rules — that is the list to obey while editing. What follows is the *why*, which is this document's job. Do not restate a bare rule here without adding rationale; that is how the two docs drift.
 
 - **Alt+Shift needs dual bindings** (`M-S-D` *and* `M-D`). Ghostty 1.3.0+ ([#9406]) strips the Shift modifier from Option-modified keys on macOS when in modifyOtherKeys mode. `extkeys` is therefore deliberately **omitted** from `terminal-features`, keeping Ghostty in legacy mode where case is preserved (`M-d` vs `M-D`). Adding `extkeys` for its other benefits will silently break every Alt+Shift bind.
+
 - **`terminal-features` is reset with `set -su` before appending** because tmux config reload is not idempotent — without the reset, features accumulate duplicates on every source.
+
 - **Emacs mode is the default** (`bindkey -e`) rather than vi, with `C-z` to toggle. vi mode introduces a mode-switch delay that makes Alt keybinds feel laggy; the toggle keeps vi available without paying for it on every keystroke.
+
 - **Switcher/menu use `#{session_id}`, not `#{session_name}`.** Session names can contain apostrophes and quotes, which break shell-style escaping inside `display-menu` command strings. Numeric `$N` IDs are quote-safe by construction.
-- **`_tmux_exit_code` is the first precmd** because it must read `$?` before OMP's own precmd overwrites it. Order here is the entire mechanism, not a preference.
+
+- **`_tmux_exit_code` is the first precmd** because it must read `$?` before OMP's own precmd overwrites it. Order here is the entire mechanism, not a preference. **It must also capture `$?` into a local as the function's very first statement** — this form is silently broken:
+
+  ```zsh
+  _tmux_exit_code() { [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code $?; }   # always 0
+  ```
+
+  `$?` is expanded *after* the `[[ ]]` test has run, so it records the test's status, not the command's. Being first in `precmd_functions` is necessary but not sufficient. Correct form:
+
+  ```zsh
+  _tmux_exit_code() { local ec=$?; [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"; }
+  ```
+
+  **Known gap:** nothing currently *reads* `@last_exit_code`. Three shells set it (zsh, bash, and formerly nushell) and no tmux config consumes it — the "status bar error dot" this was built for was never implemented. Either wire a `status-right` segment on `#{@last_exit_code}` or drop the producers; do not leave it as a documented feature that does not exist.
+
 - **Session persistence is deliberately manual** (park/save/unpark, no resurrect/continuum). Auto restore-on-boot resurrects panes whose working directories and processes have moved on, which is worse than starting clean.
 
 ## 7. Shell function conventions
@@ -226,24 +258,28 @@ Two implementation notes worth preserving:
 
 Each of these was deliberately deleted. Re-adding one means re-litigating the reason.
 
-| Removed                         | Why                                                                                                                                                                                                                                                                        |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/tmp/.zsh_editor_cache_$UID`   | Cached `$EDITOR` via a predictable path in a world-writable dir, then fed it to `GIT_EDITOR` — a value later executed as a command. Saved no measurable time. `EDITOR` is now a literal.                                                                                   |
-| `~/.fzf.zsh` loader             | Unmanaged, generated by fzf's install script, hardcoded `/opt/homebrew/opt/fzf/shell/*`. Replaced by `eval "$(fzf --zsh)"` — verified byte-identical in content, differing only in ordering. Its PATH addition was redundant; `fzf-tmux` resolves via `/opt/homebrew/bin`. |
-| Linux Homebrew branch           | `DOT_TARGET` was hardcoded `"macos"`, so the branch was unreachable. This rig is macOS-only.                                                                                                                                                                               |
-| `mysql-client` PATH block       | Neither the directory nor the `mysql` binary exists.                                                                                                                                                                                                                       |
-| `~/bin` PATH entry              | Directory does not exist; `~/.bin` is the real one.                                                                                                                                                                                                                        |
-| pyenv block                     | Already commented out, and `~/.pyenv` absent.                                                                                                                                                                                                                              |
-| Empty `.zprofile`               | Pure placeholder. macOS `/etc/zprofile` handles login-shell `path_helper`.                                                                                                                                                                                                 |
-| zinit / zsh-defer / eval caches | See §4. Determinism over milliseconds.                                                                                                                                                                                                                                     |
-| tmux-resurrect / continuum      | Session persistence is manual by choice.                                                                                                                                                                                                                                   |
+| Removed                            | Why                                                                                                                                                                                                                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tmp/.zsh_editor_cache_$UID`      | Cached `$EDITOR` via a predictable path in a world-writable dir, then fed it to `GIT_EDITOR` — a value later executed as a command. Saved no measurable time. `EDITOR` is now a literal.                                                                                   |
+| `~/.fzf.zsh` loader                | Unmanaged, generated by fzf's install script, hardcoded `/opt/homebrew/opt/fzf/shell/*`. Replaced by `eval "$(fzf --zsh)"` — verified byte-identical in content, differing only in ordering. Its PATH addition was redundant; `fzf-tmux` resolves via `/opt/homebrew/bin`. |
+| Linux Homebrew branch              | `DOT_TARGET` was hardcoded `"macos"`, so the branch was unreachable. This rig is macOS-only.                                                                                                                                                                               |
+| `mysql-client` PATH block          | Neither the directory nor the `mysql` binary exists.                                                                                                                                                                                                                       |
+| `~/bin` PATH entry                 | Directory does not exist; `~/.bin` is the real one.                                                                                                                                                                                                                        |
+| pyenv block                        | Already commented out, and `~/.pyenv` absent.                                                                                                                                                                                                                              |
+| Empty `.zprofile`                  | Pure placeholder. macOS `/etc/zprofile` handles login-shell `path_helper`.                                                                                                                                                                                                 |
+| zinit / zsh-defer / eval caches    | See §4. Determinism over milliseconds.                                                                                                                                                                                                                                     |
+| tmux-resurrect / continuum         | Session persistence is manual by choice.                                                                                                                                                                                                                                   |
+| `dot_bin/search.sh` (`rgs`, `fds`) | Both wrapped `tv` (television), which is not installed — the commands errored on every invocation. `fzf`, `fd`, `rg` and the `C-f` yazi widget already cover this ground.                                                                                                  |
+| `alias azvms`                      | `az` not installed, and the alias was **unguarded** — a broken command waiting to be typed. `dovms` beside it is now `can_haz doctl`-guarded.                                                                                                                              |
+| `alias d=lazydocker`               | `lazydocker` not installed. Guarded, so it failed silently — pure dead weight.                                                                                                                                                                                             |
+| `wt-dev` / `w` dev-build block     | Pointed at `~/DEV/rd/wt/main/bin/wt`, which no longer exists. The released `wt` is installed and wired separately.                                                                                                                                                         |
+| `dot_config/nushell/`              | `nu` not installed, zero references in either repo — 8.5K of config for a shell that never runs.                                                                                                                                                                           |
+| `~/.fzf/`                          | A 1.6M git clone left by fzf's manual install script (Jan 2024). Unreferenced; fzf comes from Homebrew.                                                                                                                                                                    |
 
-Known leftovers, **not** yet removed — these live outside both repos, so chezmoi will never surface them and nothing will ever flag them:
+Two lessons worth generalising from that list:
 
-- `~/.fzf/` — a full git clone from a manual fzf install (Jan 2024). Nothing references it; fzf now comes from Homebrew. Safe to delete; kept pending a decision.
-- `~/.zsh-reorg-orphans/` — the pre-ZDOTDIR files, retained as a rollback path for the move. Delete once the layout has survived normal use.
-
-The general lesson: **a vendor install script that writes into `$HOME` creates state neither repo owns.** Prefer package-manager installs and `tool --init`-style generated output over install scripts, so the config stays derivable rather than deposited.
+- **A vendor install script that writes into `$HOME` creates state neither repo owns.** chezmoi will never surface it and nothing will ever flag it. Prefer package-manager installs and `tool --init`-style generated output, so config stays *derivable* rather than *deposited*.
+- **An unguarded alias to a missing binary is a bug; a guarded one is dead weight.** Both are worth finding, but only the first will bite you. Audit with a loop over every tool an alias references — `command -v` each one — rather than reading the file and assuming.
 
 ## 10. Patterns worth keeping
 

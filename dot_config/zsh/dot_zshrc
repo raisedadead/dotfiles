@@ -42,7 +42,7 @@ can_haz() { whence -p "$1" >/dev/null 2>&1 }
 timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
 
 # Tmux exit code indicator (must be first precmd to capture $? before OMP)
-_tmux_exit_code() { [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code $?; }
+_tmux_exit_code() { local ec=$?; [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"; }
 precmd_functions=(_tmux_exit_code $precmd_functions)
 
 # Keybindings
@@ -153,13 +153,11 @@ can_haz wt     && eval "$(wt shell-init zsh)"
 
 # File sourcing
 source "$ZDOTDIR/alias.zsh"
-source "$ZDOTDIR/private.zsh"
+[[ -r "$ZDOTDIR/private.zsh" ]] && source "$ZDOTDIR/private.zsh"
 [[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 [[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh
 
-# Homebrew must precede /usr/bin in PATH to avoid system binaries taking priority.
-# fnm must load after Homebrew so fnm-managed Node.js overrides Homebrew's Node.js.
-export PATH="/opt/homebrew/bin:$PATH"
+# fnm must load after Homebrew (set in .zshenv) so fnm-managed Node.js wins.
 can_haz fnm && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet)"
 
 # OMP writes one session-cache file per shell and never reaps them — keep newest 50
