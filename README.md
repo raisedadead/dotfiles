@@ -110,11 +110,11 @@ git clone git@github.com:raisedadead/dotfiles.git ~/.dotfiles
 
 ```bash
 # Edit chezmoi source directly, then apply
-$EDITOR ~/.dotfiles/dot_zshrc
+$EDITOR ~/.dotfiles/dot_config/zsh/dot_zshrc
 home apply
 
 # Or edit via chezmoi without touching the target file
-home pub edit ~/.zshrc
+home pub edit ~/.config/zsh/.zshrc
 ```
 
 ### Adding a new file

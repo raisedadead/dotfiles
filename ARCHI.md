@@ -113,14 +113,27 @@ This is a deliberate trade and it gets re-litigated by every optimisation guide 
 
 Deferral buys milliseconds and costs determinism — a deferred plugin that loads after your first keystroke produces bindings that exist or don't depending on how fast you type. That is a worse failure mode than a slower start.
 
-**Budget: warm start under ~200ms.** Measure, don't guess:
+**Measured 2026-07-31: median 190ms, range 170–200ms (n=15).**
 
-```sh
-for i in 1 2 3 4 5; do /usr/bin/time -p zsh -i -c exit; done
-ZPROF=true zsh -i -c exit          # per-function breakdown
+`CLAUDE.md` previously carried a "~155ms" budget. That number is **unexplained** — it was not reproduced at the time of this measurement, and no profile of the older config survives to say where the 35ms went. It is recorded here as an open question, not silently restated as the new truth. If you care about the gap, profile before assuming a regression: the delta may be new plugins, a slower disk, or a number that was optimistic to begin with.
+
+Where the time actually goes, per `zprof`:
+
+```
+compinit + compaudit  ~24ms      the single largest attributable cost
+everything else       <3ms each  fsh widget binding, fzf-tab, can_haz x16
 ```
 
-Anything proposing zinit / zsh-defer / eval-caching to get under this is rejected by default.
+That accounts for roughly a third of wall clock; the rest is process spawn plus `eval "$(tool init)"` subshells, which `zprof` does not attribute to zsh functions.
+
+Measure, don't guess:
+
+```sh
+for i in $(seq 15); do /usr/bin/time -p zsh -i -c exit; done   # wall clock
+ZPROF=true zsh -i -c exit                                      # per-function breakdown
+```
+
+Anything proposing zinit / zsh-defer / eval-caching to get under this is rejected by default — see the trade above.
 
 ### Load order inside `.zshrc`
 
@@ -161,18 +174,14 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
 | zsh ↔ yazi     | `C-f` widget opens yazi; `y()` wrapper handles cd-on-exit via temp cwd file        |
 | zsh ↔ atuin    | `C-r` is atuin, not fzf (`--disable-up-arrow`)                                     |
 
-Hard-won details:
+`CLAUDE.md` carries the enforceable one-line form of these rules — that is the list to obey while editing. What follows is the *why*, which is this document's job. Do not restate a bare rule here without adding rationale; that is how the two docs drift.
 
-- **`_tmux_exit_code` must be the first precmd** — it captures `$?` before OMP modifies it.
-- **`keybinds.conf` ↔ `keyb.yml` must stay in sync.** Always update both.
-- **tmux names Shift-Tab `BTab`** (`M-BTab`), not `M-S-Tab`.
-- **Dual keybindings for Alt+Shift.** Bind both `M-S-D` (CSI u) and `M-D` (legacy). Ghostty 1.3.0+ (#9406) strips Shift from Option-modified keys on macOS in modifyOtherKeys mode. `extkeys` is deliberately omitted from `terminal-features` to keep Ghostty in legacy mode where case survives.
-- **`terminal-features` must be reset with `set -su`** before appending, or it duplicates on reload.
-- **Emacs mode is the default** (`bindkey -e`), `C-z` toggles vi — required for Alt binds without lag.
-- **`set -g detach-on-destroy off`** — needed for park/save/unpark; keeps the client attached.
-- **Switcher/menu use `#{session_id}`, not `#{session_name}`** — names can contain quotes that break shell escaping in `display-menu`; numeric `$N` IDs are quote-safe.
-- **Popup scripts live in `dot_config/tmux/scripts/`**, not `dot_bin/`.
-- Session persistence is **intentionally manual** — park/save/unpark, no resurrect/continuum, no auto-restore on boot.
+- **Alt+Shift needs dual bindings** (`M-S-D` *and* `M-D`). Ghostty 1.3.0+ ([#9406]) strips the Shift modifier from Option-modified keys on macOS when in modifyOtherKeys mode. `extkeys` is therefore deliberately **omitted** from `terminal-features`, keeping Ghostty in legacy mode where case is preserved (`M-d` vs `M-D`). Adding `extkeys` for its other benefits will silently break every Alt+Shift bind.
+- **`terminal-features` is reset with `set -su` before appending** because tmux config reload is not idempotent — without the reset, features accumulate duplicates on every source.
+- **Emacs mode is the default** (`bindkey -e`) rather than vi, with `C-z` to toggle. vi mode introduces a mode-switch delay that makes Alt keybinds feel laggy; the toggle keeps vi available without paying for it on every keystroke.
+- **Switcher/menu use `#{session_id}`, not `#{session_name}`.** Session names can contain apostrophes and quotes, which break shell-style escaping inside `display-menu` command strings. Numeric `$N` IDs are quote-safe by construction.
+- **`_tmux_exit_code` is the first precmd** because it must read `$?` before OMP's own precmd overwrites it. Order here is the entire mechanism, not a preference.
+- **Session persistence is deliberately manual** (park/save/unpark, no resurrect/continuum). Auto restore-on-boot resurrects panes whose working directories and processes have moved on, which is worse than starting clean.
 
 ## 7. Shell function conventions
 
@@ -229,6 +238,13 @@ Each of these was deliberately deleted. Re-adding one means re-litigating the re
 | zinit / zsh-defer / eval caches | See §4. Determinism over milliseconds.                                                                                                                                                                                                                                     |
 | tmux-resurrect / continuum      | Session persistence is manual by choice.                                                                                                                                                                                                                                   |
 
+Known leftovers, **not** yet removed — these live outside both repos, so chezmoi will never surface them and nothing will ever flag them:
+
+- `~/.fzf/` — a full git clone from a manual fzf install (Jan 2024). Nothing references it; fzf now comes from Homebrew. Safe to delete; kept pending a decision.
+- `~/.zsh-reorg-orphans/` — the pre-ZDOTDIR files, retained as a rollback path for the move. Delete once the layout has survived normal use.
+
+The general lesson: **a vendor install script that writes into `$HOME` creates state neither repo owns.** Prefer package-manager installs and `tool --init`-style generated output over install scripts, so the config stays derivable rather than deposited.
+
 ## 10. Patterns worth keeping
 
 Distilled from auditing this repo. These generalise.
@@ -248,3 +264,5 @@ Distilled from auditing this repo. These generalise.
 - Agent rules: `~/.claude/rules/`
 - chezmoi: <https://www.chezmoi.io/reference/>
 - zsh startup files: `man zshall`, section *STARTUP/SHUTDOWN FILES*
+
+[#9406]: https://github.com/ghostty-org/ghostty/pull/9406
