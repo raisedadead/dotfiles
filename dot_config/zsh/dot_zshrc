@@ -122,7 +122,6 @@ update-completions() {
   mkdir -p ~/.zfunc
   can_haz gh && gh completion -s zsh > ~/.zfunc/_gh
   can_haz op && op completion zsh > ~/.zfunc/_op
-  can_haz bd && bd completion zsh > ~/.zfunc/_bd
   can_haz wrangler && wrangler complete zsh | sed -n '/^#compdef/,$p' > ~/.zfunc/_wrangler  # strip pre-#compdef banner (wrangler 4.94+ leaks skills-install nag to stdout)
   rm -f ~/.zcompdump && autoload -Uz compinit && compinit -d ~/.zcompdump
 }
@@ -150,7 +149,6 @@ can_haz wt     && eval "$(wt shell-init zsh)"
 # File sourcing
 source "$ZDOTDIR/alias.zsh"
 [[ -r "$ZDOTDIR/private.zsh" ]] && source "$ZDOTDIR/private.zsh"
-[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 [[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh
 
 # fnm must load after Homebrew (set in .zshenv) so fnm-managed Node.js wins.

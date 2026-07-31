@@ -75,10 +75,8 @@
       key: "4"
     - name: Equalize horizontal
       key: "5"
-    - name: Save session (snapshot)
-      key: "6"
     - name: Scratch terminal
-      key: "7"
+      key: "6"
     - name: URL picker
       key: "0"
     - name: New window
