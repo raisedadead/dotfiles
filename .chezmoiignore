@@ -1,5 +1,6 @@
 .claude
 CLAUDE.md
+/ARCHI.md
 .config/brewfile
 .githooks
 README.md
