@@ -160,7 +160,7 @@ can_haz fnm && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --r
 () {
   setopt local_options extended_glob null_glob
   local -a _c=( ~/.cache/oh-my-posh/(shell|zsh).*.omp.cache(om) )
-  (( $#_c > 50 )) && rm -f -- "${_c[51,-1]}"
+  (( $#_c > 50 )) && rm -f -- "${(@)_c[51,-1]}"
 } >/dev/null 2>&1 &!
 
 # Performance profiling
