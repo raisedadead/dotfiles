@@ -22,17 +22,10 @@ export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 export HOMEBREW_PREFIX="/opt/homebrew"
 export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
 export HOMEBREW_REPOSITORY="/opt/homebrew"
-export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin${PATH+:$PATH}"
 export MANPATH="$HOMEBREW_PREFIX/share/man${MANPATH+:$MANPATH}:"
 export INFOPATH="$HOMEBREW_PREFIX/share/info:${INFOPATH:-}"
 
-# Programming languages PATH setup
-# Rust
-[[ -d "$HOME/.cargo" ]] && export PATH="$HOME/.cargo/bin:$PATH"
-
-# Go
 export GOPATH="$HOME/go"
-[[ -d "$GOPATH/bin" ]] && export PATH="$GOPATH/bin:$PATH"
 
 # Ruby (via Homebrew)
 if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/ruby" ]]; then
@@ -54,17 +47,13 @@ if [[ -d "$HOME/.rbenv" ]]; then
   }
 fi
 
-# Local bin directories (should be last to override system commands)
-[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
-[[ -d "$HOME/.bin" ]] && export PATH="$HOME/.bin:$PATH"
+source "${ZDOTDIR:-$HOME/.config/zsh}/path.zsh"
+_mrgsh_compose_path
 
 # Editor configuration
 export EDITOR="nvim"
 export VISUAL="code"
 export GIT_EDITOR="$EDITOR"
-
-# Remove duplicate PATH entries
-typeset -U PATH path
 
 #-----------------------------------------------------------
 # End of .zshenv

@@ -1,0 +1,14 @@
+#-----------------------------------------------------------
+# @raisedadead's config files
+# Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
+# License: ISC
+#
+# File name: .zprofile
+#
+# Runs after /etc/zprofile, whose path_helper reorders PATH.
+# Re-asserting here is what makes the order survive a login shell.
+# Rationale: ARCHI.md section 3, "PATH composition".
+#-----------------------------------------------------------
+
+source "${ZDOTDIR:-$HOME/.config/zsh}/path.zsh"
+_mrgsh_compose_path
