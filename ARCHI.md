@@ -211,7 +211,7 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
   _tmux_exit_code() { local ec=$?; [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"; }
   ```
 
-  **Known gap:** nothing currently *reads* `@last_exit_code`. Three shells set it (zsh, bash, and formerly nushell) and no tmux config consumes it — the "status bar error dot" this was built for was never implemented. Either wire a `status-right` segment on `#{@last_exit_code}` or drop the producers; do not leave it as a documented feature that does not exist.
+  **Known gap:** nothing currently *reads* `@last_exit_code`. Both shells set it (zsh and bash) and no tmux config consumes it — the "status bar error dot" this was built for was never implemented. Either wire a `status-right` segment on `#{@last_exit_code}` or drop the producers; do not leave it as a documented feature that does not exist.
 
 - **Session persistence is deliberately manual** (park/save/unpark, no resurrect/continuum). Auto restore-on-boot resurrects panes whose working directories and processes have moved on, which is worse than starting clean.
 
