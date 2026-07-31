@@ -111,11 +111,13 @@ fpath+=("$ZPLUGDIR/zsh-completions/src" "$ZPLUGDIR/zsh-claudecode-completion")
 [[ -d ~/.zfunc ]] && fpath=("$HOME/.zfunc" $fpath)
 
 autoload -Uz compinit
-if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+_zcompdump_stale=( ~/.zcompdump(N.mh+24) )
+if (( $#_zcompdump_stale )); then
   compinit -d ~/.zcompdump
 else
   compinit -C -d ~/.zcompdump
 fi
+unset _zcompdump_stale
 
 # Regenerate static completions in ~/.zfunc after upgrading these tools
 update-completions() {
