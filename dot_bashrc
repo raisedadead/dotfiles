@@ -33,6 +33,7 @@ export GIT_EDITOR="$EDITOR"
 # --- PATH ---
 export HOMEBREW_PREFIX="/opt/homebrew"
 export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+[[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/fnm/aliases/default/bin" ]] && export PATH="${XDG_DATA_HOME:-$HOME/.local/share}/fnm/aliases/default/bin:$PATH"
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
 export GOPATH="$HOME/go"
 [[ -d "$GOPATH/bin" ]] && export PATH="$GOPATH/bin:$PATH"
