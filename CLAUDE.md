@@ -10,6 +10,7 @@ This half holds shell / tmux / ghostty / nvim / OMP and cross-tool integration. 
 - **`RUNTIME_KEYS` is empty by design** — `_capture_runtime_owned` harvests nothing live→source, because harvesting `model` fought the pinned value every apply. Consequence: a `/model` or `/config` change not mirrored into source is silently wiped on the next apply. `PRIV_RUNTIME_OWNED` force-applies two files (`~/.claude/settings.json`, `~/.pi/agent/settings.json`); mechanism in [`~/.dotfiles-private/ARCHI.md`](~/.dotfiles-private/ARCHI.md) §2.1
 - **chezmoi never prunes** — deleting a source file leaves the deployed target in place. `rm` it manually after `apply`, or it becomes an unmanaged orphan nothing will ever flag
 - **keybinds.conf ↔ keyb.yml must stay in sync** — always update both when changing tmux bindings
+- **The workspace list lives in THREE files** — `dot_config/sketchybar/lua/items/spaces.lua`, `dot_config/sketchybar/executable_sketchybarrc` (the `left_island` bracket), and `dot_config/aerospace/aerospace.toml` (`persistent-workspaces`). Adding a workspace to fewer than all three renders and clicks but falls outside the island background, with no error. Already drifted once — `1e2658e`. Do not DRY it away; just update all three
 - **`_tmux_exit_code` must be first precmd** — captures `$?` before OMP modifies it
 - **tmux mouse selection is pane-aware** — drag selects within pane, copies to system clipboard via OSC 52; Shift+drag falls back to native Ghostty selection
 - **tmux names Shift-Tab as `BTab`** (e.g., `M-BTab`), not `M-S-Tab`
