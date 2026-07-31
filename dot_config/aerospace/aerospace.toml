@@ -11,18 +11,13 @@ exec-on-workspace-change = [
 ]
 
 start-at-login = true
-enable-normalization-flatten-containers = true
-enable-normalization-opposite-orientation-for-nested-containers = true
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 on-mode-changed = [
   'exec-and-forget /bin/bash -c "/opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)"',
 ]
-automatically-unhide-macos-hidden-apps = false
 
 persistent-workspaces = ['1', '2', '3', '4', '5']
 
-[key-mapping]
-preset = 'qwerty'
 
 [gaps]
 inner.horizontal = 12

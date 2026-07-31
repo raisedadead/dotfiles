@@ -8,17 +8,16 @@ set -euo pipefail
 target="${1:-window}"
 
 if [[ "$target" == "session" ]]; then
-  current="$(tmux display-message -p '#S')"
+	current="$(tmux display-message -p '#S')"
 else
-  current="$(tmux display-message -p '#W')"
+	current="$(tmux display-message -p '#W')"
 fi
 
 printf '\n   %s%s%s → ' "$CLR_DIM" "$current" "$CLR_RST"
 
 read_inline name || exit 0
 if [[ "$target" == "session" ]]; then
-  tmux rename-session "$name"
+	tmux rename-session "$name"
 else
-  tmux rename-window "$name"
-  tmux set -w @auto-named 0
+	tmux rename-window "$name"
 fi

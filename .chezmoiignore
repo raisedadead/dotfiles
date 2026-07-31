@@ -4,8 +4,5 @@ CLAUDE.md
 .config/brewfile
 .githooks
 README.md
-LICENSE
-LICENSE.md
-justfile
 install.sh
 /AGENTS.md

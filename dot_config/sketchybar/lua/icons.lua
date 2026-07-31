@@ -5,7 +5,6 @@ local M = {
 	clock = "\u{F017}",
 	utc = "\u{F0AC}",
 	service = "\u{F013}",
-	default = "\u{F069}",
 }
 
 function M.app(name)
