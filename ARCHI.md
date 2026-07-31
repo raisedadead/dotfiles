@@ -35,14 +35,37 @@ Both repos deploy into the same `$HOME`. A single logical config can therefore s
 
 This is easy to get wrong and hard to notice, because **`.gitignore` does not protect you** — chezmoi reads the source directory, not git's index. `AGENTS.md` was globally gitignored (so it never reached GitHub) yet still deployed to `~/AGENTS.md` from *both* repos for exactly that reason.
 
-The global agent kernels are the files that *should* deploy, and they live beside each other:
+The global agent kernels are the files that *should* deploy:
 
 ```
 ~/.claude/CLAUDE.md   ←  ~/.dotfiles-private/dot_claude/CLAUDE.md
-~/.codex/AGENTS.md    ←  UNMANAGED by either repo  (known gap)
+~/.config/AGENTS.md   ←  ~/.dotfiles-private/dot_config/AGENTS.md      canonical
+~/.codex/AGENTS.md    →  symlink to ../.config/AGENTS.md
 ```
 
-`~/.codex/AGENTS.md` having no source of truth is a real gap, recorded here rather than quietly tolerated.
+**`~/.config/AGENTS.md` is deliberately tool-neutral.** The AGENTS.md spec itself defines *no* user-level location — it is strictly repo-root and nested-directory scoped. But tool vendors converged on `~/.config/…` independently, even on macOS where the native convention would be `~/Library/Application Support/`:
+
+| tool        | global path                                                               |
+| ----------- | ------------------------------------------------------------------------- |
+| Amp         | `~/.config/amp/AGENTS.md` **and bare `~/.config/AGENTS.md`**              |
+| opencode    | `~/.config/opencode/AGENTS.md`                                            |
+| Zed         | `~/.config/zed/AGENTS.md`                                                 |
+| Codex       | `~/.codex/AGENTS.md` (relocatable via `CODEX_HOME`)                       |
+| Aider       | none native — needs `~/.aider.conf.yml` `read:` with an **absolute** path |
+| Cursor      | no global AGENTS.md path documented at all                                |
+| Claude Code | `~/.claude/CLAUDE.md` — reads `CLAUDE.md`, never `AGENTS.md`              |
+
+Bare `~/.config/AGENTS.md` is the only location any tool reads without a vendor subdirectory, so it is the canonical file; everything else symlinks to it. To add a tool later:
+
+```sh
+ln -s ../.config/AGENTS.md ~/.config/opencode/AGENTS.md
+```
+
+**Symlink targets are relative to the symlink's own directory, not `$HOME`.** From `~/.codex/` the target must be `../.config/AGENTS.md`; a bare `.config/AGENTS.md` would resolve to `~/.codex/.config/AGENTS.md` and dangle. (`~/.prettierignore → .config/git/ignore` works only because it sits directly in `$HOME`.)
+
+Only Claude Code and Codex have direct evidence of symlink support; for opencode, Zed, Amp and Gemini CLI it is untested — verify when you actually adopt one, don't assume.
+
+`~/.codex/config.toml` stays **unmanaged on purpose**: it is runtime state (marketplace revisions, hook trust hashes, desktop preferences), not config-as-code.
 
 ## 2. The deploy loop
 
