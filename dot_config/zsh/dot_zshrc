@@ -78,7 +78,7 @@ can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/
 #-----------------------------------------------------------
 # Plugins
 #-----------------------------------------------------------
-ZPLUGDIR="$HOME/.local/share/zsh/plugins"
+ZPLUGDIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 ZPLUGS=(
   zsh-users/zsh-completions
   wbingli/zsh-claudecode-completion
@@ -104,8 +104,8 @@ zsh-plugin-update() {
 }
 
 # FZF
-source ~/.fzf.zsh
-source ~/.fzf.zshrc
+can_haz fzf && eval "$(fzf --zsh)"
+source "$ZDOTDIR/fzf.zsh"
 
 #-----------------------------------------------------------
 # Completions
@@ -152,8 +152,8 @@ can_haz direnv && eval "$(direnv hook zsh)"
 can_haz wt     && eval "$(wt shell-init zsh)"
 
 # File sourcing
-source ~/.alias.zshrc
-source ~/.private.zshrc
+source "$ZDOTDIR/alias.zsh"
+source "$ZDOTDIR/private.zsh"
 [[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 [[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh
 
