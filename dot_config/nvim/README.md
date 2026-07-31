@@ -38,13 +38,13 @@ Leader: `Space`
 
 ### Navigation
 
-| Key           | Action               |
-| ------------- | -------------------- |
-| `C-h/j/k/l`   | Window navigation    |
-| `C-Arrow`     | Resize windows       |
-| `[b` / `]b`   | Prev/next buffer     |
-| `S-h` / `S-l` | Prev/next buffer     |
-| `]d` / `[d`   | Next/prev diagnostic |
+| Key           | Action                                            |
+| ------------- | ------------------------------------------------- |
+| `M-H/J/K/L`   | Pane navigation (smart-splits; crosses into tmux) |
+| `C-Arrow`     | Resize windows                                    |
+| `[b` / `]b`   | Prev/next buffer                                  |
+| `S-h` / `S-l` | Prev/next buffer                                  |
+| `]d` / `[d`   | Next/prev diagnostic                              |
 
 ### Editing
 

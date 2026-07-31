@@ -95,7 +95,7 @@ Two hazards that have bitten before:
 
   ```sh
   chezmoi apply --destination "$STAGE" --source ~/.dotfiles
-  ZDOTDIR="$STAGE/.config/zsh" zsh -i -c 'print -l $path; bindkey | grep "\^F"'
+  ZDOTDIR="$STAGE/.config/zsh" zsh -l -i -c 'print -l $path; bindkey | grep "\^F"'
   ```
 
 ## 3. zsh layout — ZDOTDIR
@@ -135,7 +135,7 @@ export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 
 Verified across all four modes — `zsh -c`, `zsh -i -c`, `zsh -l -i -c`, and plain non-interactive. The non-interactive case is the load-bearing one: without it, scripts, `ssh host cmd` and editor subshells lose PATH entirely.
 
-`.zprofile` does not exist. It was a pure placeholder with no content; macOS `/etc/zprofile` already runs `path_helper` for login shells. Do not re-add an empty one.
+`.zprofile` **does exist and is load-bearing** — see the `path_helper` trap below. It was once an empty placeholder and was deleted as dead weight; that was wrong, and re-creating it with real content is what makes Homebrew outrank `/usr/bin` in a login shell. Do not delete it again.
 
 ### PATH composition, and the `path_helper` trap
 
@@ -229,10 +229,11 @@ options & history  →  keybindings (bindkey -e)  →  prompt (OMP)  →  plugin
    →  tool integrations  →  aliases & functions  →  fnm
 ```
 
-Two constraints worth naming:
+Three constraints worth naming:
 
 - `fzf-tab` must load **after** `compinit` and **before** any plugin that wraps widgets (`fast-syntax-highlighting`, `zsh-autosuggestions`).
 - `functions.sh` sources `keybindings.sh`, which binds `C-f` to the yazi widget. It is sourced late, after the widget-wrapping plugins. Move it earlier and `C-f` dies silently.
+- **`C-r` belongs to atuin only because atuin loads last.** `fzf --zsh` and `atuin init zsh` both bind it unconditionally — fzf to `fzf-history-widget`, atuin to `atuin-search`. `--disable-up-arrow` governs only `^[[A`, not `^R`. Swap the two `eval` lines and `C-r` reverts to fzf with no error.
 
 Regression check after any reordering — compare against a pre-change capture:
 
@@ -306,14 +307,15 @@ Two implementation notes worth preserving:
 
 ## 8. Validation
 
-| Target          | Command                                                               |
-| --------------- | --------------------------------------------------------------------- |
-| Ghostty         | `ghostty +show-config`                                                |
-| tmux            | `tmux source-file ~/.config/tmux/tmux.conf`                           |
-| zsh             | `zsh -i -c exit` then diff `bindkey` / `$path` / `$fpath` vs baseline |
-| Dotfiles health | `home check`                                                          |
-| Dotfiles sync   | `home sync`                                                           |
-| Shell scripts   | `shellcheck` — advisory only                                          |
+| Target           | Command                                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| Ghostty          | `ghostty +show-config`                                           |
+| tmux             | `tmux source-file ~/.config/tmux/tmux.conf`                      |
+| zsh — load order | `zsh -i -c exit` then diff `bindkey` / `$fpath` vs baseline      |
+| zsh — PATH       | three-mode loop from §3; **`-i` alone hides `path_helper` bugs** |
+| Dotfiles health  | `home check`                                                     |
+| Dotfiles sync    | `home sync`                                                      |
+| Shell scripts    | `shellcheck` — advisory only                                     |
 
 `shellcheck` does not support zsh and emits **SC1071 on every zsh file**. That is expected, not a regression. It still catches real quoting bugs in the POSIX-ish subset, so it stays wired in as advisory.
 
@@ -321,25 +323,26 @@ Two implementation notes worth preserving:
 
 Each of these was deliberately deleted. Re-adding one means re-litigating the reason.
 
-| Removed                            | Why                                                                                                                                                                                                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/tmp/.zsh_editor_cache_$UID`      | Cached `$EDITOR` via a predictable path in a world-writable dir, then fed it to `GIT_EDITOR` — a value later executed as a command. Saved no measurable time. `EDITOR` is now a literal.                                                                                   |
-| `~/.fzf.zsh` loader                | Unmanaged, generated by fzf's install script, hardcoded `/opt/homebrew/opt/fzf/shell/*`. Replaced by `eval "$(fzf --zsh)"` — verified byte-identical in content, differing only in ordering. Its PATH addition was redundant; `fzf-tmux` resolves via `/opt/homebrew/bin`. |
-| Linux Homebrew branch              | `DOT_TARGET` was hardcoded `"macos"`, so the branch was unreachable. This rig is macOS-only.                                                                                                                                                                               |
-| `mysql-client` PATH block          | Neither the directory nor the `mysql` binary exists.                                                                                                                                                                                                                       |
-| `~/bin` PATH entry                 | Directory does not exist; `~/.bin` is the real one.                                                                                                                                                                                                                        |
-| pyenv block                        | Already commented out, and `~/.pyenv` absent.                                                                                                                                                                                                                              |
-| Empty `.zprofile`                  | Pure placeholder. macOS `/etc/zprofile` handles login-shell `path_helper`.                                                                                                                                                                                                 |
-| zinit / zsh-defer / eval caches    | See §4. Determinism over milliseconds.                                                                                                                                                                                                                                     |
-| tmux-resurrect / continuum         | Session persistence is manual by choice.                                                                                                                                                                                                                                   |
-| `dot_bin/search.sh` (`rgs`, `fds`) | Both wrapped `tv` (television), which is not installed — the commands errored on every invocation. `fzf`, `fd`, `rg` and the `C-f` yazi widget already cover this ground.                                                                                                  |
-| `alias azvms`                      | `az` not installed, and the alias was **unguarded** — a broken command waiting to be typed. `dovms` beside it is now `can_haz doctl`-guarded.                                                                                                                              |
-| `alias d=lazydocker`               | `lazydocker` not installed. Guarded, so it failed silently — pure dead weight.                                                                                                                                                                                             |
-| `wt-dev` / `w` dev-build block     | Pointed at `~/DEV/rd/wt/main/bin/wt`, which no longer exists. The released `wt` is installed and wired separately.                                                                                                                                                         |
-| `dot_config/nushell/`              | `nu` not installed, zero references in either repo — 8.5K of config for a shell that never runs.                                                                                                                                                                           |
-| `~/.fzf/`                          | A 1.6M git clone left by fzf's manual install script (Jan 2024). Unreferenced; fzf comes from Homebrew.                                                                                                                                                                    |
-
-| `@last_exit_code` wiring | Producers in zsh + bash precmd with **no consumer**. Commit `9b4f131` ("catppuccin status bar redesign") deleted the reader; the producers were left behind and both docs kept claiming a "status bar error dot" that did not exist. Restore recipe below. | | `[[ -o no_global_rcs ]] && return` | Not dead — **actively wrong**. Under `zsh -d` the option is set, the guard fired, and the rest of `.zshenv` never ran: no PATH, no XDG, no GOPATH. `-d` means "skip `/etc/z*` global rcs", not "skip the user's own config". | | `CLAUDE_GIT_PASSPHRASE` *(private repo)* | Exported from `private.zsh` with **zero consumers** in either repo or `~/.claude`. Unrelated to git signing — signing is SSH via 1Password `op-ssh-sign`. Value remains in 3 commits of private history; purge + rotate is a separate operator task. |
+| Removed                                    | Why                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tmp/.zsh_editor_cache_$UID`              | Cached `$EDITOR` via a predictable path in a world-writable dir, then fed it to `GIT_EDITOR` — a value later executed as a command. Saved no measurable time. `EDITOR` is now a literal.                                                                                              |
+| `~/.fzf.zsh` loader                        | Unmanaged, generated by fzf's install script, hardcoded `/opt/homebrew/opt/fzf/shell/*`. Replaced by `eval "$(fzf --zsh)"` — verified byte-identical in content, differing only in ordering. Its PATH addition was redundant; `fzf-tmux` resolves via `/opt/homebrew/bin`.            |
+| Linux Homebrew branch                      | `DOT_TARGET` was hardcoded `"macos"`, so the branch was unreachable. This rig is macOS-only.                                                                                                                                                                                          |
+| `mysql-client` PATH block                  | Neither the directory nor the `mysql` binary exists.                                                                                                                                                                                                                                  |
+| `~/bin` PATH entry                         | Directory does not exist; `~/.bin` is the real one.                                                                                                                                                                                                                                   |
+| pyenv block                                | Already commented out, and `~/.pyenv` absent.                                                                                                                                                                                                                                         |
+| Empty `.zprofile` — **superseded, see §3** | The *empty* placeholder was removed. Its stated rationale ("macOS `/etc/zprofile` handles login-shell `path_helper`") was **backwards**: `path_helper` is what breaks the order. `.zprofile` was re-created with real content in `4a77e3b` and is now load-bearing. Do not delete it. |
+| zinit / zsh-defer / eval caches            | See §4. Determinism over milliseconds.                                                                                                                                                                                                                                                |
+| tmux-resurrect / continuum                 | Session persistence is manual by choice.                                                                                                                                                                                                                                              |
+| `dot_bin/search.sh` (`rgs`, `fds`)         | Both wrapped `tv` (television), which is not installed — the commands errored on every invocation. `fzf`, `fd`, `rg` and the `C-f` yazi widget already cover this ground.                                                                                                             |
+| `alias azvms`                              | `az` not installed, and the alias was **unguarded** — a broken command waiting to be typed. `dovms` beside it is now `can_haz doctl`-guarded.                                                                                                                                         |
+| `alias d=lazydocker`                       | `lazydocker` not installed. Guarded, so it failed silently — pure dead weight.                                                                                                                                                                                                        |
+| `wt-dev` / `w` dev-build block             | Pointed at `~/DEV/rd/wt/main/bin/wt`, which no longer exists. The released `wt` is installed and wired separately.                                                                                                                                                                    |
+| `dot_config/nushell/`                      | `nu` not installed, zero references in either repo — 8.5K of config for a shell that never runs.                                                                                                                                                                                      |
+| `~/.fzf/`                                  | A 1.6M git clone left by fzf's manual install script (Jan 2024). Unreferenced; fzf comes from Homebrew.                                                                                                                                                                               |
+| `@last_exit_code` wiring                   | Producers in zsh + bash precmd with **no consumer**. Commit `9b4f131` ("catppuccin status bar redesign") deleted the reader; the producers were left behind and both docs kept claiming a "status bar error dot" that did not exist. Restore recipe below.                            |
+| `[[ -o no_global_rcs ]] && return`         | Not dead — **actively wrong**. Under `zsh -d` the option is set, the guard fired, and the rest of `.zshenv` never ran: no PATH, no XDG, no GOPATH. `-d` means "skip `/etc/z*` global rcs", not "skip the user's own config".                                                          |
+| `CLAUDE_GIT_PASSPHRASE` *(private repo)*   | Exported from `private.zsh` with **zero consumers** in either repo or `~/.claude`. Unrelated to git signing — signing is SSH via 1Password `op-ssh-sign`. Value remains in 3 commits of private history; purge + rotate is a separate operator task.                                  |
 
 To restore the exit-code indicator, **both halves are required**. Producer (zsh):
 
