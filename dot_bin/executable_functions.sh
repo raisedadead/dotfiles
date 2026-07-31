@@ -23,6 +23,7 @@ source ~/.bin/ssh-helpers.sh
 # load search functions
 source ~/.bin/search.sh
 source ~/.bin/fnm.sh
+source ~/.bin/awake.sh
 
 # yazi wrapper: q to cd on exit, Q to quit in place
 function y() {
