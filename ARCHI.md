@@ -197,15 +197,17 @@ This is a deliberate trade and it gets re-litigated by every optimisation guide 
 
 Deferral buys milliseconds and costs determinism — a deferred plugin that loads after your first keystroke produces bindings that exist or don't depending on how fast you type. That is a worse failure mode than a slower start.
 
-**Measured 2026-07-31: median 190ms, range 170–200ms (n=15).**
+**Measured 2026-08-01: median 123ms, range 121–134ms (n=15).**
 
-`CLAUDE.md` previously carried a "~155ms" budget. That number is **unexplained** — it was not reproduced at the time of this measurement, and no profile of the older config survives to say where the 35ms went. It is recorded here as an open question, not silently restated as the new truth. If you care about the gap, profile before assuming a regression: the delta may be new plugins, a slower disk, or a number that was optimistic to begin with.
+The earlier "190ms (n=15)" and the "~155ms" before it were both recorded when the `compinit` fast path was silently unreachable — `[[ -n ~/.zcompdump(#qN.mh+24) ]]` used a `(#q…)` qualifier while `EXTENDED_GLOB` was off, so the test was a non-empty literal, always true, and **every** shell paid a full `compinit` plus `compaudit`. Making the branch reachable (array form with bare glob qualifiers, which need no `EXTENDED_GLOB`) took `compinit` from ~24ms to 8.4ms and removed `compaudit` entirely. Measure with `ZPROF=true zsh -i -c true` before assuming a regression.
 
 Where the time actually goes, per `zprof`:
 
 ```
-compinit + compaudit  ~24ms      the single largest attributable cost
-everything else       <3ms each  fsh widget binding, fzf-tab, can_haz x16
+compinit              8.4ms     still the single largest attributable cost
+enable-fzf-tab        2.9ms
+_zsh_highlight_bind_widgets  2.9ms
+everything else       <1ms each  can_haz x15, add-zsh-hook x8, compdef x10
 ```
 
 That accounts for roughly a third of wall clock; the rest is process spawn plus `eval "$(tool init)"` subshells, which `zprof` does not attribute to zsh functions.
@@ -275,9 +277,9 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
   _tmux_exit_code() { [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code $?; }   # always 0
   ```
 
-  `$?` is expanded *after* the `[[ ]]` test runs, so it records the test's status. Being first in `precmd_functions` is necessary but not sufficient. The correct shape is `local ec=$?` on line one, then use `"$ec"`. See §9 for why the real one was removed.
+  `$?` is expanded *after* the `[[ ]]` test runs, so it records the test's status. The correct shape is `local ec=$?` on line one, then use `"$ec"`. Position in `precmd_functions` is **irrelevant** — zsh restores `$?` and `pipestatus` to the true last-command values before invoking *each* hook function (verified on zsh 5.9 and 5.9.2; OMP's own `_omp_precmd` registers last and still reads `$?` correctly). Do not prepend a hook believing it must run first. See §9 for why the real one was removed.
 
-- **Session persistence is deliberately manual** (park/save/unpark, no resurrect/continuum). Auto restore-on-boot resurrects panes whose working directories and processes have moved on, which is worse than starting clean.
+- **Session persistence is deliberately manual** (park/unpark, no resurrect/continuum; `save-session.sh` deleted in `4f12a1f`). Auto restore-on-boot resurrects panes whose working directories and processes have moved on, which is worse than starting clean.
 
 ## 7. Shell function conventions
 
@@ -348,7 +350,7 @@ To restore the exit-code indicator, **both halves are required**. Producer (zsh)
 
 ```zsh
 _tmux_exit_code() { local ec=$?; [[ -n "$TMUX" ]] && tmux set-option -qw @last_exit_code "$ec"; }
-precmd_functions=(_tmux_exit_code $precmd_functions)
+add-zsh-hook precmd _tmux_exit_code
 ```
 
 Consumer — the window-list fragment deleted by `9b4f131`, recoverable via `git show 9b4f131^`:
