@@ -78,7 +78,18 @@ edit source (~/.dotfiles/*)  →  home apply  →  validate with the tool's own 
 
 Two hazards that have bitten before:
 
-- **chezmoi never prunes.** Deleting a source file leaves the deployed target in place forever, and nothing will ever flag it. After removing or moving a source file, `rm` the orphaned target by hand. Verify with `chezmoi source-path <target>` — if it errors, the file is unmanaged.
+- **chezmoi never prunes — by default.** Deleting a source file leaves the deployed target in place forever, and nothing will ever flag it. After removing or moving a source file, `rm` the orphaned target by hand. Verify with `chezmoi source-path <target>` — if it errors, the file is unmanaged.
+
+  There are two first-class fixes, both verified on v2.71.1:
+
+  | mechanism        | effect                                                                |
+  | ---------------- | --------------------------------------------------------------------- |
+  | `exact_<dir>`    | chezmoi **deletes** any unmanaged file in that directory on apply     |
+  | `.chezmoiremove` | newline-separated list of targets to delete; works for files and dirs |
+
+  `exact_` is the durable answer and this repo does not use it yet. The caveat is real though: anything a *tool* writes into that directory gets deleted too, so audit for runtime-written files before converting a directory. Tracked for the single-repo migration.
+
+- **`.gitignore` does not gate chezmoi.** It reads the source directory, not git's index. A file can be gitignored — never reaching GitHub — and still deploy into `$HOME` on every apply. Use `.chezmoiignore` for "do not deploy"; they are unrelated mechanisms.
 
 - **Validate before applying when the live shell depends on it.** A broken `$ZDOTDIR/.zshrc` plus a live stub is a broken login shell. Stage it first:
 
