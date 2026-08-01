@@ -87,7 +87,7 @@ Two hazards that have bitten before:
   | `exact_<dir>`    | chezmoi **deletes** any unmanaged file in that directory on apply     |
   | `.chezmoiremove` | newline-separated list of targets to delete; works for files and dirs |
 
-  `exact_` is the durable answer and this repo does not use it yet. The caveat is real though: anything a *tool* writes into that directory gets deleted too, so audit for runtime-written files before converting a directory. Tracked for the single-repo migration.
+  `exact_` is the durable answer and this repo does not use it yet. **Two caveats, and the second rules it out today.** First, anything a *tool* writes into that directory gets deleted too, so audit for runtime-written files before converting. Second, and decisive for a two-repo layout: `exact_` deletes every entry the *applying* source does not manage — including files and whole subtrees owned by the **other** source. Four directories hold files from both repos — `~/.bin`, `~/.config/git`, `~/.config/zsh`, `~/.ssh` — and because `exact_` prunes unmanaged *directories* too, using it anywhere under `~/.config` endangers the other half's subtrees. Verify before converting anything: derive both target sets from `git ls-files` in each repo and intersect their parent dirs. Safe only after the single-repo migration.
 
 - **`.gitignore` does not gate chezmoi.** It reads the source directory, not git's index. A file can be gitignored — never reaching GitHub — and still deploy into `$HOME` on every apply. Use `.chezmoiignore` for "do not deploy"; they are unrelated mechanisms.
 
