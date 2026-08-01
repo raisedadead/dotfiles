@@ -40,7 +40,7 @@ This half holds shell / tmux / ghostty / nvim / OMP and cross-tool integration. 
 ## Validation
 
 - Ghostty: `ghostty +show-config`
-- tmux: `tmux source-file ~/.config/tmux/tmux.conf`
+- tmux: `tmux source-file ~/.config/tmux/tmux.conf` — reloads into the **running** server, which is the point. **`-f` does NOT change the socket**, only the config file; the socket is `-L`/`-S`. So `tmux -f /dev/null start-server … kill-server` attaches to the *live* default socket and destroys every session — it killed a working session on 2026-08-01. To parse-check a config without touching the live server, always name a throwaway socket: `tmux -L cfgcheck -f /dev/null start-server \; source-file ~/.config/tmux/tmux.conf \; kill-server`
 - Dotfiles health: `home check`
 - Dotfiles sync: `home sync`
 - Shell scripts: `shellcheck` (advisory — doesn't support zsh, SC1071 expected)
