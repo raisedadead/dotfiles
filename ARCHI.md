@@ -181,7 +181,7 @@ for m in "-l -i" "-i" ""; do zsh $=m -c 'print "brew=${path[(i)/opt/homebrew/bin
 
 An earlier audit of this repo concluded a Homebrew re-prepend in `.zshrc` was "redundant and harmful" — measured only in a non-login shell. It was in fact a workaround for `path_helper`; deleting it broke login shells silently. The workaround was in the wrong file, not wrong.
 
-`fnm` is the remaining exception: it loads in `.zshrc` *after* Homebrew, so fnm-managed Node wins.
+`fnm` wins in every shell: `path.zsh` prepends the default-alias dir above Homebrew (non-interactive included), and `.zshrc`'s `fnm env` layers the per-shell multishell dir on top for interactive shells.
 
 ### XDG variables
 
