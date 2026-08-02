@@ -4,6 +4,7 @@ set -euo pipefail
 AEROSPACE=/opt/homebrew/bin/aerospace
 WINDOW_LOOKUP_ATTEMPTS=20
 WINDOW_LOOKUP_INTERVAL=0.05
+FALLBACK_BOTTOM_INSET=60
 
 usage() {
 	printf 'usage: place-window.sh <center|cycle>\n' >&2
@@ -38,6 +39,15 @@ resolve_window_row() {
 	printf '%s\n' "$row"
 }
 
+reserved_bottom_inset() {
+	local config inset
+	config="$("$AEROSPACE" config --config-path 2>/dev/null || true)"
+	[[ -f "$config" ]] || config="${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/aerospace.toml"
+	inset="$(awk -F'=' '/^outer\.bottom/ {gsub(/[^0-9]/, "", $2); print $2; exit}' "$config" 2>/dev/null || true)"
+	[[ "$inset" =~ ^[0-9]+$ ]] || inset="$FALLBACK_BOTTOM_INSET"
+	printf '%s\n' "$inset"
+}
+
 window_id="$(resolve_window_id)" || exit 0
 window_row="$(resolve_window_row "$window_id")" || exit 0
 
@@ -46,6 +56,7 @@ IFS='|' read -r _ app_pid screen_idx window_title <<<"$window_row"
 [[ "$screen_idx" =~ ^[0-9]+$ ]] || screen_idx=0
 
 MODE="$mode" PID="$app_pid" TITLE="$window_title" SCREEN_IDX="$screen_idx" \
+	BOTTOM_INSET="$(reserved_bottom_inset)" \
 	osascript -l JavaScript <<'JXA'
 ObjC.import('stdlib');
 ObjC.import('Foundation');
@@ -59,6 +70,7 @@ function run() {
   const pid = parseInt($.getenv('PID'), 10);
   const wantTitle = $.getenv('TITLE');
   const screenIdx = parseInt($.getenv('SCREEN_IDX'), 10);
+  const bottomInset = parseInt($.getenv('BOTTOM_INSET'), 10) || 0;
 
   // AeroSpace's %{monitor-appkit-nsscreen-screens-id} is a 1-based index into
   // NSScreen.screens. Out of range means the monitor could not be resolved:
@@ -68,19 +80,23 @@ function run() {
     ? screens.objectAtIndex(screenIdx - 1)
     : $.NSScreen.mainScreen;
 
-  // visibleFrame excludes the menu bar and Dock. sketchybar is deliberately
-  // NOT reserved — centre means screen centre.
+  // visibleFrame excludes the menu bar and Dock but not sketchybar, which is a
+  // borderless overlay AppKit never subtracts. Reserving the same band that
+  // [gaps] outer.bottom reserves for tiled windows keeps the 100% stage clear
+  // of the bar; sizing alone is not enough, the centre has to shift too.
   // AppKit measures from the bottom-left of the primary screen, the
   // Accessibility API from the top-left, so Y is flipped against the primary.
   const vf = screen.visibleFrame;
   const primaryH = screens.objectAtIndex(0).frame.size.height;
+  const usableW = vf.size.width;
+  const usableH = Math.max(vf.size.height - bottomInset, 1);
   const originX = vf.origin.x;
   const originY = primaryH - (vf.origin.y + vf.size.height);
 
   const centreFor = function (w, h) {
     return [
-      Math.round(originX + (vf.size.width - w) / 2),
-      Math.round(originY + (vf.size.height - h) / 2),
+      Math.round(originX + (usableW - w) / 2),
+      Math.round(originY + (usableH - h) / 2),
     ];
   };
 
@@ -120,11 +136,11 @@ function run() {
   }
 
   let boxW, boxH;
-  if (vf.size.width / vf.size.height > ASPECT_RATIO) {
-    boxH = vf.size.height;
+  if (usableW / usableH > ASPECT_RATIO) {
+    boxH = usableH;
     boxW = boxH * ASPECT_RATIO;
   } else {
-    boxW = vf.size.width;
+    boxW = usableW;
     boxH = boxW / ASPECT_RATIO;
   }
 
