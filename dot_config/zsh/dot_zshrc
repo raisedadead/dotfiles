@@ -59,14 +59,40 @@ function zle-keymap-select {
   zle .reset-prompt
 }
 zle -N zle-keymap-select
-bindkey '^[a' backward-word         # Alt+a: beginning of word
-bindkey '^[A' beginning-of-line     # Alt+Shift+a: beginning of line
-bindkey '^[e' emacs-forward-word    # Alt+e: end of word
-bindkey '^[E' end-of-line           # Alt+Shift+e: end of line
-bindkey '^[[1;3C' forward-word      # Alt+Right: forward word
-bindkey '^[[1;3D' backward-word     # Alt+Left: backward word
-bindkey '^[[1;4C' end-of-line       # Alt+Shift+Right: end of line
-bindkey '^[[1;4D' beginning-of-line # Alt+Shift+Left: beginning of line
+
+# Word/line editing — one Ctrl band. Left column acts backwards, right column
+# forwards; plain = word, +Shift = whole line.
+#
+#   Ctrl+W  delete word back   │ Ctrl+Shift+W  delete line back
+#   Ctrl+E  accept sugg. word  │ Ctrl+Shift+E  accept whole suggestion
+#   Ctrl+A  jump word back     │ Ctrl+Shift+A  jump to line start
+#   Ctrl+S  jump word forward  │ Ctrl+Shift+S  jump to line end
+#
+# The full accept (Ctrl+Shift+E) only accepts with the cursor already at end
+# of buffer; from mid-line the first press moves to EOL and a second accepts
+# (_zsh_autosuggest_accept bails to the unwrapped widget when CURSOR !=
+# $#BUFFER). Ctrl+E has no such guard — it moves one word and absorbs
+# suggestion text as soon as the cursor passes the original buffer end.
+#
+# Ctrl+Shift+X arrives as ESC + the Ctrl byte (`^[^X`): no terminal can
+# distinguish Ctrl+Shift+X from Ctrl+X in legacy encoding, so Ghostty rewrites
+# the four in config.ghostty and keybinds.conf routes them per pane. Ctrl+S
+# needs the `stty -ixon` above (flow control would eat it). This reassigns
+# ^A/^E off beginning-of-line/end-of-line, and drops ^S's default
+# history-incremental-search-forward — ^R (atuin) is the history entry point.
+#
+# The forward *jump* pair calls the builtin widgets (`.` prefix) to bypass
+# zsh-autosuggestions' accept wrappers — moving right must never swallow a
+# suggestion, that is Ctrl+E / Ctrl+Shift+E's job. Their backward twins need
+# no such guard (nothing accepts leftwards), so they stay plain.
+bindkey '^W'   backward-kill-word  # Ctrl+W
+bindkey '^[^W' backward-kill-line  # Ctrl+Shift+W
+bindkey '^E'   emacs-forward-word  # Ctrl+E        (partial-accept wrapped)
+bindkey '^[^E' end-of-line         # Ctrl+Shift+E  (accept wrapped)
+bindkey '^A'   backward-word       # Ctrl+A
+bindkey '^[^A' beginning-of-line   # Ctrl+Shift+A
+bindkey '^S'   .forward-word       # Ctrl+S
+bindkey '^[^S' .end-of-line        # Ctrl+Shift+S
 
 # Prompt (oh-my-posh)
 can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"

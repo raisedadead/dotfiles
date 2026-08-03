@@ -75,6 +75,19 @@ macos-option-as-alt = left
 # Keybindings
 keybind = ctrl+enter=text:\r
 
+# Ctrl+Shift word/line editing (see zsh/.zshrc). Legacy encoding cannot
+# distinguish Ctrl+Shift+X from Ctrl+X — both are one control byte — so rewrite
+# each as ESC + that byte (`^[^X`, i.e. tmux M-C-x). keybinds.conf then routes
+# it: vim panes get the plain Ctrl+X back, everything else gets M-C-x.
+# CSI u is not the alternative here — this rig deliberately stays in legacy
+# mode (tmux.conf omits `extkeys` from terminal-features, see CLAUDE.md).
+# The rewrite is terminal-wide: outside tmux these reach whatever app is
+# running as ESC+Ctrl+X, with no vim arbitration.
+keybind = ctrl+shift+w=text:\x1b\x17
+keybind = ctrl+shift+e=text:\x1b\x05
+keybind = ctrl+shift+a=text:\x1b\x01
+keybind = ctrl+shift+s=text:\x1b\x13
+
 # Scrollback
 keybind = ctrl+shift+j=scroll_page_lines:5
 keybind = ctrl+shift+k=scroll_page_lines:-5

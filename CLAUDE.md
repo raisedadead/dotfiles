@@ -12,6 +12,9 @@ Chezmoi, two repos: public (`~/.dotfiles`) + private (`~/.dotfiles-private`), sp
 - **tmux mouse selection is pane-aware** — drag copies via OSC 52; Shift+drag falls back to native Ghostty selection.
 - **tmux names Shift-Tab `BTab`** (`M-BTab`, not `M-S-Tab`).
 - **Dual keybindings for Alt+Shift combos** — bind both `M-S-D` (CSI u) and `M-D` (legacy). Ghostty 1.3.0+ (#9406) strips Shift from Option-modified keys in modifyOtherKeys mode; `extkeys` is deliberately omitted from `terminal-features` to stay in legacy mode where case survives. Details in keybinds.conf/tmux.conf comments.
+- **zsh's `Ctrl+Shift+W/E/A/S` are Ghostty rewrites arbitrated by tmux, not zsh keys** — in legacy encoding no terminal can tell `Ctrl+Shift+X` from `Ctrl+X` (one control byte either way), so `config.ghostty` maps each to `text:\x1b\x<byte>`; tmux receives `M-C-x` and splits it on `@pane-is-vim` exactly like `M-H/J/K/L` — vim panes get plain `Ctrl+X` back, every other pane gets `M-C-x`, which `.zshrc` binds as `^[^X`. The vim branch exists so vim panes keep native `Ctrl+X` semantics rather than a stray `<Esc>` prefix; it is **mode-scoped, not blanket protection** — probed on a throwaway socket with buffer `5 foo`: in insert mode the branch turns `<Esc><C-a>` (increments to `6 foo`) into `i_CTRL-A` (`5 foo5 foo`), but in normal mode both paths increment identically, because plain `C-a` increments too. Three residual holes, accepted: `Ctrl+Shift+A` still increments in neovim normal mode (only an nvim-side remap could stop that); outside tmux (quick terminal, bare Ghostty) there is no arbitration; and `beginning-of-line`/`end-of-line` exist only under Ghostty, since `^A`/`^E` are reassigned and Home/End are unbound in this rig.
+- **Forward zsh motions bind the `.`-prefixed builtin widgets** — `bindkey '^S' .forward-word`, `'^[^S' .end-of-line`. zsh-autosuggestions' `_zsh_autosuggest_bind_widgets` lists `.*` in its `ignore_widgets`, so the dot form moves the cursor without swallowing the suggestion; the undotted names are in its PARTIAL_ACCEPT / ACCEPT lists and are used deliberately on `Ctrl+E` / `Ctrl+Shift+E`. Backward motions need no guard — nothing accepts leftwards, and `_zsh_autosuggest_modify` restores POSTDISPLAY when the buffer is unchanged.
+- **`Ctrl+F` is yazi, bound in `dot_bin/keybindings.sh`** — sourced from `.zshrc` via `~/.bin/functions.sh` *after* the keybinding block, so any `bindkey '^f'` earlier in `.zshrc` is silently overridden.
 - **`Ctrl+R` is atuin, not fzf** — atuin runs `--disable-up-arrow`.
 - **Emacs mode default** (`bindkey -e`), `C-z` toggles vi — required for lag-free Alt binds.
 - **Popup scripts live in `dot_config/tmux/scripts/`**, not `dot_bin/`.
@@ -27,6 +30,18 @@ Chezmoi, two repos: public (`~/.dotfiles`) + private (`~/.dotfiles-private`), sp
 - **`set -g detach-on-destroy off`** — park/unpark UX; client stays attached when the current session dies.
 - **Session persistence is intentionally manual** — `park-session.sh`/`unpark-session.sh`, no auto-restore. `save-session.sh` + `session-lib.sh` deleted in `4f12a1f` (write-only) — do not re-add.
 - **Switcher/menu use `#{session_id}`, not `#{session_name}`** — names can carry quotes that break `display-menu` escaping; numeric `$N` IDs are quote-safe.
+
+## Keybind layers
+
+Five layers, outside-in: Aerospace (WM) → Ghostty (terminal) → tmux (multiplexer) → zsh (shell) → neovim (editor). Each layer claims a modifier band; a layer only intercepts what it explicitly binds, everything else falls through to the next.
+
+- **Aerospace**: `ctrl-alt(-shift)` — WM-level, never reaches the terminal.
+- **Ghostty**: `keybind =` in `config.ghostty` — global quick-terminal (`ctrl+grave`), scrollback/opacity, `cmd+` macOS-native combos, plus the four `ctrl+shift+` rewrites below. Minimal by design; most binds pushed down to tmux so they work over SSH too.
+- **tmux**: `M-` (Alt) root table, prefix-free (`keybinds.conf`) + `copy-mode-vi` table (`copy-mode.conf`). Dual-encoding and `BTab` nuances: see Rules above.
+- **zsh**: emacs mode (`bindkey -e`) + `Ctrl` word/line editing in `.zshrc` (`W`/`E` delete-back/accept-forward, `A`/`S` jump back/forward, `+Shift` widens word→line); `^z` toggles into `vicmd` for one command.
+- **neovim**: `<leader>` (snacks pickers, `which-key.lua`), `<A-H/J/K/L>` for smart-splits pane nav — shares the M-H/J/K/L band with tmux, see below.
+
+Nuance not covered by the Rules list: **M-H/J/K/L is shared, not layered.** tmux's root table checks `@pane-is-vim` per keypress (`if -F "#{@pane-is-vim}" "send-keys M-H" "select-pane -L"`) and forwards to neovim's own `<A-H/J/K/L>` (`smart-splits.lua`) when the active pane is vim, else runs `select-pane` itself. One binding, two consumers, arbitrated per-keypress at runtime — not a tmux-then-nvim fallthrough chain. Same pattern repeats in `copy-mode.conf`'s `copy-mode-vi` table.
 
 ## Cross-Tool Integration
 
