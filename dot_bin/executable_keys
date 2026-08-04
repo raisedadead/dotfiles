@@ -1,0 +1,326 @@
+#!/usr/bin/env python3
+"""keys — one searchable view of every live keybinding.
+
+Every row is generated at run time from the tool's own reporting:
+
+    aerospace   aerospace config --get mode.<mode>.binding --json
+    ghostty     ghostty +list-keybinds
+    tmux        tmux list-keys -T <table>   (descriptions from -N notes)
+    zsh         zsh -i -c bindkey
+    nvim        nvim --headless + vim.api.nvim_get_keymap
+
+Nothing here is a hand-maintained copy of a binding, so nothing here can go
+stale. This replaced dot_config/keyb/keyb.yml, which was exactly such a copy
+and drifted repeatedly (C-t was documented as transpose-chars long after fzf
+had taken it).
+
+Descriptions come from each tool's own description field where one exists —
+tmux `-N` notes and neovim `desc` — so a label always lives beside the binding
+it names. Tools with no such field fall back to the bound command, which for
+aerospace, ghostty and zsh is already readable.
+
+Usage:
+    keys                one fzf list, search across every tool
+    keys tmux           prefill the fzf query
+    keys --plain        write to stdout and exit (implied when piped)
+    keys --all          include mouse/wheel bindings, hidden by default
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+# Catppuccin Mocha. Mirrors dot_config/tmux/scripts/colors.sh — presentation
+# constants only, never binding data.
+DIM = "\033[38;2;147;153;178m"
+ACCENT = "\033[38;2;249;226;175m"
+MAUVE = "\033[38;2;203;166;247m"
+RST = "\033[0m"
+
+FZF_COLORS = (
+    "bg+:#313244,bg:#1E1E2E,spinner:#F5E0DC,hl:#F38BA8,"
+    "fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC,"
+    "marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8,"
+    "selected-bg:#45475A,border:#6C7086,label:#CDD6F4"
+)
+
+MOUSE_RE = re.compile(r"Mouse|Wheel|DoubleClick|TripleClick", re.IGNORECASE)
+
+# Neovim ships built-in mappings whose desc is a bare help reference. They are
+# upstream defaults, not this rig's choices, and they crowd out the real ones.
+NVIM_DEFAULT_RE = re.compile(r"^:help \S+-default$")
+
+# bindkey prints two shapes: a single `"^A" backward-word`, and a compressed
+# contiguous range `"a"-"z" self-insert`. One pattern for both reads a range's
+# interior quotes as part of the key and emits `a"-"z` — 9 such rows here.
+ZSH_ATOM = r'(?:[^"\\]|\\.)*'
+ZSH_RANGE_RE = re.compile(rf'^"({ZSH_ATOM})"-"({ZSH_ATOM})" (\S+)$')
+ZSH_SINGLE_RE = re.compile(rf'^"({ZSH_ATOM})" (\S+)$')
+
+NVIM_LUA = r"""
+local modes = { 'n', 'x', 'o', 'i', 'c', 't' }
+local leader = vim.g.mapleader
+local seen, out = {}, {}
+for _, mode in ipairs(modes) do
+  for _, m in ipairs(vim.api.nvim_get_keymap(mode)) do
+    local lhs, desc = m.lhs, m.desc
+    if desc and desc ~= '' then
+      if leader and leader ~= '' and lhs:sub(1, #leader) == leader then
+        lhs = '<leader>' .. lhs:sub(#leader + 1)
+      end
+      local id = mode .. '\1' .. lhs
+      if not seen[id] then
+        seen[id] = true
+        out[#out + 1] = mode .. '\t' .. lhs .. '\t' .. desc
+      end
+    end
+  end
+end
+io.stdout:write(table.concat(out, '\n'))
+"""
+
+
+def run(*argv: str) -> str:
+    """Return stdout of argv, or "" if the tool is absent or fails.
+
+    A missing tool degrades to a missing section rather than a crash: this
+    script has to work on a machine where, say, aerospace was never installed.
+    """
+    if shutil.which(argv[0]) is None:
+        return ""
+    try:
+        proc = subprocess.run(
+            argv, capture_output=True, text=True, timeout=15, check=False
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return proc.stdout if proc.returncode == 0 else ""
+
+
+def collapse(text: str, limit: int = 300) -> str:
+    """Flatten a bound command to one line for use as a fallback description."""
+    out = " ".join(text.split())
+    return out[: limit - 1] + "…" if len(out) > limit else out
+
+
+def from_aerospace() -> list[tuple[str, str, str, str]]:
+    rows = []
+    modes = run("aerospace", "list-modes").split() or ["main"]
+    for mode in modes:
+        raw = run("aerospace", "config", "--get", f"mode.{mode}.binding", "--json")
+        if not raw:
+            continue
+        try:
+            bindings = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        for key, cmd in sorted(bindings.items()):
+            # Aerospace reports declared-but-empty bindings (used to mask a
+            # macOS default); they are real, and "" would read as a bug.
+            rows.append(("aerospace", mode, key, collapse(cmd) or "(suppressed)"))
+    return rows
+
+
+def from_ghostty() -> list[tuple[str, str, str, str]]:
+    rows = []
+    for line in run("ghostty", "+list-keybinds").splitlines():
+        line = line.strip()
+        if not line.startswith("keybind = "):
+            continue
+        # `keybind = ctrl+shift+j=scroll_page_lines:5` — the first `=` is the
+        # separator, except where the trigger itself ends in one: `super+=`
+        # prints as `super+==increase_font_size:1`. Probed the 106-row dump —
+        # two triggers contain `=` and no action does, ghostty using `:` for
+        # action arguments. rpartition would be wrong in the other direction,
+        # since ghostty does accept an action like `text:a=b`.
+        spec = line[len("keybind = ") :]
+        key, sep, action = spec.partition("=")
+        if not sep:
+            continue
+        if key.endswith("+") and action.startswith("="):
+            key, action = key + "=", action[1:]
+        rows.append(("ghostty", "", key, collapse(action)))
+    return rows
+
+
+# bind-key [-r] -T <table> <key> <command...>. The optional flags before -T
+# are why a plain whitespace split mis-reads `-r` bindings as their own key.
+TMUX_BIND_RE = re.compile(r"^bind-key\s+.*?-T\s+(\S+)\s+(\S+)\s+(.*)$")
+
+
+def tmux_key(key: str) -> str:
+    """Normalise a key as list-keys prints it.
+
+    Two escaping styles appear in the same table: `"M-;"` is double-quoted
+    while `\\#` and `\\;` are backslash-escaped. -N notes use neither, so both
+    have to be stripped or the note lookup misses.
+    """
+    if len(key) > 1 and key.startswith('"') and key.endswith('"'):
+        key = key[1:-1]
+    if len(key) > 1 and key.startswith("\\"):
+        key = key[1:]
+    return key
+
+
+def from_tmux() -> list[tuple[str, str, str, str]]:
+    if not os.environ.get("TMUX") and not run("tmux", "list-sessions"):
+        # list-keys needs a running server; without one tmux would spawn a
+        # throwaway. Reporting nothing beats reporting a default-only table.
+        return []
+    rows = []
+    prefix = run("tmux", "show-options", "-gv", "prefix").strip()
+    for table in ("root", "prefix", "copy-mode-vi"):
+        notes = {}
+        for line in run("tmux", "list-keys", "-N", "-T", table).splitlines():
+            body = line.strip()
+            # `list-keys -N` prints the prefix key ahead of every row, even for
+            # the prefix-free root table (probed on an isolated socket).
+            if prefix and body.startswith(prefix + " "):
+                body = body[len(prefix) + 1 :].lstrip()
+            key, _, note = body.partition(" ")
+            note = note.strip()
+            if key and note:
+                notes[tmux_key(key)] = note
+        for line in run("tmux", "list-keys", "-T", table).splitlines():
+            m = TMUX_BIND_RE.match(line.strip())
+            if not m:
+                continue
+            key = tmux_key(m.group(2))
+            rows.append(("tmux", table, key, notes.get(key) or collapse(m.group(3))))
+    return rows
+
+
+def from_zsh() -> list[tuple[str, str, str, str]]:
+    rows = []
+    for keymap, label in (("main", "emacs"), ("vicmd", "vicmd")):
+        # bindkey only populates in an interactive shell, hence -i. This reads
+        # the same rc the operator's shells do, so it reports what is actually
+        # bound after fzf/atuin/yazi have wrapped their widgets.
+        out = run("zsh", "-i", "-c", f"bindkey -M {keymap}")
+        for line in out.splitlines():
+            line = line.strip()
+            m = ZSH_RANGE_RE.match(line)
+            if m:
+                rows.append(
+                    ("zsh", label, f"{m.group(1)}-{m.group(2)}", m.group(3))
+                )
+                continue
+            m = ZSH_SINGLE_RE.match(line)
+            if m:
+                rows.append(("zsh", label, m.group(1), m.group(2)))
+    return rows
+
+
+def from_nvim() -> list[tuple[str, str, str, str]]:
+    out = run("nvim", "--headless", "-c", f"lua {NVIM_LUA}", "-c", "qa!")
+    rows = []
+    for line in out.splitlines():
+        parts = line.split("\t")
+        if len(parts) != 3:
+            continue
+        mode, lhs, desc = parts
+        if NVIM_DEFAULT_RE.match(desc):
+            continue
+        rows.append(("nvim", mode, lhs, collapse(desc)))
+    return rows
+
+
+def render(rows: list[tuple[str, str, str, str]], color: bool) -> list[str]:
+    tw = max((len(r[0]) for r in rows), default=4)
+    cw = max((len(r[1]) for r in rows), default=0)
+    kw = min(max((len(r[2]) for r in rows), default=3), 22)
+    lines = []
+    for tool, ctx, key, desc in rows:
+        if color:
+            lines.append(
+                f"{MAUVE}{tool:<{tw}}{RST} {DIM}{ctx:<{cw}}{RST} "
+                f"{ACCENT}{key:<{kw}}{RST} {desc}"
+            )
+        else:
+            lines.append(f"{tool:<{tw}} {ctx:<{cw}} {key:<{kw}} {desc}")
+    return lines
+
+
+def main() -> int:
+    argv = sys.argv[1:]
+    plain = "--plain" in argv or "-p" in argv
+    show_all = "--all" in argv or "-a" in argv
+    query = " ".join(a for a in argv if not a.startswith("-"))
+
+    rows = (
+        from_aerospace() + from_ghostty() + from_tmux() + from_zsh() + from_nvim()
+    )
+    if not rows:
+        print("keys: no keybindings found — is any of the five tools installed?",
+              file=sys.stderr)
+        return 1
+
+    hidden = 0
+    if not show_all:
+        kept = [r for r in rows if not MOUSE_RE.search(r[2])]
+        hidden = len(rows) - len(kept)
+        rows = kept
+
+    if plain or not sys.stdout.isatty() or shutil.which("fzf") is None:
+        # No fzf to search with, so the positional argument has to do the
+        # filtering itself rather than silently doing nothing.
+        if query:
+            needle = query.lower()
+            rows = [r for r in rows if needle in " ".join(r).lower()]
+            if not rows:
+                print(f"keys: nothing matches {query!r}", file=sys.stderr)
+                return 1
+        print("\n".join(render(rows, color=sys.stdout.isatty())))
+        if hidden:
+            print(f"\n{hidden} mouse bindings hidden (--all to show)",
+                  file=sys.stderr)
+        return 0
+
+    tools = sorted({r[0] for r in rows})
+    header = f"{len(rows)} bindings  ◆  " + " ".join(tools)
+    footer = "  Type to search ◆ Quit [Esc]"
+    if hidden:
+        footer = f"  {hidden} mouse bindings hidden [--all] ◆ Quit [Esc]"
+
+    fzf = [
+        "fzf",
+        "--ansi",
+        "--no-sort",
+        "--no-info",
+        "--layout=reverse",
+        "--border=rounded",
+        "--border-label= Keybindings ",
+        "--padding=1,2",
+        "--header-first",
+        "--header-border=line",
+        f"--header={header}",
+        f"--footer={footer}",
+        "--footer-border=line",
+        f"--color={FZF_COLORS}",
+        "--prompt=keys ❯ ",
+        # Read-only view: selecting a row must not look like it will act on it.
+        # Nothing printable is bound to quit either — Esc aborts by default, and
+        # a bare `q` would make every binding with a q in it unsearchable, which
+        # is how the script this replaced behaved.
+        "--bind=enter:ignore",
+    ]
+    if query:
+        fzf.append(f"--query={query}")
+
+    try:
+        proc = subprocess.run(fzf, input="\n".join(render(rows, color=True)),
+                              text=True, check=False)
+    except OSError as exc:
+        print(f"keys: {exc}", file=sys.stderr)
+        return 1
+    # 130 is fzf's exit code for Esc/Ctrl-C, which is the normal way out here.
+    return 0 if proc.returncode in (0, 1, 130) else proc.returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())
