@@ -80,8 +80,14 @@ ctrl-alt-comma = 'layout accordion horizontal vertical'
 # Windows float by default (see the rules below); this is the escape hatch that
 # pulls one into the tiling tree, and back out again.
 ctrl-alt-f = 'layout floating tiling'
-# Reset: collapse the workspace tree back to a flat row
-ctrl-alt-shift-r = 'flatten-workspace-tree'
+# Reset: pull the focused window back into the tiling tree, then collapse that
+# tree to a flat row. The first step exists because windows float by default
+# here (catch-all rule below) and flatten-workspace-tree only touches the tiling
+# tree — on a floating window the bare reset is a silent no-op.
+# Scope caveat: `layout tiling` acts on the FOCUSED window only. AeroSpace has no
+# all-windows-in-workspace form (`--root` rejects tiling/floating), so a
+# workspace of floaters still needs one reset per window.
+ctrl-alt-shift-r = ['layout tiling', 'flatten-workspace-tree']
 ctrl-alt-c = [
   'layout floating',
   'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
