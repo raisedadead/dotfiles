@@ -44,8 +44,8 @@ git:
   log:
     order: default
   overrideGpg: true
-  pagers:
+  diffRenderers:
     - colorArg: always
-      pager: delta --paging=never
+      command: delta --paging=never
 disableStartupPopups: true
 quitOnTopLevelReturn: true
