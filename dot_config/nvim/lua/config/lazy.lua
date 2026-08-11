@@ -30,11 +30,13 @@ require("lazy").setup({
     version = false, -- always use the latest git commit
     -- version = "*", -- try installing the latest stable version for plugins that support semver
   },
-  install = { colorscheme = { "tokyonight", "habamax" } },
+  install = { colorscheme = { "catppuccin-mocha", "habamax" } },
   checker = {
-    enabled = true, -- check for plugin updates periodically
+    -- Off on purpose: lazy-lock.json is chezmoi-managed, background update
+    -- checks churn it. Update deliberately with `:Lazy update` + `home re-add`.
+    enabled = false,
     notify = false, -- notify on update
-  }, -- automatically check for plugin updates
+  },
   performance = {
     rtp = {
       -- disable some rtp plugins
