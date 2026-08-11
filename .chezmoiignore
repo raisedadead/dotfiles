@@ -3,9 +3,9 @@ CLAUDE.md
 # `keys` is Python; anything that imports rather than executes it drops a
 # __pycache__ beside it, which chezmoi would otherwise report as target drift.
 **/__pycache__
-/ARCHI.md
+ARCHI.md
 .config/brewfile
 .githooks
 README.md
 install.sh
-/AGENTS.md
+AGENTS.md
