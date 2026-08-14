@@ -131,11 +131,26 @@ run = 'move-node-to-workspace 2'
 
 # Workspace 3: Development — tiled
 [[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.mitchellh.ghostty \
-  || test %{app-bundle-id} = com.microsoft.VSCode
-'''
+if = 'test %{app-bundle-id} = com.mitchellh.ghostty'
 run = 'move-node-to-workspace 3'
+
+# Workspace 3: VS Code — floating, because it runs macOS native tabs
+# ("window.nativeTabs": true). Every tab is a distinct AXWindow, so AeroSpace
+# registers it as its own node and hands it a tile — but only the frontmost tab
+# of a group has a visible surface. Tiled, an N-tab window therefore eats N
+# slots and the one you can see shrinks to 1/N. Measured on this monitor:
+# 2 Ghostty + 2 Code tabs = 4 tiles of 625px, with the second Code tile a blank
+# 622px hole at x=1286. Floating, the phantom nodes cost no tiling slot and
+# Ghostty gets the full split back.
+# Upstream: AeroSpace#68 (open, 1.0-blocker) — no fix in 0.21.3-Beta, PRs #2206
+# and #2225 unmerged. Not VS Code-specific: AppleWindowTabbingMode is `always`
+# here, so any native-tab app hits it (Finder is AeroSpace#489).
+[[on-window-detected]]
+if = 'test %{app-bundle-id} = com.microsoft.VSCode'
+run = [
+  'move-node-to-workspace 3',
+  'layout floating',
+]
 
 # Workspace 4: Communication — tiled
 [[on-window-detected]]
