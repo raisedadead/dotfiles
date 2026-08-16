@@ -4,6 +4,9 @@ search_mode = "daemon-fuzzy"
 style = "auto"
 
 invert = true
+# 0 = fill the whole viewport. The default 40 caps the UI at 40 rows, which
+# leaves a blank band under the tmux popup whenever the popup is taller.
+inline_height = 0
 show_preview = true
 keymap_mode = "emacs"
 max_preview_height = 15
