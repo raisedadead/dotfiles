@@ -1,0 +1,22 @@
+# style name or JSON path (default "auto")
+# Catppuccin Mocha, to match bat, fzf, tmux and neovim. Applies on a tty only:
+# glow renders plain text whenever stdout is a pipe and this key is not enough
+# to override that, so read-popup.sh passes -s on the command line for its fzf
+# preview. The path must be absolute — glow does not expand "~". Note the two
+# different failures: an unexpanded "~" path degrades quietly to unstyled
+# output (exit 0), but an ABSOLUTE path that does not exist is fatal —
+# "Error: specified style does not exist", exit 1, no output at all, for every
+# glow call on the machine. read-popup.sh guards with a built-in fallback.
+style: "{{ .chezmoi.homeDir }}/.config/glow/mocha.json"
+# mouse support (TUI-mode only)
+mouse: true
+# use pager to display markdown
+pager: true
+# word-wrap at width
+# Applies to bare `glow <file>` only; read-popup.sh always passes -w itself.
+# glow never clamps this to the terminal, on a tty or off it, so any value
+# above the pane width overflows and the terminal hard-wraps mid-word (probed
+# at 60 columns with 80 and 120). 80 is glow's own default.
+width: 80
+# show all files, including hidden and ignored.
+all: false
