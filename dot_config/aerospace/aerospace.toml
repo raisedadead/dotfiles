@@ -119,11 +119,6 @@ test %{app-bundle-id} = com.sindresorhus.Dato \
 '''
 run = 'layout floating'
 
-# Workspace 1: Claude — tiled
-[[on-window-detected]]
-if = 'test %{app-bundle-id} = com.anthropic.claudefordesktop'
-run = 'move-node-to-workspace 1'
-
 # Workspace 2: Helium — tiled
 [[on-window-detected]]
 if = 'test %{app-bundle-id} = net.imput.helium'
@@ -152,28 +147,27 @@ run = [
   'layout floating',
 ]
 
-# Workspace 4: Communication — tiled
+# Workspace 4: Spark + Spotify only — tiled 2/3 : 1/3.
 [[on-window-detected]]
 if = '''
 test %{app-bundle-id} = com.readdle.SparkDesktop \
-  || test %{app-bundle-id} = com.spotify.client \
-  || test %{app-bundle-id} = ru.keepcoder.Telegram \
-  || test %{app-bundle-id} = net.whatsapp.WhatsApp \
-  || test %{app-bundle-id} = com.automattic.beeper.desktop \
-  || test %{app-bundle-id} = com.flexibits.fantastical2.mac
+  || test %{app-bundle-id} = com.spotify.client
 '''
-run = 'move-node-to-workspace 4'
+run = [
+  'move-node-to-workspace 4',
+  'exec-and-forget ~/.config/aerospace/scripts/ws4-split.sh',
+]
 
-# Workspace 5: Gaming — floating and centered
+# Workspace 5: messengers — accordion
 [[on-window-detected]]
 if = '''
-test %{app-bundle-id} = com.valvesoftware.steam \
-  || test %{app-bundle-id} = com.valvesoftware.steam.helper
+test %{app-bundle-id} = net.whatsapp.WhatsApp \
+  || test %{app-bundle-id} = ru.keepcoder.Telegram \
+  || test %{app-bundle-id} = com.automattic.beeper.desktop
 '''
 run = [
   'move-node-to-workspace 5',
-  'layout floating',
-  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
+  'layout h_accordion',
 ]
 
 # Browsers that are not Helium: parked in workspace 1, floating.
