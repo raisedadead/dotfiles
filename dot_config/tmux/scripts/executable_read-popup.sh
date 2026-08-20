@@ -92,7 +92,10 @@ MD_EXT=(-e md -e markdown -e mdown -e mkd -e mkdn -e mdwn -e mdtext -e mdx)
 
 # fd applies gitignore rules ONLY inside a repository, and #{pane_current_path}
 # is often outside one (~, ~/Downloads, /tmp) — there, Docs and Files would list
-# .claude/ and .scratchpad/, the Scratch tab's whole content leaked into both.
+# any .claude/ and .scratchpad/ that also sits outside a repo, ~/.claude first
+# among them. A nested repo keeps its own rules even when the walk starts off
+# repo (probed), so the leak was never the whole Scratch tab — but ~/.claude
+# alone is enough to swamp both views.
 # The fix holds the tab contract by name, NOT with fd's --no-require-git: that
 # flag applies the entire global ignore file off-repo, and ~/.config/git/ignore
 # lists CLAUDE.md (:38), AGENTS.md (:42) and .env (:57) — a markdown reader that
@@ -214,11 +217,16 @@ preview_row() {
 
 # ── Header ────────────────────────────────────────────────────────────────────
 
-# Labels are terse for one reason: the header and the footer span the LIST
-# column only, not the popup, and --keep-right truncates both from the LEFT —
-# the long form lost `Ctrl+D Docs`, the active tab on open, at 100 columns
-# (probed: `··cs · Ctrl+F Files · Ctrl+S Scratch`). The short form fits there.
-make_header() {
+# The tab bar rides the outer BORDER LABEL, not --header, and the labels are
+# terse. Both decisions are about width. --header spans the list column only —
+# 40% of the popup, which is itself 80% of the terminal, so ~31 columns on a
+# 100-column terminal — and --keep-right truncates it from the LEFT, taking the
+# active tab with it: probed at the popup's real interior width, `^D Docs` still
+# vanished (`··s · ^F Files · ^S Scratch`). The border label spans the whole fzf
+# frame instead, ~0.8 of the terminal, and `change-border-label` reloads it per
+# tab exactly like `change-header` did. ANSI survives in a label (probed), so
+# the active tab keeps its accent.
+make_tabs() {
   local active="$1"
   local -a items=("Docs" "Files" "Scratch")
   local -a keys=("^D" "^F" "^S")
@@ -249,15 +257,15 @@ esac
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-HDR_DOCS=$(make_header "Docs")
-HDR_FILES=$(make_header "Files")
-HDR_SCRATCH=$(make_header "Scratch")
+TABS_DOCS=$(make_tabs "Docs")
+TABS_FILES=$(make_tabs "Files")
+TABS_SCRATCH=$(make_tabs "Scratch")
 
 FOOTER="${DIM}⏎ read · ^/ preview · esc quit${RST}"
 
-BIND_DOCS="reload('$SELF' --source docs)+change-prompt($_ico_doc  Docs ❯ )+change-header($HDR_DOCS)"
-BIND_FILES="reload('$SELF' --source files)+change-prompt($_ico_file  Files ❯ )+change-header($HDR_FILES)"
-BIND_SCRATCH="reload('$SELF' --source scratch)+change-prompt($_ico_scratch  Scratch ❯ )+change-header($HDR_SCRATCH)"
+BIND_DOCS="reload('$SELF' --source docs)+change-prompt($_ico_doc  Docs ❯ )+change-border-label($TABS_DOCS)"
+BIND_FILES="reload('$SELF' --source files)+change-prompt($_ico_file  Files ❯ )+change-border-label($TABS_FILES)"
+BIND_SCRATCH="reload('$SELF' --source scratch)+change-prompt($_ico_scratch  Scratch ❯ )+change-border-label($TABS_SCRATCH)"
 
 # --height=100% and --keep-right are both stated, never inherited. The tmux
 # server environment carries FZF_DEFAULT_OPTS from fzf.zsh, so a popup silently
@@ -280,7 +288,7 @@ source_docs | fzf --read0 --print0 --ansi --height=100% --keep-right \
   --delimiter=$'\t' --with-nth 1 \
   --color="$FZF_MOCHA_COLORS" \
   --prompt="$_ico_doc  Docs ❯ " \
-  --header "$HDR_DOCS" --header-first --header-border=line \
+  --border-label "$TABS_DOCS" --border-label-pos=3 \
   --footer "$FOOTER" --footer-border=line \
   --preview "'$SELF' --preview {}" \
   --preview-window='border-rounded:right:60%' \
