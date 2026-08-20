@@ -43,7 +43,7 @@ MAUVE = "\033[38;2;203;166;247m"
 RST = "\033[0m"
 
 FZF_COLORS = (
-    "bg+:#313244,bg:#1E1E2E,spinner:#F5E0DC,hl:#F38BA8,"
+    "bg+:#313244,bg:#11111B,spinner:#F5E0DC,hl:#F38BA8,"
     "fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC,"
     "marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8,"
     "selected-bg:#45475A,border:#6C7086,label:#CDD6F4"

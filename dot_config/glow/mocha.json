@@ -128,7 +128,7 @@
       "generic_inserted": { "color": "#a6e3a1" },
       "generic_strong": { "bold": true },
       "generic_subheading": { "color": "#9399b2" },
-      "background": { "background_color": "#1e1e2e" }
+      "background": { "background_color": "#11111b" }
     }
   },
   "table": {},
