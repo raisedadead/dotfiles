@@ -146,6 +146,7 @@ source "$ZPLUGDIR/wakatime-zsh-plugin/wakatime.plugin.zsh"
 can_haz atuin  && eval "$(atuin init zsh --disable-up-arrow)"
 can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"
 can_haz direnv && eval "$(direnv hook zsh)"
+can_haz wt     && eval "$(wt config shell init zsh)"
 
 # File sourcing
 source "$ZDOTDIR/alias.zsh"
