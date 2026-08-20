@@ -200,7 +200,7 @@ def from_zsh() -> list[tuple[str, str, str, str]]:
     for keymap, label in (("main", "emacs"), ("vicmd", "vicmd")):
         # bindkey only populates in an interactive shell, hence -i. This reads
         # the same rc the operator's shells do, so it reports what is actually
-        # bound after fzf/atuin/yazi have wrapped their widgets.
+        # bound after fzf and atuin have wrapped their widgets.
         out = run("zsh", "-i", "-c", f"bindkey -M {keymap}")
         for line in out.splitlines():
             line = line.strip()

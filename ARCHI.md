@@ -231,10 +231,9 @@ options & history  →  keybindings (bindkey -e)  →  prompt (OMP)  →  plugin
    →  tool integrations  →  aliases & functions  →  fnm
 ```
 
-Three constraints worth naming:
+Two constraints worth naming:
 
 - `fzf-tab` must load **after** `compinit` and **before** any plugin that wraps widgets (`fast-syntax-highlighting`, `zsh-autosuggestions`).
-- `functions.sh` sources `keybindings.sh`, which binds `C-f` to the yazi widget. It is sourced late, after the widget-wrapping plugins. Move it earlier and `C-f` dies silently.
 - **`C-r` belongs to atuin only because atuin loads last.** `fzf --zsh` and `atuin init zsh` both bind it unconditionally — fzf to `fzf-history-widget`, atuin to `atuin-search`. `--disable-up-arrow` governs only `^[[A`, not `^R`. Swap the two `eval` lines and `C-r` reverts to fzf with no error.
 
 Regression check after any reordering — compare against a pre-change capture:
@@ -258,7 +257,6 @@ zsh -i -c 'bindkey' > after.txt && diff before.txt after.txt
 | tmux ↔ nvim    | `M-H/J/K/L` forwarded via `@pane-is-vim` (needs smart-splits.nvim)                 |
 | tmux ↔ zsh     | *(removed — see §9; the exit-code indicator had no consumer)*                      |
 | tmux ↔ ghostty | terminal features (hyperlinks, clipboard — **no** extkeys) + `macos-option-as-alt` |
-| zsh ↔ yazi     | `C-f` widget opens yazi; `y()` wrapper handles cd-on-exit via temp cwd file        |
 | zsh ↔ atuin    | `C-r` is atuin, not fzf (`--disable-up-arrow`)                                     |
 
 `CLAUDE.md` carries the enforceable one-line form of these rules — that is the list to obey while editing. What follows is the *why*, which is this document's job. Do not restate a bare rule here without adding rationale; that is how the two docs drift.
@@ -336,7 +334,7 @@ Each of these was deliberately deleted. Re-adding one means re-litigating the re
 | Empty `.zprofile` — **superseded, see §3** | The *empty* placeholder was removed. Its stated rationale ("macOS `/etc/zprofile` handles login-shell `path_helper`") was **backwards**: `path_helper` is what breaks the order. `.zprofile` was re-created with real content in `4a77e3b` and is now load-bearing. Do not delete it. |
 | zinit / zsh-defer / eval caches            | See §4. Determinism over milliseconds.                                                                                                                                                                                                                                                |
 | tmux-resurrect / continuum                 | Session persistence is manual by choice.                                                                                                                                                                                                                                              |
-| `dot_bin/search.sh` (`rgs`, `fds`)         | Both wrapped `tv` (television), which is not installed — the commands errored on every invocation. `fzf`, `fd`, `rg` and the `C-f` yazi widget already cover this ground.                                                                                                             |
+| `dot_bin/search.sh` (`rgs`, `fds`)         | Both wrapped `tv` (television), which is not installed — the commands errored on every invocation. `fzf`, `fd` and `rg` already cover this ground.                                                                                                             |
 | `alias azvms`                              | `az` not installed, and the alias was **unguarded** — a broken command waiting to be typed. `dovms` beside it is now `can_haz doctl`-guarded.                                                                                                                                         |
 | `alias d=lazydocker`                       | `lazydocker` not installed. Guarded, so it failed silently — pure dead weight.                                                                                                                                                                                                        |
 | `wt-dev` / `w` dev-build block             | Pointed at `~/DEV/rd/wt/main/bin/wt`, which no longer exists. The released `wt` is installed and wired separately.                                                                                                                                                                    |

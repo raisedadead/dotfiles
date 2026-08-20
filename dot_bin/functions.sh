@@ -24,16 +24,6 @@ source ~/.bin/ssh-helpers.sh
 source ~/.bin/fnm.sh
 source ~/.bin/awake.sh
 
-# yazi wrapper: q to cd on exit, Q to quit in place
-function y() {
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-	command yazi "$@" --cwd-file="$tmp"
-	local cwd
-	IFS= read -r -d '' cwd <"$tmp"
-	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
-	rm -f -- "$tmp"
-}
-
 # terminal title (disabled — was overwriting oh-my-posh's precmd)
 # _set_terminal_title() { print -Pn "\e]0;%~\a" }
 # autoload -Uz add-zsh-hook
@@ -106,6 +96,3 @@ compdef '_describe "remove host" "(ssh_host_remove:\"remove host from known_host
 compdef '_describe "remove host" "(rkh:\"remove host from known_hosts\")"' rkh
 compdef '_describe "cleanup junk" "(cleanup:\"cleanup macOS junk files\")"' cleanup
 compdef '_describe "set default app" "(set_default_app:\"set default app for dev files\")"' set_default_app
-
-# load keybindings
-source ~/.bin/keybindings.sh
