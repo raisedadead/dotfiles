@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+set -u
+
+SELF="$0"
+[[ "$SELF" == /* ]] || SELF="$PWD/$SELF"
+
+GLOW_STYLE="$HOME/.config/glow/mocha.json"
+[[ -r "$GLOW_STYLE" ]] || GLOW_STYLE=dark
+
+HI=$'\033[38;2;137;180;250m'
+DIM=$'\033[38;2;147;153;178m'
+SUB=$'\033[38;2;166;173;200m'
+RST=$'\033[0m'
+
+FZF_COLORS="bg+:#313244,bg:#1E1E2E,spinner:#F5E0DC,hl:#F38BA8"
+FZF_COLORS+=",fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC"
+FZF_COLORS+=",marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8"
+FZF_COLORS+=",selected-bg:#45475A,border:#6C7086,label:#CDD6F4"
+
+_ico_all=$'\U000F0E9B'
+_ico_doc=$'\U000F0284'
+_ico_file=$'\U000F0219'
+_ico_scratch=$'\U000F0493'
+
+MD_GLOBS=(
+  --glob '*.md' --glob '*.markdown' --glob '*.mdown' --glob '*.mkd'
+  --glob '*.mkdn' --glob '*.mdwn' --glob '*.mdtext' --glob '*.mdx'
+)
+
+usage() {
+  printf 'usage: mdr [--all|--docs|--scratch|--files] [directory]\n' >&2
+  exit "${1:-2}"
+}
+
+text_width() {
+  local cols="$1"
+  [[ "$cols" =~ ^[0-9]+$ ]] || cols=80
+  ((cols > 24)) && printf '%s' "$((cols - 4))" || printf '20'
+}
+
+is_markdown() {
+  case "${1,,}" in
+    *.md | *.markdown | *.mdown | *.mkd | *.mkdn | *.mdwn | *.mdtext | *.mdx)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+walk_opts() {
+  WALK=(--glob '!.git' --glob '!node_modules' --glob '!.venv' --glob '!.claude')
+  git rev-parse --is-inside-work-tree > /dev/null 2>&1 ||
+    WALK+=(--max-depth 6 --glob '!/Library' --glob '!/.Trash' --glob '!/.cache'
+      --glob '!.scratchpad')
+}
+
+render_rows() {
+  MDR_SUB="$SUB" MDR_DIM="$DIM" MDR_HI="$HI" MDR_RST="$RST" \
+    MDR_ICO_DOC="$_ico_doc" MDR_ICO_FILE="$_ico_file" \
+    perl -0 -ne '
+      chomp;
+      s{^\./}{};
+      my $p = $_;
+      my ($d, $n) = $p =~ m{^(.*/)?([^/]*)$}s;
+      $d = defined $d ? $d : q{};
+      my $ico = $p =~ /\.(md|markdown|mdown|mkd|mkdn|mdwn|mdtext|mdx)$/i
+        ? $ENV{MDR_ICO_DOC} : $ENV{MDR_ICO_FILE};
+      s/[\t\n]/ /g for ($d, $n);
+      print "$ENV{MDR_SUB}$ico  $ENV{MDR_DIM}$d$ENV{MDR_HI}$n$ENV{MDR_RST}\t$p\0";
+    '
+}
+
+source_all() {
+  local -a WALK
+  walk_opts
+  rg --files --null --hidden --follow "${WALK[@]}" \
+    --glob '.scratchpad' "${MD_GLOBS[@]}" 2> /dev/null | render_rows
+}
+
+source_docs() {
+  local -a WALK
+  walk_opts
+  rg --files --null --hidden --follow "${WALK[@]}" \
+    "${MD_GLOBS[@]}" 2> /dev/null | render_rows
+}
+
+source_files() {
+  local -a WALK
+  walk_opts
+  rg --files --null --hidden --follow "${WALK[@]}" 2> /dev/null | render_rows
+}
+
+source_scratch() {
+  local -a roots=()
+  local d
+  case "$PWD/" in
+    */.scratchpad/* | */.claude/*) roots=(.) ;;
+    *)
+      while IFS= read -r -d '' d; do roots+=("$d"); done < <(
+        find -L . -maxdepth 4 \
+          \( -path ./Library -o -path ./.Trash -o -path ./.cache \
+            -o -name .git -o -name node_modules \) -prune -o \
+          -type d \( -name .scratchpad -o -name .claude \) -print0 -prune 2> /dev/null
+      )
+      ;;
+  esac
+  ((${#roots[@]})) || return 0
+  rg --files --null --hidden --no-ignore --follow \
+    --glob '!.git' --glob '!node_modules' \
+    -- "${roots[@]}" 2> /dev/null | render_rows
+}
+
+do_source() {
+  case "$1" in
+    all) source_all ;;
+    docs) source_docs ;;
+    scratch) source_scratch ;;
+    files) source_files ;;
+    *)
+      echo "mdr: unknown view: $1" >&2
+      exit 1
+      ;;
+  esac
+}
+
+preview() {
+  local file="$1" width
+  width="$(text_width "${FZF_PREVIEW_COLUMNS:-80}")"
+  if is_markdown "$file"; then
+    glow -s "$GLOW_STYLE" -w "$width" -- "$file"
+  else
+    bat --color=always --style=numbers --paging=never \
+      --terminal-width="$width" --wrap=auto -- "$file"
+  fi
+}
+
+open_file() {
+  local file="$1" width
+  width="$(text_width "$(tput cols || true)")"
+  if is_markdown "$file"; then
+    exec glow -s "$GLOW_STYLE" -w "$width" -- "$file"
+  fi
+  exec bat --color=always --style=numbers,header --paging=always \
+    --pager='less -R' --terminal-width="$width" --wrap=auto -- "$file"
+}
+
+case "${1:-}" in
+  --source)
+    do_source "${2:-all}"
+    exit 0
+    ;;
+  --open)
+    [[ -f "${2:-}" ]] || exit 0
+    open_file "$2"
+    ;;
+  --preview)
+    file="${2:-}"
+    file="${file#*$'\t'}"
+    [[ -f "$file" ]] || exit 0
+    preview "$file"
+    exit 0
+    ;;
+esac
+
+view=all
+while (($#)); do
+  case "$1" in
+    --all | --docs | --scratch | --files)
+      view="${1#--}"
+      shift
+      ;;
+    -h | --help) usage 0 ;;
+    --)
+      shift
+      break
+      ;;
+    -*) usage ;;
+    *) break ;;
+  esac
+done
+(($# <= 1)) || usage
+(($# == 0)) || cd -- "$1" || exit 1
+
+for tool in rg fzf glow bat perl; do
+  command -v "$tool" > /dev/null || {
+    echo "mdr: $tool not found" >&2
+    exit 1
+  }
+done
+
+case "$view" in
+  all) prompt="$_ico_all  All ❯ " ;;
+  docs) prompt="$_ico_doc  Docs ❯ " ;;
+  scratch) prompt="$_ico_scratch  Scratch ❯ " ;;
+  files) prompt="$_ico_file  Files ❯ " ;;
+esac
+
+sel_file="$(mktemp "${TMPDIR:-/tmp}/mdr.XXXXXX")" || {
+  echo "mdr: cannot create a temporary file" >&2
+  exit 1
+}
+trap 'rm -f "$sel_file"' EXIT
+
+do_source "$view" |
+  fzf --read0 --print0 --ansi --height=80% --keep-right \
+    --layout=reverse --border=rounded --info=right --padding=1,2 \
+    --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
+    --delimiter=$'\t' --with-nth 1 \
+    --color="$FZF_COLORS" \
+    --prompt="$prompt" \
+    --footer "${DIM}Read [⏎] ◆ Preview [Ctrl+/]${RST}" --footer-border=line \
+    --preview "'$SELF' --preview {}" \
+    --preview-window='border-rounded:right:60%' \
+    --bind 'ctrl-/:toggle-preview' \
+    --bind 'ctrl-o:toggle-preview' \
+    --bind 'shift-up:preview-half-page-up' \
+    --bind 'shift-down:preview-half-page-down' \
+    --bind 'esc:abort' > "$sel_file"
+
+sel=""
+IFS= read -r -d '' sel < "$sel_file" || true
+rm -f "$sel_file"
+
+file="${sel#*$'\t'}"
+[[ -n "$file" && -f "$file" ]] || exit 0
+
+open_file "$file"

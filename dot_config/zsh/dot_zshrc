@@ -68,6 +68,12 @@ bindkey '^[^A' backward-word       # Ctrl+Shift+A
 bindkey '^S'   .end-of-line        # Ctrl+S
 bindkey '^[^S' .forward-word       # Ctrl+Shift+S
 
+if can_haz mdr; then
+  mdr-widget() { zle -I; mdr; zle reset-prompt }
+  zle -N mdr-widget
+  bindkey '^F' mdr-widget
+fi
+
 # Prompt (oh-my-posh)
 can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
 
