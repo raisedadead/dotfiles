@@ -33,6 +33,7 @@ float getSdfRectangle(in vec2 p, in vec2 xy, in vec2 b)
     return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
 }
 
+// Based on Inigo Quilez's 2D distance functions article: https://iquilezles.org/articles/distfunctions2d/
 float seg(in vec2 p, in vec2 a, in vec2 b, inout float s, float d) {
     vec2 e = b - a;
     vec2 w = p - a;
@@ -208,7 +209,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord){
 
         float finalAlpha = trail.a * shapeAlpha;
 
-        newColor = mix(newColor, vec4(trail.rgb, newColor.a), finalAlpha);
+        newColor = mix(newColor, vec4(trail.rgb * newColor.a, newColor.a), finalAlpha);
 
         newColor = mix(newColor, fragColor, step(sdfCurrentCursor, 0.));
 
