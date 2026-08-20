@@ -39,7 +39,10 @@ window-height = 54
 background-opacity = 0.9
 background-blur = macos-glass-clear
 theme = Catppuccin Mocha
+background = 11111b
 bold-color = bright
+minimum-contrast = 1.1
+palette = 8=#6c7086
 faint-opacity=1
 
 # Splits
@@ -62,6 +65,7 @@ font-codepoint-map = U+F0000-U+FFFFF=Symbols Nerd Font
 
 # Shaders
 custom-shader = shaders/cursor_warp.glsl
+custom-shader = shaders/text_glow.glsl
 
 # Cursor
 cursor-color = f5e0dc
