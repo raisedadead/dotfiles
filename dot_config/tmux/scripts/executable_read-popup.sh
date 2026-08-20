@@ -217,19 +217,20 @@ preview_row() {
 
 # ── Header ────────────────────────────────────────────────────────────────────
 
-# The tab bar rides the outer BORDER LABEL, not --header, and the labels are
-# terse. Both decisions are about width. --header spans the list column only —
-# 40% of the popup, which is itself 80% of the terminal, so ~31 columns on a
-# 100-column terminal — and --keep-right truncates it from the LEFT, taking the
-# active tab with it: probed at the popup's real interior width, `^D Docs` still
-# vanished (`··s · ^F Files · ^S Scratch`). The border label spans the whole fzf
-# frame instead, ~0.8 of the terminal, and `change-border-label` reloads it per
-# tab exactly like `change-header` did. ANSI survives in a label (probed), so
-# the active tab keeps its accent.
+# The tab bar rides the outer BORDER LABEL, not --header. --header spans the
+# LIST column only — 40% of a popup that is itself 80% of the terminal, so ~31
+# columns on a 100-column terminal — and --keep-right truncates it from the
+# LEFT, taking the active tab with it: even shortened to `^D Docs`, probed at
+# the popup's real interior width, the active tab still vanished. The border
+# label spans the whole fzf frame instead, ~0.8 of the terminal, so the labels
+# can keep switcher.sh's `Ctrl+X Name` wording; `change-border-label` reloads it
+# per tab exactly like `change-header` did, and ANSI survives in a label
+# (probed), so the active tab keeps its accent. The footer is the sacrificial
+# one: it stays in the list column and truncates on a narrow popup.
 make_tabs() {
   local active="$1"
   local -a items=("Docs" "Files" "Scratch")
-  local -a keys=("^D" "^F" "^S")
+  local -a keys=("Ctrl+D" "Ctrl+F" "Ctrl+S")
   local result="" first=1 i
   for i in "${!items[@]}"; do
     [[ "$first" == "1" ]] && first=0 || result+=" ${DIM}·${RST} "
@@ -261,7 +262,14 @@ TABS_DOCS=$(make_tabs "Docs")
 TABS_FILES=$(make_tabs "Files")
 TABS_SCRATCH=$(make_tabs "Scratch")
 
-FOOTER="${DIM}⏎ read · ^/ preview · esc quit${RST}"
+# Two items, no Esc hint, no leading pad. switcher.sh and `keys` keep the pad
+# because they run --no-keep-right and truncate on the RIGHT, where a leading
+# pad costs nothing; this footer sits in the LIST column and
+# --keep-right truncates it from the LEFT, so a long footer loses `Read [⏎]`
+# first — the primary action. Probed at a 94-column interior (a 120-column
+# terminal): the 42-column form rendered `·· Preview [Ctrl+/] ◆ Quit [Esc]`.
+# The asymmetry is deliberate; do not "unify" it back.
+FOOTER="${DIM}Read [⏎] ◆ Preview [Ctrl+/]${RST}"
 
 BIND_DOCS="reload('$SELF' --source docs)+change-prompt($_ico_doc  Docs ❯ )+change-border-label($TABS_DOCS)"
 BIND_FILES="reload('$SELF' --source files)+change-prompt($_ico_file  Files ❯ )+change-border-label($TABS_FILES)"
@@ -284,7 +292,7 @@ trap 'rm -f "$sel_file"' EXIT
 
 source_docs | fzf --read0 --print0 --ansi --height=100% --keep-right \
   --layout=reverse --border=rounded --info=right \
-  --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
+  --pointer='▶' --marker='●' --separator='─' --scrollbar='│' --padding=1,2 \
   --delimiter=$'\t' --with-nth 1 \
   --color="$FZF_MOCHA_COLORS" \
   --prompt="$_ico_doc  Docs ❯ " \
@@ -296,6 +304,7 @@ source_docs | fzf --read0 --print0 --ansi --height=100% --keep-right \
   --bind "ctrl-f:$BIND_FILES" \
   --bind "ctrl-s:$BIND_SCRATCH" \
   --bind 'ctrl-/:toggle-preview' \
+  --bind 'ctrl-o:toggle-preview' \
   --bind 'shift-up:preview-half-page-up' \
   --bind 'shift-down:preview-half-page-down' \
   --bind 'esc:abort' >"$sel_file"

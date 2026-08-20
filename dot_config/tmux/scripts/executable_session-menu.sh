@@ -13,8 +13,9 @@ fi
 
 KEYS="123456789abcdefghijklmnopqrstuvwxyz"
 
-cmd=(display-menu -T '#[align=centre] Sessions ' -x C -y C -b rounded \
-  -s 'fg=#cdd6f4,bg=#1e1e2e' -S 'fg=#6c7086' -H 'fg=#1e1e2e,bg=#cba6f7,bold')
+# No -s/-S/-H here: menu-style, menu-selected-style and menu-border-style in
+# theme.conf carry the palette for every menu on the server, built-ins included.
+cmd=(display-menu -T '#[align=centre] Sessions ' -x C -y C -b rounded)
 
 active_lines=()
 parked_lines=()

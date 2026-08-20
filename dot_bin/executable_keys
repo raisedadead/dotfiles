@@ -287,11 +287,23 @@ def main() -> int:
     if hidden:
         footer = f"  {hidden} mouse bindings hidden [--all] ◆ Quit [Esc]"
 
+    # --height and --no-keep-right are stated, never inherited. `keys` runs
+    # inside `display-popup` (keybinds.conf M-?), and a tmux popup inherits
+    # FZF_DEFAULT_OPTS from the server environment — --height=60% draws the
+    # list in the top 60% of the popup with dead rows below (probed: 18 of 30
+    # rows used), and --keep-right truncates a row from the LEFT, cutting the
+    # tool and key columns that every row is read by.
+    # --height applies standalone too, where it replaces the inherited 60% with
+    # the full terminal. That is deliberate: this is a 700-row cheatsheet, and
+    # fzf takes the alternate screen either way (probed — identical output for
+    # --height=100% and bare fullscreen), so the prior screen still returns.
     fzf = [
         "fzf",
         "--ansi",
         "--no-sort",
         "--no-info",
+        "--height=100%",
+        "--no-keep-right",
         "--layout=reverse",
         "--border=rounded",
         "--border-label= Keybindings ",

@@ -439,9 +439,9 @@ esac
 
 # Exact tmpfile cleanup is handled inside _source_all_raw; no broad wildcard trap.
 
-FOOTER_NAV="${DIM}  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+O]${RST}"
-FOOTER_TMUX="${DIM}  Switch [⏎] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+O]${RST}"
-FOOTER_FSRCH="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+O] ◆ Text grep [Ctrl+G]${RST}"
+FOOTER_NAV="${DIM}  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
+FOOTER_TMUX="${DIM}  Switch [⏎] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
+FOOTER_FSRCH="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+/] ◆ Text grep [Ctrl+G]${RST}"
 FOOTER_GSRCH="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Files [Ctrl+F]${RST}"
 
 HDR_ALL=$(make_header "All")
@@ -458,8 +458,17 @@ BIND_ZOX="reload($SELF --source zox)+change-prompt($_ico_zoxide  Zoxide ❯ )+ch
 BIND_FSRCH="reload($SELF --source search files)+change-prompt($_ico_files  Files ❯ )+change-header($HDR_FSRCH)+change-footer($FOOTER_FSRCH)"
 BIND_GSRCH="reload($SELF --source search text)+change-prompt($_ico_text  Grep ❯ )+change-header($HDR_GSRCH)+change-footer($FOOTER_GSRCH)+hide-preview"
 
+# --no-keep-right is stated, never inherited. fzf's own --tmux popup mode sizes
+# the window itself, so --height=60% from FZF_DEFAULT_OPTS cannot bite here —
+# but every other option in that block still does, and --keep-right truncates a
+# row from the LEFT, cutting the icon and name off a narrow popup and leaving
+# only the path. Command-line options beat FZF_DEFAULT_OPTS.
+# It costs the tail of the footer on a narrow popup — probed at a 64-column
+# interior, `Preview [Ctrl+/]` falls off — and that is the better half of the
+# trade: every footer lists its primary action first, so losing the tail keeps
+# `Connect [⏎]` on screen where left truncation would have eaten it.
 result=$(source_all | fzf --tmux center,55%,60% \
-  --ansi --no-info --cycle --tiebreak=begin,index \
+  --ansi --no-info --cycle --tiebreak=begin,index --no-keep-right \
   --delimiter $'\t' --with-nth '2..' --nth '1' \
   --border rounded --border-label ' Switcher ' --border-label-pos 3 --padding=1,2 \
   --color "$FZF_MOCHA_COLORS" \
@@ -476,6 +485,7 @@ result=$(source_all | fzf --tmux center,55%,60% \
   --bind "ctrl-z:$BIND_ZOX" \
   --bind "ctrl-f:$BIND_FSRCH" \
   --bind "ctrl-g:$BIND_GSRCH" \
+  --bind 'ctrl-/:toggle-preview' \
   --bind 'ctrl-o:toggle-preview' \
   --expect 'ctrl-e,ctrl-v,ctrl-d' \
   --bind 'esc:abort')

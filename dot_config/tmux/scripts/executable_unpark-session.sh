@@ -9,6 +9,7 @@ if [[ -z "$parked" ]]; then
   exit 0
 fi
 
+# Styling comes from theme.conf's menu-* options, never per-call -s/-S/-H.
 cmd=(display-menu -T '#[align=centre] Unpark Session ' -x C -y C -b rounded)
 idx=1
 while IFS='|' read -r sid name wins; do
