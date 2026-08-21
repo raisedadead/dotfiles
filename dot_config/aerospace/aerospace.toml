@@ -1,20 +1,17 @@
 config-version = 2
+start-at-login = true
+persistent-workspaces = ['1', '2', '3', '4', '5']
 
 after-startup-command = ['exec-and-forget /opt/homebrew/bin/sketchybar']
-
 exec-on-workspace-change = [
   '/bin/bash',
   '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
-
-start-at-login = true
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 on-mode-changed = [
   'exec-and-forget /bin/bash -c "/opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=$(/opt/homebrew/bin/aerospace list-modes --current)"',
 ]
-
-persistent-workspaces = ['1', '2', '3', '4', '5']
 
 
 [gaps]
@@ -25,9 +22,14 @@ outer.right = 12
 outer.top = 12
 outer.bottom = 60
 
-# Key tiers: h/j/k/l = focus, shift+h/j/k/l = move within the tree,
-# arrows = join, shift+arrows = monitor. Service mode holds only the rare and
-# the destructive.
+# Key tiers: 
+#
+# h/j/k/l = focus, 
+# shift+h/j/k/l = move within the tree,
+# arrows = join, 
+# shift+arrows = monitor. 
+#
+# Service mode holds only the rare and the destructive.
 [mode.main.binding]
 # Disable macOS hide: aerospace moves workspace-inactive windows off-screen
 # instead of hiding; cmd-h breaks that bookkeeping.
@@ -119,17 +121,28 @@ test %{app-bundle-id} = com.sindresorhus.Dato \
 '''
 run = 'layout floating'
 
-# Workspace 2: Helium — tiled
+# Workspace 1: Helium — tiled
 [[on-window-detected]]
 if = 'test %{app-bundle-id} = net.imput.helium'
-run = 'move-node-to-workspace 2'
+run = 'move-node-to-workspace 1'
 
-# Workspace 3: Development — tiled
+# Workspace 2: Development — tiled
 [[on-window-detected]]
 if = 'test %{app-bundle-id} = com.mitchellh.ghostty'
-run = 'move-node-to-workspace 3'
+run = 'move-node-to-workspace 2'
+# Terminals that are not Ghostty
+[[on-window-detected]]
+if = '''
+test %{app-bundle-id} = com.apple.Terminal \
+  || test %{app-bundle-id} = com.googlecode.iterm2
+'''
+run = [
+  'move-node-to-workspace 2',
+  'layout floating',
+  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
+]
 
-# Workspace 3: VS Code — floating, because it runs macOS native tabs
+# VS Code — floating, because it runs macOS native tabs
 # ("window.nativeTabs": true). Every tab is a distinct AXWindow, so AeroSpace
 # registers it as its own node and hands it a tile — but only the frontmost tab
 # of a group has a visible surface. Tiled, an N-tab window therefore eats N
@@ -142,10 +155,7 @@ run = 'move-node-to-workspace 3'
 # here, so any native-tab app hits it (Finder is AeroSpace#489).
 [[on-window-detected]]
 if = 'test %{app-bundle-id} = com.microsoft.VSCode'
-run = [
-  'move-node-to-workspace 3',
-  'layout floating',
-]
+run = ['move-node-to-workspace 2', 'layout floating']
 
 # Workspace 4: Spark + Spotify only — tiled 2/3 : 1/3.
 [[on-window-detected]]
@@ -165,10 +175,7 @@ test %{app-bundle-id} = net.whatsapp.WhatsApp \
   || test %{app-bundle-id} = ru.keepcoder.Telegram \
   || test %{app-bundle-id} = com.automattic.beeper.desktop
 '''
-run = [
-  'move-node-to-workspace 5',
-  'layout h_accordion',
-]
+run = ['move-node-to-workspace 5', 'layout h_accordion']
 
 # Browsers that are not Helium: parked in workspace 1, floating.
 [[on-window-detected]]
@@ -176,18 +183,6 @@ if = '''
 test %{app-bundle-id} = com.apple.Safari \
   || test %{app-bundle-id} = com.google.Chrome \
   || test %{app-bundle-id} = com.brave.Browser.origin
-'''
-run = [
-  'move-node-to-workspace 1',
-  'layout floating',
-  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
-]
-
-# Terminals that are not Ghostty: parked in workspace 1, floating.
-[[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.apple.Terminal \
-  || test %{app-bundle-id} = com.googlecode.iterm2
 '''
 run = [
   'move-node-to-workspace 1',
