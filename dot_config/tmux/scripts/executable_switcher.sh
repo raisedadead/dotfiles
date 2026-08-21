@@ -13,6 +13,7 @@ _ico_zoxide=$'\U000F02DA'    # nf-md-history
 _ico_search=$'\U000F0349'    # nf-md-magnify
 _ico_files=$'\U000F0219'     # nf-md-file_multiple
 _ico_text=$'\U000F0284'      # nf-md-file_document
+_ico_star=$'\U000F04CE'      # nf-md-star
 
 DIM="$CLR_DIM"
 HI="$CLR_HI"
@@ -26,9 +27,29 @@ _CLR_CONF="$CLR_ACCENT"
 _CLR_ZOX="$CLR_MAUVE"
 
 PROJECTS_JSON="$HOME/.config/switcher/projects.json"
+BOOKMARKS_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/switcher/bookmarks"
+TAB_FILE="${SWITCHER_TAB_FILE:-}"
 
 expand_tilde() { echo "${1/#\~/$HOME}"; }
 shorten()      { echo "${1/#$HOME/\~}"; }
+
+bookmarks_raw() { [[ -f "$BOOKMARKS_FILE" ]] && cat "$BOOKMARKS_FILE"; return 0; }
+
+_BM_SET=$'\n'"$(bookmarks_raw)"$'\n'
+is_bookmarked() { [[ -n "$1" && "$_BM_SET" == *$'\n'"$1"$'\n'* ]]; }
+
+toggle_bookmark() {
+  local path="${1%/}" tmp
+  [[ -n "$path" && -d "$path" ]] || return 1
+  mkdir -p "${BOOKMARKS_FILE%/*}"
+  if is_bookmarked "$path"; then
+    tmp=$(mktemp "${BOOKMARKS_FILE}.XXXXXX")
+    grep -vxF -- "$path" "$BOOKMARKS_FILE" > "$tmp" 2>/dev/null
+    mv "$tmp" "$BOOKMARKS_FILE"
+  else
+    printf '%s\n' "$path" >> "$BOOKMARKS_FILE"
+  fi
+}
 
 # Render one fzf display line.
 # Args: cat, target, path
@@ -39,7 +60,7 @@ shorten()      { echo "${1/#$HOME/\~}"; }
 #   col 4: short path (dim)
 render_line() {
   local cat="$1" target="$2" path="$3"
-  local name short icon cat_label cat_color
+  local name short icon cat_label cat_color mark
   short=$(shorten "$path")
   case "$cat" in
     tmux)   name="${target%%:*}"; icon="$_ico_session"; cat_label="session"; cat_color="$_CLR_TMUX" ;;
@@ -49,9 +70,10 @@ render_line() {
     zox)  name=$(basename "$path"); icon="$_ico_zoxide";  cat_label="zoxide";  cat_color="$_CLR_ZOX" ;;
     *) return ;;
   esac
-  printf '%s|%s|%s\t%s%s  %-20s%s\t%s%-7s%s\t%s%s%s\n' \
+  if is_bookmarked "$path"; then mark="${ACCENT}${_ico_star}${RST} "; else mark="  "; fi
+  printf '%s|%s|%s\t%s%s%s  %-20s%s\t%s%-7s%s\t%s%s%s\n' \
     "$cat" "$target" "$path" \
-    "$HI" "$icon" "$name" "$RST" \
+    "$mark" "$HI" "$icon" "$name" "$RST" \
     "$cat_color" "$cat_label" "$RST" \
     "$DIM" "$short" "$RST"
 }
@@ -98,6 +120,10 @@ _source_all_raw() {
       [[ -d "$d" ]] && printf '50|3|conf||%s\n' "$d"
     done
 
+    while IFS= read -r bm; do
+      bm="${bm%/}"; [[ -n "$bm" && -d "$bm" ]] && printf '200|2|proj||%s\n' "$bm"
+    done < <(bookmarks_raw)
+
     # Projects (priority 2, floor score 100; favorites floor 200)
     if [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1; then
       while IFS='|' read -r _scope base; do
@@ -107,13 +133,13 @@ _source_all_raw() {
         else
           find "$base" -maxdepth 1 -mindepth 1 -type d 2>/dev/null
         fi | while IFS= read -r p; do
-          [[ -d "$p" ]] && printf '100|2|proj||%s\n' "$p"
+          p="${p%/}"; [[ -d "$p" ]] && printf '100|2|proj||%s\n' "$p"
         done
       done < <(jq -r '.baseFolders[]? | "\(.scope // "Other")|\(.path)"' "$PROJECTS_JSON" 2>/dev/null)
 
       while IFS= read -r fav; do
-        fav=$(expand_tilde "$fav")
-        [[ -d "$fav" ]] && printf '200|2|proj||%s\n' "$fav"
+        fav=$(expand_tilde "$fav"); fav="${fav%/}"
+        [[ -n "$fav" && -d "$fav" ]] && printf '200|2|proj||%s\n' "$fav"
       done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
     fi
 
@@ -185,26 +211,41 @@ source_tmux() {
 }
 
 source_proj() {
-  [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1 || return
-  local paths=()
+  local paths=() seen=$'\n' p
+
+  while IFS= read -r bm; do
+    bm="${bm%/}"; [[ -n "$bm" && -d "$bm" ]] || continue
+    [[ "$seen" == *$'\n'"$bm"$'\n'* ]] && continue
+    seen+="$bm"$'\n'
+    render_line "proj" "" "$bm"
+  done < <(bookmarks_raw)
+
+  [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1 || return 0
+
+  while IFS= read -r fav; do
+    fav=$(expand_tilde "$fav"); fav="${fav%/}"
+    [[ -n "$fav" && -d "$fav" ]] || continue
+    [[ "$seen" == *$'\n'"$fav"$'\n'* ]] && continue
+    seen+="$fav"$'\n'
+    render_line "proj" "" "$fav"
+  done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
+
   while IFS='|' read -r _scope base; do
     base=$(expand_tilde "$base"); [[ -d "$base" ]] || continue
     if command -v fd >/dev/null 2>&1; then
-      while IFS= read -r p; do [[ -d "$p" ]] && paths+=("$p"); done \
+      while IFS= read -r p; do p="${p%/}"; [[ -d "$p" ]] && paths+=("$p"); done \
         < <(fd -d 1 -t d . "$base" 2>/dev/null | sort)
     else
-      while IFS= read -r p; do [[ -d "$p" ]] && paths+=("$p"); done \
+      while IFS= read -r p; do p="${p%/}"; [[ -d "$p" ]] && paths+=("$p"); done \
         < <(find "$base" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
     fi
   done < <(jq -r '.baseFolders[]? | "\(.scope // "Other")|\(.path)"' "$PROJECTS_JSON" 2>/dev/null)
 
-  # Favorites first
-  while IFS= read -r fav; do
-    fav=$(expand_tilde "$fav")
-    [[ -d "$fav" ]] && render_line "proj" "" "$fav"
-  done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
-
-  for p in "${paths[@]}"; do render_line "proj" "" "$p"; done
+  for p in "${paths[@]}"; do
+    [[ "$seen" == *$'\n'"$p"$'\n'* ]] && continue
+    seen+="$p"$'\n'
+    render_line "proj" "" "$p"
+  done
 }
 
 source_conf() {
@@ -253,17 +294,20 @@ source_search() {
   else
     fd --max-depth 4 --type f --type d . "$base" 2>/dev/null | head -5000 | \
     while IFS= read -r p; do
-      local short name
+      local short name mark
+      p="${p%/}"
       short=$(shorten "$p")
       name=$(basename "$p")
-      printf 'search||%s\t%s%s  %-22s%s\t%ssrch%s\t%s%s%s\n' \
-        "$p" "$HI" "$_ico_files" "$name" "$RST" \
+      if is_bookmarked "$p"; then mark="${ACCENT}${_ico_star}${RST} "; else mark="  "; fi
+      printf 'search||%s\t%s%s%s  %-22s%s\t%ssrch%s\t%s%s%s\n' \
+        "$p" "$mark" "$HI" "$_ico_files" "$name" "$RST" \
         "$DIM" "$RST" "$DIM" "$short" "$RST"
     done
   fi
 }
 
 do_source() {
+  [[ -n "$TAB_FILE" ]] && printf '%s %s\n' "$1" "${2:-}" > "$TAB_FILE"
   case "$1" in
     all)    source_all ;;
     tmux)   source_tmux ;;
@@ -431,16 +475,34 @@ make_header() {
 # ── Subcommand dispatch ───────────────────────────────────────────────────────
 
 case "${1:-}" in
-  --source)  do_source "${2:-all}" "${3:-}"; exit ;;
-  --preview) do_preview "$2"; exit ;;
+  --source)   do_source "${2:-all}" "${3:-}"; exit ;;
+  --preview)  do_preview "$2"; exit ;;
+  --bookmark)
+    toggle_bookmark "$(extract_path "$2")" &&
+      printf 'reload(%s --source-current)' "$SELF"
+    exit 0 ;;
+  --source-current)
+    if [[ -n "$TAB_FILE" && -s "$TAB_FILE" ]]; then
+      read -r _tab _arg < "$TAB_FILE"
+      do_source "${_tab:-all}" "${_arg:-}"
+    else
+      do_source all
+    fi
+    exit ;;
 esac
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 # Exact tmpfile cleanup is handled inside _source_all_raw; no broad wildcard trap.
 
-FOOTER_NAV="${DIM}  Connect [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
-FOOTER_TMUX="${DIM}  Switch [⏎] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
+SWITCHER_TAB_FILE=$(mktemp /tmp/switcher-tab.XXXXXX)
+export SWITCHER_TAB_FILE
+TAB_FILE="$SWITCHER_TAB_FILE"
+trap 'rm -f "$SWITCHER_TAB_FILE"' EXIT
+printf 'all \n' > "$TAB_FILE"
+
+FOOTER_NAV="${DIM}  Connect [⏎] ◆ Bookmark [Ctrl+S] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
+FOOTER_TMUX="${DIM}  Switch [⏎] ◆ Bookmark [Ctrl+S] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
 FOOTER_FSRCH="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+/] ◆ Text grep [Ctrl+G]${RST}"
 FOOTER_GSRCH="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Files [Ctrl+F]${RST}"
 
@@ -456,6 +518,7 @@ BIND_TMUX="reload($SELF --source tmux)+change-prompt($_ico_session  Sessions ❯
 BIND_PROJ="reload($SELF --source proj)+change-prompt($_ico_project  Projects ❯ )+change-header($HDR_PROJ)+change-footer($FOOTER_NAV)"
 BIND_ZOX="reload($SELF --source zox)+change-prompt($_ico_zoxide  Zoxide ❯ )+change-header($HDR_ZOX)+change-footer($FOOTER_NAV)"
 BIND_FSRCH="reload($SELF --source search files)+change-prompt($_ico_files  Files ❯ )+change-header($HDR_FSRCH)+change-footer($FOOTER_FSRCH)"
+BIND_MARK="transform($SELF --bookmark {})"
 BIND_GSRCH="reload($SELF --source search text)+change-prompt($_ico_text  Grep ❯ )+change-header($HDR_GSRCH)+change-footer($FOOTER_GSRCH)+hide-preview"
 
 # --no-keep-right is stated, never inherited. fzf's own --tmux popup mode sizes
@@ -485,6 +548,7 @@ result=$(source_all | fzf --tmux center,55%,60% \
   --bind "ctrl-z:$BIND_ZOX" \
   --bind "ctrl-f:$BIND_FSRCH" \
   --bind "ctrl-g:$BIND_GSRCH" \
+  --bind "ctrl-s:$BIND_MARK" \
   --bind 'ctrl-/:toggle-preview' \
   --bind 'ctrl-o:toggle-preview' \
   --expect 'ctrl-e,ctrl-v,ctrl-d' \
