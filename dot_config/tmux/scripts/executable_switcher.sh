@@ -478,7 +478,7 @@ result=$(source_all | fzf --tmux center,55%,60% \
   --footer "$FOOTER_NAV" \
   --footer-border=line \
   --preview "$SELF --preview {}" \
-  --preview-window 'bottom:30%:wrap' \
+  --preview-window 'bottom:30%:wrap:hidden' \
   --bind "ctrl-a:$BIND_ALL" \
   --bind "ctrl-t:$BIND_TMUX" \
   --bind "ctrl-p:$BIND_PROJ" \
