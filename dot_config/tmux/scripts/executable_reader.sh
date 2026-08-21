@@ -36,7 +36,8 @@ HDR_ALL="$(make_header All)"
 HDR_DOCS="$(make_header Docs)"
 HDR_SCRATCH="$(make_header Scratch)"
 HDR_FILES="$(make_header Files)"
-FOOTER="${DIM}  Read [⏎] ◆ Preview [Ctrl+/]${RST}"
+FOOTER="${DIM}  Read [⏎] ◆ Preview [Ctrl+/] ◆ Copy [Ctrl+Y]${RST}"
+FOOTER_COPIED="${ACCENT}  Copied to clipboard${RST}"
 
 BIND_ALL="reload($MDR --source all)+change-prompt($_ico_all  All ❯ )+change-header($HDR_ALL)"
 BIND_DOCS="reload($MDR --source docs)+change-prompt($_ico_doc  Docs ❯ )+change-header($HDR_DOCS)"
@@ -61,6 +62,8 @@ trap 'rm -f "$sel_file"' EXIT
   --bind "ctrl-d:$BIND_DOCS" \
   --bind "ctrl-s:$BIND_SCRATCH" \
   --bind "ctrl-f:$BIND_FILES" \
+  --bind "ctrl-y:execute-silent($MDR --copy {})+change-footer($FOOTER_COPIED)" \
+  --bind "focus:change-footer($FOOTER)" \
   --bind 'ctrl-/:toggle-preview' \
   --bind 'ctrl-o:toggle-preview' \
   --bind 'shift-up:preview-half-page-up' \
