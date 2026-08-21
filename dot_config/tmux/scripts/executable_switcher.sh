@@ -13,7 +13,7 @@ _ico_zoxide=$'\U000F02DA'    # nf-md-history
 _ico_search=$'\U000F0349'    # nf-md-magnify
 _ico_files=$'\U000F0219'     # nf-md-file_multiple
 _ico_text=$'\U000F0284'      # nf-md-file_document
-_ico_star=$'\U000F04CE'      # nf-md-star
+_ico_bookmark=$'\U000F00C0'  # nf-md-bookmark
 
 DIM="$CLR_DIM"
 HI="$CLR_HI"
@@ -70,7 +70,7 @@ render_line() {
     zox)  name=$(basename "$path"); icon="$_ico_zoxide";  cat_label="zoxide";  cat_color="$_CLR_ZOX" ;;
     *) return ;;
   esac
-  if is_bookmarked "$path"; then mark="${ACCENT}${_ico_star}${RST} "; else mark="  "; fi
+  if is_bookmarked "$path"; then mark="${ACCENT}${_ico_bookmark}${RST}  "; else mark="   "; fi
   printf '%s|%s|%s\t%s%s%s  %-20s%s\t%s%-7s%s\t%s%s%s\n' \
     "$cat" "$target" "$path" \
     "$mark" "$HI" "$icon" "$name" "$RST" \
@@ -298,7 +298,7 @@ source_search() {
       p="${p%/}"
       short=$(shorten "$p")
       name=$(basename "$p")
-      if is_bookmarked "$p"; then mark="${ACCENT}${_ico_star}${RST} "; else mark="  "; fi
+      if is_bookmarked "$p"; then mark="${ACCENT}${_ico_bookmark}${RST}  "; else mark="   "; fi
       printf 'search||%s\t%s%s%s  %-22s%s\t%ssrch%s\t%s%s%s\n' \
         "$p" "$mark" "$HI" "$_ico_files" "$name" "$RST" \
         "$DIM" "$RST" "$DIM" "$short" "$RST"
