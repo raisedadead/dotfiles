@@ -180,6 +180,18 @@ description = "run a command in a new pane and hand it to the agent"
 width = "60%"
 height = "20%"
 
+[[keys.command]]
+key = "prefix+alt+r"
+type = "plugin_action"
+command = "persiyanov.reviewr.toggle"
+description = "reviewr: toggle diff pane"
+
+[[keys.command]]
+key = "prefix+alt+e"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer"
+description = "file explorer"
+
 [experimental]
 switch_ascii_input_source_in_prefix = true
 pane_history = true
