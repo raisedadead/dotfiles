@@ -14,8 +14,11 @@ trap 'rm -f "$scratch"' EXIT
 
 "$herdr" pane read "$pane" --source recent-unwrapped --lines 2000 >"$scratch" 2>/dev/null || true
 
-mapfile -t urls < <(
-	grep -oE '(https?|ftp|file)://[][:alnum:]_@:/.,~#%&?+=-]*[[:alnum:]/]' "$scratch" |
+urls=()
+while IFS= read -r found; do
+	urls+=("$found")
+done < <(
+	grep -oE 'https?://[][:alnum:]_@:/.,~#%&?+=-]*[[:alnum:]/]' "$scratch" |
 		awk '!seen[$0]++' || true
 )
 
@@ -24,18 +27,30 @@ if ((${#urls[@]} == 0)); then
 	exit 0
 fi
 
+rows=$(
+	index=0
+	for one in "${urls[@]}"; do
+		index=$((index + 1))
+		printf '%d\t%s\n' "$index" "$one"
+	done
+)
+
 choice=$(
-	printf '%s\n' "${urls[@]}" |
-		nl -w3 -s'  ' |
+	printf '%s\n' "$rows" |
 		fzf --height=100% \
 			--no-keep-right \
 			--border=rounded \
 			--border-label=' URLs ' \
 			--prompt='open > ' \
+			--delimiter='\t' \
 			--no-sort
 ) || exit 0
 
-url="${choice#*  }"
-if [[ -n "$url" ]]; then
+url="${choice#*$'\t'}"
+
+if [[ "$url" =~ ^https?:// ]]; then
 	open "$url"
+else
+	printf 'url-picker: refusing non-http target %s\n' "$url" >&2
+	exit 1
 fi

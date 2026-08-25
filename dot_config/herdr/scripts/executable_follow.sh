@@ -10,18 +10,23 @@ if [[ -z "$pane" ]]; then
 	exit 1
 fi
 
-read -r -e -p "follow command > " cmd
+if ! command -v jq >/dev/null 2>&1; then
+	printf 'follow: jq is required\n' >&2
+	exit 1
+fi
+
+read -r -e -p "follow command > " cmd || true
 if [[ -z "${cmd:-}" ]]; then
 	exit 0
 fi
 
 width=$(
 	"$herdr" pane layout --pane "$pane" 2>/dev/null |
-		jq -r --arg p "$pane" '.result.layout.panes[] | select(.pane_id==$p) | .rect.width' 2>/dev/null
+		jq -r --arg p "$pane" '[.result.layout.panes[] | select(.pane_id==$p) | .rect.width] | first // 0' 2>/dev/null
 ) || width=0
 
 direction=down
-if [[ -n "${width:-}" ]] && ((width >= 160)); then
+if [[ "${width:-0}" =~ ^[0-9]+$ ]] && ((width >= 160)); then
 	direction=right
 fi
 

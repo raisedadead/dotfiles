@@ -57,9 +57,7 @@ MOUSE_RE = re.compile(r"Mouse|Wheel|DoubleClick|TripleClick", re.IGNORECASE)
 # upstream defaults, not this rig's choices, and they crowd out the real ones.
 NVIM_DEFAULT_RE = re.compile(r"^:help \S+-default$")
 
-# herdr has no list-keys. Its own `--default-config` prints every default as a
-# commented assignment, and the deployed config.toml holds the overrides.
-HERDR_DEFAULT_RE = re.compile(r'^#\s*([a-z_]+)\s*=\s*"([^"]*)"')
+HERDR_DEFAULT_RE = re.compile(r'^#\s*([a-z_]+)\s*=\s*"([^"]*)"\s*(#.*)?$')
 
 # bindkey prints two shapes: a single `"^A" backward-word`, and a compressed
 # contiguous range `"a"-"z" self-insert`. One pattern for both reads a range's

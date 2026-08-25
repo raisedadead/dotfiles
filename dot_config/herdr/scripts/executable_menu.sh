@@ -45,7 +45,7 @@ swap-down) run pane swap --direction down --pane "$pane" ;;
 zoom) run pane zoom "$pane" --toggle ;;
 urls) exec "$here/url-picker.sh" ;;
 rename-pane)
-	read -r -p "pane name: " name
+	read -r -p "pane name: " name || true
 	if [[ -n "${name:-}" ]]; then
 		run pane rename "$pane" "$name"
 	fi

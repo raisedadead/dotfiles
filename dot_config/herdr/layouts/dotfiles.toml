@@ -3,7 +3,11 @@ cwd = "~/.dotfiles"
 
 [[tabs]]
 name = "code"
-panes = ["", ""]
+panes = ["nvim", ""]
+
+[[tabs]]
+name = "git"
+panes = ["lazygit"]
 
 [[tabs]]
 name = "agents"
