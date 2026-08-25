@@ -8,7 +8,6 @@ Every row is generated at run time from the tool's own reporting:
     tmux        tmux list-keys -T <table>   (descriptions from -N notes)
     zsh         zsh -i -c bindkey
     nvim        nvim --headless + vim.api.nvim_get_keymap
-    herdr       herdr --default-config + ~/.config/herdr/config.toml
 
 Nothing here is a hand-maintained copy of a binding, so nothing here can go
 stale. This replaced dot_config/keyb/keyb.yml, which was exactly such a copy
@@ -35,7 +34,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 
 # Catppuccin Mocha. Mirrors dot_config/tmux/scripts/colors.sh — presentation
 # constants only, never binding data.
@@ -56,11 +54,6 @@ MOUSE_RE = re.compile(r"Mouse|Wheel|DoubleClick|TripleClick", re.IGNORECASE)
 # Neovim ships built-in mappings whose desc is a bare help reference. They are
 # upstream defaults, not this rig's choices, and they crowd out the real ones.
 NVIM_DEFAULT_RE = re.compile(r"^:help \S+-default$")
-
-HERDR_DEFAULT_RE = re.compile(r'^#\s*([a-z_]+)\s*=\s*"([^"]*)"\s*(#.*)?$')
-
-HERDR_UNREACHABLE = {"remote_image_paste"}
-HERDR_UNREACHABLE_PREFIX = "navigate_"
 
 # bindkey prints two shapes: a single `"^A" backward-word`, and a compressed
 # contiguous range `"a"-"z" self-insert`. One pattern for both reads a range's
@@ -237,80 +230,6 @@ def from_nvim() -> list[tuple[str, str, str, str]]:
     return rows
 
 
-def herdr_defaults() -> dict[str, str]:
-    out = run("herdr", "--default-config")
-    defaults: dict[str, str] = {}
-    section = ""
-    for line in out.splitlines():
-        stripped = line.strip()
-        header = stripped.lstrip("#").strip()
-        if header.startswith("[") and header.endswith("]"):
-            section = header.strip("[]")
-            continue
-        if section != "keys":
-            continue
-        m = HERDR_DEFAULT_RE.match(stripped)
-        if m and m.group(2):
-            defaults[m.group(1)] = m.group(2)
-    return defaults
-
-
-def herdr_keys(value: object) -> list[str]:
-    if isinstance(value, str):
-        return [value] if value else []
-    if isinstance(value, list):
-        return [v for v in value if isinstance(v, str) and v]
-    return []
-
-
-def from_herdr() -> list[tuple[str, str, str, str]]:
-    if not shutil.which("herdr"):
-        return []
-
-    config: dict = {}
-    path = os.path.join(
-        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
-        "herdr",
-        "config.toml",
-    )
-    try:
-        with open(path, "rb") as handle:
-            config = tomllib.load(handle)
-    except (OSError, tomllib.TOMLDecodeError):
-        config = {}
-
-    keys = config.get("keys", {})
-    if not isinstance(keys, dict):
-        keys = {}
-
-    bindings = herdr_defaults()
-    for action, value in keys.items():
-        if action == "command" or action == "indexed":
-            continue
-        chords = herdr_keys(value)
-        if chords:
-            bindings[action] = "\x00".join(chords)
-        else:
-            bindings.pop(action, None)
-
-    rows = []
-    for action, chord in sorted(bindings.items()):
-        if action in HERDR_UNREACHABLE or action.startswith(HERDR_UNREACHABLE_PREFIX):
-            continue
-        for one in chord.split("\x00"):
-            rows.append(("herdr", "", one, action))
-
-    commands = keys.get("command", [])
-    if isinstance(commands, list):
-        for entry in commands:
-            if not isinstance(entry, dict):
-                continue
-            desc = entry.get("description") or entry.get("command") or "custom command"
-            for one in herdr_keys(entry.get("key")):
-                rows.append(("herdr", "cmd", one, collapse(str(desc))))
-    return rows
-
-
 def render(rows: list[tuple[str, str, str, str]], color: bool) -> list[str]:
     tw = max((len(r[0]) for r in rows), default=4)
     cw = max((len(r[1]) for r in rows), default=0)
@@ -339,10 +258,9 @@ def main() -> int:
         + from_tmux()
         + from_zsh()
         + from_nvim()
-        + from_herdr()
     )
     if not rows:
-        print("keys: no keybindings found — is any of the six tools installed?",
+        print("keys: no keybindings found — is any of the five tools installed?",
               file=sys.stderr)
         return 1
 

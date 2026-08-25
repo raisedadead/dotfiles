@@ -255,10 +255,6 @@ cmd_apply() {
     (( first )) || echo ""
     first=0
     p "applying $repo repo..."
-    if [[ "$repo" == "public" ]] && ! _check_herdr_source; then
-      printf "${RED}dotfiles ·${RST} refusing to apply a herdr config that does not validate\n"
-      failed=1; break
-    fi
     [[ "$repo" == "private" ]] && _capture_runtime_owned
     local apply_args=()
     (( force )) && apply_args=(--force)
@@ -277,88 +273,6 @@ cmd_apply() {
   fi
   echo ""
   return "$failed"
-}
-
-_herdr_report() {
-  printf "  ${RED}herdr${RST} ${DIM}%s${RST}\n" "$1"
-  shift
-  while IFS= read -r line; do
-    [[ -n "$line" ]] && printf "  ${DIM}  %s${RST}\n" "$line"
-  done <<< "$*"
-}
-
-_herdr_unresolved_actions() {
-  command -v python3 >/dev/null 2>&1 || return 0
-  local registry
-  registry=$(mktemp) || return 0
-  herdr plugin action list > "$registry" 2>/dev/null || : > "$registry"
-  python3 - "$1" "$registry" <<'PYEOF'
-import json, sys, tomllib
-
-try:
-    with open(sys.argv[2], encoding="utf-8") as handle:
-        registry = json.load(handle)
-except (OSError, ValueError):
-    registry = {}
-known = {
-    "%s.%s" % (a.get("plugin_id"), a.get("action_id"))
-    for a in registry.get("result", {}).get("actions", [])
-}
-try:
-    with open(sys.argv[1], "rb") as handle:
-        config = tomllib.load(handle)
-except (OSError, tomllib.TOMLDecodeError):
-    sys.exit(0)
-for entry in config.get("keys", {}).get("command", []):
-    if entry.get("type") != "plugin_action":
-        continue
-    action = entry.get("command", "")
-    if action not in known:
-        print("%s is bound but no installed plugin provides it" % action)
-PYEOF
-  rm -f "$registry"
-}
-
-_check_herdr() {
-  local cfg="${XDG_CONFIG_HOME:-$HOME/.config}/herdr/config.toml"
-  [[ -e "$cfg" ]] || return 0
-
-  if ! command -v herdr >/dev/null 2>&1; then
-    _herdr_report "config.toml" "config is deployed but herdr is not installed"
-    return 1
-  fi
-
-  local out failed=0
-  if ! out=$(herdr config check 2>&1); then
-    _herdr_report "config.toml" "$out"
-    failed=1
-  fi
-
-  local unresolved
-  unresolved=$(_herdr_unresolved_actions "$cfg")
-  if [[ -n "$unresolved" ]]; then
-    _herdr_report "plugin actions" "$unresolved"
-    failed=1
-  fi
-
-  return "$failed"
-}
-
-_check_herdr_source() {
-  local src
-  src=$(chezmoi --source "$PUB" cat "$HOME/.config/herdr/config.toml" 2>/dev/null) || return 0
-  [[ -n "$src" ]] || return 0
-  command -v herdr >/dev/null 2>&1 || return 0
-
-  local probe out
-  probe=$(mktemp -d) || return 0
-  mkdir -p "$probe/herdr"
-  printf '%s\n' "$src" > "$probe/herdr/config.toml"
-  out=$(XDG_CONFIG_HOME="$probe" herdr config check 2>&1) && { rm -rf "$probe"; return 0; }
-  rm -rf "$probe"
-
-  _herdr_report "source config.toml" "$out"
-  return 1
 }
 
 cmd_check() {
@@ -507,17 +421,13 @@ cmd_check() {
     fi
   done
 
-  local TOOL_FAIL=0
-  _check_herdr || TOOL_FAIL=1
-
   local HAS_PULL=$(( (BEHIND_pub > 0) + (BEHIND_priv > 0) ))
   local HAS_PUSH=$(( (AHEAD_pub > 0) + (AHEAD_priv > 0) ))
   local ANY_WORK=$(( NEEDS_COMMIT_pub + NEEDS_COMMIT_priv ))
-  local ANY_SHARED=$(( HAS_PULL + HAS_CONFLICT + HAS_RESOLVABLE + HAS_PUSH + TOOL_FAIL ))
+  local ANY_SHARED=$(( HAS_PULL + HAS_CONFLICT + HAS_RESOLVABLE + HAS_PUSH ))
 
   if (( ANY_WORK + ANY_SHARED > 0 )); then
     printf "\n${DIM}next →${RST}\n\n"
-    (( TOOL_FAIL )) && printf "    ${RED}herdr config check${RST}\n"
     (( HAS_PULL ))  && printf "    ${CYN}home pull${RST}\n"
     (( HAS_RESOLVABLE || HAS_CONFLICT )) && printf "    ${YLW}home sync${RST}\n"
     (( CONFLICT_pub ))  && printf "    ${RED}home pub diff${RST}\n"
@@ -529,7 +439,7 @@ cmd_check() {
     printf "\n${GRN}all clear${RST}\n"
   fi
   echo ""
-  return $(( TOOL_FAIL ))
+  return 0
 }
 
 cmd_sync() {
