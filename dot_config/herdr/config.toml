@@ -165,6 +165,14 @@ width = "56%"
 height = "60%"
 
 [[keys.command]]
+key = "alt+p"
+type = "popup"
+command = "$HOME/.config/herdr/scripts/layout.py --pick"
+description = "build a workspace from a layout"
+width = "56%"
+height = "40%"
+
+[[keys.command]]
 key = "alt+f"
 type = "popup"
 command = "$HOME/.config/herdr/scripts/follow.sh"

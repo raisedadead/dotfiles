@@ -1,0 +1,10 @@
+name = "dotfiles"
+cwd = "~/.dotfiles"
+
+[[tabs]]
+name = "code"
+panes = ["", ""]
+
+[[tabs]]
+name = "agents"
+panes = [""]
