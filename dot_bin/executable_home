@@ -118,7 +118,7 @@ cmd_help() {
   printf "  ${BLD}Custom commands (both repos):${RST}\n\n"
   printf "  ${BLD}home check${RST}                  ${DIM}show status and suggested actions${RST}\n"
   printf "  ${BLD}home sync${RST}                   ${DIM}auto-resolve drift + stage for commit${RST}\n"
-  printf "  ${BLD}home apply${RST}                  ${DIM}→ deploy source to ~${RST}\n"
+  printf "  ${BLD}home apply${RST} ${DIM}[--force]${RST}        ${DIM}→ deploy source to ~ (--force discards runtime edits)${RST}\n"
   printf "  ${BLD}home re-add${RST}                 ${DIM}← capture ~ edits back to source${RST}\n"
   printf "  ${BLD}home pull${RST}                   ${DIM}pull both repos${RST}\n"
   printf "  ${BLD}home push${RST}                   ${DIM}push both repos to origin${RST}\n"
@@ -179,11 +179,78 @@ cmd_readd() {
     printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for next steps\n"
   fi
   echo ""
+  return "$failed"
+}
+
+_drift_exempt() {
+  local target
+  for target in "${PRIV_RUNTIME_OWNED[@]}"; do
+    [[ "$1" == "$target" ]] && return 0
+  done
+  return 1
+}
+
+_drift_blockers() {
+  local repo="$1" line code target src
+  while IFS= read -r line; do
+    code="${line:0:1}"
+    [[ "$code" == "M" || "$code" == "D" ]] || continue
+    target="${line:3}"
+    _drift_exempt "$target" && continue
+    src=$(_cm "$repo" source-path "$target" 2>/dev/null) || src=""
+    if [[ "$code" == "D" ]]; then
+      printf '%s\tsource-only\ttarget deleted — restore with `home apply --force`, or drop the source entry\n' "$target"
+    elif [[ -z "$src" || ! -e "$src" || "$src" == *.tmpl ]]; then
+      printf '%s\tsource-only\tre-add cannot capture it — edit the source, then `home apply --force`\n' "$target"
+    else
+      printf '%s\tcapturable\thome re-add\n' "$target"
+    fi
+  done < <(_cm "$repo" status --path-style absolute 2>/dev/null)
+}
+
+_report_drift_blockers() {
+  local repo="$1" blockers="$2" target kind remedy capturable=0
+  printf "${RED}dotfiles ·${RST} refusing to apply %s — %s\n" \
+    "$repo" "these targets have runtime changes no re-add has captured"
+  while IFS=$'\t' read -r target kind remedy; do
+    [[ -n "$target" ]] || continue
+    printf "  ${YLW}%s${RST} ${DIM}→ %s${RST}\n" "${target/#$HOME/\~}" "$remedy"
+    [[ "$kind" == "capturable" ]] && capturable=1
+  done <<< "$blockers"
+  (( capturable )) &&
+    printf "  ${DIM}capture them with ${RST}${BLD}home sync${RST}\n"
+  printf "  ${DIM}discard them with ${RST}${BLD}home apply --force${RST}\n"
 }
 
 cmd_apply() {
+  local force=0 arg
+  for arg in "$@"; do
+    case "$arg" in
+      -f|--force) force=1 ;;
+      *) printf "${RED}dotfiles ·${RST} unknown flag for apply: %s\n" "$arg"; exit 1 ;;
+    esac
+  done
+
   echo ""
-  local first=1 failed=0
+  local repo blockers first=1 failed=0
+
+  if (( ! force )); then
+    for repo in $(_repos); do
+      blockers=$(_drift_blockers "$repo")
+      if [[ -n "$blockers" ]]; then
+        (( failed )) && echo ""
+        _report_drift_blockers "$repo" "$blockers"
+        failed=1
+      fi
+    done
+    if (( failed )); then
+      echo ""
+      printf "${YLW}dotfiles ·${RST} run ${BLD}home check${RST} to see what went wrong\n"
+      echo ""
+      return 1
+    fi
+  fi
+
   for repo in $(_repos); do
     (( first )) || echo ""
     first=0
@@ -193,7 +260,9 @@ cmd_apply() {
       failed=1; break
     fi
     [[ "$repo" == "private" ]] && _capture_runtime_owned
-    if _cm "$repo" apply; then
+    local apply_args=()
+    (( force )) && apply_args=(--force)
+    if _cm "$repo" apply "${apply_args[@]}"; then
       ok "$repo repo applied"
     else
       printf "${RED}dotfiles ·${RST} $repo apply failed\n"
@@ -207,6 +276,7 @@ cmd_apply() {
     printf "${DIM}dotfiles ·${RST} run ${BLD}home check${RST} for next steps\n"
   fi
   echo ""
+  return "$failed"
 }
 
 _herdr_report() {
@@ -618,7 +688,7 @@ case "${1:-}" in
   check)   cmd_check ;;
   sync)    cmd_sync ;;
   init)    cmd_init ;;
-  apply)   cmd_apply ;;
+  apply)   shift; cmd_apply "$@" ;;
   re-add)  cmd_readd ;;
   diff)    shift; cmd_diff "$@" ;;
   cd)
