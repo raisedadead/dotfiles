@@ -205,6 +205,20 @@ cmd_apply() {
   echo ""
 }
 
+_check_herdr() {
+  command -v herdr >/dev/null 2>&1 || return 0
+  [[ -e "${XDG_CONFIG_HOME:-$HOME/.config}/herdr/config.toml" ]] || return 0
+
+  local out
+  out=$(herdr config check 2>&1) && return 0
+
+  printf "  ${RED}herdr${RST} ${DIM}config.toml${RST}\n"
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && printf "  ${DIM}  %s${RST}\n" "$line"
+  done <<< "$out"
+  return 1
+}
+
 cmd_check() {
   local PUB_N PRIV_N
   PUB_N=$(chezmoi managed 2>/dev/null | wc -l | tr -d ' ')
@@ -351,13 +365,17 @@ cmd_check() {
     fi
   done
 
+  local TOOL_FAIL=0
+  _check_herdr || TOOL_FAIL=1
+
   local HAS_PULL=$(( (BEHIND_pub > 0) + (BEHIND_priv > 0) ))
   local HAS_PUSH=$(( (AHEAD_pub > 0) + (AHEAD_priv > 0) ))
   local ANY_WORK=$(( NEEDS_COMMIT_pub + NEEDS_COMMIT_priv ))
-  local ANY_SHARED=$(( HAS_PULL + HAS_CONFLICT + HAS_RESOLVABLE + HAS_PUSH ))
+  local ANY_SHARED=$(( HAS_PULL + HAS_CONFLICT + HAS_RESOLVABLE + HAS_PUSH + TOOL_FAIL ))
 
   if (( ANY_WORK + ANY_SHARED > 0 )); then
     printf "\n${DIM}next →${RST}\n\n"
+    (( TOOL_FAIL )) && printf "    ${RED}herdr config check${RST}\n"
     (( HAS_PULL ))  && printf "    ${CYN}home pull${RST}\n"
     (( HAS_RESOLVABLE || HAS_CONFLICT )) && printf "    ${YLW}home sync${RST}\n"
     (( CONFLICT_pub ))  && printf "    ${RED}home pub diff${RST}\n"
