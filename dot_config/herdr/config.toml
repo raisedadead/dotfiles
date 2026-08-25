@@ -4,12 +4,69 @@ onboarding = false
 name = "catppuccin"
 auto_switch = false
 
+[theme.custom]
+accent = "#cba6f7"
+panel_bg = "reset"
+sidebar_bg = "#181825"
+active_row_bg = "#313244"
+selection_bg = "#45475a"
+surface0 = "#313244"
+surface1 = "#45475a"
+surface_dim = "#11111b"
+overlay0 = "#6c7086"
+overlay1 = "#7f849c"
+text = "#cdd6f4"
+subtext0 = "#a6adc8"
+mauve = "#cba6f7"
+green = "#a6e3a1"
+yellow = "#f9e2af"
+red = "#f38ba8"
+blue = "#89b4fa"
+teal = "#94e2d5"
+peach = "#fab387"
+
+[terminal]
+new_cwd = "follow"
+
+[session]
+resume_agents_on_restore = true
+
 [ui]
+accent = "#cba6f7"
 show_agent_labels_on_pane_borders = true
 agent_panel_sort = "spaces"
+status_indicators = "symbols"
+sidebar_max_width = 48
+pane_borders = true
+pane_outer_borders = false
+pane_gaps = false
+pane_scrollbars = false
+tab_bar_position = "top"
+window_title = "{workspace} · {tab}"
+tab_bar_right_separator = " · "
+
+[[ui.tab_bar_right]]
+type = "zoom"
+
+[[ui.tab_bar_right]]
+type = "datetime"
+format = "%a %d %b %H:%M"
+
+[ui.sidebar.spaces]
+rows = [["state_icon", "workspace"], ["branch", "git_status"]]
+
+[ui.sidebar.agents]
+rows = [["state_icon", "workspace", "tab"], ["agent"]]
+
+[ui.sidebar.agents.rows_by_agent]
+claude = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"], ["agent"]]
 
 [ui.toast]
 delivery = "terminal"
+
+[ui.toast.clipboard]
+enabled = true
+position = "bottom-center"
 
 [keys]
 prefix = "ctrl+b"
@@ -109,3 +166,4 @@ height = "60%"
 
 [experimental]
 switch_ascii_input_source_in_prefix = true
+pane_history = true
