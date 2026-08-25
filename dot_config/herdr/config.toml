@@ -84,7 +84,7 @@ rename_tab = ["prefix+shift+t", "alt+shift+r"]
 
 new_workspace = ["prefix+shift+n", "alt+n"]
 rename_workspace = ["prefix+shift+w", "alt+r"]
-workspace_picker = ["prefix+w", "alt+o"]
+workspace_picker = "prefix+w"
 goto = ["prefix+g", "alt+w"]
 next_workspace = "alt+tab"
 previous_workspace = "alt+shift+tab"
@@ -147,6 +147,14 @@ command = "$HOME/.bin/keys"
 description = "keybindings cheatsheet"
 width = "80%"
 height = "80%"
+
+[[keys.command]]
+key = ["alt+o", "prefix+o"]
+type = "popup"
+command = "SWITCHER_HEIGHT=100% $HOME/.config/herdr/scripts/switcher.sh"
+description = "switcher (spaces/projects/zoxide/files/grep)"
+width = "70%"
+height = "70%"
 
 [[keys.command]]
 key = "alt+semicolon"
