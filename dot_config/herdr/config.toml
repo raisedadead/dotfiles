@@ -60,12 +60,52 @@ command = "smart-splits.nvim.right"
 description = "navigate right (vim/herdr)"
 
 [[keys.command]]
-key = "prefix+alt+g"
+key = ["alt+g", "prefix+alt+g"]
 type = "popup"
 command = "lazygit"
-description = "run lazygit"
+description = "lazygit"
+width = "70%"
+height = "80%"
+
+[[keys.command]]
+key = ["alt+t", "prefix+t"]
+type = "popup"
+command = "exec \"${SHELL:-sh}\""
+description = "scratch terminal"
+width = "56%"
+height = "64%"
+
+[[keys.command]]
+key = ["alt+i", "prefix+i"]
+type = "popup"
+command = "MDR_HEIGHT=100% $HOME/.bin/mdr"
+description = "reader (all/docs/scratch/files)"
 width = "80%"
 height = "80%"
+
+[[keys.command]]
+key = "alt+?"
+type = "popup"
+command = "$HOME/.bin/keys"
+description = "keybindings cheatsheet"
+width = "80%"
+height = "80%"
+
+[[keys.command]]
+key = "alt+semicolon"
+type = "popup"
+command = "$HOME/.config/herdr/scripts/menu.sh"
+description = "command menu"
+width = "56%"
+height = "60%"
+
+[[keys.command]]
+key = "alt+u"
+type = "popup"
+command = "$HOME/.config/herdr/scripts/url-picker.sh"
+description = "pick a URL from this pane"
+width = "56%"
+height = "60%"
 
 [experimental]
 switch_ascii_input_source_in_prefix = true
