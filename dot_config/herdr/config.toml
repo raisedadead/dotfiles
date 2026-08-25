@@ -34,7 +34,7 @@ resume_agents_on_restore = true
 [ui]
 accent = "#cba6f7"
 show_agent_labels_on_pane_borders = true
-agent_panel_sort = "spaces"
+agent_panel_sort = "priority"
 status_indicators = "symbols"
 sidebar_max_width = 48
 pane_borders = true
@@ -163,6 +163,14 @@ command = "$HOME/.config/herdr/scripts/url-picker.sh"
 description = "pick a URL from this pane"
 width = "56%"
 height = "60%"
+
+[[keys.command]]
+key = "alt+f"
+type = "popup"
+command = "$HOME/.config/herdr/scripts/follow.sh"
+description = "run a command in a new pane and hand it to the agent"
+width = "60%"
+height = "20%"
 
 [experimental]
 switch_ascii_input_source_in_prefix = true
