@@ -8,5 +8,9 @@ return {
     vim.keymap.set("n", "<A-J>", ss.move_cursor_down, { desc = "Move to lower pane" })
     vim.keymap.set("n", "<A-K>", ss.move_cursor_up, { desc = "Move to upper pane" })
     vim.keymap.set("n", "<A-L>", ss.move_cursor_right, { desc = "Move to right pane" })
+    vim.keymap.set("n", "<C-h>", ss.move_cursor_left, { desc = "Move to left pane" })
+    vim.keymap.set("n", "<C-j>", ss.move_cursor_down, { desc = "Move to lower pane" })
+    vim.keymap.set("n", "<C-k>", ss.move_cursor_up, { desc = "Move to upper pane" })
+    vim.keymap.set("n", "<C-l>", ss.move_cursor_right, { desc = "Move to right pane" })
   end,
 }
