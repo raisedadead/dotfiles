@@ -15,19 +15,19 @@ on-mode-changed = [
 
 
 [gaps]
-inner.horizontal = 12
-inner.vertical = 12
-outer.left = 12
-outer.right = 12
-outer.top = 12
+inner.horizontal = 8
+inner.vertical = 8
+outer.left = 10
+outer.right = 10
+outer.top = 10
 outer.bottom = 60
 
-# Key tiers: 
+# Key tiers:
 #
-# h/j/k/l = focus, 
+# h/j/k/l = focus,
 # shift+h/j/k/l = move within the tree,
-# arrows = join, 
-# shift+arrows = monitor. 
+# arrows = join,
+# shift+arrows = monitor.
 #
 # Service mode holds only the rare and the destructive.
 [mode.main.binding]
