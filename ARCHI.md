@@ -68,13 +68,24 @@ Corollary, learned the hard way: **do not pre-create vendor directories for tool
 
 ## 2. The deploy loop
 
-chezmoi source is canonical. The runtime target is downstream and disposable.
+chezmoi source is the record. The runtime target is where an edit starts.
 
 ```
-edit source (~/.dotfiles/*)  →  home apply  →  validate with the tool's own validator  →  home re-add
+edit target (~/.config/*, ~/.claude/*)  →  validate with the tool's own validator  →  home re-add  →  commit
 ```
 
-`home` is the wrapper (`dot_bin/executable_home`) that drives both repos together. `home re-add` captures normalisation a tool applied to its own config back into source.
+This is runtime-first, adopted 2026-08-25. It replaced a source-first loop (`edit source → home apply → validate → home re-add`), which put validation one `apply` behind the commit.
+
+Four targets keep the old direction and must be edited in source, then applied:
+
+| target                       | why                                                       |
+| ---------------------------- | ---------------------------------------------------------- |
+| `~/.config/glow/glow.yml`    | template — `chezmoi re-add` skips a template in silence     |
+| `~/.aws/config`              | template, private repo — same skip                          |
+| `~/.claude/settings.json`    | `PRIV_RUNTIME_OWNED`, force-applied from source every apply |
+| `~/.pi/agent/settings.json`  | same                                                        |
+
+`home` is the wrapper (`dot_bin/executable_home`) that drives both repos together. `home re-add` captures normalisation a tool applied to its own config back into source. `home apply` runs a pre-flight drift check over every selected repo before it writes to any of them: it names each target holding a change no re-add has captured — column-1 `M` or `D` in `chezmoi status` — and exits 1. `home apply --force` discards them. Templates, chezmoi externals and deleted targets get a source-only remedy, because `re-add` cannot capture any of the three.
 
 Two hazards that have bitten before:
 
