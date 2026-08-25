@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -132,7 +133,7 @@ def build(spec: dict, path: str) -> str:
                     )["result"]["pane"]["pane_id"]
                 if command.strip():
                     herdr("pane", "run", pane_id, command)
-    except (RuntimeError, KeyError, TypeError, AttributeError):
+    except (RuntimeError, KeyError, TypeError, AttributeError, subprocess.SubprocessError):
         herdr("workspace", "close", workspace_id)
         raise
 
@@ -150,6 +151,9 @@ def main() -> int:
 
     wanted = argv[0]
     if wanted == "--pick":
+        if not shutil.which("fzf"):
+            print("layout: fzf is required for --pick", file=sys.stderr)
+            return 1
         if not layouts:
             print("layout: no layouts found", file=sys.stderr)
             return 1
@@ -192,6 +196,7 @@ def main() -> int:
         KeyError,
         TypeError,
         AttributeError,
+        subprocess.SubprocessError,
     ) as err:
         print(f"layout: {err}", file=sys.stderr)
         return 1

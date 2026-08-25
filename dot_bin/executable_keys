@@ -59,6 +59,9 @@ NVIM_DEFAULT_RE = re.compile(r"^:help \S+-default$")
 
 HERDR_DEFAULT_RE = re.compile(r'^#\s*([a-z_]+)\s*=\s*"([^"]*)"\s*(#.*)?$')
 
+HERDR_UNREACHABLE = {"remote_image_paste"}
+HERDR_UNREACHABLE_PREFIX = "navigate_"
+
 # bindkey prints two shapes: a single `"^A" backward-word`, and a compressed
 # contiguous range `"a"-"z" self-insert`. One pattern for both reads a range's
 # interior quotes as part of the key and emits `a"-"z` — 9 such rows here.
@@ -292,6 +295,8 @@ def from_herdr() -> list[tuple[str, str, str, str]]:
 
     rows = []
     for action, chord in sorted(bindings.items()):
+        if action in HERDR_UNREACHABLE or action.startswith(HERDR_UNREACHABLE_PREFIX):
+            continue
         for one in chord.split("\x00"):
             rows.append(("herdr", "", one, action))
 

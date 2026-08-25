@@ -69,7 +69,7 @@ enabled = true
 position = "bottom-center"
 
 [keys]
-prefix = "ctrl+b"
+prefix = "ctrl+space"
 
 split_vertical = ["prefix+v", "alt+d"]
 split_horizontal = ["prefix+minus", "alt+shift+d"]
@@ -93,27 +93,27 @@ switch_workspace = "prefix+shift+1..9"
 focus_agent = "prefix+alt+1..9"
 
 [[keys.command]]
-key = "ctrl+h"
-type = "plugin_action"
-command = "smart-splits.nvim.left"
+key = "alt+shift+h"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/navigate.sh left alt+shift+h"
 description = "navigate left (vim/herdr)"
 
 [[keys.command]]
-key = "ctrl+j"
-type = "plugin_action"
-command = "smart-splits.nvim.down"
+key = "alt+shift+j"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/navigate.sh down alt+shift+j"
 description = "navigate down (vim/herdr)"
 
 [[keys.command]]
-key = "ctrl+k"
-type = "plugin_action"
-command = "smart-splits.nvim.up"
+key = "alt+shift+k"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/navigate.sh up alt+shift+k"
 description = "navigate up (vim/herdr)"
 
 [[keys.command]]
-key = "ctrl+l"
-type = "plugin_action"
-command = "smart-splits.nvim.right"
+key = "alt+shift+l"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/navigate.sh right alt+shift+l"
 description = "navigate right (vim/herdr)"
 
 [[keys.command]]
@@ -173,7 +173,7 @@ width = "56%"
 height = "40%"
 
 [[keys.command]]
-key = "alt+f"
+key = "prefix+f"
 type = "popup"
 command = "$HOME/.config/herdr/scripts/follow.sh"
 description = "run a command in a new pane and hand it to the agent"

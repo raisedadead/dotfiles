@@ -47,8 +47,6 @@ fi
 source "${ZDOTDIR:-$HOME/.config/zsh}/path.zsh"
 _mrgsh_compose_path
 
-export SMART_SPLITS_HERDR_PASSTHROUGH_RE='^(lazygit|k9s|btop)$'
-
 # Editor configuration
 export EDITOR="nvim"
 export VISUAL="code"

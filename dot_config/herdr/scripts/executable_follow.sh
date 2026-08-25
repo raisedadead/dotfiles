@@ -40,8 +40,18 @@ if [[ -z "${new:-}" || "$new" == "null" ]]; then
 	exit 1
 fi
 
-"$herdr" pane run "$new" "$cmd" >/dev/null 2>&1
+if ! "$herdr" pane run "$new" "$cmd" >/dev/null 2>&1; then
+	printf 'follow: could not run in %s\n' "$new" >&2
+	"$herdr" pane close "$new" >/dev/null 2>&1 || true
+	exit 1
+fi
 
-"$herdr" pane send-text "$pane" \
-	"Follow pane ${new}. Read it with: herdr pane read ${new} --source recent-unwrapped --lines 200. Block on a marker with: herdr pane wait-output ${new} --regex '<pattern>' --timeout 120000." \
-	>/dev/null 2>&1
+hosts_agent=$("$herdr" agent list 2>/dev/null | jq -r --arg p "$pane" '[.result.agents[]? | select(.pane_id==$p)] | length' 2>/dev/null || echo 0)
+
+if [[ "${hosts_agent:-0}" -gt 0 ]]; then
+	"$herdr" pane send-text "$pane" \
+		"Follow pane ${new}. Read it with: herdr pane read ${new} --source recent-unwrapped --lines 200. Block on a marker with: herdr pane wait-output ${new} --regex '<pattern>' --timeout 120000." \
+		>/dev/null 2>&1 || true
+else
+	printf 'follow: %s is following, no agent in this pane to hand it to\n' "$new"
+fi

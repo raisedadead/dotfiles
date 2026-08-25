@@ -27,26 +27,15 @@ if ((${#urls[@]} == 0)); then
 	exit 0
 fi
 
-rows=$(
-	index=0
-	for one in "${urls[@]}"; do
-		index=$((index + 1))
-		printf '%d\t%s\n' "$index" "$one"
-	done
-)
-
-choice=$(
-	printf '%s\n' "$rows" |
+url=$(
+	printf '%s\n' "${urls[@]}" |
 		fzf --height=100% \
 			--no-keep-right \
 			--border=rounded \
 			--border-label=' URLs ' \
 			--prompt='open > ' \
-			--delimiter='\t' \
 			--no-sort
 ) || exit 0
-
-url="${choice#*$'\t'}"
 
 if [[ "$url" =~ ^https?:// ]]; then
 	open "$url"
