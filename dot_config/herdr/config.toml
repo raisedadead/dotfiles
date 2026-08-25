@@ -1,17 +1,39 @@
 onboarding = false
-[ui]
-show_agent_labels_on_pane_borders = true
-
-agent_panel_sort = "spaces"
-[experimental]
-switch_ascii_input_source_in_prefix = true
-
-[ui.toast]
-delivery = "system"
 
 [theme]
 name = "catppuccin"
 auto_switch = false
+
+[ui]
+show_agent_labels_on_pane_borders = true
+agent_panel_sort = "spaces"
+
+[ui.toast]
+delivery = "terminal"
+
+[keys]
+prefix = "ctrl+b"
+
+split_vertical = ["prefix+v", "alt+d"]
+split_horizontal = ["prefix+minus", "alt+shift+d"]
+zoom = ["prefix+z", "alt+shift+enter"]
+copy_mode = ["prefix+[", "alt+v"]
+
+new_tab = ["prefix+c", "alt+m"]
+next_tab = ["prefix+n", "alt+backtick"]
+previous_tab = ["prefix+p", "alt+shift+backtick"]
+switch_tab = ["prefix+1..9", "alt+1..9"]
+rename_tab = ["prefix+shift+t", "alt+shift+r"]
+
+new_workspace = ["prefix+shift+n", "alt+n"]
+rename_workspace = ["prefix+shift+w", "alt+r"]
+workspace_picker = ["prefix+w", "alt+o"]
+goto = ["prefix+g", "alt+w"]
+next_workspace = "alt+tab"
+previous_workspace = "alt+shift+tab"
+switch_workspace = "prefix+shift+1..9"
+
+focus_agent = "prefix+alt+1..9"
 
 [[keys.command]]
 key = "prefix+alt+g"
@@ -20,3 +42,6 @@ command = "lazygit"
 description = "run lazygit"
 width = "80%"
 height = "80%"
+
+[experimental]
+switch_ascii_input_source_in_prefix = true
