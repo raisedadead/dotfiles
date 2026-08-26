@@ -28,6 +28,7 @@ Usage:
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import re
@@ -246,21 +247,20 @@ def render(rows: list[tuple[str, str, str, str]], color: bool) -> list[str]:
     return lines
 
 
+SOURCES = (from_aerospace, from_ghostty, from_tmux, from_zsh, from_nvim)
+
+
 def main() -> int:
     argv = sys.argv[1:]
     plain = "--plain" in argv or "-p" in argv
     show_all = "--all" in argv or "-a" in argv
     query = " ".join(a for a in argv if not a.startswith("-"))
 
-    rows = (
-        from_aerospace()
-        + from_ghostty()
-        + from_tmux()
-        + from_zsh()
-        + from_nvim()
-    )
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        pending = [pool.submit(source) for source in SOURCES]
+    rows = [row for future in pending for row in future.result()]
     if not rows:
-        print("keys: no keybindings found — is any of the five tools installed?",
+        print("keys: no keybindings found — is any supported tool installed?",
               file=sys.stderr)
         return 1
 

@@ -251,13 +251,14 @@ cmd_apply() {
     fi
   fi
 
+  local apply_args=()
+  (( force )) && apply_args=(--force)
+
   for repo in $(_repos); do
     (( first )) || echo ""
     first=0
     p "applying $repo repo..."
     [[ "$repo" == "private" ]] && _capture_runtime_owned
-    local apply_args=()
-    (( force )) && apply_args=(--force)
     if _cm "$repo" apply "${apply_args[@]}"; then
       ok "$repo repo applied"
     else
