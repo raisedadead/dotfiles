@@ -142,6 +142,45 @@ copy_file() {
   pbcopy < "$1"
 }
 
+abs_path() {
+  case "$1" in
+    /*) printf '%s' "$1" ;;
+    *) printf '%s/%s' "${PWD%/}" "$1" ;;
+  esac
+}
+
+copy_path() {
+  local path
+  path="$(abs_path "$1")"
+  if [[ -n "${TMUX:-}" ]] && command -v tmux > /dev/null; then
+    printf '%s' "$path" | tmux load-buffer -w - && return 0
+  fi
+  command -v pbcopy > /dev/null || return 1
+  printf '%s' "$path" | pbcopy
+}
+
+edit_file() {
+  local file
+  local -a cmd
+  file="$(abs_path "$1")"
+  IFS=' ' read -r -a cmd <<< "${EDITOR:-nvim}"
+  if [[ -n "${TMUX:-}" ]] && command -v tmux > /dev/null; then
+    tmux new-window -c "$PWD" -- "${cmd[@]}" "$file"
+    return 0
+  fi
+  exec "${cmd[@]}" "$file"
+}
+
+visual_file() {
+  local file
+  local -a cmd
+  file="$(abs_path "$1")"
+  IFS=' ' read -r -a cmd <<< "${VISUAL:-}"
+  ((${#cmd[@]})) || return 1
+  command -v "${cmd[0]}" > /dev/null || return 1
+  "${cmd[@]}" "$file" > /dev/null 2>&1
+}
+
 open_file() {
   local file="$1" width
   width="$(text_width "$(tput cols || true)")"
@@ -166,6 +205,27 @@ case "${1:-}" in
     file="${file#*$'\t'}"
     [[ -f "$file" ]] || exit 0
     copy_file "$file"
+    exit 0
+    ;;
+  --copy-path)
+    file="${2:-}"
+    file="${file#*$'\t'}"
+    [[ -f "$file" ]] || exit 0
+    copy_path "$file"
+    exit 0
+    ;;
+  --edit)
+    file="${2:-}"
+    file="${file#*$'\t'}"
+    [[ -f "$file" ]] || exit 0
+    edit_file "$file"
+    exit 0
+    ;;
+  --visual)
+    file="${2:-}"
+    file="${file#*$'\t'}"
+    [[ -f "$file" ]] || exit 0
+    visual_file "$file"
     exit 0
     ;;
   --preview)
@@ -210,8 +270,10 @@ case "$view" in
   files) prompt="$_ico_file  Files ❯ " ;;
 esac
 
-FOOTER="${DIM}Read [⏎] ◆ Preview [Ctrl+/] ◆ Copy [Ctrl+Y]${RST}"
-FOOTER_COPIED="${HI}Copied to clipboard${RST}"
+LABEL=" Reader ${DIM}·${RST} ⏎ read ${DIM}·${RST} ^E edit ${DIM}·${RST} ^V code ${DIM}·${RST} ^P path ${DIM}·${RST} ^Y copy "
+FOOTER="${DIM}^/ preview${RST}"
+FOOTER_COPIED="${HI}Contents copied${RST}"
+FOOTER_PATH="${HI}Path copied${RST}"
 
 sel_file="$(mktemp "${TMPDIR:-/tmp}/mdr.XXXXXX")" || {
   echo "mdr: cannot create a temporary file" >&2
@@ -222,6 +284,7 @@ trap 'rm -f "$sel_file"' EXIT
 do_source "$view" |
   fzf --read0 --print0 --ansi --height=80% --keep-right \
     --layout=reverse --border=rounded --info=right --padding=1,2 \
+    --border-label "$LABEL" --border-label-pos 3 \
     --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
     --delimiter=$'\t' --with-nth 1 \
     --color="$FZF_COLORS" \
@@ -230,6 +293,9 @@ do_source "$view" |
     --preview "'$SELF' --preview {}" \
     --preview-window='border-rounded:right:60%' \
     --bind "ctrl-y:execute-silent('$SELF' --copy {})+change-footer($FOOTER_COPIED)" \
+    --bind "ctrl-p:execute-silent('$SELF' --copy-path {})+change-footer($FOOTER_PATH)" \
+    --bind "ctrl-e:execute('$SELF' --edit {})+abort" \
+    --bind "ctrl-v:execute-silent('$SELF' --visual {})+abort" \
     --bind "focus:change-footer($FOOTER)" \
     --bind 'ctrl-/:toggle-preview' \
     --bind 'ctrl-o:toggle-preview' \

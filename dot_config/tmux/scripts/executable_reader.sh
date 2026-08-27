@@ -36,8 +36,10 @@ HDR_ALL="$(make_header All)"
 HDR_DOCS="$(make_header Docs)"
 HDR_SCRATCH="$(make_header Scratch)"
 HDR_FILES="$(make_header Files)"
-FOOTER="${DIM}  Read [⏎] ◆ Preview [Ctrl+/] ◆ Copy [Ctrl+Y]${RST}"
-FOOTER_COPIED="${ACCENT}  Copied to clipboard${RST}"
+LABEL=" Reader ${DIM}·${RST} ⏎ read ${DIM}·${RST} ^E edit ${DIM}·${RST} ^V code ${DIM}·${RST} ^P path ${DIM}·${RST} ^Y copy "
+FOOTER="${DIM}  ^/ preview${RST}"
+FOOTER_COPIED="${ACCENT}  Contents copied${RST}"
+FOOTER_PATH="${ACCENT}  Path copied${RST}"
 
 BIND_ALL="reload($MDR --source all)+change-prompt($_ico_all  All ❯ )+change-header($HDR_ALL)"
 BIND_DOCS="reload($MDR --source docs)+change-prompt($_ico_doc  Docs ❯ )+change-header($HDR_DOCS)"
@@ -50,7 +52,7 @@ trap 'rm -f "$sel_file"' EXIT
 "$MDR" --source all | fzf --tmux center,80%,80% \
   --read0 --print0 --ansi --keep-right --info=right --cycle \
   --delimiter=$'\t' --with-nth 1 \
-  --border rounded --border-label ' Reader ' --border-label-pos 3 --padding=1,2 \
+  --border rounded --border-label "$LABEL" --border-label-pos 3 --padding=1,2 \
   --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
   --color "$FZF_MOCHA_COLORS" \
   --header "$HDR_ALL" --header-first --header-border=line \
@@ -63,6 +65,9 @@ trap 'rm -f "$sel_file"' EXIT
   --bind "ctrl-s:$BIND_SCRATCH" \
   --bind "ctrl-f:$BIND_FILES" \
   --bind "ctrl-y:execute-silent($MDR --copy {})+change-footer($FOOTER_COPIED)" \
+  --bind "ctrl-p:execute-silent($MDR --copy-path {})+change-footer($FOOTER_PATH)" \
+  --bind "ctrl-e:execute($MDR --edit {})+abort" \
+  --bind "ctrl-v:execute-silent($MDR --visual {})+abort" \
   --bind "focus:change-footer($FOOTER)" \
   --bind 'ctrl-/:toggle-preview' \
   --bind 'ctrl-o:toggle-preview' \
