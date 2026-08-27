@@ -10,6 +10,7 @@ _mrgsh_path_prepend() {
 
 _mrgsh_compose_path() {
 	_mrgsh_path_prepend \
+		"$HOME/.opencode/bin" \
 		"$HOMEBREW_PREFIX/sbin" \
 		"$HOMEBREW_PREFIX/bin" \
 		"${XDG_DATA_HOME:-$HOME/.local/share}/fnm/aliases/default/bin" \
