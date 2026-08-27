@@ -287,9 +287,9 @@ def main() -> int:
 
     tools = sorted({r[0] for r in rows})
     header = f"{len(rows)} bindings  ◆  " + " ".join(tools)
-    footer = "  Type to search ◆ Quit [Esc]"
+    footer = "  Type to search ◆ Quit <Esc>"
     if hidden:
-        footer = f"  {hidden} mouse bindings hidden [--all] ◆ Quit [Esc]"
+        footer = f"  {hidden} mouse bindings hidden [--all] ◆ Quit <Esc>"
 
     # --height and --no-keep-right are stated, never inherited. `keys` runs
     # inside `display-popup` (keybinds.conf M-?), and a tmux popup inherits
@@ -311,6 +311,7 @@ def main() -> int:
         "--layout=reverse",
         "--border=rounded",
         "--border-label= Keybindings ",
+        "--border-label-pos=3",
         "--padding=1,2",
         "--header-first",
         "--header-border=line",

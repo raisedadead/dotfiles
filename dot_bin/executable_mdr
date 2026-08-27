@@ -10,6 +10,7 @@ GLOW_STYLE="$HOME/.config/glow/mocha.json"
 HI=$'\033[38;2;137;180;250m'
 DIM=$'\033[38;2;147;153;178m'
 SUB=$'\033[38;2;166;173;200m'
+ACCENT=$'\033[38;2;249;226;175m'
 RST=$'\033[0m'
 
 FZF_COLORS="bg+:#313244,bg:#11111B,spinner:#F5E0DC,hl:#F38BA8"
@@ -270,10 +271,9 @@ case "$view" in
   files) prompt="$_ico_file  Files ❯ " ;;
 esac
 
-LABEL=" Reader ${DIM}·${RST} ⏎ read ${DIM}·${RST} ^E edit ${DIM}·${RST} ^V code ${DIM}·${RST} ^P path ${DIM}·${RST} ^Y copy "
-FOOTER="${DIM}^/ preview${RST}"
-FOOTER_COPIED="${HI}Contents copied${RST}"
-FOOTER_PATH="${HI}Path copied${RST}"
+FOOTER="${DIM}  Preview <C-/> ◆ Copy <C-y> ◆ Path <C-p> ◆ Code <C-v> ◆ Edit <C-e> ◆ Read <CR>${RST}"
+FOOTER_COPIED="${ACCENT}  Contents copied${RST}"
+FOOTER_PATH="${ACCENT}  Path copied${RST}"
 
 sel_file="$(mktemp "${TMPDIR:-/tmp}/mdr.XXXXXX")" || {
   echo "mdr: cannot create a temporary file" >&2
@@ -282,9 +282,9 @@ sel_file="$(mktemp "${TMPDIR:-/tmp}/mdr.XXXXXX")" || {
 trap 'rm -f "$sel_file"' EXIT
 
 do_source "$view" |
-  fzf --read0 --print0 --ansi --height=80% --keep-right \
+  fzf --read0 --print0 --ansi --height=80% --keep-right --cycle \
     --layout=reverse --border=rounded --info=right --padding=1,2 \
-    --border-label "$LABEL" --border-label-pos 3 \
+    --border-label ' Reader ' --border-label-pos 3 \
     --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
     --delimiter=$'\t' --with-nth 1 \
     --color="$FZF_COLORS" \

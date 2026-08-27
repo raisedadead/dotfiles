@@ -459,8 +459,8 @@ do_action() {
 make_header() {
   local active="$1"
   local -a items=("All" "Sessions" "Projects" "Zoxide" "Files" "Grep")
-  local -a keys=("Ctrl+A" "Ctrl+T" "Ctrl+P" "Ctrl+Z" "Ctrl+F" "Ctrl+G")
-  local result="" first=1
+  local -a keys=("<C-a>" "<C-t>" "<C-p>" "<C-z>" "<C-f>" "<C-g>")
+  local result="  " first=1
   for i in "${!items[@]}"; do
     [[ "$first" == "1" ]] && first=0 || result+=" ${DIM}·${RST} "
     if [[ "${items[$i]}" == "$active" ]]; then
@@ -501,10 +501,10 @@ TAB_FILE="$SWITCHER_TAB_FILE"
 trap 'rm -f "$SWITCHER_TAB_FILE"' EXIT
 printf 'all \n' > "$TAB_FILE"
 
-FOOTER_NAV="${DIM}  Connect [⏎] ◆ Bookmark [Ctrl+S] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
-FOOTER_TMUX="${DIM}  Switch [⏎] ◆ Bookmark [Ctrl+S] ◆ Kill [Ctrl+D] ◆ Preview [Ctrl+/]${RST}"
-FOOTER_FSRCH="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Preview [Ctrl+/] ◆ Text grep [Ctrl+G]${RST}"
-FOOTER_GSRCH="${DIM}  Open [⏎] ◆ Editor [Ctrl+E] ◆ VS Code [Ctrl+V] ◆ Files [Ctrl+F]${RST}"
+FOOTER_NAV="${DIM}  Connect <CR> ◆ Bookmark <C-s> ◆ Editor <C-e> ◆ Code <C-v> ◆ Kill <C-d> ◆ Preview <C-/>${RST}"
+FOOTER_TMUX="${DIM}  Switch <CR> ◆ Bookmark <C-s> ◆ Kill <C-d> ◆ Preview <C-/>${RST}"
+FOOTER_FSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Code <C-v> ◆ Preview <C-/> ◆ Text grep <C-g>${RST}"
+FOOTER_GSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Code <C-v> ◆ Files <C-f>${RST}"
 
 HDR_ALL=$(make_header "All")
 HDR_TMUX=$(make_header "Sessions")
@@ -527,9 +527,9 @@ BIND_GSRCH="reload($SELF --source search text)+change-prompt($_ico_text  Grep �
 # row from the LEFT, cutting the icon and name off a narrow popup and leaving
 # only the path. Command-line options beat FZF_DEFAULT_OPTS.
 # It costs the tail of the footer on a narrow popup — probed at a 64-column
-# interior, `Preview [Ctrl+/]` falls off — and that is the better half of the
+# interior, `Preview <C-/>` falls off — and that is the better half of the
 # trade: every footer lists its primary action first, so losing the tail keeps
-# `Connect [⏎]` on screen where left truncation would have eaten it.
+# `Connect <CR>` on screen where left truncation would have eaten it.
 result=$(source_all | fzf --tmux center,55%,60% \
   --ansi --no-info --cycle --tiebreak=begin,index --no-keep-right \
   --delimiter $'\t' --with-nth '2..' --nth '1' \

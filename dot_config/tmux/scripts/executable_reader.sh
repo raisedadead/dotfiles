@@ -19,7 +19,7 @@ _ico_file=$'\U000F0219'
 make_header() {
   local active="$1"
   local -a items=("All" "Docs" "Scratch" "Files")
-  local -a keys=("Ctrl+A" "Ctrl+D" "Ctrl+S" "Ctrl+F")
+  local -a keys=("<C-a>" "<C-d>" "<C-s>" "<C-f>")
   local result="  " first=1 i
   for i in "${!items[@]}"; do
     [[ "$first" == "1" ]] && first=0 || result+=" ${DIM}·${RST} "
@@ -36,8 +36,7 @@ HDR_ALL="$(make_header All)"
 HDR_DOCS="$(make_header Docs)"
 HDR_SCRATCH="$(make_header Scratch)"
 HDR_FILES="$(make_header Files)"
-LABEL=" Reader ${DIM}·${RST} ⏎ read ${DIM}·${RST} ^E edit ${DIM}·${RST} ^V code ${DIM}·${RST} ^P path ${DIM}·${RST} ^Y copy "
-FOOTER="${DIM}  ^/ preview${RST}"
+FOOTER="${DIM}  Preview <C-/> ◆ Copy <C-y> ◆ Path <C-p> ◆ Code <C-v> ◆ Edit <C-e> ◆ Read <CR>${RST}"
 FOOTER_COPIED="${ACCENT}  Contents copied${RST}"
 FOOTER_PATH="${ACCENT}  Path copied${RST}"
 
@@ -50,9 +49,9 @@ sel_file="$(mktemp "${TMPDIR:-/tmp}/reader.XXXXXX")" || exit 1
 trap 'rm -f "$sel_file"' EXIT
 
 "$MDR" --source all | fzf --tmux center,80%,80% \
-  --read0 --print0 --ansi --keep-right --info=right --cycle \
+  --read0 --print0 --ansi --keep-right --info=right --cycle --layout=reverse \
   --delimiter=$'\t' --with-nth 1 \
-  --border rounded --border-label "$LABEL" --border-label-pos 3 --padding=1,2 \
+  --border rounded --border-label ' Reader ' --border-label-pos 3 --padding=1,2 \
   --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
   --color "$FZF_MOCHA_COLORS" \
   --header "$HDR_ALL" --header-first --header-border=line \
