@@ -532,7 +532,7 @@ BIND_GSRCH="reload($SELF --source search text)+change-prompt($_ico_text  Grep ‚ù
 # `Connect <CR>` on screen where left truncation would have eaten it.
 result=$(source_all | fzf --tmux center,55%,60% \
   --ansi --no-info --cycle --tiebreak=begin,index --no-keep-right \
-  --delimiter $'\t' --with-nth '2..' --nth '1' \
+  --delimiter $'\t' --with-nth '2..' --nth '1,3..' \
   --border rounded --border-label ' Switcher ' --border-label-pos 3 --padding=1,2 \
   --color "$FZF_MOCHA_COLORS" \
   --header "$HDR_ALL" \
