@@ -311,7 +311,6 @@ def main() -> int:
         "--layout=reverse",
         "--border=rounded",
         "--border-label= Keybindings ",
-        "--border-label-pos=3",
         "--padding=1,2",
         "--header-first",
         "--header-border=line",

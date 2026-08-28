@@ -51,7 +51,7 @@ trap 'rm -f "$sel_file"' EXIT
 "$MDR" --source all | fzf --tmux center,80%,80% \
   --read0 --print0 --ansi --keep-right --info=right --cycle --layout=reverse \
   --delimiter=$'\t' --with-nth 1 \
-  --border rounded --border-label ' Reader ' --border-label-pos 3 --padding=1,2 \
+  --border rounded --border-label ' Reader ' --padding=1,2 \
   --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
   --color "$FZF_MOCHA_COLORS" \
   --header "$HDR_ALL" --header-first --header-border=line \

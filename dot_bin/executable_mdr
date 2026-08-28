@@ -284,7 +284,7 @@ trap 'rm -f "$sel_file"' EXIT
 do_source "$view" |
   fzf --read0 --print0 --ansi --height=80% --keep-right --cycle \
     --layout=reverse --border=rounded --info=right --padding=1,2 \
-    --border-label ' Reader ' --border-label-pos 3 \
+    --border-label ' Reader ' \
     --pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
     --delimiter=$'\t' --with-nth 1 \
     --color="$FZF_COLORS" \
