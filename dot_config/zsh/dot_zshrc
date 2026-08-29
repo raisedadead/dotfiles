@@ -163,6 +163,9 @@ source "$ZDOTDIR/alias.zsh"
 # fnm must load after Homebrew (set in .zshenv) so fnm-managed Node.js wins.
 can_haz fnm && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet)"
 
+export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
+[[ -d "$PNPM_HOME/bin" ]] && path=("$PNPM_HOME/bin" $path)
+
 # OMP writes one session-cache file per shell and never reaps them — keep newest 50
 () {
   setopt local_options extended_glob null_glob
