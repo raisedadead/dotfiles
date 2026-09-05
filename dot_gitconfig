@@ -37,7 +37,9 @@ default = current
 autoSetupRemote = true
 recurseSubmodules = on-demand
 [submodule]
-recurse = true
+recurse = false
+[submodule "dot_claude"]
+update = merge
 
 [merge]
 conflictstyle = diff3

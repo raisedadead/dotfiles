@@ -15,6 +15,21 @@ if [ -f .gitmodules ]; then
 		printf '  commit inside the submodule first, then commit the gitlink here\n' >&2
 		exit 1
 	fi
+
+	mismatch=$(git submodule status | awk '/^[+U]/ {print $2}')
+	if [ -n "$mismatch" ]; then
+		printf '\e[0;31mdotfiles ·\e[0m submodule does not match the staged gitlink\n' >&2
+		printf '%s\n' "$mismatch" | while IFS= read -r path; do
+			if ! staged=$(git rev-parse ":$path" 2>/dev/null); then
+				printf '  resolve the conflict in %s\n' "$path" >&2
+			elif git -C "$path" merge-base --is-ancestor "$staged" HEAD 2>/dev/null; then
+				printf '  git add %s\n' "$path" >&2
+			else
+				printf '  git submodule update %s\n' "$path" >&2
+			fi
+		done
+		exit 1
+	fi
 fi
 
 report=$(gitleaks git --staged --redact --no-banner 2>&1) && exit 0

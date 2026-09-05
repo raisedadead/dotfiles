@@ -137,9 +137,18 @@ if [ -f "$DOTFILES_DIR/.gitmodules" ]; then
 	ok "Private submodules initialised."
 fi
 
+mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}"
+
 info "Applying..."
 chezmoi apply --source "$DOTFILES_DIR"
 ok "Dotfiles applied."
+
+AUTOCAPTURE="$HOME/Library/LaunchAgents/dev.mrugesh.chezmoi-autocapture.plist"
+if [ -f "$AUTOCAPTURE" ]; then
+	launchctl bootout "gui/$UID/dev.mrugesh.chezmoi-autocapture" 2>/dev/null || true
+	launchctl bootstrap "gui/$UID" "$AUTOCAPTURE"
+	ok "Capture agent loaded."
+fi
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. Packages
