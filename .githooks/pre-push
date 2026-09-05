@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+
+[ -f .gitmodules ] || exit 0
+
+unpushed=$(git submodule foreach --quiet 'git branch -r --contains HEAD 2>/dev/null | grep -q . || printf "%s\n" "$sm_path"; true')
+
+[ -n "$unpushed" ] || exit 0
+
+printf '\e[0;31mdotfiles ·\e[0m submodule commit is on no remote: %s\n' "$unpushed" >&2
+printf '%s\n' "$unpushed" | while IFS= read -r path; do
+	branch=$(git -C "$path" rev-parse --abbrev-ref HEAD)
+	printf '  git -C %s push origin %s\n' "$path" "$branch" >&2
+done
+printf '  a clone of this remote cannot check the submodule out until then\n' >&2
+printf '  run git -C <path> fetch first if you pushed it from another machine\n' >&2
+exit 1

@@ -43,8 +43,9 @@ Use disposable fixtures for write and key-routing checks. A completion test must
 | M10 | Compare deployed skill directories/symlinks with `~/.local/state/skills/.skill-lock.json`, source `cmd-*`, and installed plugin registrations | Each skill has an owner; no broken symlinks |
 | M11 | Search each `exact_dot_bin/` script and `dot_claude/workflows/*.js` name across the rig and this documentation, excluding itself | Each has a consumer or appears in [Operator tools](ARCHI.md#operator-tools) or the workflow registry |
 | M12 | Run the claim checker below | Exit 0 and `CLAIMS: CLEAN` |
-| M13 | `git -C ~/.dotfiles submodule status dot_claude`; `git -C ~/.dotfiles/dot_claude config core.hooksPath` | First character is a space; value is `.githooks`. After a fresh clone run `git submodule update --init` and set the hook path; `chezmoi update` is not used |
+| M13 | `git -C ~/.dotfiles submodule status dot_claude`; `git -C ~/.dotfiles/dot_claude config core.hooksPath` | First character is a space; value is `.githooks`. A `+` means the worktree and the gitlink disagree: `git add dot_claude` when the worktree is ahead, `git submodule update dot_claude` when it is behind. After a fresh clone run `git submodule update --init` and set the hook path; `chezmoi update` is not used |
 | M14 | `git config --get push.recurseSubmodules`; `git config --get submodule.recurse`; `git config --get submodule.dot_claude.update` | `on-demand`, `false`, and `merge`: a parent push sends unpushed submodule commits first; `pull` and `checkout` leave the submodule working tree alone; `git submodule update` without `--checkout` or `--force` reports `Already up to date.` while the branch is ahead |
+| M16 | `.githooks/pre-push` with every submodule pushed, then with one commit held back | Exit 0, then exit 1 naming the submodule and printing its push command |
 | M15 | `launchctl print gui/$UID/dev.mrugesh.chezmoi-autocapture`; inspect `~/.local/state/chezmoi-autocapture.log` | The service is loaded, its interval is 300, and its last exit status is 0; the log holds no repeating error |
 
 ```sh
