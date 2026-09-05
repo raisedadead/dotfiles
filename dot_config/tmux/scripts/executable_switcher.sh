@@ -6,14 +6,14 @@ SELF="$0"
 . "$(dirname "$0")/colors.sh"
 
 # Nerd Font icons via escape sequences (Write tool drops literal PUA chars)
-_ico_session=$'\U000F018D'   # nf-md-console
-_ico_project=$'\U000F0770'   # nf-md-folder_open
-_ico_config=$'\U000F0493'    # nf-md-cog
-_ico_zoxide=$'\U000F02DA'    # nf-md-history
-_ico_search=$'\U000F0349'    # nf-md-magnify
-_ico_files=$'\U000F0219'     # nf-md-file_multiple
-_ico_text=$'\U000F0284'      # nf-md-file_document
-_ico_bookmark=$'\U000F00C0'  # nf-md-bookmark
+_ico_session=$'\U000F018D'  # nf-md-console
+_ico_project=$'\U000F0770'  # nf-md-folder_open
+_ico_config=$'\U000F0493'   # nf-md-cog
+_ico_zoxide=$'\U000F02DA'   # nf-md-history
+_ico_search=$'\U000F0349'   # nf-md-magnify
+_ico_files=$'\U000F0219'    # nf-md-file_multiple
+_ico_text=$'\U000F0284'     # nf-md-file_document
+_ico_bookmark=$'\U000F00C0' # nf-md-bookmark
 
 DIM="$CLR_DIM"
 HI="$CLR_HI"
@@ -31,24 +31,27 @@ BOOKMARKS_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/switcher/bookmarks"
 TAB_FILE="${SWITCHER_TAB_FILE:-}"
 
 expand_tilde() { echo "${1/#\~/$HOME}"; }
-shorten()      { echo "${1/#$HOME/\~}"; }
+shorten() { echo "${1/#$HOME/\~}"; }
 
-bookmarks_raw() { [[ -f "$BOOKMARKS_FILE" ]] && cat "$BOOKMARKS_FILE"; return 0; }
+bookmarks_raw() {
+	[[ -f "$BOOKMARKS_FILE" ]] && cat "$BOOKMARKS_FILE"
+	return 0
+}
 
 _BM_SET=$'\n'"$(bookmarks_raw)"$'\n'
 is_bookmarked() { [[ -n "$1" && "$_BM_SET" == *$'\n'"$1"$'\n'* ]]; }
 
 toggle_bookmark() {
-  local path="${1%/}" tmp
-  [[ -n "$path" && -d "$path" ]] || return 1
-  mkdir -p "${BOOKMARKS_FILE%/*}"
-  if is_bookmarked "$path"; then
-    tmp=$(mktemp "${BOOKMARKS_FILE}.XXXXXX")
-    grep -vxF -- "$path" "$BOOKMARKS_FILE" > "$tmp" 2>/dev/null
-    mv "$tmp" "$BOOKMARKS_FILE"
-  else
-    printf '%s\n' "$path" >> "$BOOKMARKS_FILE"
-  fi
+	local path="${1%/}" tmp
+	[[ -n "$path" && -d "$path" ]] || return 1
+	mkdir -p "${BOOKMARKS_FILE%/*}"
+	if is_bookmarked "$path"; then
+		tmp=$(mktemp "${BOOKMARKS_FILE}.XXXXXX")
+		grep -vxF -- "$path" "$BOOKMARKS_FILE" >"$tmp" 2>/dev/null
+		mv "$tmp" "$BOOKMARKS_FILE"
+	else
+		printf '%s\n' "$path" >>"$BOOKMARKS_FILE"
+	fi
 }
 
 # Render one fzf display line.
@@ -59,30 +62,55 @@ toggle_bookmark() {
 #   col 3: category label (colored, 7 chars)
 #   col 4: short path (dim)
 render_line() {
-  local cat="$1" target="$2" path="$3"
-  local name short icon cat_label cat_color mark
-  short=$(shorten "$path")
-  case "$cat" in
-    tmux)   name="${target%%:*}"; icon="$_ico_session"; cat_label="session"; cat_color="$_CLR_TMUX" ;;
-    parked) name="${target%%:*}"; icon="$_ico_session"; cat_label="parked";  cat_color="$DIM" ;;
-    proj) name=$(basename "$path"); icon="$_ico_project"; cat_label="project"; cat_color="$_CLR_PROJ" ;;
-    conf) name=$(basename "$path"); icon="$_ico_config";  cat_label="config";  cat_color="$_CLR_CONF" ;;
-    zox)  name=$(basename "$path"); icon="$_ico_zoxide";  cat_label="zoxide";  cat_color="$_CLR_ZOX" ;;
-    *) return ;;
-  esac
-  if is_bookmarked "$path"; then mark="${ACCENT}${_ico_bookmark}${RST}  "; else mark="   "; fi
-  printf '%s|%s|%s\t%s%s%s  %-20s%s\t%s%-7s%s\t%s%s%s\n' \
-    "$cat" "$target" "$path" \
-    "$mark" "$HI" "$icon" "$name" "$RST" \
-    "$cat_color" "$cat_label" "$RST" \
-    "$DIM" "$short" "$RST"
+	local cat="$1" target="$2" path="$3"
+	local name short icon cat_label cat_color mark
+	short=$(shorten "$path")
+	case "$cat" in
+	tmux)
+		name="${target%%:*}"
+		icon="$_ico_session"
+		cat_label="session"
+		cat_color="$_CLR_TMUX"
+		;;
+	parked)
+		name="${target%%:*}"
+		icon="$_ico_session"
+		cat_label="parked"
+		cat_color="$DIM"
+		;;
+	proj)
+		name=$(basename "$path")
+		icon="$_ico_project"
+		cat_label="project"
+		cat_color="$_CLR_PROJ"
+		;;
+	conf)
+		name=$(basename "$path")
+		icon="$_ico_config"
+		cat_label="config"
+		cat_color="$_CLR_CONF"
+		;;
+	zox)
+		name=$(basename "$path")
+		icon="$_ico_zoxide"
+		cat_label="zoxide"
+		cat_color="$_CLR_ZOX"
+		;;
+	*) return ;;
+	esac
+	if is_bookmarked "$path"; then mark="${ACCENT}${_ico_bookmark}${RST}  "; else mark="   "; fi
+	printf '%s|%s|%s\t%s%s%s  %-20s%s\t%s%-7s%s\t%s%s%s\n' \
+		"$cat" "$target" "$path" \
+		"$mark" "$HI" "$icon" "$name" "$RST" \
+		"$cat_color" "$cat_label" "$RST" \
+		"$DIM" "$short" "$RST"
 }
 
 # Reads "score|cat|target|path" from stdin, emits rendered fzf lines.
 render_all() {
-  while IFS='|' read -r _score cat target path; do
-    render_line "$cat" "$target" "$path"
-  done
+	while IFS='|' read -r _score cat target path; do
+		render_line "$cat" "$target" "$path"
+	done
 }
 
 # ── Data Sources ──────────────────────────────────────────────────────────────
@@ -94,81 +122,90 @@ render_all() {
 # Score: tmux uses session recency buckets; others inherit from zoxide, with
 #        conf/proj floors so they stay visible even if not recently visited.
 _source_all_raw() {
-  local tmpfile now
-  tmpfile=$(mktemp /tmp/switcher-merge.XXXXXX)
-  now=$(date +%s)
+	local tmpfile now
+	tmpfile=$(mktemp /tmp/switcher-merge.XXXXXX)
+	now=$(date +%s)
 
-  {
-    # Zoxide (priority 4 — baseline ranking for all directories)
-    zoxide query --list --score 2>/dev/null | while read -r score path; do
-      [[ -d "$path" ]] || continue
-      printf '%s|4|zox||%s\n' "$score" "$path"
-    done
+	{
+		# Zoxide (priority 4 — baseline ranking for all directories)
+		zoxide query --list --score 2>/dev/null | while read -r score path; do
+			[[ -d "$path" ]] || continue
+			printf '%s|4|zox||%s\n' "$score" "$path"
+		done
 
-    # Config dirs (priority 3, floor score 50)
-    local dirs=()
-    if [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1; then
-      while IFS= read -r d; do
-        d=$(expand_tilde "$d"); [[ -d "$d" ]] && dirs+=("$d")
-      done < <(jq -r '.configDirs[]? // empty' "$PROJECTS_JSON" 2>/dev/null)
-    fi
-    [[ ${#dirs[@]} -eq 0 ]] && dirs=(
-      "$HOME/.config/nvim" "$HOME/.config/tmux"
-      "$HOME/.config/ghostty" "$HOME/.dotfiles"
-    )
-    for d in "${dirs[@]}"; do
-      [[ -d "$d" ]] && printf '50|3|conf||%s\n' "$d"
-    done
+		# Config dirs (priority 3, floor score 50)
+		local dirs=()
+		if [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1; then
+			while IFS= read -r d; do
+				d=$(expand_tilde "$d")
+				[[ -d "$d" ]] && dirs+=("$d")
+			done < <(jq -r '.configDirs[]? // empty' "$PROJECTS_JSON" 2>/dev/null)
+		fi
+		[[ ${#dirs[@]} -eq 0 ]] && dirs=(
+			"$HOME/.config/nvim" "$HOME/.config/tmux"
+			"$HOME/.config/ghostty" "$HOME/.dotfiles"
+		)
+		for d in "${dirs[@]}"; do
+			[[ -d "$d" ]] && printf '50|3|conf||%s\n' "$d"
+		done
 
-    while IFS= read -r bm; do
-      bm="${bm%/}"; [[ -n "$bm" && -d "$bm" ]] && printf '200|2|proj||%s\n' "$bm"
-    done < <(bookmarks_raw)
+		while IFS= read -r bm; do
+			bm="${bm%/}"
+			[[ -n "$bm" && -d "$bm" ]] && printf '200|2|proj||%s\n' "$bm"
+		done < <(bookmarks_raw)
 
-    # Projects (priority 2, floor score 100; favorites floor 200)
-    if [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1; then
-      while IFS='|' read -r _scope base; do
-        base=$(expand_tilde "$base"); [[ -d "$base" ]] || continue
-        if command -v fd >/dev/null 2>&1; then
-          fd -d 1 -t d . "$base" 2>/dev/null
-        else
-          find "$base" -maxdepth 1 -mindepth 1 -type d 2>/dev/null
-        fi | while IFS= read -r p; do
-          p="${p%/}"; [[ -d "$p" ]] && printf '100|2|proj||%s\n' "$p"
-        done
-      done < <(jq -r '.baseFolders[]? | "\(.scope // "Other")|\(.path)"' "$PROJECTS_JSON" 2>/dev/null)
+		# Projects (priority 2, floor score 100; favorites floor 200)
+		if [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1; then
+			while IFS='|' read -r _scope base; do
+				base=$(expand_tilde "$base")
+				[[ -d "$base" ]] || continue
+				if command -v fd >/dev/null 2>&1; then
+					fd -d 1 -t d . "$base" 2>/dev/null
+				else
+					find "$base" -maxdepth 1 -mindepth 1 -type d 2>/dev/null
+				fi | while IFS= read -r p; do
+					p="${p%/}"
+					[[ -d "$p" ]] && printf '100|2|proj||%s\n' "$p"
+				done
+			done < <(jq -r '.baseFolders[]? | "\(.scope // "Other")|\(.path)"' "$PROJECTS_JSON" 2>/dev/null)
 
-      while IFS= read -r fav; do
-        fav=$(expand_tilde "$fav"); fav="${fav%/}"
-        [[ -n "$fav" && -d "$fav" ]] && printf '200|2|proj||%s\n' "$fav"
-      done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
-    fi
+			while IFS= read -r fav; do
+				fav=$(expand_tilde "$fav")
+				fav="${fav%/}"
+				[[ -n "$fav" && -d "$fav" ]] && printf '200|2|proj||%s\n' "$fav"
+			done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
+		fi
 
-    # TMux sessions (priority 1 — highest; score based on recency)
-    tmux list-windows -a \
-      -F '#{session_last_attached}|#{session_name}:#{window_index}|#{pane_current_path}|#{@parked}|#{window_active}' 2>/dev/null |
-    while IFS='|' read -r last_attached target path parked active; do
-      [[ "$active" != "1" ]] && continue
-      if [[ "$parked" == "1" ]]; then
-        # Tier 2: always below active sessions, always above everything else
-        printf '50000|1|parked|%s|%s\n' "$target" "$path"
-      else
-        # Tier 1: active sessions always on top
-        local age=$(( now - last_attached ))
-        local tmux_score
-        if   (( age <   3600 )); then tmux_score=108000  # last hour
-        elif (( age <  86400 )); then tmux_score=104000  # last day
-        elif (( age < 604800 )); then tmux_score=101500  # last week
-        else                          tmux_score=100500
-        fi
-        printf '%s|1|tmux|%s|%s\n' "$tmux_score" "$target" "$path"
-      fi
-    done
-  } >> "$tmpfile"
+		# TMux sessions (priority 1 — highest; score based on recency)
+		tmux list-windows -a \
+			-F '#{session_last_attached}|#{session_name}:#{window_index}|#{pane_current_path}|#{@parked}|#{window_active}' 2>/dev/null |
+			while IFS='|' read -r last_attached target path parked active; do
+				[[ "$active" != "1" ]] && continue
+				if [[ "$parked" == "1" ]]; then
+					# Tier 2: always below active sessions, always above everything else
+					printf '50000|1|parked|%s|%s\n' "$target" "$path"
+				else
+					# Tier 1: active sessions always on top
+					local age=$((now - last_attached))
+					local tmux_score
+					if ((age < 3600)); then
+						tmux_score=108000 # last hour
+					elif ((age < 86400)); then
+						tmux_score=104000 # last day
+					elif ((age < 604800)); then
+						tmux_score=101500 # last week
+					else
+						tmux_score=100500
+					fi
+					printf '%s|1|tmux|%s|%s\n' "$tmux_score" "$target" "$path"
+				fi
+			done
+	} >>"$tmpfile"
 
-  # Merge: sort by path (k5) + priority asc (k2) so highest-priority cat comes
-  # first per path group. In awk, keep that cat/target but accumulate max score.
-  # Final sort by score descending.
-  sort -t'|' -k5,5 -k2,2n "$tmpfile" | awk -F'|' '
+	# Merge: sort by path (k5) + priority asc (k2) so highest-priority cat comes
+	# first per path group. In awk, keep that cat/target but accumulate max score.
+	# Final sort by score descending.
+	sort -t'|' -k5,5 -k2,2n "$tmpfile" | awk -F'|' '
   {
     score=$1+0; cat=$3; target=$4; path=$5
     if (path == last_path) {
@@ -181,314 +218,362 @@ _source_all_raw() {
   END { if (last_path != "") printf "%s|%s|%s|%s\n", best_score, best_cat, best_target, last_path }
   ' | sort -t'|' -k1,1 -rn
 
-  rm -f "$tmpfile"
+	rm -f "$tmpfile"
 }
 
 source_all() { _source_all_raw | render_all; }
 
 source_tmux() {
-  local now
-  now=$(date +%s)
-  tmux list-windows -a \
-    -F '#{session_last_attached}|#{session_name}:#{window_index}|#{pane_current_path}|#{@parked}|#{window_active}' 2>/dev/null |
-  while IFS='|' read -r last_attached target path parked active; do
-    [[ "$active" != "1" ]] && continue
-    if [[ "$parked" == "1" ]]; then
-      printf '300|parked|%s|%s\n' "$target" "$path"
-    else
-      local age=$(( now - last_attached ))
-      local score
-      if   (( age <   3600 )); then score=8000
-      elif (( age <  86400 )); then score=4000
-      elif (( age < 604800 )); then score=1500
-      else                          score=500
-      fi
-      printf '%s|tmux|%s|%s\n' "$score" "$target" "$path"
-    fi
-  done | sort -t'|' -k1,1 -rn | while IFS='|' read -r _score cat target path; do
-    render_line "$cat" "$target" "$path"
-  done
+	local now
+	now=$(date +%s)
+	tmux list-windows -a \
+		-F '#{session_last_attached}|#{session_name}:#{window_index}|#{pane_current_path}|#{@parked}|#{window_active}' 2>/dev/null |
+		while IFS='|' read -r last_attached target path parked active; do
+			[[ "$active" != "1" ]] && continue
+			if [[ "$parked" == "1" ]]; then
+				printf '300|parked|%s|%s\n' "$target" "$path"
+			else
+				local age=$((now - last_attached))
+				local score
+				if ((age < 3600)); then
+					score=8000
+				elif ((age < 86400)); then
+					score=4000
+				elif ((age < 604800)); then
+					score=1500
+				else
+					score=500
+				fi
+				printf '%s|tmux|%s|%s\n' "$score" "$target" "$path"
+			fi
+		done | sort -t'|' -k1,1 -rn | while IFS='|' read -r _score cat target path; do
+		render_line "$cat" "$target" "$path"
+	done
 }
 
 source_proj() {
-  local paths=() seen=$'\n' p
+	local paths=() seen=$'\n' p
 
-  while IFS= read -r bm; do
-    bm="${bm%/}"; [[ -n "$bm" && -d "$bm" ]] || continue
-    [[ "$seen" == *$'\n'"$bm"$'\n'* ]] && continue
-    seen+="$bm"$'\n'
-    render_line "proj" "" "$bm"
-  done < <(bookmarks_raw)
+	while IFS= read -r bm; do
+		bm="${bm%/}"
+		[[ -n "$bm" && -d "$bm" ]] || continue
+		[[ "$seen" == *$'\n'"$bm"$'\n'* ]] && continue
+		seen+="$bm"$'\n'
+		render_line "proj" "" "$bm"
+	done < <(bookmarks_raw)
 
-  [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1 || return 0
+	[[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1 || return 0
 
-  while IFS= read -r fav; do
-    fav=$(expand_tilde "$fav"); fav="${fav%/}"
-    [[ -n "$fav" && -d "$fav" ]] || continue
-    [[ "$seen" == *$'\n'"$fav"$'\n'* ]] && continue
-    seen+="$fav"$'\n'
-    render_line "proj" "" "$fav"
-  done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
+	while IFS= read -r fav; do
+		fav=$(expand_tilde "$fav")
+		fav="${fav%/}"
+		[[ -n "$fav" && -d "$fav" ]] || continue
+		[[ "$seen" == *$'\n'"$fav"$'\n'* ]] && continue
+		seen+="$fav"$'\n'
+		render_line "proj" "" "$fav"
+	done < <(jq -r '.favorites[]? | select(.enabled != false) | .rootPath // empty' "$PROJECTS_JSON" 2>/dev/null)
 
-  while IFS='|' read -r _scope base; do
-    base=$(expand_tilde "$base"); [[ -d "$base" ]] || continue
-    if command -v fd >/dev/null 2>&1; then
-      while IFS= read -r p; do p="${p%/}"; [[ -d "$p" ]] && paths+=("$p"); done \
-        < <(fd -d 1 -t d . "$base" 2>/dev/null | sort)
-    else
-      while IFS= read -r p; do p="${p%/}"; [[ -d "$p" ]] && paths+=("$p"); done \
-        < <(find "$base" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
-    fi
-  done < <(jq -r '.baseFolders[]? | "\(.scope // "Other")|\(.path)"' "$PROJECTS_JSON" 2>/dev/null)
+	while IFS='|' read -r _scope base; do
+		base=$(expand_tilde "$base")
+		[[ -d "$base" ]] || continue
+		if command -v fd >/dev/null 2>&1; then
+			while IFS= read -r p; do
+				p="${p%/}"
+				[[ -d "$p" ]] && paths+=("$p")
+			done \
+				< <(fd -d 1 -t d . "$base" 2>/dev/null | sort)
+		else
+			while IFS= read -r p; do
+				p="${p%/}"
+				[[ -d "$p" ]] && paths+=("$p")
+			done \
+				< <(find "$base" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
+		fi
+	done < <(jq -r '.baseFolders[]? | "\(.scope // "Other")|\(.path)"' "$PROJECTS_JSON" 2>/dev/null)
 
-  for p in "${paths[@]}"; do
-    [[ "$seen" == *$'\n'"$p"$'\n'* ]] && continue
-    seen+="$p"$'\n'
-    render_line "proj" "" "$p"
-  done
+	for p in "${paths[@]}"; do
+		[[ "$seen" == *$'\n'"$p"$'\n'* ]] && continue
+		seen+="$p"$'\n'
+		render_line "proj" "" "$p"
+	done
 }
 
 source_conf() {
-  local dirs=()
-  if [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1; then
-    while IFS= read -r d; do
-      d=$(expand_tilde "$d"); [[ -d "$d" ]] && dirs+=("$d")
-    done < <(jq -r '.configDirs[]? // empty' "$PROJECTS_JSON" 2>/dev/null)
-  fi
-  [[ ${#dirs[@]} -eq 0 ]] && dirs=(
-    "$HOME/.config/nvim" "$HOME/.config/tmux"
-    "$HOME/.config/ghostty" "$HOME/.dotfiles"
-  )
-  for d in "${dirs[@]}"; do [[ -d "$d" ]] && render_line "conf" "" "$d"; done
+	local dirs=()
+	if [[ -f "$PROJECTS_JSON" ]] && command -v jq >/dev/null 2>&1; then
+		while IFS= read -r d; do
+			d=$(expand_tilde "$d")
+			[[ -d "$d" ]] && dirs+=("$d")
+		done < <(jq -r '.configDirs[]? // empty' "$PROJECTS_JSON" 2>/dev/null)
+	fi
+	[[ ${#dirs[@]} -eq 0 ]] && dirs=(
+		"$HOME/.config/nvim" "$HOME/.config/tmux"
+		"$HOME/.config/ghostty" "$HOME/.dotfiles"
+	)
+	for d in "${dirs[@]}"; do [[ -d "$d" ]] && render_line "conf" "" "$d"; done
 }
 
 source_zox() {
-  zoxide query --list --score 2>/dev/null | while read -r _score path; do
-    [[ -d "$path" ]] && render_line "zox" "" "$path"
-  done
+	zoxide query --list --score 2>/dev/null | while read -r _score path; do
+		[[ -d "$path" ]] && render_line "zox" "" "$path"
+	done
 }
 
-# Search source. mode = "files" (default) or "text".
-#
-# Internal format (col 1):
-#   files: search||/path/to/file
-#   text:  search|LINE_NUMBER|/path/to/file
-#
-# target is empty for files (path is the only key needed),
-# and holds the line number for text (so do_action can jump directly).
 source_search() {
-  local mode="${1:-files}"
-  local base
-  base=$(tmux display-message -p '#{pane_current_path}' 2>/dev/null || echo "$HOME")
-
-  if [[ "$mode" == "text" ]]; then
-    rg --no-heading --line-number --color=always . "$base" 2>/dev/null | head -5000 | \
-    while IFS= read -r line; do
-      local clean file lineno
-      # shellcheck disable=SC2001  # regex char class — not replaceable with ${//}
-      clean=$(sed 's/\x1b\[[0-9;]*m//g' <<< "$line")
-      file=$(cut -d: -f1 <<< "$clean")
-      lineno=$(cut -d: -f2 <<< "$clean")
-      printf 'search|%s|%s\t%s%s  %s\n' "$lineno" "$file" "$HI" "$_ico_text" "$line"
-    done
-  else
-    fd --max-depth 4 --type f --type d . "$base" 2>/dev/null | head -5000 | \
-    while IFS= read -r p; do
-      local short name mark
-      p="${p%/}"
-      short=$(shorten "$p")
-      name=$(basename "$p")
-      if is_bookmarked "$p"; then mark="${ACCENT}${_ico_bookmark}${RST}  "; else mark="   "; fi
-      printf 'search||%s\t%s%s%s  %-22s%s\t%ssrch%s\t%s%s%s\n' \
-        "$p" "$mark" "$HI" "$_ico_files" "$name" "$RST" \
-        "$DIM" "$RST" "$DIM" "$short" "$RST"
-    done
-  fi
+	local mode="${1:-files}" query="${2:-}" base
+	base=$(tmux display-message -p '#{pane_current_path}' 2>/dev/null || echo "$HOME")
+	if [[ "$mode" == "text" ]]; then
+		[[ -n "$query" ]] || return 0
+		rg --json --hidden --glob '!.git' -- "$query" "$base" 2>/dev/null |
+			jq --unbuffered -r --arg hi "$HI" --arg icon "$_ico_text" --arg base "${base%/}/" '
+        select(.type == "match") | .data |
+        (.path.text // (.path.bytes | @base64d)) as $path |
+        "search|\(.line_number)|\($path | @base64)\t\($hi)\($icon)  " +
+        (("\($path | ltrimstr($base)):\(.line_number):" + (.lines.text // (.lines.bytes | @base64d))) |
+          gsub("[\u0000-\u001f\u007f]"; " "))'
+	else
+		fd --hidden --exclude .git --type f --type d --print0 . "$base" 2>/dev/null |
+			perl -0 -MMIME::Base64=encode_base64 -e '
+        my ($home, $hi, $icon, $dim, $rst, $accent, $bookmark, $store) = @ARGV;
+        my %bookmarks;
+        if (open my $fh, "<", $store) { local $/ = "\n"; while (<$fh>) { chomp; $bookmarks{$_} = 1 } }
+        $| = 1;
+        while (<STDIN>) {
+          chomp; s{/$}{};
+          my $path = $_;
+          my $encoded = encode_base64($path, "");
+          my $short = $path; $short =~ s/^\Q$home\E(?=\/|$)/~/;
+          my ($name) = $path =~ m{([^/]+)$};
+          for ($name, $short) { s/[\x00-\x1f\x7f]/ /g }
+          my $mark = $bookmarks{$path} ? "$accent$bookmark$rst  " : "   ";
+          printf "search||%s\t%s%s%s  %-22s%s\t%ssrch%s\t%s%s%s\n",
+            $encoded, $mark, $hi, $icon, $name, $rst, $dim, $rst, $dim, $short, $rst;
+        }
+      ' "$HOME" "$HI" "$_ico_files" "$DIM" "$RST" "$ACCENT" "$_ico_bookmark" "$BOOKMARKS_FILE"
+	fi
 }
 
 do_source() {
-  [[ -n "$TAB_FILE" ]] && printf '%s %s\n' "$1" "${2:-}" > "$TAB_FILE"
-  case "$1" in
-    all)    source_all ;;
-    tmux)   source_tmux ;;
-    proj)   source_proj ;;
-    conf)   source_conf ;;
-    zox)    source_zox ;;
-    search) source_search "${2:-files}" ;;
-    *)      echo "Unknown source: $1" >&2; exit 1 ;;
-  esac
+	[[ -n "$TAB_FILE" ]] && printf '%s %s\n' "$1" "${2:-}" >"$TAB_FILE"
+	case "$1" in
+	all) source_all ;;
+	tmux) source_tmux ;;
+	proj) source_proj ;;
+	conf) source_conf ;;
+	zox) source_zox ;;
+	search) source_search "${2:-files}" "${3:-}" ;;
+	*)
+		echo "Unknown source: $1" >&2
+		exit 1
+		;;
+	esac
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-_internal()      { cut -f1 <<< "$1"; }
-extract_cat()    { _internal "$1" | cut -d'|' -f1; }
+_internal() { cut -f1 <<<"$1"; }
+extract_cat() { _internal "$1" | cut -d'|' -f1; }
 extract_target() { _internal "$1" | cut -d'|' -f2; }
-extract_path()   { _internal "$1" | cut -d'|' -f3; }
+extract_path() {
+	if [[ $(extract_cat "$1") == search ]]; then
+		_internal "$1" | cut -d'|' -f3 | base64 --decode
+	else
+		_internal "$1" | cut -d'|' -f3-
+	fi
+}
 
 eza_tree() {
-  eza --tree --level=2 --icons --color=always --group-directories-first \
-    --ignore-glob='node_modules|.git|__pycache__|.next|dist|build|.cache|.turbo|vendor' \
-    "$1" 2>/dev/null || ls -la "$1" 2>/dev/null
+	eza --tree --level=2 --icons --color=always --group-directories-first \
+		--ignore-glob='node_modules|.git|__pycache__|.next|dist|build|.cache|.turbo|vendor' \
+		"$1" 2>/dev/null || ls -la "$1" 2>/dev/null
 }
 
 # ── Preview ───────────────────────────────────────────────────────────────────
 
 do_preview() {
-  local entry="$1"
-  local cat target path
-  cat=$(extract_cat "$entry")
-  target=$(extract_target "$entry")
-  path=$(extract_path "$entry")
+	local entry="$1"
+	local cat target path
+	cat=$(extract_cat "$entry")
+	target=$(extract_target "$entry")
+	path=$(extract_path "$entry")
 
-  case "$cat" in
-    tmux|parked)
-      local session="${target%%:*}"
-      tmux capture-pane -t "=$session" -p 2>/dev/null || echo "No preview available"
-      ;;
-    proj|conf|zox)
-      local readme=""
-      for f in "$path"/README.md "$path"/readme.md "$path"/README "$path"/README.rst; do
-        [[ -f "$f" ]] && readme="$f" && break
-      done
-      if [[ -n "$readme" ]]; then
-        bat -n --color=always --style=plain "$readme" 2>/dev/null
-      else
-        eza_tree "$path"
-      fi
-      ;;
-    search)
-      # Only preview files mode (target empty = files; non-empty = text/line ref)
-      if [[ -z "$target" && -f "$path" ]]; then
-        bat -n --color=always "$path" 2>/dev/null
-      elif [[ -z "$target" && -d "$path" ]]; then
-        eza_tree "$path"
-      fi
-      ;;
-  esac
+	case "$cat" in
+	tmux | parked)
+		local session="${target%%:*}"
+		tmux capture-pane -t "=$session" -p 2>/dev/null || echo "No preview available"
+		;;
+	proj | conf | zox)
+		local readme=""
+		for f in "$path"/README.md "$path"/readme.md "$path"/README "$path"/README.rst; do
+			[[ -f "$f" ]] && readme="$f" && break
+		done
+		if [[ -n "$readme" ]]; then
+			bat -n --color=always --style=plain "$readme" 2>/dev/null
+		else
+			eza_tree "$path"
+		fi
+		;;
+	search)
+		if [[ -d "$path" ]]; then
+			eza_tree "$path"
+		elif [[ -f "$path" ]]; then
+			if [[ $(file --brief --mime-encoding -- "$path") == binary ]]; then
+				file --brief -- "$path"
+			elif [[ -n "$target" ]]; then
+				bat --color=always --style=numbers --highlight-line "$target" \
+					--line-range "$((target > 20 ? target - 20 : 1)):$((target + 50))" -- "$path"
+			else
+				bat --color=always --style=numbers --line-range=:500 -- "$path"
+			fi
+		fi
+		;;
+	esac
 }
 
 # ── Actions ───────────────────────────────────────────────────────────────────
 
 open_in_editor() {
-  local path="$1" line="${2:-}" dir
-  if [[ -f "$path" ]]; then
-    dir=$(dirname "$path")
-    if [[ -n "$line" ]]; then
-      tmux new-window -c "$dir" "${EDITOR:-nvim}" "+$line" "$path"
-    else
-      tmux new-window -c "$dir" "${EDITOR:-nvim}" "$path"
-    fi
-  else
-    tmux new-window -c "$path" "${EDITOR:-nvim}"
-  fi
+	local path="$1" line="${2:-}" dir
+	if [[ -f "$path" ]]; then
+		dir=$(dirname "$path")
+		if [[ -n "$line" ]]; then
+			tmux new-window -c "$dir" "${EDITOR:-nvim}" "+$line" "$path"
+		else
+			tmux new-window -c "$dir" "${EDITOR:-nvim}" "$path"
+		fi
+	else
+		tmux new-window -c "$path" "${EDITOR:-nvim}"
+	fi
 }
 
 tmux_connect() {
-  local path="$1" name suffix
-  name=$(basename "$path" | sed 's/^\.//')
+	local path="$1" name suffix
+	name=$(basename "$path" | sed 's/^\.//')
 
-  # Handle collision: if session exists but points to a different path, append suffix
-  if tmux has-session -t "=$name" 2>/dev/null; then
-    local existing_path
-    existing_path=$(tmux display-message -t "=${name}" -p '#{session_path}' 2>/dev/null || true)
-    if [[ "$existing_path" != "$path" ]]; then
-      suffix=2
-      while tmux has-session -t "=${name}-${suffix}" 2>/dev/null; do
-        ((suffix++))
-      done
-      name="${name}-${suffix}"
-    fi
-  fi
+	# Handle collision: if session exists but points to a different path, append suffix
+	if tmux has-session -t "=$name" 2>/dev/null; then
+		local existing_path
+		existing_path=$(tmux display-message -t "=${name}" -p '#{session_path}' 2>/dev/null || true)
+		if [[ "$existing_path" != "$path" ]]; then
+			suffix=2
+			while tmux has-session -t "=${name}-${suffix}" 2>/dev/null; do
+				((suffix++))
+			done
+			name="${name}-${suffix}"
+		fi
+	fi
 
-  tmux new-session -d -s "$name" -c "$path" 2>/dev/null || true
-  tmux switch-client -t "=$name"
+	tmux new-session -d -s "$name" -c "$path" 2>/dev/null || true
+	tmux switch-client -t "=$name"
 }
 
 do_action() {
-  local entry="$1" key="${2:-}"
-  local cat target path
-  cat=$(extract_cat "$entry")
-  target=$(extract_target "$entry")
-  path=$(extract_path "$entry")
+	local entry="$1" key="${2:-}"
+	local cat target path
+	cat=$(extract_cat "$entry")
+	target=$(extract_target "$entry")
+	path=$(extract_path "$entry")
 
-  case "$cat" in
-    tmux|parked)
-      local session="${target%%:*}" window="${target#*:}"
-      case "$key" in
-        ctrl-d) tmux kill-session -t "=$session" ;;
-        ctrl-e) open_in_editor "$path" ;;
-        ctrl-v) "${VISUAL:-code}" "$path" ;;
-        *)      [[ "$cat" == "parked" ]] && tmux set -t "=$session" -u @parked
-                tmux switch-client -t "=$session"
-                tmux select-window -t "${session}:${window}" ;;
-      esac
-      ;;
-    proj|conf|zox)
-      case "$key" in
-        ctrl-e) open_in_editor "$path" ;;
-        ctrl-v) "${VISUAL:-code}" "$path" ;;
-        *)      tmux_connect "$path" ;;
-      esac
-      ;;
-    search)
-      if [[ -n "$target" ]]; then
-        # Text mode: target = line number, path = file
-        case "$key" in
-          ctrl-v) "${VISUAL:-code}" --goto "$path:$target" ;;
-          *)      open_in_editor "$path" "$target" ;;
-        esac
-      elif [[ -d "$path" ]]; then
-        case "$key" in
-          ctrl-e) open_in_editor "$path" ;;
-          ctrl-v) "${VISUAL:-code}" "$path" ;;
-          *)      tmux_connect "$path" ;;
-        esac
-      elif [[ -f "$path" ]]; then
-        case "$key" in
-          ctrl-v) "${VISUAL:-code}" "$path" ;;
-          *)      open_in_editor "$path" ;;
-        esac
-      fi
-      ;;
-  esac
+	case "$cat" in
+	tmux | parked)
+		local session="${target%%:*}" window="${target#*:}"
+		case "$key" in
+		ctrl-d)
+			local sid="" sid_id sid_name
+			while IFS=' ' read -r sid_id sid_name; do
+				[[ "$sid_name" == "$session" ]] && {
+					sid="$sid_id"
+					break
+				}
+			done < <(tmux list-sessions -F '#{session_id} #{session_name}' 2>/dev/null)
+			if [[ -n "$sid" ]]; then
+				tmux confirm-before -p "Kill ${session//\#/##}? (y/n)" "kill-session -t $sid"
+			else
+				tmux display-message "No session ${session//\#/##}"
+			fi
+			;;
+		ctrl-e) open_in_editor "$path" ;;
+		ctrl-v) "${VISUAL:-code}" "$path" ;;
+		*)
+			[[ "$cat" == "parked" ]] && tmux set -t "=$session" -u @parked
+			tmux switch-client -t "=$session"
+			tmux select-window -t "${session}:${window}"
+			;;
+		esac
+		;;
+	proj | conf | zox)
+		case "$key" in
+		ctrl-e) open_in_editor "$path" ;;
+		ctrl-v) "${VISUAL:-code}" "$path" ;;
+		*) tmux_connect "$path" ;;
+		esac
+		;;
+	search)
+		if [[ -n "$target" ]]; then
+			# Text mode: target = line number, path = file
+			case "$key" in
+			ctrl-v) "${VISUAL:-code}" --goto "$path:$target" ;;
+			*) open_in_editor "$path" "$target" ;;
+			esac
+		elif [[ -d "$path" ]]; then
+			case "$key" in
+			ctrl-e) open_in_editor "$path" ;;
+			ctrl-v) "${VISUAL:-code}" "$path" ;;
+			*) tmux_connect "$path" ;;
+			esac
+		elif [[ -f "$path" ]]; then
+			case "$key" in
+			ctrl-v) "${VISUAL:-code}" "$path" ;;
+			*) open_in_editor "$path" ;;
+			esac
+		fi
+		;;
+	esac
 }
 
 # ── Header ────────────────────────────────────────────────────────────────────
 
 make_header() {
-  local active="$1"
-  local -a items=("All" "Sessions" "Projects" "Zoxide" "Files" "Grep")
-  local -a keys=("<C-a>" "<C-t>" "<C-p>" "<C-z>" "<C-f>" "<C-g>")
-  local result="  " first=1
-  for i in "${!items[@]}"; do
-    [[ "$first" == "1" ]] && first=0 || result+=" ${DIM}·${RST} "
-    if [[ "${items[$i]}" == "$active" ]]; then
-      result+="${ACCENT}${keys[$i]} ${items[$i]}${RST}"
-    else
-      result+="${SUB}${keys[$i]} ${items[$i]}${RST}"
-    fi
-  done
-  printf '%s' "$result"
+	local active="$1"
+	local -a items=("All" "Sessions" "Projects" "Zoxide" "Files" "Grep")
+	local -a keys=("<C-a>" "<C-t>" "<C-p>" "<C-z>" "<C-f>" "<C-g>")
+	local result="  " first=1
+	for i in "${!items[@]}"; do
+		[[ "$first" == "1" ]] && first=0 || result+=" ${DIM}·${RST} "
+		if [[ "${items[$i]}" == "$active" ]]; then
+			result+="${ACCENT}${keys[$i]} ${items[$i]}${RST}"
+		else
+			result+="${SUB}${keys[$i]} ${items[$i]}${RST}"
+		fi
+	done
+	printf '%s' "$result"
 }
 
 # ── Subcommand dispatch ───────────────────────────────────────────────────────
 
 case "${1:-}" in
-  --source)   do_source "${2:-all}" "${3:-}"; exit ;;
-  --preview)  do_preview "$2"; exit ;;
-  --bookmark)
-    toggle_bookmark "$(extract_path "$2")" &&
-      printf 'reload(%s --source-current)' "$SELF"
-    exit 0 ;;
-  --source-current)
-    if [[ -n "$TAB_FILE" && -s "$TAB_FILE" ]]; then
-      read -r _tab _arg < "$TAB_FILE"
-      do_source "${_tab:-all}" "${_arg:-}"
-    else
-      do_source all
-    fi
-    exit ;;
+--source)
+	do_source "${2:-all}" "${3:-}" "${4:-}"
+	exit
+	;;
+--preview)
+	do_preview "$2"
+	exit
+	;;
+--bookmark)
+	toggle_bookmark "$(extract_path "$2")" &&
+		printf 'reload(%s --source-current)' "$SELF"
+	exit 0
+	;;
+--source-current)
+	if [[ -n "$TAB_FILE" && -s "$TAB_FILE" ]]; then
+		read -r _tab _arg <"$TAB_FILE"
+		do_source "${_tab:-all}" "${_arg:-}"
+	else
+		do_source all
+	fi
+	exit
+	;;
 esac
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -499,12 +584,12 @@ SWITCHER_TAB_FILE=$(mktemp /tmp/switcher-tab.XXXXXX)
 export SWITCHER_TAB_FILE
 TAB_FILE="$SWITCHER_TAB_FILE"
 trap 'rm -f "$SWITCHER_TAB_FILE"' EXIT
-printf 'all \n' > "$TAB_FILE"
+printf 'all \n' >"$TAB_FILE"
 
 FOOTER_NAV="${DIM}  Connect <CR> ◆ Bookmark <C-s> ◆ Editor <C-e> ◆ Code <C-v> ◆ Kill <C-d> ◆ Preview <C-/>${RST}"
 FOOTER_TMUX="${DIM}  Switch <CR> ◆ Bookmark <C-s> ◆ Kill <C-d> ◆ Preview <C-/>${RST}"
 FOOTER_FSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Code <C-v> ◆ Preview <C-/> ◆ Text grep <C-g>${RST}"
-FOOTER_GSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Code <C-v> ◆ Files <C-f>${RST}"
+FOOTER_GSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Code <C-v> ◆ Files <C-f> ◆ Regex query${RST}"
 
 HDR_ALL=$(make_header "All")
 HDR_TMUX=$(make_header "Sessions")
@@ -513,13 +598,13 @@ HDR_ZOX=$(make_header "Zoxide")
 HDR_FSRCH=$(make_header "Files")
 HDR_GSRCH=$(make_header "Grep")
 
-BIND_ALL="reload($SELF --source all)+change-prompt($_ico_project  All ❯ )+change-header($HDR_ALL)+change-footer($FOOTER_NAV)"
-BIND_TMUX="reload($SELF --source tmux)+change-prompt($_ico_session  Sessions ❯ )+change-header($HDR_TMUX)+change-footer($FOOTER_TMUX)"
-BIND_PROJ="reload($SELF --source proj)+change-prompt($_ico_project  Projects ❯ )+change-header($HDR_PROJ)+change-footer($FOOTER_NAV)"
-BIND_ZOX="reload($SELF --source zox)+change-prompt($_ico_zoxide  Zoxide ❯ )+change-header($HDR_ZOX)+change-footer($FOOTER_NAV)"
-BIND_FSRCH="reload($SELF --source search files)+change-prompt($_ico_files  Files ❯ )+change-header($HDR_FSRCH)+change-footer($FOOTER_FSRCH)"
+BIND_ALL="unbind(change)+enable-search+reload($SELF --source all)+change-prompt($_ico_project  All ❯ )+change-header($HDR_ALL)+change-footer($FOOTER_NAV)"
+BIND_TMUX="unbind(change)+enable-search+reload($SELF --source tmux)+change-prompt($_ico_session  Sessions ❯ )+change-header($HDR_TMUX)+change-footer($FOOTER_TMUX)"
+BIND_PROJ="unbind(change)+enable-search+reload($SELF --source proj)+change-prompt($_ico_project  Projects ❯ )+change-header($HDR_PROJ)+change-footer($FOOTER_NAV)"
+BIND_ZOX="unbind(change)+enable-search+reload($SELF --source zox)+change-prompt($_ico_zoxide  Zoxide ❯ )+change-header($HDR_ZOX)+change-footer($FOOTER_NAV)"
+BIND_FSRCH="unbind(change)+enable-search+reload($SELF --source search files)+change-prompt($_ico_files  Files ❯ )+change-header($HDR_FSRCH)+change-footer($FOOTER_FSRCH)"
 BIND_MARK="transform($SELF --bookmark {})"
-BIND_GSRCH="reload($SELF --source search text)+change-prompt($_ico_text  Grep ❯ )+change-header($HDR_GSRCH)+change-footer($FOOTER_GSRCH)+hide-preview"
+BIND_GSRCH="disable-search+rebind(change)+reload($SELF --source search text {q})+change-prompt($_ico_text  Grep ❯ )+change-header($HDR_GSRCH)+change-footer($FOOTER_GSRCH)+hide-preview"
 
 # --no-keep-right is stated, never inherited. fzf's own --tmux popup mode sizes
 # the window itself, so --height=60% from FZF_DEFAULT_OPTS cannot bite here —
@@ -531,33 +616,35 @@ BIND_GSRCH="reload($SELF --source search text)+change-prompt($_ico_text  Grep �
 # trade: every footer lists its primary action first, so losing the tail keeps
 # `Connect <CR>` on screen where left truncation would have eaten it.
 result=$(source_all | fzf --tmux center,55%,60% \
-  --ansi --no-info --cycle --tiebreak=begin,index --no-keep-right \
-  --delimiter $'\t' --with-nth '2..' --nth '1,3..' \
-  --border rounded --border-label ' Switcher ' --padding=1,2 \
-  --color "$FZF_MOCHA_COLORS" \
-  --header "$HDR_ALL" \
-  --header-first --header-border=line \
-  --prompt "$_ico_project  All ❯ " \
-  --footer "$FOOTER_NAV" \
-  --footer-border=line \
-  --preview "$SELF --preview {}" \
-  --preview-window 'bottom:30%:wrap:hidden' \
-  --bind "ctrl-a:$BIND_ALL" \
-  --bind "ctrl-t:$BIND_TMUX" \
-  --bind "ctrl-p:$BIND_PROJ" \
-  --bind "ctrl-z:$BIND_ZOX" \
-  --bind "ctrl-f:$BIND_FSRCH" \
-  --bind "ctrl-g:$BIND_GSRCH" \
-  --bind "ctrl-s:$BIND_MARK" \
-  --bind 'ctrl-/:toggle-preview' \
-  --bind 'ctrl-o:toggle-preview' \
-  --expect 'ctrl-e,ctrl-v,ctrl-d' \
-  --bind 'esc:abort')
+	--ansi --no-info --cycle --tiebreak=begin,index --no-keep-right \
+	--delimiter $'\t' --with-nth '2..' --nth '1,3..' \
+	--border rounded --border-label ' Switcher ' --padding=1,2 \
+	--color "$FZF_MOCHA_COLORS" \
+	--header "$HDR_ALL" \
+	--header-first --header-border=line \
+	--prompt "$_ico_project  All ❯ " \
+	--footer "$FOOTER_NAV" \
+	--footer-border=line \
+	--preview "$SELF --preview {}" \
+	--preview-window 'bottom:30%:wrap:hidden' \
+	--bind "start:unbind(change)" \
+	--bind "change:reload($SELF --source search text {q})" \
+	--bind "ctrl-a:$BIND_ALL" \
+	--bind "ctrl-t:$BIND_TMUX" \
+	--bind "ctrl-p:$BIND_PROJ" \
+	--bind "ctrl-z:$BIND_ZOX" \
+	--bind "ctrl-f:$BIND_FSRCH" \
+	--bind "ctrl-g:$BIND_GSRCH" \
+	--bind "ctrl-s:$BIND_MARK" \
+	--bind 'ctrl-/:toggle-preview' \
+	--bind 'ctrl-o:toggle-preview' \
+	--expect 'ctrl-e,ctrl-v,ctrl-d' \
+	--bind 'esc:abort')
 
 [[ -z "$result" ]] && exit 0
 
-key=$(head -1 <<< "$result")
-entry=$(tail -1 <<< "$result")
+key=$(head -1 <<<"$result")
+entry=$(tail -1 <<<"$result")
 
 [[ -z "$entry" ]] && exit 0
 

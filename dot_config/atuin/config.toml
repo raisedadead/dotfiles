@@ -1,6 +1,6 @@
 auto_sync = true
 update_check = true
-search_mode = "daemon-fuzzy"
+search_mode = "fuzzy"
 style = "auto"
 
 invert = true
@@ -15,8 +15,8 @@ show_tabs = false
 ctrl_n_shortcuts = true
 
 [daemon]
-enabled = true
-autostart = true
+enabled = false
+autostart = false
 
 [tmux]
 enabled = true

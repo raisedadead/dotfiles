@@ -33,7 +33,7 @@ require("lazy").setup({
   install = { colorscheme = { "catppuccin-mocha", "habamax" } },
   checker = {
     -- Off by preference: no background git fetches, no update nags. Plugin
-    -- updates happen deliberately — `:Lazy update` then `home re-add`.
+    -- updates happen deliberately — `:Lazy update` then `chezmoi re-add`.
     -- (The checker itself never writes lazy-lock.json; only install, update
     -- and clean do — `lazy/manage/init.lua:147-163`.)
     enabled = false,

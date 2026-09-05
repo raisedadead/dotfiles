@@ -1,0 +1,142 @@
+#-----------------------------------------------------------
+# @raisedadead's config files
+# Copyright: Mrugesh Mohapatra <https://mrugesh.dev>
+# License: ISC
+#
+# File name: .zshrc
+#-----------------------------------------------------------
+
+# Performance profiling (set ZPROF=true to enable)
+[[ "$ZPROF" = true ]] && zmodload zsh/zprof
+
+#-----------------------------------------------------------
+# Core Settings
+#-----------------------------------------------------------
+umask 022
+limit coredumpsize 0
+
+# History
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=999999999
+SAVEHIST=$HISTSIZE
+setopt EXTENDED_HISTORY
+setopt INC_APPEND_HISTORY
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt SHARE_HISTORY
+
+# Options
+setopt AUTO_CD
+setopt AUTO_PUSHD
+setopt PUSHD_IGNORE_DUPS
+setopt CDABLE_VARS
+setopt INTERACTIVECOMMENTS
+stty -ixon -ixoff 2>/dev/null
+
+# Helpers
+can_haz() { whence -p "$1" >/dev/null 2>&1 }
+timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
+
+# Keybindings
+bindkey -e  # Emacs mode
+bindkey '^z' vi-cmd-mode
+bindkey -M vicmd '^z' vi-add-next
+
+function zle-keymap-select {
+  if [[ "$KEYMAP" == "vicmd" ]]; then
+    export POSH_VI_MODE="cmd"
+  else
+    unset POSH_VI_MODE
+  fi
+  # Re-generate OMP prompt (reads updated POSH_VI_MODE), then redisplay
+  if (( $+functions[_omp_get_prompt] )); then
+    eval "$(_omp_get_prompt primary --eval)"
+  fi
+  zle .reset-prompt
+}
+zle -N zle-keymap-select
+
+bindkey '^[^W' backward-kill-line  # Ctrl+Shift+W
+bindkey '^E'   end-of-line         # Ctrl+E              (accept wrapped)
+bindkey '^[^E' emacs-forward-word  # Ctrl+Shift+E        (partial-accept wrapped)
+bindkey '^A'   beginning-of-line   # Ctrl+A
+bindkey '^[^A' backward-word       # Ctrl+Shift+A
+bindkey '^S'   .end-of-line        # Ctrl+S
+bindkey '^[^S' .forward-word       # Ctrl+Shift+S
+
+if can_haz mdr; then
+  mdr-widget() { zle -I; mdr; zle reset-prompt }
+  zle -N mdr-widget
+  bindkey '^F' mdr-widget
+fi
+
+# Prompt (oh-my-posh)
+can_haz oh-my-posh && eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/config.toml)"
+
+#-----------------------------------------------------------
+# Plugins
+#-----------------------------------------------------------
+ZPLUGDIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+source "$ZDOTDIR/plugins.zsh"
+
+# FZF
+can_haz fzf && eval "$(fzf --zsh)"
+source "$ZDOTDIR/fzf.zsh"
+
+#-----------------------------------------------------------
+# Completions
+#-----------------------------------------------------------
+typeset -U fpath
+fpath+=("$ZPLUGDIR/zsh-completions/src" "$ZPLUGDIR/zsh-claudecode-completion")
+[[ -n "$HOMEBREW_PREFIX" ]] && fpath+=("$HOMEBREW_PREFIX/share/zsh/site-functions")
+[[ -d ~/.zfunc ]] && fpath=("$HOME/.zfunc" $fpath)
+source "$ZDOTDIR/completions.zsh"
+
+# fzf-tab must load after compinit, before widget-wrapping plugins
+source "$ZPLUGDIR/fzf-tab/fzf-tab.plugin.zsh"
+zstyle ':fzf-tab:*' use-fzf-default-opts yes
+zstyle ':fzf-tab:*' fzf-flags --height=~60%
+
+source "$ZPLUGDIR/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+source "$ZPLUGDIR/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh"
+source "$ZPLUGDIR/zsh-smartinput/smartinput.plugin.zsh"
+source "$ZPLUGDIR/pnpm-shell-completion/pnpm-shell-completion.plugin.zsh"
+source "$ZPLUGDIR/zsh-touchplus/touchplus.plugin.zsh"
+source "$ZPLUGDIR/wakatime-zsh-plugin/wakatime.plugin.zsh"
+
+#-----------------------------------------------------------
+# Tool Integrations
+#-----------------------------------------------------------
+can_haz atuin  && eval "$(atuin init zsh --disable-up-arrow)"
+can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"
+export DIRENV_LOG_FORMAT=""
+can_haz direnv && eval "$(direnv hook zsh)"
+can_haz wt     && eval "$(wt config shell init zsh)"
+
+# File sourcing
+source "$ZDOTDIR/alias.zsh"
+[[ -r "$ZDOTDIR/private.zsh" ]] && source "$ZDOTDIR/private.zsh"
+[[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh
+
+# fnm must load after Homebrew (set in .zshenv) so fnm-managed Node.js wins.
+can_haz fnm && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet)"
+
+export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
+[[ -d "$PNPM_HOME/bin" ]] && path=("$PNPM_HOME/bin" $path)
+
+# OMP writes one session-cache file per shell and never reaps them — keep newest 50
+() {
+  setopt local_options extended_glob null_glob
+  local -a _c=( ~/.cache/oh-my-posh/*.*-*-*-*-*.omp.cache(om) )
+  (( $#_c > 50 )) && rm -f -- "${(@)_c[51,-1]}"
+} >/dev/null 2>&1 &!
+
+# Performance profiling
+[[ "$ZPROF" = true ]] && zprof
+#-----------------------------------------------------------
+# End of .zshrc
+#-----------------------------------------------------------

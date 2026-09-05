@@ -1,0 +1,4 @@
+[submodule "dot_claude"]
+	path = dot_claude
+	url = git@github.com:raisedadead/dotfiles-private.git
+	branch = dot_claude

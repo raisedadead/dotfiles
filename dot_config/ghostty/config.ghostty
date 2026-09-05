@@ -41,7 +41,7 @@ background-blur = macos-glass-clear
 theme = Catppuccin Mocha
 background = 11111b
 bold-color = bright
-minimum-contrast = 1.1
+minimum-contrast = 1.5
 palette = 8=#6c7086
 faint-opacity=1
 

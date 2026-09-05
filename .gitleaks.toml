@@ -1,0 +1,21 @@
+# gitleaks default rules score entropy. A human-typed passphrase scores too low
+# to fire, which is how a 13-character phrase reached this repository's public
+# history and survived every scan. The rule below matches the SHAPE instead.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "shell-export-secret-literal"
+description = "Shell export of a literal passphrase, password, secret or token"
+# RE2 has no backreference, so the two quote styles are separate alternatives.
+regex = '''(?i)\b(?:export|declare\s+-x|setenv)\s+[A-Za-z0-9_]*(?:PASSPHRASE|PASSWORD|PASSWD|SECRET|APIKEY|API_KEY|TOKEN)[A-Za-z0-9_]*\s*=\s*(?:'[^'\n]{4,}'|"[^"\n]{4,}")'''
+keywords = ["export", "declare", "setenv"]
+entropy = 0
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+  '''op://''',                    # 1Password reference, not a value
+  '''\$\{?[A-Za-z_]''',           # indirection, not a value
+  '''\{\{''',                     # chezmoi or shell template
+  '''(?i)(changeme|example|dummy|placeholder|redacted|xxx+|your[-_ ]?)''',
+]

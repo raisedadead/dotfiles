@@ -1,14 +1,27 @@
+# Every external is PINNED. Nothing here refreshes on its own.
+# refreshPeriod = "0" stops the automatic fetch. A checksum makes chezmoi
+# refuse a file whose bytes changed. Bump a pin deliberately: fetch the new
+# artefact, read it, then write the new sha256 here.
+
 [".config/tmux/plugins/tpm"]
     type = "git-repo"
     url = "https://github.com/tmux-plugins/tpm.git"
-    refreshPeriod = "168h"
+    refreshPeriod = "0"
+    [".config/tmux/plugins/tpm".clone]
+        args = ["--branch", "v3.1.0", "--depth", "1"]
 
 ["Library/Fonts/sketchybar-app-font.ttf"]
     type = "file"
-    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/sketchybar-app-font.ttf"
-    refreshPeriod = "720h"
+    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v2.0.84/sketchybar-app-font.ttf"
+    refreshPeriod = "0"
+    ["Library/Fonts/sketchybar-app-font.ttf".checksum]
+        sha256 = "9f0653faf37a9e53ac64494d28849be1d3c70da093bdb8d42996427b8165f004"
 
+# sketchybar EXECUTES this file as Lua. The checksum is the control that stops
+# an upstream change running here unread.
 [".config/sketchybar/lua/icon_map.lua"]
     type = "file"
-    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download/icon_map.lua"
-    refreshPeriod = "720h"
+    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v2.0.84/icon_map.lua"
+    refreshPeriod = "0"
+    [".config/sketchybar/lua/icon_map.lua".checksum]
+        sha256 = "4b0c2115086d84c2663029cc6139cff65e31d151fa99b5a9db19e2940e5cad65"

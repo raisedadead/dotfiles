@@ -2,11 +2,13 @@ config-version = 2
 start-at-login = true
 persistent-workspaces = ['1', '2', '3', '4', '5']
 
-after-startup-command = ['exec-and-forget /opt/homebrew/bin/sketchybar']
+after-startup-command = [
+  'exec-and-forget /opt/homebrew/bin/sketchybar',
+]
 exec-on-workspace-change = [
   '/bin/bash',
   '-c',
-  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 on-mode-changed = [
@@ -15,11 +17,11 @@ on-mode-changed = [
 
 
 [gaps]
-inner.horizontal = 8
-inner.vertical = 8
-outer.left = 10
-outer.right = 10
-outer.top = 10
+inner.horizontal = 10
+inner.vertical = 10
+outer.left = 15
+outer.right = 15
+outer.top = 12
 outer.bottom = 60
 
 # Key tiers:
@@ -75,7 +77,9 @@ ctrl-alt-tab = 'workspace-back-and-forth'
 ctrl-alt-leftSquareBracket = 'workspace prev'
 ctrl-alt-rightSquareBracket = 'workspace next'
 
-# Layout
+# Custom layouts run only on demand, with the focused window as primary.
+ctrl-alt-w = 'exec-and-forget /opt/homebrew/bin/lua "${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/scripts/layout-run.lua" 50'
+ctrl-alt-e = 'exec-and-forget /opt/homebrew/bin/lua "${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/scripts/layout-run.lua" 60'
 ctrl-alt-enter = 'fullscreen'
 ctrl-alt-slash = 'layout tiles horizontal vertical'
 ctrl-alt-comma = 'layout accordion horizontal vertical'
@@ -121,73 +125,45 @@ test %{app-bundle-id} = com.sindresorhus.Dato \
 '''
 run = 'layout floating'
 
-# Workspace 1: Helium — tiled
-[[on-window-detected]]
-if = 'test %{app-bundle-id} = net.imput.helium'
-run = 'move-node-to-workspace 1'
-
-# Workspace 2: Development — tiled
-[[on-window-detected]]
-if = 'test %{app-bundle-id} = com.mitchellh.ghostty'
-run = 'move-node-to-workspace 2'
-# Terminals that are not Ghostty
 [[on-window-detected]]
 if = '''
-test %{app-bundle-id} = com.apple.Terminal \
-  || test %{app-bundle-id} = com.googlecode.iterm2
-'''
-run = [
-  'move-node-to-workspace 2',
-  'layout floating',
-  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
-]
-
-# VS Code — floating, because it runs macOS native tabs
-# ("window.nativeTabs": true). Every tab is a distinct AXWindow, so AeroSpace
-# registers it as its own node and hands it a tile — but only the frontmost tab
-# of a group has a visible surface. Tiled, an N-tab window therefore eats N
-# slots and the one you can see shrinks to 1/N. Measured on this monitor:
-# 2 Ghostty + 2 Code tabs = 4 tiles of 625px, with the second Code tile a blank
-# 622px hole at x=1286. Floating, the phantom nodes cost no tiling slot and
-# Ghostty gets the full split back.
-# Upstream: AeroSpace#68 (open, 1.0-blocker) — no fix in 0.21.3-Beta, PRs #2206
-# and #2225 unmerged. Not VS Code-specific: AppleWindowTabbingMode is `always`
-# here, so any native-tab app hits it (Finder is AeroSpace#489).
-[[on-window-detected]]
-if = 'test %{app-bundle-id} = com.microsoft.VSCode'
-run = ['move-node-to-workspace 2', 'layout floating']
-
-# Workspace 4: Spark + Spotify only — tiled 2/3 : 1/3.
-[[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.readdle.SparkDesktop \
-  || test %{app-bundle-id} = com.spotify.client
-'''
-run = [
-  'move-node-to-workspace 4',
-  'exec-and-forget ~/.config/aerospace/scripts/ws4-split.sh',
-]
-
-# Workspace 5: messengers — accordion
-[[on-window-detected]]
-if = '''
-test %{app-bundle-id} = net.whatsapp.WhatsApp \
-  || test %{app-bundle-id} = ru.keepcoder.Telegram \
-  || test %{app-bundle-id} = com.automattic.beeper.desktop
-'''
-run = ['move-node-to-workspace 5', 'layout h_accordion']
-
-# Browsers that are not Helium: parked in workspace 1, floating.
-[[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.apple.Safari \
+test %{app-bundle-id} = net.imput.helium \
+  || test %{app-bundle-id} = com.apple.Safari \
   || test %{app-bundle-id} = com.google.Chrome \
-  || test %{app-bundle-id} = com.brave.Browser.origin
+  || test %{app-bundle-id} = com.brave.Browser.origin \
+  || test %{app-bundle-id} = com.brave.Browser \
+  || test %{app-bundle-id} = org.mozilla.firefox
 '''
 run = [
   'move-node-to-workspace 1',
-  'layout floating',
-  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
+]
+
+[[on-window-detected]]
+if = '''
+test %{app-bundle-id} = com.mitchellh.ghostty \
+  || test %{app-bundle-id} = com.microsoft.VSCode
+'''
+run = [
+  'move-node-to-workspace 2',
+]
+
+[[on-window-detected]]
+if = '''
+test %{app-bundle-id} = com.anthropic.claudefordesktop \
+  || test %{app-bundle-id} = com.openai.codex
+'''
+run = [
+  'move-node-to-workspace 3',
+]
+
+[[on-window-detected]]
+if = '''
+test %{app-bundle-id} = com.readdle.SparkDesktop \
+  || test %{app-bundle-id} = com.spotify.client \
+  || test %{app-bundle-id} = net.whatsapp.WhatsApp
+'''
+run = [
+  'move-node-to-workspace 4',
 ]
 
 # Everything else: float, centered, on whichever workspace is already focused.

@@ -1,0 +1,16 @@
+[user]
+    name = Mrugesh Mohapatra
+    email = noreply@mrugesh.dev
+    signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJZmuLl4e2SPr0V6eX5/hwh/B/Ve7+5nM69qYAWDVC7U
+    # signingkey = ~/.ssh/id_ed25519.pub
+
+[gpg]
+    format = ssh
+
+# Enable below if you want to use 1Password for signing
+[gpg "ssh"]
+    program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+    allowedSignersFile = ~/.config/git/allowed_signers
+
+[commit]
+    gpgsign = true

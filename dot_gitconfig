@@ -35,6 +35,9 @@ rebase = false
 [push]
 default = current
 autoSetupRemote = true
+recurseSubmodules = on-demand
+[submodule]
+recurse = true
 
 [merge]
 conflictstyle = diff3

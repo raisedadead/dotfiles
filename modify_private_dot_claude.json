@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+input=$(cat)
+settings="${CHEZMOI_SOURCE_DIR:-}/dot_claude/settings.json"
+[[ -r "$settings" ]] || settings="${HOME}/.claude/settings.json"
+
+passthrough() {
+	printf '%s' "$input"
+	exit 0
+}
+
+command -v jq >/dev/null 2>&1 || passthrough
+[[ -r "$settings" ]] || passthrough
+
+servers=$(jq -ce '.mcpServers' "$settings" 2>/dev/null) || passthrough
+
+if [[ ! $input =~ [^[:space:]] ]]; then
+	seeded=$(jq -n --argjson s "$servers" '{mcpServers: $s}')
+	printf '%s' "$seeded"
+	exit 0
+fi
+
+if merged=$(printf '%s' "$input" | jq --argjson s "$servers" '.mcpServers = $s' 2>/dev/null); then
+	printf '%s' "$merged"
+else
+	passthrough
+fi

@@ -1,9 +1,15 @@
 sourceDir = "~/.dotfiles"
+encryption = "age"
+
+[age]
+    identity = "~/.config/chezmoi/age-identity.txt"
+    recipient = "age1s33fhflvlg5vt4l7qn0gg0thjq4yels4486srpr07c2jm2wceycqaqjjnq"
+
 
 [edit]
     command = "nvim"
-    apply = true
-    watch = true
+    apply = false
+    watch = false
 
 [git]
     autoCommit = false
@@ -24,4 +30,5 @@ sourceDir = "~/.dotfiles"
     secrets = "error"
 
 [completion]
-    custom = true
+    # https://github.com/spf13/cobra/issues/1577
+    custom = false
