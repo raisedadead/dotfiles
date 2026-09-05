@@ -14,6 +14,7 @@ export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
+export ENHANCE_THEME="catppuccin_mocha"
 
 # Homebrew (needs to be early in PATH)
 export HOMEBREW_PREFIX="/opt/homebrew"

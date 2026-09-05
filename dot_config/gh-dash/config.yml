@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://gh-dash.dev/schema.json
+pager:
+  diff: delta
+keybindings:
+  prs:
+    - key: T
+      name: enhance
+      command: gh enhance -R {{.RepoName}} {{.PrNumber}}
+theme:
+  colors:
+    text:
+      primary: "#cdd6f4"
+      secondary: "#cba6f7"
+      inverted: "#11111b"
+      faint: "#bac2de"
+      warning: "#f9e2af"
+      success: "#a6e3a1"
+      error: "#f38ba8"
+      actor: "#cba6f7"
+    background:
+      selected: "#313244"
+    border:
+      primary: "#cba6f7"
+      secondary: "#45475a"
+      faint: "#313244"
