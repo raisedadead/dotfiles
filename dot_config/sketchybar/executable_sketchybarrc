@@ -53,9 +53,13 @@ require("items.widgets")
 
 sbar.add("bracket", "left_island", {
 	"space.1",
+	"space.separator.2",
 	"space.2",
+	"space.separator.3",
 	"space.3",
+	"space.separator.4",
 	"space.4",
+	"space.separator.5",
 	"space.5",
 	"mode_indicator",
 }, {

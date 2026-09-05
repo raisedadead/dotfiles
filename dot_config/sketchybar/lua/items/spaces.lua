@@ -5,6 +5,7 @@ local aerospace = "/opt/homebrew/bin/aerospace"
 local workspaces = { "1", "2", "3", "4", "5" }
 local focused = ""
 local spaces = {}
+local separators = {}
 
 local function style(space, sid, strip)
 	if sid == focused then
@@ -33,13 +34,35 @@ local function refresh_all()
 				strips[ws] = (strips[ws] or "") .. icons.app(app) .. " "
 			end
 		end
-		for sid, space in pairs(spaces) do
-			style(space, sid, strips[sid] or "")
+		local previous_visible = false
+		for _, sid in ipairs(workspaces) do
+			local strip = strips[sid] or ""
+			local visible = sid == focused or strip ~= ""
+			style(spaces[sid], sid, strip)
+			if separators[sid] then
+				separators[sid]:set({ drawing = visible and previous_visible and "on" or "off" })
+			end
+			previous_visible = previous_visible or visible
 		end
 	end)
 end
 
-for _, sid in ipairs(workspaces) do
+for index, sid in ipairs(workspaces) do
+	if index > 1 then
+		separators[sid] = sbar.add("item", "space.separator." .. sid, {
+			position = "left",
+			drawing = "off",
+			width = 12,
+			icon = {
+				string = "│",
+				font = { family = colors.font, size = 12 },
+				color = colors.surface2,
+				padding_left = 3,
+				padding_right = 3,
+			},
+			label = { drawing = false },
+		})
+	end
 	local space = sbar.add("item", "space." .. sid, {
 		position = "left",
 		drawing = "off",
