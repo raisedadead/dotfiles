@@ -5,7 +5,7 @@ A macOS chezmoi repository for Ghostty, zsh, tmux, Neovim, desktop tools, and th
 ## Install or recover
 
 1. Install Homebrew and 1Password. Enable the 1Password SSH agent under **Settings → Developer**.
-2. Restore the 1Password document `chezmoi age identity (dotfiles)` from the personal account, vault `Keys - GPG, PGP, SSH`, to `~/.config/chezmoi/age-identity.txt`. Set its mode to `600`.
+2. Restore the 1Password document that holds the chezmoi age identity to `~/.config/chezmoi/age-identity.txt`. Set its mode to `600`. The private repository README names the vault and the item.
 3. Confirm the SSH agent can reach GitHub: `ssh -T git@github.com`. The private submodules clone over SSH during `chezmoi init`.
 4. Run:
 
