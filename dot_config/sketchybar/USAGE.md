@@ -4,14 +4,15 @@ Click Claude or Codex to open the text panel. Click either item again to
 close it. An app focus change also closes it. There is no close timer or
 outside-click listener.
 
-The bar shows the remaining weekly quota: `W96%`. `W—` means that the weekly
+The bar shows the remaining weekly quota: `96%`. `—` means that the weekly
 limit is missing or its reset has passed. `!` marks a fetch error or data
-older than 30 minutes. Open the panel for the error and last update time.
+older than 30 minutes. Open the panel for the error or stale-data status.
 
-The panel shows reported limit percentages and local reset times. Saved
-values have a `saved` label. Expired limits show `Unknown` until a successful
-refresh. Codex Spark rows are hidden. Other model limits appear only when
-the provider returns them.
+Each panel row shows a limit, its remaining percentage, and its local reset
+time: `Weekly  96% · Tue 15 Sep 08:16`. Saved values have a `!` marker.
+Expired limits show `— · reset passed`. Missing reset times are omitted.
+Codex Spark rows are hidden. Other model limits appear only when the
+provider returns them.
 
 Background checks run every 15 minutes. A successful request sets a minimum
 15-minute interval from its start. Clicks, wake events, and restarts respect

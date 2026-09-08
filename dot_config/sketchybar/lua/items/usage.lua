@@ -35,7 +35,7 @@ for i, provider in ipairs(providers) do
 		padding_left = 4,
 		padding_right = 4,
 		icon = { string = icons.app(provider.label), color = provider.color, font = { family = colors.app_font, size = 16 } },
-		label = { string = "W—", font = { size = 12, features = "tnum" } },
+		label = { string = "—", font = { size = 12, features = "tnum" } },
 	})
 	table.insert(names, name)
 	if i < #providers then
@@ -67,8 +67,8 @@ local function row(left, right, color, size)
 		width = 480,
 		padding_left = 0,
 		padding_right = 0,
-		icon = { string = left:gsub("%c", " "), color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = right and 344 or 444, max_chars = right and 40 or 52, padding_left = 18, padding_right = 0 },
-		label = { drawing = right ~= nil, string = right or "", color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = 100, align = "right", padding_left = 0, padding_right = 18 },
+		icon = { string = left:gsub("%c", " "), color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = right and 200 or 444, max_chars = right and 24 or 52, padding_left = 18, padding_right = 0 },
+		label = { drawing = right ~= nil, string = right or "", color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = 244, align = "right", padding_left = 0, padding_right = 18 },
 		background = { drawing = false },
 	})
 	table.insert(rows, name)
@@ -80,21 +80,23 @@ local function render()
 		sbar.remove(name)
 	end
 	rows = {}
-	row("Remaining subscription quota", nil, colors.text, 13)
 	for _, provider in ipairs(providers) do
 		local data = snapshot[provider.id] or {}
 		local value = remaining(data.weekly)
 		local failure = read_error or data.error
 		local stale = failure or (data.updated_at and os.time() - data.updated_at > 1800)
-		items[provider.id]:set({ label = { string = "W" .. (value and (value .. "%") or "—") .. (stale and " !" or ""), color = tint(value, provider.color) } })
-		row(provider.label .. " · " .. (data.plan or "Subscription"), nil, provider.color, 14)
+		items[provider.id]:set({ label = { string = (value and (value .. "%") or "—") .. (stale and " !" or ""), color = tint(value, provider.color) } })
+		row(provider.label, nil, provider.color, 14)
 		local count = 0
 		for _, window in ipairs(data.windows or {}) do
 			if provider.id ~= "codex" or not window.label:lower():find("codex-spark", 1, true) then
 				local available = remaining(window)
-				row(window.label, available and (available .. (stale and "% saved" or "% left")) or "Unknown", tint(available, provider.color))
 				local reset = window.resets_at
-				row(reset and (reset <= os.time() and "Reset passed · awaiting update" or "Resets " .. os.date("%a %d %b · %H:%M", reset)) or "Reset not supplied", nil, colors.overlay2, 11)
+				local detail = available and (available .. "%" .. (stale and " !" or "")) or "—"
+				if reset then
+					detail = detail .. " · " .. (reset <= os.time() and "reset passed" or os.date("%a %d %b %H:%M", reset))
+				end
+				row(window.label, detail, tint(available, provider.color))
 				count = count + 1
 			end
 		end
@@ -104,16 +106,9 @@ local function render()
 		if failure then
 			row(failure, nil, colors.yellow, 11)
 		elseif stale then
-			row("Saved data is over 30 minutes old", nil, colors.yellow, 11)
-		end
-		if data.updated_at then
-			row((stale and "Saved " or "Updated ") .. os.date("%a %d %b · %H:%M", math.floor(data.updated_at)), nil, colors.overlay2, 11)
-		end
-		if data.next_attempt and data.next_attempt > os.time() then
-			row("Next check after " .. os.date("%a %d %b · %H:%M", math.ceil(data.next_attempt)), nil, colors.overlay2, 11)
+			row("Stale · " .. os.date("%a %d %b %H:%M", math.floor(data.updated_at)), nil, colors.yellow, 11)
 		end
 	end
-	row("W = weekly · ! = saved data or error · Local times", nil, colors.overlay2, 11)
 	owner:set({ popup = { drawing = opened } })
 end
 
