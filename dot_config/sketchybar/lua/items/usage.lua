@@ -142,7 +142,7 @@ for _, provider in ipairs(providers) do
 		owner:set({ popup = { drawing = opened } })
 	end)
 end
-owner:subscribe("front_app_switched", function()
+owner:subscribe({ "front_app_switched", "mouse.exited.global" }, function()
 	opened = false
 	owner:set({ popup = { drawing = false } })
 end)

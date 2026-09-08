@@ -1,8 +1,8 @@
 # Subscription quota
 
 Click Claude or Codex to open the text panel. Click either item again to
-close it. An app focus change also closes it. There is no close timer or
-outside-click listener.
+close it. An app focus change or a pointer exit from the bar and popup also
+closes it. There is no close timer or outside-click listener.
 
 The bar shows the remaining weekly quota: `96%`. `—` means that the weekly
 limit is missing or its reset has passed. `!` marks a fetch error or data
