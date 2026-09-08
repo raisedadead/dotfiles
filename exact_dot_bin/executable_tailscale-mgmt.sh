@@ -40,7 +40,9 @@ function ts_mgmt() {
   fi
 
   # Get API key
-  api_key=$(op read "${TAILSCALE_OP_ITEM:?set TAILSCALE_OP_ITEM to the 1Password reference of the API key}")
+  env_file="${XDG_CONFIG_HOME:-$HOME/.config}/tailscale-mgmt.env"
+  [ -r "$env_file" ] && . "$env_file"
+  api_key=$(op read "${TAILSCALE_OP_ITEM:?set TAILSCALE_OP_ITEM in $env_file to the 1Password reference of the API key}")
   if [ -z "$api_key" ]; then
     echo -e "${RED}API key not found. Please check the credential is available${NC}"
     return 1
