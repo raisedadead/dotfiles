@@ -1,0 +1,174 @@
+# Maintenance context
+
+This file holds the structure, the load order, and the gotchas. [README.md](../README.md) holds the install steps. [README.md](README.md) here holds the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [CLAUDE.md](../CLAUDE.md) holds the editing rules. Read versions, revisions, and inventories from the source files or the tools, not from here.
+
+## Deploy loop
+
+Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target>`. Inspect the Git diff. Commit. Nothing captures a target on its own. Settings: [.chezmoi.toml.tmpl](../.chezmoi.toml.tmpl).
+
+Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including an installer or runtime write. Capture one target at a time when the list holds a change you did not make. Revert the rest with `chezmoi apply <target>`.
+
+| Kind                                       | Source                                                                       | Maintenance                                         |
+| ------------------------------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------- |
+| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                                     | Edit the target and `re-add`. `re-add` re-encrypts  |
+| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_aws/encrypted_private_config.tmpl.age` | Edit the source. `re-add` skips templates           |
+| Modify script                              | `modify_private_dot_claude.json`                                             | Edit the source. It merges into the existing target |
+| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                               | Change the pinned revision or checksum              |
+| Repository document, `docs/`, `install.sh` | Root files                                                                   | Edit the source. Not deployed                       |
+
+`re-add` does not capture templates, modify targets, externals, or symlink entries. Before an apply, read `chezmoi status` and `chezmoi diff`. Column one `M` is a target edit. Column one `D` is a deleted target. Do not delete the chezmoi state to resolve drift.
+
+`exact_dot_bin`, `dot_config/exact_zsh`, and `dot_config/exact_git` own their target directories. Apply removes an entry there that the source does not hold. Keep generated state elsewhere. Completion data lives in `~/.zfunc`, `~/.zcompdump`, and `$XDG_CACHE_HOME/zsh`. Plugin checkouts live under `$XDG_DATA_HOME/zsh/plugins`.
+
+A `re-add` of an exact directory captures new children and removes source entries for deleted children. A `re-add` of one child file also captures new siblings. Inspect the directory before a capture and the source diff after it. Implementation: [readdcmd.go](https://github.com/twpayne/chezmoi/blob/v2.72.1/internal/cmd/readdcmd.go).
+
+[.chezmoiignore](../.chezmoiignore) controls deployment. Git ignores do not. Its paths are relative to `$HOME`, without a leading `/`. An untracked source file deploys. Do not track authentication, sessions, databases, logs, caches, installed plugins, or skill symlinks. Outside an exact directory, a removed source entry leaves the target in place. Remove that orphan yourself.
+
+Stage a shell startup change with an isolated destination and state file before a broad apply. A broken `.zshrc` affects every new shell.
+
+### Private submodule
+
+`dot_claude/` is a git submodule of `raisedadead/dotfiles-private`, branch `dot_claude`. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
+
+Both repos run `gitleaks` in `.githooks/pre-commit` and exit 1 on a finding. The parent `.githooks/pre-push` resolves the gitlink of each commit in each pushed range. It exits 1 when that submodule commit is on no remote, or when it cannot check it. A clone of the parent cannot check out such a commit.
+
+Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.dot_claude.update = merge`, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
+
+Each private directory is one orphan branch with the directory name, mounted with `git submodule add -b <dir>`. A private branch root holds only `.git*`-prefixed files, which chezmoi skips. `dotfiles-privatize.sh` seeds `pre-commit` and `post-commit` from the parent `.githooks/` into a new private branch.
+
+## Terminal stack
+
+| Layer       | Source                                                                          | Owns                                                            |
+| ----------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Desktop     | `dot_config/aerospace/`                                                         | Desktop shortcuts, read before the terminal                     |
+| Terminal    | [Ghostty](../dot_config/ghostty/config.ghostty)                                    | Rendering, native selection, scrollback, key rewrites           |
+| Multiplexer | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration |
+| Shell       | [zsh](../dot_config/exact_zsh/dot_zshrc)                                           | Emacs editing, completions, history                             |
+| Editor      | [Neovim](../dot_config/nvim/)                                                      | LazyVim defaults plus local overrides                           |
+
+A root tmux binding takes its key before zsh or Neovim. Before you assign a key, check `ghostty +list-keybinds`, `tmux list-keys -T root`, and `bindkey`. Ghostty Alt+Left/Right send `M-b`/`M-f`.
+
+`smart-splits.nvim` sets `@pane-is-vim`. tmux uses it to forward `M-H/J/K/L` to Neovim or to select a pane. The same flag routes Ghostty's Ctrl+Shift+W/E/A/S rewrites: Neovim receives plain Ctrl+W/E/A/S, other panes receive `M-C-w/e/a/s`. Ctrl+Shift+W deletes to line start in zsh.
+
+tmux omits client `extkeys` and keeps legacy uppercase plus CSI-u bindings because of Ghostty's [Option+Shift encoding issue](https://github.com/ghostty-org/ghostty/issues/9406). `terminal-features` resets before it appends, so a reload does not duplicate entries. Check the client features, not only `extended-keys`.
+
+Ghostty shell-integration features add to the defaults. Keep `path` enabled. Ctrl+Shift+H/J/K/L scroll Ghostty history, not tmux copy mode. Mouse drag selects in tmux. Shift+drag selects in the terminal.
+
+The shader chain is cursor warp, then text glow. The default animation mode renders focused shader surfaces continuously. A change to the animation mode also changes the cursor effect ([Ghostty reference](https://ghostty.org/docs/config/reference#custom-shader-animation)). CPU samples alone do not measure GPU or battery cost.
+
+### zsh startup and PATH
+
+| File                                                          | Owns                                                                                         |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `~/.zshenv`                                                   | Sets `ZDOTDIR` and sources its `.zshenv`. zsh does not reread it after the directory changes |
+| `.config/zsh/.zshenv`                                         | Environment and `path.zsh`                                                                   |
+| `.config/zsh/.zprofile`                                       | Reapplies PATH after macOS `path_helper`                                                     |
+| `.config/zsh/.zshrc`                                          | Interactive setup, in order                                                                  |
+| `.config/zsh/plugins.zsh`, `plugins.lock`                     | Pinned plugins and explicit updates                                                          |
+| `.config/zsh/completions.zsh`                                 | Completion cache and generated providers                                                     |
+| `.config/zsh/fzf.zsh`                                         | Picker behavior and theme                                                                    |
+| `.config/zsh/alias.zsh`, `private.zsh`, `~/.bin/functions.sh` | Aliases, 1Password shell integration, helpers                                                |
+
+[path.zsh](../dot_config/exact_zsh/path.zsh) prepends in order. The last prepend wins. User commands and the fnm default come before Homebrew. `.zprofile` restores that order after `path_helper`. [dot_bashrc](../dot_bashrc) carries the fnm prepend too. A GUI process reads no shell startup file and needs its own PATH.
+
+Startup order: options and keymaps, prompt, pinned plugins, fzf, unique fpath and compinit, fzf-tab, widget wrappers, tool integrations, aliases and functions, fnm. fzf-tab loads after compinit and before highlighting and autosuggestions. Atuin loads after fzf and owns Ctrl+R. There is no deferred loading and no plugin manager.
+
+`plugins.lock` records repository and commit. A missing plugin clones at that commit. A changed lock synchronizes an existing checkout at the next startup. A local edit in a checkout causes an error. `zsh-plugin-update` fetches the upstream heads and records the new pins. Capture the lock after it. Keep checkout state out of the exact zsh directory.
+
+The completion cache signature includes provider directories, metadata, and entry names. A directory change or cache age triggers compinit. `rebuild-completions` handles a provider content change. `update-completions` regenerates the gh, op, and wrangler providers. Run it after you upgrade those tools.
+
+chezmoi keeps its packaged `_chezmoi` completion with `completion.custom = false`. Its custom path candidates can fail on a tilde prefix ([Cobra issue](https://github.com/spf13/cobra/issues/1577)). A scoped completion style includes dotfiles. The native fallback can offer an unmanaged path.
+
+Ctrl+T replaces the shell argument at the cursor. An existing directory becomes the search root. A remaining fragment becomes the query. It keeps the other arguments, quotes the inserted path, and leaves the buffer intact on cancel. It does not evaluate variables or command substitutions. It lists files and directories recursively, includes hidden paths, and respects Git ignores. `<C-g>` includes Git-ignored entries for that call. Alt+C uses the same ignore policy.
+
+Emacs mode is the default. Ctrl+Z toggles `vicmd`. Ctrl+F opens `mdr`. Dot-prefixed forward-motion widgets move without accepting an autosuggestion. Ctrl+E and Ctrl+Shift+E accept one. Keep `DIRENV_LOG_FORMAT` exported above the direnv hook.
+
+OMP cache cleanup matches UUID session caches only. Do not include `init.*.zsh` or bare `omp.cache`. Keep the array slice `"${(@)_c[51,-1]}"`. Without `(@)` the slice joins the paths and removes nothing.
+
+### tmux and pickers
+
+A tmux test server needs a unique `-L` or `-S` on every command, including subprocesses. `-f` and `TMUX_TMPDIR` do not isolate the live server. Read the parse output as well as the exit status.
+
+[theme.conf](../dot_config/tmux/theme.conf) owns the palette and the menu options. Use IDs for menu targets. Escape displayed names. Command-local menu colors are literal. Global menu style options accept formats. A painted popup background is opaque, also with Ghostty transparency.
+
+Use tmux `-N` notes for binding descriptions. [keys](../exact_dot_bin/executable_keys) reads tool reports at runtime. State the fzf options at each popup call, because an inherited `FZF_DEFAULT_OPTS` can change height or truncation. `--keep-right` also truncates headers and footers from the left. Test the real popup width.
+
+[Switcher](../dot_config/tmux/scripts/executable_switcher.sh) combines sessions, projects, config roots, and zoxide. Files walks the pane directory without a depth or row cap. Grep reloads ripgrep for the current expression. An empty query produces no rows. Rows carry the target path separately from the display text. Bookmarks live at `$XDG_STATE_HOME/switcher/bookmarks`, one absolute directory per line, unmanaged. `~/.config/switcher/projects.json` is optional.
+
+[reader.sh](../dot_config/tmux/scripts/executable_reader.sh) and [mdr](../exact_dot_bin/executable_mdr) share actions through mdr subcommands but keep separate fzf bindings. Update both together. Rows are NUL-delimited with the path after the first tab. Sanitize only the display text. A positive ripgrep glob is an inclusion rule. Off-repository walks stop at depth six.
+
+Force color and pager options in previews. bat and glow behave differently off a TTY. Glow does not expand `~` in its style path, so its configuration is a template. Keep the temporary-file removal before `exec glow`. An EXIT trap does not run after exec.
+
+Sessions are parked by hand with `@parked`. There is no automatic restore. The first window is `Main`. Later windows use the shared `@cmd_name` mapping. [input-lib.sh](../dot_config/tmux/scripts/input-lib.sh) needs Homebrew Bash for namerefs.
+
+A tmux reload adds or overwrites bindings and options. A removed source line does not clear runtime state. Unbind or unset explicitly. A `run-shell` string expands formats before the child command. Double `#` when the inner command needs the format. `M-\\` cannot be a menu shortcut, because ESC-backslash ends a DCS ([tmux issue](https://github.com/tmux/tmux/issues/4386)).
+
+### Neovim
+
+[lua/config](../dot_config/nvim/lua/config/) holds LazyVim deltas. [lua/plugins](../dot_config/nvim/lua/plugins/) holds plugin overrides. Check the upstream default before you add one. Use `catppuccin-mocha`. Bare `catppuccin` can resolve to the built-in colorscheme.
+
+`chezmoi.nvim` does not watch source buffers. The whitespace autocmd trims selected code and config filetypes only. It keeps Markdown and plain text, and it skips binary, special, nonmodifiable, and large buffers. Keep it separate from a conform catch-all formatter, which suppresses the LSP fallback.
+
+Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config/nvim/lazy-lock.json`. `:Lazy sync` also removes plugins absent from the spec.
+
+## Desktop and utilities
+
+AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchybar/lua/items/spaces.lua`, and the bracket in `sketchybarrc`. Update the three together. Read layout keys and triggers from the AeroSpace source. An unmatched window follows the floating catch-all rule. A GUI-launched rule script needs absolute executable paths. `lockf` serializes layout changes. Keep scalar horizontal gaps in the TOML.
+
+Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `executable_` marks a program, not a sourced file. `awake` stores PID, deadline, and spec state. Its process check cannot tell a reused PID from another `caffeinate`.
+
+## Agent rig
+
+| Source                                                                                                   | Owns                                                          |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [dot_claude/settings.json](../dot_claude/settings.json)                                                     | Hook wiring, plugins, MCP declarations, statuslines, settings |
+| [hooks/executable_hooks.py](../dot_claude/hooks/executable_hooks.py)                                        | Event dispatcher and runtime decisions                        |
+| [hooks/hook_config.json](../dot_claude/hooks/hook_config.json)                                              | Rule and gate configuration                                   |
+| [validators.json](../dot_claude/hooks/validators.json), [formatters.json](../dot_claude/hooks/formatters.json) | Tool registries                                               |
+| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                                 | Kernel and path-scoped instructions                           |
+| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/)           | Delegation contracts and reusable work                        |
+| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                                   | Memory configuration. The database stays unmanaged            |
+
+Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
+
+SessionStart registers the main marker and runs the doctor. PreToolUse evaluates command and file rules and spawn contracts. PostToolUse formats, validates, queues project checks, and records mutations. SubagentStop records completed review agents. Stop handles failure suppression, review, length, claims, queued validators, and notification. SessionEnd cleans session state. Read the dispatcher for the other events and the error paths.
+
+The review request belongs to the operator. Keep that wording in the kernel and in the gate message. A completed review-class agent satisfies the marker. A planned or crashed review does not. A workflow agent needs the recognized reviewer type. A shell-driven edit is outside the mutation recorder, so the agent still owes the review.
+
+### Hook gotchas
+
+- Test with an isolated `MARKERS_DIR` and `MAIN_SESSION_MARKER`. A fake young main-session marker silences review and notification behavior.
+- Read the configuration before the fallback constants. An existing key wins. An edit to its fallback has no effect.
+- Stop uses `stop_hook_active` against a correction loop. Emit one JSON decision, then exit. A gate error must not discard the validator drain.
+- A project root can disappear before a queued validation runs. Handle `OSError`, including `FileNotFoundError`.
+- A spawn contract needs `OUTPUT:` and `DONE:`. A named agent also needs `REPORT:`. The gate checks presence, not quality. Roster writes need `fcntl.flock`.
+- Test a new hook regex with long adverse input. A nested quantifier can stall the hook. A tool matcher matches the full name, not a substring.
+- `git commit -F` is outside the `-m` command-string checks. Malformed hook input and several error paths return without a denial. Inspect the handler before you claim enforcement.
+- The claim checker rejects on exit 1. A missing plugin, a timeout, or another error passes. It checks claim form, not truth. Resolve its path through the installed-plugin registry.
+- Stop length checks run after the first reply is visible. Keep the kernel and the output style short.
+
+RTK has two command writers: the dispatcher allowlist and native `rtk hook claude`. Keep one owner per command word. Before you add an allowlist word, `rtk hook check '<word> x'` must return `No rewrite`. Keep argv in `rtk proxy`. Read `~/.claude/markers/rtk-corruption.log` for entries.
+
+### Plugins, MCP, and memory
+
+First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed file from `installPath` in `~/.claude/plugins/installed_plugins.json`. A cache directory name can be a version, not a SHA. A plugin-registered hook runs outside the dispatcher. Disable the plugin in `enabledPlugins` to stop it. Read the manifest and the hook registrations before you enable one.
+
+`settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi diff ~/.claude.json` and connectivity with `claude mcp list`. A duplicate server name at two scopes can split OAuth state.
+
+Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`. If search raises `Maximum call stack size exceeded`, use the timeline and observation tools. Keep native `autoMemoryEnabled` off. A native write creates target drift. The Pi runtime is `~/.pi/agent`. Its source is `~/DEV/rd/pi-kit`, outside this deployment.
+
+### Statusline
+
+[statusline.sh](../dot_claude/statusline/executable_statusline.sh) supplies `ICON_*` variables to [theme.omp.yaml](../dot_claude/statusline/theme.omp.yaml). Keep the YAML ASCII-clean. File tools lose PUA glyphs. The subagent statusline is a separate jq renderer. Effort reads `.effort.level`, then `CLAUDE_EFFORT`. `session-alert.py` reads the transcript for unresolved downgrade and API alerts. Keep `switchModelsOnFlag: false`. A source setting alone does not prove server behavior.
+
+## Operator tools
+
+| Tool                                   | Purpose                                                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift                                                                                 |
+| `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                     |
+| `chezmoi-claude-hooks-test.sh --all`   | Runs the source test suites                                                                                       |
+| `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands |
+| `rig-change-review`, `code-review`     | Review a rig change, or any other source change                                                                   |
+
+The workflow directory registers scripts through `meta.name`. Operator-only utilities without an automated consumer: `cavemem-seed.ts`, `claude-flag-audit.sh`, `check_for_updates.sh`, `tailscale-mgmt.sh`. `tailscale-mgmt.sh` reads `TAILSCALE_OP_ITEM` from `~/.config/tailscale-mgmt.env`, an encrypted entry.

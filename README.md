@@ -21,7 +21,7 @@ macOS configuration for Ghostty, zsh, tmux, Neovim, desktop tools, and the Claud
 
 ## Use
 
-Edit the file in your home directory, then `chezmoi re-add <file>` and commit. [docs/README.md](docs/README.md) holds every command for this setup. [ARCHI.md](ARCHI.md) holds the maintenance context, [MAINTENANCE.md](MAINTENANCE.md) the checks.
+Edit the file in your home directory, then `chezmoi re-add <file>` and commit. [docs/README.md](docs/README.md) holds every command for this setup. [docs/ARCHI.md](docs/ARCHI.md) holds the maintenance context, [docs/MAINTENANCE.md](docs/MAINTENANCE.md) the checks.
 
 ## License
 

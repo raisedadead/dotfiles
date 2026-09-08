@@ -1,6 +1,6 @@
 # chezmoi commands for this setup
 
-Source: `~/.dotfiles`. Target: `$HOME`. Private tree: `~/.dotfiles/dot_claude`, a git submodule that deploys to `~/.claude`. Edit the target file, then capture it. Nothing captures a file on its own.
+Source: `~/.dotfiles`. Target: `$HOME`. Private tree: `~/.dotfiles/dot_claude`, a submodule that deploys to `~/.claude`. Edit the target, then capture it. Nothing captures a file on its own.
 
 ## Daily loop
 
@@ -12,7 +12,7 @@ chezmoi re-add ~/.config/zsh/.zshrc     # 4. capture it into source
 git -C ~/.dotfiles commit -am "feat(zsh): ..."
 ```
 
-`chezmoi status` prints two columns. Column one is the change since the last apply. Column two is what `chezmoi apply` would do. `MM` after a target edit is normal. An empty line means no drift.
+`chezmoi status` prints two columns. Column one is the change since the last apply. Column two is what `chezmoi apply` would do. `MM` after a target edit is normal. No output means no drift.
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including a change an installer or a runtime made.
 
@@ -23,7 +23,7 @@ chezmoi re-add ~/.claude/settings.json
 git -C ~/.dotfiles/dot_claude commit -am "feat(claude): ..."
 ```
 
-The submodule `post-commit` hook then commits the gitlink bump in `~/.dotfiles`. Claude Code rewrites `settings.json` at runtime, so `chezmoi status` can list it again after a session change. Capture it when you want the runtime values, or run `chezmoi apply ~/.claude/settings.json` to restore the source.
+The submodule `post-commit` hook commits the gitlink bump in `~/.dotfiles`. Claude Code rewrites `settings.json` at runtime, so `chezmoi status` lists it again after a session change. Capture it, or restore the source with `chezmoi apply ~/.claude/settings.json`.
 
 ## Reject a change you did not make
 
@@ -40,7 +40,7 @@ chezmoi apply <target>     # overwrite the target from source
 | Secret file            | `chezmoi add --encrypt <target>`                    | `encrypted_...age`; mode 600 adds `private_` |
 | File under `~/.claude` | `chezmoi add <target>`, then commit in `dot_claude` | inside the submodule                         |
 
-`add --encrypt` skips the secrets scan. `re-add` re-encrypts an encrypted file. `add.secrets = "error"` stops a plain `add` of a file that looks like a secret.
+`add --encrypt` skips the secrets scan. `re-add` re-encrypts an encrypted file. A plain `add` of a file that looks like a secret exits 1 (`add.secrets = "error"`).
 
 ## Files that need a source edit
 
@@ -55,7 +55,7 @@ Templates today: `dot_config/glow/glow.yml.tmpl`, `dot_aws/encrypted_private_con
 
 ## Exact directories
 
-`~/.bin`, `~/.config/git`, and `~/.config/zsh` are exact. `chezmoi apply` removes a file there that the source does not hold. Keep generated state out of those directories.
+`~/.bin`, `~/.config/git`, and `~/.config/zsh` are exact. `chezmoi apply` removes a file there that the source does not hold. Keep generated state elsewhere.
 
 ## Inspect
 
@@ -77,13 +77,13 @@ git -C ~/.dotfiles/dot_claude push origin dot_claude   # the submodule first
 git -C ~/.dotfiles push                                # then the parent
 ```
 
-The parent `pre-push` hook exits 1 while a recorded submodule commit is on no remote; see `.githooks/pre-push`. Hooks in both repos: `pre-commit` runs gitleaks on the staged diff. The submodule `post-commit` bumps the parent gitlink. The settings that make this work live in `~/.gitconfig`: `submodule.recurse = false`, `push.recurseSubmodules = on-demand`, `submodule.dot_claude.update = merge`, `status.submoduleSummary = true`.
+Hooks: `pre-commit` in both repos runs gitleaks on the staged diff. The submodule `post-commit` bumps the parent gitlink. The parent `pre-push` exits 1 while a recorded submodule commit is on no remote. Details: [ARCHI.md](ARCHI.md#private-submodule).
 
 Move a directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push`.
 
 ## Recover a machine
 
-Follow [README.md](../README.md). Notes:
+Follow [README.md](../README.md).
 
 - Keep `--source ~/.dotfiles` on `chezmoi init`; the default source path is different.
 - The age identity is not in Git. Without the 1Password copy, encrypted files cannot be recovered.
@@ -94,4 +94,4 @@ Follow [README.md](../README.md). Notes:
 
 ## Checks
 
-[MAINTENANCE.md](../MAINTENANCE.md) holds the probes. The quick set: `chezmoi status`, `~/.bin/chezmoi-claude-doctor.sh`, and `gitleaks git . --exit-code 1` in `~/.dotfiles`.
+[MAINTENANCE.md](MAINTENANCE.md) holds the probes. Quick set: `chezmoi status`, `~/.bin/chezmoi-claude-doctor.sh`, `gitleaks git . --exit-code 1`.
