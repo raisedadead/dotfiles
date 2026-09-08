@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_AUTHOR_DATE GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL GIT_COMMITTER_DATE
+super=$(git rev-parse --show-superproject-working-tree)
+[ -n "$super" ] || exit 0
+
+top=$(git rev-parse --show-toplevel)
+path=${top#"$super"/}
+super_git=$(git -C "$super" rev-parse --absolute-git-dir)
+for marker in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do
+	[ -e "$super_git/$marker" ] && exit 0
+done
+
+git -C "$super" diff HEAD --quiet --ignore-submodules=dirty -- "$path" && exit 0
+
+subject="chore($path): bump to $(git rev-parse --short HEAD)"
+amend=""
+if [[ "$(git -C "$super" log -1 --format=%s)" == "chore($path): bump to "* ]] &&
+	! git -C "$super" branch -r --contains HEAD 2>/dev/null | grep -q .; then
+	amend=--amend
+fi
+git -C "$super" commit -q ${amend:+"$amend"} -m "$subject" -- "$path"
+printf '\e[0;90mdotfiles ·\e[0m %s gitlink committed in %s\n' "$path" "$super"

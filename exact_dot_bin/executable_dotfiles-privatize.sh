@@ -72,8 +72,8 @@ if [[ -z "$REMOTE" ]]; then
 fi
 [[ -n "$REMOTE" ]] || die 'no remote: pass --remote <url>'
 command -v gitleaks >/dev/null || die 'gitleaks not found'
-[[ -f .gitleaks.toml && -f .githooks/pre-commit ]] ||
-	die 'missing .gitleaks.toml or .githooks/pre-commit'
+[[ -f .gitleaks.toml && -f .githooks/pre-commit && -f .githooks/post-commit ]] ||
+	die 'missing .gitleaks.toml, .githooks/pre-commit, or .githooks/post-commit'
 
 BRANCH="$DIR"
 TMP_BRANCH="privatize/$DIR"
@@ -107,7 +107,7 @@ trap 'rm -f "$IGNORE_FILE"' EXIT
 repath .gitleaksignore >"$IGNORE_FILE"
 
 root_tree() {
-	local entries entry rules hook hooks_tree
+	local entries entry rules pre post hooks_tree
 	entries="$(git ls-tree "$TMP_BRANCH" |
 		grep -vE $'\t(\.gitleaks\.toml|\.gitleaksignore|\.gitignore|\.githooks)$' || true)"
 	entry="$(printf '100644 blob %s\t.gitleaks.toml' "$(git hash-object -w .gitleaks.toml)")"
@@ -122,15 +122,16 @@ root_tree() {
 			"$(printf '%s' "$rules" | git hash-object -w --stdin)")"
 		entries="$entries"$'\n'"$entry"
 	fi
-	hook="$(git hash-object -w .githooks/pre-commit)"
-	hooks_tree="$(printf '100755 blob %s\tpre-commit\n' "$hook" | git mktree)"
+	pre="$(git hash-object -w .githooks/pre-commit)"
+	post="$(git hash-object -w .githooks/post-commit)"
+	hooks_tree="$(printf '100755 blob %s\tpre-commit\n100755 blob %s\tpost-commit\n' "$pre" "$post" | git mktree)"
 	entry="$(printf '040000 tree %s\t.githooks' "$hooks_tree")"
 	entries="$entries"$'\n'"$entry"
 	printf '%s\n' "$entries" | git mktree
 }
 
 root_commit="$(git commit-tree "$(root_tree)" -p "$TMP_BRANCH" \
-	-m 'chore: add gitleaks config and pre-commit hook')"
+	-m 'chore: add gitleaks config and git hooks')"
 git branch -f "$TMP_BRANCH" "$root_commit"
 gitleaks git . --log-opts="$TMP_BRANCH" --gitleaks-ignore-path "$IGNORE_FILE" \
 	--redact --no-banner --exit-code 1 >/dev/null 2>&1 ||

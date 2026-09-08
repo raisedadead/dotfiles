@@ -38,7 +38,7 @@ Edit a deployed file, validate it, then capture it. Nothing captures a file on i
 | Track a new file | `chezmoi add <target>` |
 | Track a secret | `chezmoi add --encrypt <target>` |
 | Capture a managed file | `chezmoi re-add <target>` |
-| Capture a file under `~/.claude` | `chezmoi re-add <target>`, then commit in `~/.dotfiles/dot_claude`. Commit the gitlink in `~/.dotfiles` before a push |
+| Capture a file under `~/.claude` | `chezmoi re-add <target>`, then commit in `~/.dotfiles/dot_claude`. A hook commits the gitlink in `~/.dotfiles` |
 | Move a source directory to the private repository | `~/.bin/dotfiles-privatize.sh <dir> --push` |
 | Inspect a proposed apply | `chezmoi status` and `chezmoi diff` |
 | Deploy source | `chezmoi apply <target>` |
