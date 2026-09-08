@@ -48,7 +48,7 @@ Templates, modify scripts, and externals need source edits. Exact directories al
 
 Tab completes chezmoi target paths, including `~/.config/zsh/` and dotfiles. Ctrl+T continues the path argument at the cursor; `<C-g>` inside that picker includes Git-ignored paths.
 
-[ARCHI.md](ARCHI.md) holds the maintenance context. [MAINTENANCE.md](MAINTENANCE.md) holds checks. [CLAUDE.md](CLAUDE.md) holds project editing rules.
+[docs/README.md](docs/README.md) holds the chezmoi command reference. [ARCHI.md](ARCHI.md) holds the maintenance context. [MAINTENANCE.md](MAINTENANCE.md) holds checks. [CLAUDE.md](CLAUDE.md) holds project editing rules.
 
 ## License
 
