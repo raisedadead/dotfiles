@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
 import datetime
 import email.utils
 import fcntl
 import json
 import math
 import os
-from pathlib import Path
-import random
+import pwd
 import selectors
 import subprocess
 import sys
@@ -14,6 +12,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 INTERVAL = 900
 
@@ -154,7 +153,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def claude():
+def claude() -> dict:
     config = Path(os.environ.get('CLAUDE_CONFIG_DIR', str(Path.home() / '.claude')))
     credential_file = config / '.credentials.json'
     if credential_file.is_file():
@@ -163,7 +162,10 @@ def claude():
         service = 'Claude Code-credentials'
         if os.environ.get('CLAUDE_CONFIG_DIR'):
             raise Unavailable('Use Claude CLI credential file')
-        result = subprocess.run(['/usr/bin/security', 'find-generic-password', '-s', service, '-w'], capture_output=True, text=True, timeout=10)
+        command = ['/usr/bin/security', 'find-generic-password', '-s', service]
+        result = subprocess.run([*command, '-a', pwd.getpwuid(os.getuid()).pw_name, '-w'], capture_output=True, text=True, timeout=10, check=False)
+        if result.returncode == 44:
+            result = subprocess.run([*command, '-w'], capture_output=True, text=True, timeout=10, check=False)
         if result.returncode:
             raise Unavailable('Unlock Keychain or sign in to Claude')
         raw = result.stdout.strip()
@@ -213,7 +215,7 @@ def refresh(state, fetch):
         return state
     try:
         result = fetch()
-        result.update(updated_at=time.time(), next_attempt=time.time() + INTERVAL + random.randint(0, 60), failures=0)
+        result.update(updated_at=time.time(), next_attempt=now + INTERVAL, failures=0)
         return result
     except Exception as error:
         failures = min(state.get('failures', 0) + 1, 6)

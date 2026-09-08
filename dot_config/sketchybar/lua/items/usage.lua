@@ -1,27 +1,14 @@
 local colors = require("colors")
 local icons = require("icons")
 local config = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+local command = "/opt/homebrew/bin/python3 '" .. (config .. "/sketchybar/usage.py"):gsub("'", "'\\''") .. "'"
 local providers = {
 	{ id = "claude", label = "Claude", color = colors.peach },
 	{ id = "codex", label = "Codex", color = colors.teal },
 }
-local items, names = {}, {}
-local update, close, watch
+local items, names, rows = {}, {}, {}
 local snapshot, pending, opened = {}, false, false
-local opened_until = 0
-local watch_generation = 0
-local renderer_ready, watching_generation = false, nil
-local cache = (os.getenv("XDG_CACHE_HOME") or (os.getenv("HOME") .. "/.cache")) .. "/sketchybar-usage"
-local renderer = config .. "/sketchybar/usage-panel.swift"
-local binary = cache .. "/usage-panel"
-local image_slot = 0
-local panel_width = 480
-local owner
-
-local function quote(value)
-	return "'" .. value:gsub("'", "'\\''") .. "'"
-end
-local command = "/opt/homebrew/bin/python3 " .. quote(config .. "/sketchybar/usage.py")
+local read_error
 
 local function remaining(row)
 	if not row or (row.resets_at and row.resets_at <= os.time()) then
@@ -48,7 +35,7 @@ for i, provider in ipairs(providers) do
 		padding_left = 4,
 		padding_right = 4,
 		icon = { string = icons.app(provider.label), color = provider.color, font = { family = colors.app_font, size = 16 } },
-		label = { string = "—", font = { size = 12, features = "tnum" } },
+		label = { string = "W—", font = { size = 12, features = "tnum" } },
 	})
 	table.insert(names, name)
 	if i < #providers then
@@ -62,142 +49,107 @@ for i, provider in ipairs(providers) do
 		table.insert(names, separator)
 	end
 end
-owner = items.claude
+local owner = items.claude
 owner:set({
-	update_freq = 60,
+	update_freq = 900,
 	popup = {
 		align = "right",
-		height = 1,
+		height = 26,
 		y_offset = -10,
-		background = { color = 0xff1a1b26, border_color = 0xff414655, border_width = 1, corner_radius = 12 },
+		background = { color = colors.mantle, border_color = colors.surface2, border_width = 1, corner_radius = 12 },
 	},
 })
 
-local panel = sbar.add("item", "usage.popup.panel", {
-	position = "popup.usage.claude",
-	width = panel_width,
-	padding_left = 0,
-	padding_right = 0,
-	icon = { drawing = false },
-	label = { string = "Loading quota…", width = panel_width, align = "center", padding_left = 0, padding_right = 0 },
-	background = { drawing = true, color = 0x00000000, height = 80 },
-})
-local footer = sbar.add("item", "usage.popup.footer", {
-	position = "popup.usage.claude",
-	width = panel_width - 36,
-	padding_left = 18,
-	padding_right = 18,
-	update_freq = 1,
-	updates = false,
-	icon = { string = "Local reset times", color = 0xffacb0c0, font = { family = colors.font, size = 11 }, width = 220, padding_left = 0, padding_right = 0 },
-	label = { string = "", color = colors.text, font = { family = colors.font, size = 11 }, width = panel_width - 256, align = "right", padding_left = 0, padding_right = 0 },
-	background = { drawing = true, color = 0x00000000, height = 40 },
-})
-
-local function render_footer()
-	if opened and os.time() >= opened_until then
-		close()
-		return
-	end
-	local deadline
-	for _, provider in ipairs(providers) do
-		local next_attempt = (snapshot[provider.id] or {}).next_attempt or 0
-		deadline = math.min(deadline or next_attempt, next_attempt)
-	end
-	local delay = math.max(0, math.ceil((deadline or 0) - os.time()))
-	local duration = delay < 60 and (delay .. "s") or (math.ceil(delay / 60) .. "m")
-	footer:set({ label = { string = pending and "Checking quota…" or delay > 0 and ("Next check in " .. duration .. "  ↻") or "Refresh quota  ↻" } })
+local function row(left, right, color, size)
+	local name = "usage.popup." .. (#rows + 1)
+	sbar.add("item", name, {
+		position = "popup.usage.claude",
+		width = 480,
+		padding_left = 0,
+		padding_right = 0,
+		icon = { string = left:gsub("%c", " "), color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = right and 344 or 444, max_chars = right and 40 or 52, padding_left = 18, padding_right = 0 },
+		label = { drawing = right ~= nil, string = right or "", color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = 100, align = "right", padding_left = 0, padding_right = 18 },
+		background = { drawing = false },
+	})
+	table.insert(rows, name)
 end
 
 local function render()
+	owner:set({ popup = { drawing = false } })
+	for _, name in ipairs(rows) do
+		sbar.remove(name)
+	end
+	rows = {}
+	row("Remaining subscription quota", nil, colors.text, 13)
 	for _, provider in ipairs(providers) do
 		local data = snapshot[provider.id] or {}
 		local value = remaining(data.weekly)
-		local stale = data.error or (data.updated_at and os.time() - data.updated_at > 1800)
-		items[provider.id]:set({ label = { string = (value and (value .. "%") or "—") .. (stale and " ·" or ""), color = tint(value, provider.color) } })
+		local failure = read_error or data.error
+		local stale = failure or (data.updated_at and os.time() - data.updated_at > 1800)
+		items[provider.id]:set({ label = { string = "W" .. (value and (value .. "%") or "—") .. (stale and " !" or ""), color = tint(value, provider.color) } })
+		row(provider.label .. " · " .. (data.plan or "Subscription"), nil, provider.color, 14)
+		local count = 0
+		for _, window in ipairs(data.windows or {}) do
+			if provider.id ~= "codex" or not window.label:lower():find("codex-spark", 1, true) then
+				local available = remaining(window)
+				row(window.label, available and (available .. (stale and "% saved" or "% left")) or "Unknown", tint(available, provider.color))
+				local reset = window.resets_at
+				row(reset and (reset <= os.time() and "Reset passed · awaiting update" or "Resets " .. os.date("%a %d %b · %H:%M", reset)) or "Reset not supplied", nil, colors.overlay2, 11)
+				count = count + 1
+			end
+		end
+		if count == 0 then
+			row("Quota unavailable", nil, colors.overlay2, 12)
+		end
+		if failure then
+			row(failure, nil, colors.yellow, 11)
+		elseif stale then
+			row("Saved data is over 30 minutes old", nil, colors.yellow, 11)
+		end
+		if data.updated_at then
+			row((stale and "Saved " or "Updated ") .. os.date("%a %d %b · %H:%M", math.floor(data.updated_at)), nil, colors.overlay2, 11)
+		end
+		if data.next_attempt and data.next_attempt > os.time() then
+			row("Next check after " .. os.date("%a %d %b · %H:%M", math.ceil(data.next_attempt)), nil, colors.overlay2, 11)
+		end
 	end
-	render_footer()
+	row("W = weekly · ! = saved data or error · Local times", nil, colors.overlay2, 11)
+	owner:set({ popup = { drawing = opened } })
 end
 
-update = function(cached)
+local function update(cached)
 	if pending then
 		return
 	end
 	pending = true
-	render_footer()
-	image_slot = 1 - image_slot
-	local image_path = cache .. "/panel-" .. image_slot .. ".png"
-	local build = "if [ ! -x " .. quote(binary) .. " ] || [ " .. quote(renderer) .. " -nt " .. quote(binary) .. " ]; then /usr/bin/xcrun swiftc -O " .. quote(renderer) .. " -o " .. quote(binary) .. "; fi"
-	local script = command .. (cached and " --cached" or "") .. " && (" .. build .. ") && " .. quote(binary) .. " " .. quote(cache .. "/quota.json") .. " " .. quote(image_path)
-	sbar.exec(script, function(data, exit_code)
+	sbar.exec(command .. (cached and " --cached" or ""), function(data, exit_code)
 		pending = false
-		if type(data) == "table" then
+		if exit_code == 0 and type(data) == "table" then
 			snapshot = data
-		end
-		if exit_code == 0 then
-			renderer_ready = true
-			panel:set({ label = { drawing = false }, background = { height = 0, image = { string = image_path, scale = 0.5 } } })
-			if opened then
-				watch()
-			end
+			read_error = nil
 		else
-			panel:set({ label = { drawing = true, string = "Quota panel unavailable" } })
+			read_error = "Quota check failed"
 		end
 		render()
+		if cached then
+			update(false)
+		end
 	end)
 end
 
-close = function()
-	opened = false
-	watch_generation = watch_generation + 1
-	footer:set({ updates = false })
-	owner:set({ popup = { drawing = false } })
-end
-watch = function()
-	local generation = watch_generation
-	if not renderer_ready or watching_generation == generation then
-		return
-	end
-	watching_generation = generation
-	sbar.exec(quote(binary) .. " --watch", function(data, exit_code)
-		if watching_generation == generation then
-			watching_generation = nil
-		end
-		if not opened or generation ~= watch_generation then
-			return
-		end
-		if exit_code == 0 and type(data) == "table" then
-			if data.outside or os.time() >= opened_until then
-				close()
-			else
-				watch()
-			end
-		end
-	end)
-end
 for _, provider in ipairs(providers) do
 	items[provider.id]:subscribe("mouse.clicked", function()
+		opened = not opened
 		if opened then
-			close()
-		else
-			opened = true
-			opened_until = os.time() + 15
-			owner:set({ popup = { drawing = true } })
-			footer:set({ updates = true })
+			render()
 			update(false)
-			watch()
 		end
+		owner:set({ popup = { drawing = opened } })
 	end)
 end
-footer:subscribe("routine", render_footer)
-footer:subscribe("mouse.clicked", function()
-	opened_until = os.time() + 15
-	update(false)
-end)
 owner:subscribe("front_app_switched", function()
-	if opened then
-		close()
-	end
+	opened = false
+	owner:set({ popup = { drawing = false } })
 end)
 owner:subscribe({ "routine", "forced", "system_woke" }, function() update(false) end)
 update(true)
