@@ -42,6 +42,8 @@ recurse = false
 submoduleSummary = true
 [submodule "dot_claude"]
 update = merge
+[submodule "dot_codex"]
+update = merge
 
 [merge]
 conflictstyle = diff3

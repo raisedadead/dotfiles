@@ -2,6 +2,7 @@
 
 # Override global gitignore for chezmoi source
 !CLAUDE.md
+!AGENTS.md
 !private_dot_gitconfig.local
 
 # dossier: internal scratchpad theater tooling

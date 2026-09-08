@@ -1,8 +1,18 @@
-# Maintenance context
+# How this setup works
 
-This file holds the structure, the load order, and the gotchas. [README.md](../README.md) holds the install steps. [README.md](README.md) here holds the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [CLAUDE.md](../CLAUDE.md) holds the editing rules. Read versions, revisions, and inventories from the source files or the tools, not from here.
+This guide explains ownership, load order, and constraints that matter when you change the setup. [README.md](../README.md) holds the install steps. [README.md](README.md) here holds the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [AGENTS.md](../AGENTS.md) holds the editing rules. Read versions, revisions, and inventories from the source files or the tools, not from here.
 
-## Deploy loop
+## Contents
+
+- [Deployment and capture](#deployment-and-capture)
+- [Private submodules](#private-submodules)
+- [Terminal stack](#terminal-stack)
+- [Desktop and utilities](#desktop-and-utilities)
+- [Claude Code](#claude-code)
+- [Codex](#codex)
+- [Operator tools](#operator-tools)
+
+## Deployment and capture
 
 Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target>`. Inspect the Git diff. Commit. Nothing captures a target on its own. Settings: [.chezmoi.toml.tmpl](../.chezmoi.toml.tmpl).
 
@@ -13,7 +23,7 @@ Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures e
 | File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                                     | Edit the target and `re-add`. `re-add` re-encrypts  |
 | Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_aws/encrypted_private_config.tmpl.age` | Edit the source. `re-add` skips templates           |
 | Modify script                              | `modify_private_dot_claude.json`                                             | Edit the source. It merges into the existing target |
-| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                               | Change the pinned revision or checksum              |
+| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                            | Change the pinned revision or checksum              |
 | Repository document, `docs/`, `install.sh` | Root files                                                                   | Edit the source. Not deployed                       |
 
 `re-add` does not capture templates, modify targets, externals, or symlink entries. Before an apply, read `chezmoi status` and `chezmoi diff`. Column one `M` is a target edit. Column one `D` is a deleted target. Do not delete the chezmoi state to resolve drift.
@@ -26,25 +36,25 @@ A `re-add` of an exact directory captures new children and removes source entrie
 
 Stage a shell startup change with an isolated destination and state file before a broad apply. A broken `.zshrc` affects every new shell.
 
-### Private submodule
+### Private submodules
 
-`dot_claude/` is a git submodule of `raisedadead/dotfiles-private`, branch `dot_claude`. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
+`dot_claude/` and `dot_codex/` are git submodules of `raisedadead/dotfiles-private`, on branches with the same names. Each has an independent history. The following Claude example also describes the Codex capture and gitlink flow. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
 
 Both repos run `gitleaks` in `.githooks/pre-commit` and exit 1 on a finding. The parent `.githooks/pre-push` resolves the gitlink of each commit in each pushed range. It exits 1 when that submodule commit is on no remote, or when it cannot check it. A clone of the parent cannot check out such a commit.
 
-Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.dot_claude.update = merge`, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
+Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.dot_claude.update = merge` and `submodule.dot_codex.update = merge`, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
 
-Each private directory is one orphan branch with the directory name, mounted with `git submodule add -b <dir>`. A private branch root holds only `.git*`-prefixed files, which chezmoi skips. `dotfiles-privatize.sh` seeds `pre-commit` and `post-commit` from the parent `.githooks/` into a new private branch.
+Each private directory is one orphan branch with the directory name, mounted with `git submodule add -b <dir>`. Private branch repository metadata uses `.git*`-prefixed files, which chezmoi skips. Deployable configuration also lives at the branch root. Codex owner documents under `docs/` are excluded explicitly. `dotfiles-privatize.sh` seeds `pre-commit` and `post-commit` from the parent `.githooks/` into a new private branch.
 
 ## Terminal stack
 
-| Layer       | Source                                                                          | Owns                                                            |
-| ----------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Desktop     | `dot_config/aerospace/`                                                         | Desktop shortcuts, read before the terminal                     |
-| Terminal    | [Ghostty](../dot_config/ghostty/config.ghostty)                                    | Rendering, native selection, scrollback, key rewrites           |
+| Layer       | Source                                                                                | Owns                                                            |
+| ----------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Desktop     | `dot_config/aerospace/`                                                               | Desktop shortcuts, read before the terminal                     |
+| Terminal    | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites           |
 | Multiplexer | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration |
-| Shell       | [zsh](../dot_config/exact_zsh/dot_zshrc)                                           | Emacs editing, completions, history                             |
-| Editor      | [Neovim](../dot_config/nvim/)                                                      | LazyVim defaults plus local overrides                           |
+| Shell       | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                             |
+| Editor      | [Neovim](../dot_config/nvim/)                                                         | LazyVim defaults plus local overrides                           |
 
 A root tmux binding takes its key before zsh or Neovim. Before you assign a key, check `ghostty +list-keybinds`, `tmux list-keys -T root`, and `bindkey`. Ghostty Alt+Left/Right send `M-b`/`M-f`.
 
@@ -117,17 +127,17 @@ AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchy
 
 Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `executable_` marks a program, not a sourced file. `awake` stores PID, deadline, and spec state. Its process check cannot tell a reused PID from another `caffeinate`.
 
-## Agent rig
+## Claude Code
 
-| Source                                                                                                   | Owns                                                          |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [dot_claude/settings.json](../dot_claude/settings.json)                                                     | Hook wiring, plugins, MCP declarations, statuslines, settings |
-| [hooks/executable_hooks.py](../dot_claude/hooks/executable_hooks.py)                                        | Event dispatcher and runtime decisions                        |
-| [hooks/hook_config.json](../dot_claude/hooks/hook_config.json)                                              | Rule and gate configuration                                   |
+| Source                                                                                                         | Owns                                                          |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [dot_claude/settings.json](../dot_claude/settings.json)                                                        | Hook wiring, plugins, MCP declarations, statuslines, settings |
+| [hooks/executable_hooks.py](../dot_claude/hooks/executable_hooks.py)                                           | Event dispatcher and runtime decisions                        |
+| [hooks/hook_config.json](../dot_claude/hooks/hook_config.json)                                                 | Rule and gate configuration                                   |
 | [validators.json](../dot_claude/hooks/validators.json), [formatters.json](../dot_claude/hooks/formatters.json) | Tool registries                                               |
 | [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                                 | Kernel and path-scoped instructions                           |
-| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/)           | Delegation contracts and reusable work                        |
-| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                                   | Memory configuration. The database stays unmanaged            |
+| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/)        | Delegation contracts and reusable work                        |
+| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                                      | Memory configuration. The database stays unmanaged            |
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
@@ -160,6 +170,14 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 ### Statusline
 
 [statusline.sh](../dot_claude/statusline/executable_statusline.sh) supplies `ICON_*` variables to [theme.omp.yaml](../dot_claude/statusline/theme.omp.yaml). Keep the YAML ASCII-clean. File tools lose PUA glyphs. The subagent statusline is a separate jq renderer. Effort reads `.effort.level`, then `CLAUDE_EFFORT`. `session-alert.py` reads the transcript for unresolved downgrade and API alerts. Keep `switchModelsOnFlag: false`. A source setting alone does not prove server behavior.
+
+## Codex
+
+`dot_codex/` owns the global instructions, code-style guide, rig reference, native command rules, hook registration, and Python hook source and tests. Read [RIG.md](../dot_codex/RIG.md) for behavior and limits. The hook uses Homebrew Python 3.11 or later. It does not load Claude files or require Claude plugins.
+
+Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. New managed files need an explicit addition to both lists.
+
+The private [owner plan](../dot_codex/docs/PLAN.md) and its archive preserve audit evidence and deferred decisions. They are source-only documents. A passing hook suite does not prove live interception. Review new hook definitions with `/hooks`, restart the client, and use disposable fixtures for live checks.
 
 ## Operator tools
 

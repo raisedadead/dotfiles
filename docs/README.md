@@ -1,6 +1,8 @@
-# chezmoi commands for this setup
+# Daily use
 
-Source: `~/.dotfiles`. Target: `$HOME`. Private tree: `~/.dotfiles/dot_claude`, a submodule that deploys to `~/.claude`. Edit the target, then capture it. Nothing captures a file on its own.
+The **source** is the configuration stored in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To capture a change means to copy it from the target back into chezmoi source. This happens only when you run a capture command.
+
+Private sources `dot_claude/` and `dot_codex/` deploy to `~/.claude` and `~/.codex`. The Codex source manages named rig files only; its authentication and runtime state stay local.
 
 ## Daily loop
 
@@ -9,7 +11,8 @@ nvim ~/.config/zsh/.zshrc              # 1. edit the target
 chezmoi status                          # 2. see what differs from source
 chezmoi diff ~/.config/zsh/.zshrc       # 3. optional: read the change
 chezmoi re-add ~/.config/zsh/.zshrc     # 4. capture it into source
-git -C ~/.dotfiles commit -am "feat(zsh): ..."
+git -C ~/.dotfiles add dot_config/exact_zsh/dot_zshrc
+git -C ~/.dotfiles commit -m "feat(zsh): ..."
 ```
 
 `chezmoi status` prints two columns. Column one is the change since the last apply. Column two is what `chezmoi apply` would do. `MM` after a target edit is normal. No output means no drift.
@@ -20,12 +23,23 @@ Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures e
 
 ```sh
 chezmoi re-add ~/.claude/settings.json
-git -C ~/.dotfiles/dot_claude commit -am "feat(claude): ..."
+git -C ~/.dotfiles/dot_claude add settings.json
+git -C ~/.dotfiles/dot_claude commit -m "feat(claude): ..."
 ```
 
 The submodule `post-commit` hook commits the gitlink bump in `~/.dotfiles`. Claude Code rewrites `settings.json` at runtime, so `chezmoi status` lists it again after a session change. Capture it, or restore the source with `chezmoi apply ~/.claude/settings.json`.
 
-## Reject a change you did not make
+## A managed Codex file
+
+```sh
+chezmoi re-add ~/.codex/CODE_STYLE.md
+git -C ~/.dotfiles/dot_codex add CODE_STYLE.md
+git -C ~/.dotfiles/dot_codex commit -m "docs(codex): update code style"
+```
+
+Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Git and deployment rules allow only the selected rig files. The private owner plan and audit archive stay in source under `dot_codex/docs/`.
+
+## Restore a target from source
 
 ```sh
 chezmoi diff <target>      # read it
@@ -34,11 +48,11 @@ chezmoi apply <target>     # overwrite the target from source
 
 ## Track a new file
 
-| Case                   | Command                                             | Source entry                                 |
-| ---------------------- | --------------------------------------------------- | -------------------------------------------- |
-| Plain file             | `chezmoi add <target>`                              | `dot_...`                                    |
-| Secret file            | `chezmoi add --encrypt <target>`                    | `encrypted_...age`; mode 600 adds `private_` |
-| File under `~/.claude` | `chezmoi add <target>`, then commit in `dot_claude` | inside the submodule                         |
+| Case             | Command                                                                          | Source entry                                 |
+| ---------------- | -------------------------------------------------------------------------------- | -------------------------------------------- |
+| Plain file       | `chezmoi add <target>`                                                           | `dot_...`                                    |
+| Secret file      | `chezmoi add --encrypt <target>`                                                 | `encrypted_...age`; mode 600 adds `private_` |
+| Private rig file | Add a named target, inspect its source path, then commit in the owning submodule | inside the submodule                         |
 
 `add --encrypt` skips the secrets scan. `re-add` re-encrypts an encrypted file. A plain `add` of a file that looks like a secret exits 1 (`add.secrets = "error"`).
 
@@ -69,17 +83,20 @@ chezmoi cat <target>            # render a target without applying
 chezmoi doctor                  # environment check
 ```
 
-## Git and the submodule
+## Git and private submodules
 
 ```sh
 git -C ~/.dotfiles status                              # lists pending submodule commits
-git -C ~/.dotfiles/dot_claude push origin dot_claude   # the submodule first
+git -C ~/.dotfiles/dot_claude push origin dot_claude   # if Claude changed
+git -C ~/.dotfiles/dot_codex push origin dot_codex     # if Codex changed
 git -C ~/.dotfiles push                                # then the parent
 ```
 
-Hooks: `pre-commit` in both repos runs gitleaks on the staged diff. The submodule `post-commit` bumps the parent gitlink. The parent `pre-push` exits 1 while a recorded submodule commit is on no remote. Details: [ARCHI.md](ARCHI.md#private-submodule).
+Hooks: `pre-commit` in both repos runs gitleaks on the staged diff. The submodule `post-commit` bumps the parent gitlink. The parent `pre-push` exits 1 while a recorded submodule commit is on no remote. Details: [ARCHI.md](ARCHI.md#private-submodules).
 
-Move a directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push`.
+The operator runs pushes. Push changed private branches before the parent.
+
+Move an existing, tracked directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push`.
 
 ## Recover a machine
 
@@ -94,4 +111,4 @@ Follow [README.md](../README.md).
 
 ## Checks
 
-[MAINTENANCE.md](MAINTENANCE.md) holds the probes. Quick set: `chezmoi status`, `~/.bin/chezmoi-claude-doctor.sh`, `gitleaks git . --exit-code 1`.
+[MAINTENANCE.md](MAINTENANCE.md) holds the probes. Start with `chezmoi status` and the checks for the component you changed. Use `gitleaks git . --redact --exit-code 1` for a repository secret scan.

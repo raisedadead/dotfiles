@@ -14,3 +14,17 @@ install.sh
 .claude/skills/**/*.original.md
 .claude/output-styles/*.original.md
 docs
+
+.codex/docs
+.codex/*
+!.codex/AGENTS.md
+!.codex/CODE_STYLE.md
+!.codex/RIG.md
+!.codex/hooks.json
+!.codex/hooks
+!.codex/rules
+.codex/hooks/*
+!.codex/hooks/codex_hooks.py
+!.codex/hooks/test_codex_hooks.py
+.codex/rules/*
+!.codex/rules/safety.rules
