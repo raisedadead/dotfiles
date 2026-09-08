@@ -31,14 +31,14 @@ chezmoi status
 chezmoi diff
 ```
 
-Edit a deployed file, validate it, then capture it. Saves do not apply source files automatically. Use `chezmoi edit --apply <target>` when you explicitly want to edit and apply the source.
+Edit a deployed file, validate it, then capture it. Nothing captures a file on its own: `chezmoi status` lists every edited target until you capture it. Saves do not apply source files automatically. Use `chezmoi edit --apply <target>` when you explicitly want to edit and apply the source.
 
 | Task | Command |
 | --- | --- |
 | Track a new file | `chezmoi add <target>` |
 | Track a secret | `chezmoi add --encrypt <target>` |
 | Capture a managed file | `chezmoi re-add <target>` |
-| Capture a file under `~/.claude` | `chezmoi re-add <target>`, commit in `~/.dotfiles/dot_claude`, then commit the gitlink in `~/.dotfiles` |
+| Capture a file under `~/.claude` | `chezmoi re-add <target>`, then commit in `~/.dotfiles/dot_claude`. Commit the gitlink in `~/.dotfiles` before a push |
 | Move a source directory to the private repository | `~/.bin/dotfiles-privatize.sh <dir> --push` |
 | Inspect a proposed apply | `chezmoi status` and `chezmoi diff` |
 | Deploy source | `chezmoi apply <target>` |

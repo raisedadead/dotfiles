@@ -38,6 +38,8 @@ autoSetupRemote = true
 recurseSubmodules = on-demand
 [submodule]
 recurse = false
+[status]
+submoduleSummary = true
 [submodule "dot_claude"]
 update = merge
 
@@ -45,6 +47,7 @@ update = merge
 conflictstyle = diff3
 [diff]
 colorMoved = default
+submodule = log
 [interactive]
 diffFilter = delta --color-only
 

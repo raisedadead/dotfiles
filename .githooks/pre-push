@@ -1,17 +1,53 @@
 #!/bin/bash
 set -euo pipefail
 
-[ -f .gitmodules ] || exit 0
+zero=0000000000000000000000000000000000000000
+missing=""
+unchecked=""
 
-unpushed=$(git submodule foreach --quiet 'git branch -r --contains HEAD 2>/dev/null | grep -q . || printf "%s\n" "$sm_path"; true')
-
-[ -n "$unpushed" ] || exit 0
-
-printf '\e[0;31mdotfiles ·\e[0m submodule commit is on no remote: %s\n' "$unpushed" >&2
-printf '%s\n' "$unpushed" | while IFS= read -r path; do
-	branch=$(git -C "$path" rev-parse --abbrev-ref HEAD)
-	printf '  git -C %s push origin %s\n' "$path" "$branch" >&2
+while read -r _ local_sha _ remote_sha; do
+	[ -n "$local_sha" ] && [ "$local_sha" != "$zero" ] || continue
+	if [ "$remote_sha" = "$zero" ]; then
+		range=("$local_sha" --not --remotes)
+	else
+		range=("$remote_sha..$local_sha")
+	fi
+	while read -r commit; do
+		modules=$(git show "$commit:.gitmodules" 2>/dev/null) || continue
+		while read -r _ path; do
+			[ -n "$path" ] || continue
+			gitlink=$(git rev-parse -q --verify "$commit:$path" 2>/dev/null) || continue
+			top=$(git -C "$path" rev-parse --show-toplevel 2>/dev/null) || top=""
+			if [ "$top" != "$PWD/$path" ] || ! git -C "$path" cat-file -e "$gitlink^{commit}" 2>/dev/null; then
+				unchecked="$unchecked$path $gitlink"$'\n'
+				continue
+			fi
+			git -C "$path" branch -r --contains "$gitlink" 2>/dev/null | grep -q . && continue
+			missing="$missing$path $gitlink"$'\n'
+		done < <(git config --file <(printf '%s\n' "$modules") --get-regexp '^submodule\..*\.path$' || true)
+	done < <(git rev-list "${range[@]}")
 done
-printf '  a clone of this remote cannot check the submodule out until then\n' >&2
-printf '  run git -C <path> fetch first if you pushed it from another machine\n' >&2
+
+[ -n "$missing$unchecked" ] || exit 0
+
+branch_of() {
+	git config --file .gitmodules --get-regexp '^submodule\..*\.path$' | awk -v p="$1" '$2 == p {sub(/\.path$/, ".branch", $1); print $1}' |
+		xargs -r git config --file .gitmodules --get 2>/dev/null || true
+}
+
+if [ -n "$missing" ]; then
+	printf '\e[0;31mdotfiles ·\e[0m a pushed commit records a submodule commit that is on no remote\n' >&2
+	printf '%s' "$missing" | sort -u | while read -r path gitlink; do
+		printf '  %s → %s\n' "$path" "$gitlink" >&2
+		printf '  git -C %s push origin %s\n' "$path" "$(branch_of "$path")" >&2
+	done
+	printf '  a clone of this remote cannot check the submodule out until then\n' >&2
+fi
+if [ -n "$unchecked" ]; then
+	printf '\e[0;31mdotfiles ·\e[0m cannot check a recorded submodule commit\n' >&2
+	printf '%s' "$unchecked" | sort -u | while read -r path gitlink; do
+		printf '  %s → %s\n' "$path" "$gitlink" >&2
+	done
+	printf '  the submodule is not initialised, or the commit is not fetched: git submodule update --init; git -C <path> fetch\n' >&2
+fi
 exit 1
