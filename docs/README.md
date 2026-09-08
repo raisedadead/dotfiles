@@ -83,7 +83,14 @@ Move a directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push
 
 ## Recover a machine
 
-Follow [README.md](../README.md). In short: the 1Password SSH agent, the age identity from 1Password, `chezmoi init --source ~/.dotfiles git@github.com:raisedadead/dotfiles.git`, the hook paths, then `install.sh`.
+Follow [README.md](../README.md). Notes:
+
+- Keep `--source ~/.dotfiles` on `chezmoi init`; the default source path is different.
+- The age identity is not in Git. Without the 1Password copy, encrypted files cannot be recovered.
+- The submodules clone over SSH, so the 1Password SSH agent must work first: `ssh -T git@github.com`.
+- A clone without submodules needs `git -C ~/.dotfiles submodule update --init`; the doctor fails until then.
+- `install.sh` takes no arguments. `chezmoi-claude-bootstrap.sh` accepts `--check`, `--only`, and `--skip`.
+- Tab completes chezmoi target paths. Ctrl+T continues the path argument; `<C-g>` in that picker includes Git-ignored paths.
 
 ## Checks
 
