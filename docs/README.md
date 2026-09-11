@@ -87,14 +87,12 @@ chezmoi doctor                  # environment check
 
 ```sh
 git -C ~/.dotfiles status                              # lists pending submodule commits
-git -C ~/.dotfiles/dot_claude push origin dot_claude   # if Claude changed
-git -C ~/.dotfiles/dot_codex push origin dot_codex     # if Codex changed
-git -C ~/.dotfiles push                                # then the parent
+home push                                             # pushes submodules, then the parent
 ```
 
 Hooks: `pre-commit` in both repos runs gitleaks on the staged diff. The submodule `post-commit` bumps the parent gitlink. The parent `pre-push` exits 1 while a recorded submodule commit is on no remote. Details: [ARCHI.md](ARCHI.md#private-submodules).
 
-The operator runs pushes. Push changed private branches before the parent.
+The operator runs `home push`. It pushes each initialized submodule recursively, then the parent. A failed submodule push stops the command. `home push` takes no extra arguments. Other `home` commands pass through to chezmoi.
 
 Move an existing, tracked directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push`.
 

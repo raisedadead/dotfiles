@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ "${1-}" != push ]; then
+	exec chezmoi "$@"
+fi
+
+if [ "$#" -ne 1 ]; then
+	printf '%s\n' 'Usage: home push' >&2
+	exit 2
+fi
+
+chezmoi git -- submodule foreach --recursive 'git push' &&
+	chezmoi git -- push

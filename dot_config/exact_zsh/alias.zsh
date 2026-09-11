@@ -9,7 +9,10 @@
 #-----------------------------
 # Chezmoi
 #-----------------------------
-can_haz chezmoi && alias home=chezmoi
+if can_haz chezmoi; then
+  unalias home 2>/dev/null || true
+  compdef _chezmoi home
+fi
 
 #-----------------------------
 # cat
