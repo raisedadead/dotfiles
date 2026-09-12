@@ -214,9 +214,9 @@ Expected: `lastError` is null. MCP connects
 
 ### M10
 
-Compare deployed skill directories and symlinks with `~/.local/state/skills/.skill-lock.json`, source `cmd-*`, and plugin registrations
+Compare deployed skill directories and symlinks with `~/.local/state/skills/.skill-lock.json`, source `cmd-*`, and plugin registrations. Run `/skill-doctor` in a session
 
-Expected: Each skill has an owner. No broken symlink
+Expected: Each skill has an owner. No broken symlink. No never-invoked skill that you want to keep. Unused plugins reviewed
 
 ### M11
 

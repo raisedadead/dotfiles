@@ -141,7 +141,7 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
-SessionStart registers the main marker and runs the doctor. PreToolUse evaluates command and file rules and spawn contracts. PostToolUse formats, validates, queues project checks, and records mutations. SubagentStop records completed review agents. Stop handles failure suppression, review, length, claims, queued validators, and notification. SessionEnd cleans session state. Read the dispatcher for the other events and the error paths.
+SessionStart registers the main marker and sets the session title. The doctor runs beside it as an `asyncRewake` hook at startup and wakes Claude with the issue lines when it finds any. TaskCreated denies a task name outside the `<GROUP><N> <title>` form. PreToolUse evaluates command and file rules and spawn contracts. PostToolUse formats, validates, queues project checks, and records mutations. SubagentStop records completed review agents. Stop handles failure suppression, review, length, claims, queued validators, and notification. SessionEnd cleans session state. Read the dispatcher for the other events and the error paths.
 
 The review request belongs to the operator. Keep that wording in the kernel and in the gate message. A completed review-class agent satisfies the marker. A planned or crashed review does not. A workflow agent needs the recognized reviewer type. A shell-driven edit is outside the mutation recorder, so the agent still owes the review.
 

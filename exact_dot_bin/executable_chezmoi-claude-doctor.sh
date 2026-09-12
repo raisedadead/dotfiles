@@ -21,6 +21,7 @@
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
 #   chezmoi-claude-doctor.sh --quiet   # exit code only
 #   chezmoi-claude-doctor.sh --test    # synthetic round-trip (creates+detects+cleans)
+#   chezmoi-claude-doctor.sh --rewake  # hook mode: issue lines on stderr, exit 2 when any
 
 set -uo pipefail
 
@@ -35,8 +36,9 @@ MODE="run"
 case "${1:-}" in
 --quiet) QUIET=1 ;;
 --test) MODE="test" ;;
+--rewake) MODE="rewake" ;;
 --help | -h)
-	sed -n '2,18p' "$0"
+	sed -n '2,24p' "$0"
 	exit 0
 	;;
 '') ;;
@@ -600,6 +602,21 @@ load_ignored
 if [[ "$MODE" == "test" ]]; then
 	self_test
 	exit $?
+fi
+
+if [[ "$MODE" == "rewake" ]]; then
+	report=$(run_checks 2>&1)
+	rc=$?
+	issues=$(grep -E 'WARN:|ORPHAN:|LINT:' <<<"$report")
+	[[ "$rc" -eq 0 && -z "$issues" ]] && exit 0
+	body=$issues
+	[[ "$rc" -ne 0 ]] && body=$report
+	{
+		printf 'chezmoi-claude-doctor: issues found. Run ~/.bin/chezmoi-claude-doctor.sh for the full report.\n'
+		printf '%s\n' "$body"
+		[[ "$rc" -eq 0 ]] && grep -E '^Total issues' <<<"$report"
+	} >&2
+	exit 2
 fi
 
 run_checks
