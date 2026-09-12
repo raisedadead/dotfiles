@@ -360,23 +360,6 @@ check_plugin_src_drift() {
 	return "$found"
 }
 
-check_rtk_corruption() {
-	local log_file="$CLAUDE_DIR/markers/rtk-corruption.log"
-	if [[ ! -r "$log_file" ]]; then
-		log '  clean'
-		return 0
-	fi
-	local cutoff count
-	cutoff=$(($(date +%s) - 7 * 86400))
-	count=$(awk -F'\t' -v c="$cutoff" '$1 > c { n++ } END { print n + 0 }' "$log_file")
-	if [[ "$count" -gt 0 ]]; then
-		log "  WARN: $count rtk-corruption.log entries in the last 7 days"
-		return "$count"
-	fi
-	log '  clean'
-	return 0
-}
-
 check_cavemem_abi() {
 	local bin="$HOME/.local/share/fnm/aliases/default/bin/cavemem"
 	if [[ ! -x "$bin" ]]; then
@@ -535,31 +518,27 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/7] drift (source vs rendered sha256: settings.json, hooks.py, hook_config.json)'
+	log '[warn 1/6] drift (source vs rendered sha256: settings.json, hooks.py, hook_config.json)'
 	check_drift
 	log ''
 
-	log '[warn 2/7] env-schema (settings.json env{} vs schemastore.org/claude-code-settings.json)'
+	log '[warn 2/6] env-schema (settings.json env{} vs schemastore.org/claude-code-settings.json)'
 	check_env_schema
 	log ''
 
-	log '[warn 3/7] first-party plugin drift (installed sha vs claude-code-plugins source HEAD)'
+	log '[warn 3/6] first-party plugin drift (installed sha vs claude-code-plugins source HEAD)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 4/7] rtk corruption tally (rtk-corruption.log entries, last 7 days)'
-	check_rtk_corruption
-	log ''
-
-	log '[warn 5/7] cavemem ABI probe + embedder (@xenova) presence'
+	log '[warn 4/6] cavemem ABI probe + embedder (@xenova) presence'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 6/7] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 5/6] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 7/7] user agents (cap of 4, 0-spawn-in-30d staleness via subagent-spawns.jsonl)'
+	log '[warn 6/6] user agents (cap of 4, 0-spawn-in-30d staleness via subagent-spawns.jsonl)'
 	check_user_agents
 	log ''
 

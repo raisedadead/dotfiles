@@ -157,7 +157,7 @@ The review request belongs to the operator. Keep that wording in the kernel and 
 - The claim checker rejects on exit 1. A missing plugin, a timeout, or another error passes. It checks claim form, not truth. Resolve its path through the installed-plugin registry.
 - Stop length checks run after the first reply is visible. Keep the kernel and the output style short.
 
-RTK has two command writers: the dispatcher allowlist and native `rtk hook claude`. Keep one owner per command word. Before you add an allowlist word, `rtk hook check '<word> x'` must return `No rewrite`. Keep argv in `rtk proxy`. Read `~/.claude/markers/rtk-corruption.log` for entries.
+Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`.
 
 ### Plugins, MCP, and memory
 

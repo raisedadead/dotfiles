@@ -190,9 +190,9 @@ Expected: Empty, or the drifted paths listed without an apply
 
 ### M6
 
-`rtk hook check 'grep -r x .'`; `rtk gain`; read `.bash_wrap` in `hook_config.json` and the corruption log
+`rtk hook check 'git status'`; `rtk gain`
 
-Expected: Each dispatcher-owned command returns `No rewrite`. Fewer than five corruption entries in seven days
+Expected: `rtk git status`, then a savings report
 
 ### M7
 
