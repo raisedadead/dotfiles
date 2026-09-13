@@ -138,6 +138,7 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 | [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                                 | Kernel and path-scoped instructions                           |
 | [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/)        | Delegation contracts and reusable work                        |
 | [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                                      | Memory configuration. The database stays unmanaged            |
+| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                            | RTK filters and hook exclusions; `git` is excluded            |
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
@@ -158,7 +159,7 @@ The review request belongs to the operator. Keep that wording in the kernel and 
 - `git commit -F` is outside the `-m` command-string checks. Malformed hook input and several error paths return without a denial. Inspect the handler before you claim enforcement.
 - The claim checker rejects on exit 1. A missing plugin, a timeout, or another error passes. It checks claim form, not truth. Resolve its path through the installed-plugin registry.
 
-Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`.
+Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
 ### Plugins, MCP, and memory
 
