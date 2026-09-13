@@ -112,7 +112,7 @@ is_ignored() {
 
 build_status() {
 	[[ -d "$PUB_SOURCE" ]] || return 0
-	chezmoi status --source "$PUB_SOURCE" 2>/dev/null | grep -F "$CLAUDE_DIR" 2>/dev/null | sort -u
+	chezmoi status --source "$PUB_SOURCE" --path-style absolute -- "$CLAUDE_DIR" | sort -u
 }
 
 # Extract top-level paths under $CLAUDE_DIR: <CLAUDE_DIR>/<first-segment>
@@ -126,7 +126,10 @@ is_managed_path() {
 
 check_status() {
 	local out lines
-	out="$(build_status)"
+	if ! out="$(build_status)"; then
+		log '  ERROR: chezmoi status failed'
+		return 1
+	fi
 	if [[ -n "$out" ]]; then
 		log "$out"
 		lines=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
@@ -236,32 +239,6 @@ check_lint() {
 		done < <(find "$skill_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 	fi
 
-	[[ "$found" -eq 0 ]] && log '  clean'
-	return "$found"
-}
-
-check_drift() {
-	local pairs=(
-		"$PRIV_SOURCE/dot_claude/settings.json:$CLAUDE_DIR/settings.json"
-		"$PRIV_SOURCE/dot_claude/hooks/executable_hooks.py:$CLAUDE_DIR/hooks/hooks.py"
-		"$PRIV_SOURCE/dot_claude/hooks/hook_config.json:$CLAUDE_DIR/hooks/hook_config.json"
-	)
-	local pair src tgt src_sha tgt_sha found=0
-	for pair in "${pairs[@]}"; do
-		src="${pair%%:*}"
-		tgt="${pair#*:}"
-		if [[ ! -r "$src" || ! -r "$tgt" ]]; then
-			log "  WARN: $tgt or $src unreadable — drift: run chezmoi apply"
-			found=$((found + 1))
-			continue
-		fi
-		src_sha=$(shasum -a 256 "$src" | awk '{print $1}')
-		tgt_sha=$(shasum -a 256 "$tgt" | awk '{print $1}')
-		if [[ "$src_sha" != "$tgt_sha" ]]; then
-			log "  WARN: $tgt drift: run chezmoi apply"
-			found=$((found + 1))
-		fi
-	done
 	[[ "$found" -eq 0 ]] && log '  clean'
 	return "$found"
 }
@@ -453,23 +430,19 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/5] drift (source vs rendered sha256: settings.json, hooks.py, hook_config.json)'
-	check_drift
-	log ''
-
-	log '[warn 2/5] first-party plugin drift (installed sha vs claude-code-plugins source HEAD)'
+	log '[warn 1/4] first-party plugin drift (installed sha vs claude-code-plugins source HEAD)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 3/5] cavemem ABI probe + embedder (@xenova) presence'
+	log '[warn 2/4] cavemem ABI probe + embedder (@xenova) presence'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 4/5] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 3/4] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 5/5] user agents (cap of 4, 0-spawn-in-30d staleness via subagent-spawns.jsonl)'
+	log '[warn 4/4] user agents (cap of 4, 0-spawn-in-30d staleness via subagent-spawns.jsonl)'
 	check_user_agents
 	log ''
 
