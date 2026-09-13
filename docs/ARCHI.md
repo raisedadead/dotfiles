@@ -189,4 +189,4 @@ The private [owner plan](../dot_codex/docs/PLAN.md) and its archive preserve aud
 | `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands |
 | `rig-change-review`, `code-review`     | Review a rig change, or any other source change                                                                   |
 
-The workflow directory registers scripts through `meta.name`. Operator-only utilities without an automated consumer: `cavemem-seed.ts`, `claude-flag-audit.sh`, `check_for_updates.sh`, `tailscale-mgmt.sh`. `tailscale-mgmt.sh` reads `TAILSCALE_OP_ITEM` from `~/.config/tailscale-mgmt.env`, an encrypted entry.
+The workflow directory registers scripts through `meta.name`. Operator-only utilities without an automated consumer: `cavemem-seed.ts`, `claude-flag-audit.sh`, `tailscale-mgmt.sh`. `tailscale-mgmt.sh` reads `TAILSCALE_OP_ITEM` from `~/.config/tailscale-mgmt.env`, an encrypted entry.
