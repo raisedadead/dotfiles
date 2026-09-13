@@ -2,20 +2,19 @@
 # chezmoi-claude-bootstrap — fresh-machine setup for the Claude Code rig.
 #
 # Idempotent. Run after `chezmoi init --apply` (clone + apply). Closes ARCHI
-# "Bootstrap" section gaps G18–G20: cavemem / agentskills installs are manual
-# sequences otherwise easy to forget.
+# "Bootstrap" section gaps G18–G20: the cavemem install is a manual
+# sequence otherwise easy to forget.
 #
 # Steps (each idempotent — re-runs are safe):
 #   1. cavemem  — npm i -g cavemem on fnm-default node
-#   2. agentskills — replay ~/.local/state/skills/.skill-lock.json via npx skills add
-#   3. MCP reconcile — chezmoi apply ~/.claude.json
-#   4. plugins  — claude plugin install for each enabledPlugins entry
-#   5. verify   — ~/.bin/chezmoi-claude-doctor.sh (5 phases)
+#   2. MCP reconcile — chezmoi apply ~/.claude.json
+#   3. plugins  — claude plugin install for each enabledPlugins entry
+#   4. verify   — ~/.bin/chezmoi-claude-doctor.sh (5 phases)
 #
 # Usage:
 #   chezmoi-claude-bootstrap.sh             # run all steps
 #   chezmoi-claude-bootstrap.sh --check     # report missing pieces, no install
-#   chezmoi-claude-bootstrap.sh --skip NAME # skip step (cavemem|agentskills|mcp|plugins|verify)
+#   chezmoi-claude-bootstrap.sh --skip NAME # skip step (cavemem|mcp|plugins|verify)
 #   chezmoi-claude-bootstrap.sh --only NAME # run only one step
 
 # step_* dispatch and helper functions are invoked indirectly — silence the
@@ -25,7 +24,6 @@
 set -uo pipefail
 
 PRIV_SOURCE="${PRIV_SOURCE:-$HOME/.dotfiles}"
-LOCK="${SKILL_LOCK:-$HOME/.local/state/skills/.skill-lock.json}"
 SETTINGS="${SETTINGS:-$PRIV_SOURCE/dot_claude/settings.json}"
 
 DIM=$'\e[0;90m'
@@ -50,7 +48,7 @@ while [[ $# -gt 0 ]]; do
 		ONLY="$1"
 		;;
 	--help | -h)
-		sed -n '2,19p' "$0"
+		sed -n '2,18p' "$0"
 		exit 0
 		;;
 	*)
@@ -94,49 +92,6 @@ step_cavemem() {
 		return 1
 	}
 	ok "cavemem + @xenova embedder installed"
-}
-
-step_agentskills() {
-	if [[ ! -r "$LOCK" ]]; then
-		warn "skill lock missing at $LOCK — nothing to replay"
-		return 0
-	fi
-	if ! command -v jq >/dev/null 2>&1; then
-		err "jq required to parse $LOCK"
-		return 1
-	fi
-	local sources
-	sources=$(jq -r '(.skills // {}) | to_entries[] | .value.source' "$LOCK" 2>/dev/null)
-	if [[ -z "$sources" ]]; then
-		warn "skill lock has no entries"
-		return 0
-	fi
-
-	local needed=0 src name
-	while IFS= read -r src; do
-		[[ -z "$src" ]] && continue
-		name=$(jq -r --arg s "$src" '(.skills // {}) | to_entries[] | select(.value.source == $s) | .key' "$LOCK" 2>/dev/null | head -1)
-		[[ -z "$name" ]] && continue
-		if [[ -d "$HOME/.agents/skills/$name" ]]; then
-			ok "agentskill '$name' present"
-			continue
-		fi
-		needed=$((needed + 1))
-		if ((CHECK_ONLY)); then
-			warn "agentskill '$name' missing — run 'npx skills add $src'"
-			continue
-		fi
-		if ! command -v npx >/dev/null 2>&1; then
-			err "npx required to install agentskills.io skills"
-			return 1
-		fi
-		p "installing agentskill '$name' from $src…"
-		npx -y skills add "$src" || {
-			err "npx skills add $src failed"
-			return 1
-		}
-	done <<<"$sources"
-	((needed == 0)) && ok "all agentskills present"
 }
 
 step_mcp() {
@@ -222,7 +177,7 @@ main() {
 	printf "%s\n\n" "${RST}"
 
 	local rc=0
-	for step in cavemem agentskills mcp plugins verify; do
+	for step in cavemem mcp plugins verify; do
 		if skipped "$step"; then
 			printf '%sbootstrap ·%s skip %s\n' "$DIM" "$RST" "$step"
 			continue

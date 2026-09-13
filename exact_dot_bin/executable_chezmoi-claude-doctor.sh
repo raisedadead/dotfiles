@@ -15,7 +15,6 @@
 #                           5b. mcpServers entries must declare `type` (stdio/http/sse).
 #                           5c. log `claude --version` informationally (no pin — operator policy 2026-05-15).
 #                           5d. SKILL.md frontmatter `name:` must match parent directory.
-#                           5e. agentskills lock (`~/.local/state/skills/.skill-lock.json`) skills must exist on disk.
 #
 # Usage:
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
@@ -38,7 +37,7 @@ case "${1:-}" in
 --test) MODE="test" ;;
 --rewake) MODE="rewake" ;;
 --help | -h)
-	sed -n '2,24p' "$0"
+	sed -n '2,23p' "$0"
 	exit 0
 	;;
 '') ;;
@@ -184,7 +183,6 @@ check_mcp() {
 # Lint stage: schema-shape checks against ARCHI "Drift detection" gaps. Each sub-check
 check_lint() {
 	local settings="$PRIV_SOURCE/dot_claude/settings.json"
-	local lock="$HOME/.local/state/skills/.skill-lock.json"
 	local found=0
 
 	# 5a + 5b: settings.json shape (need jq + source present)
@@ -236,21 +234,6 @@ check_lint() {
 				found=$((found + 1))
 			fi
 		done < <(find "$skill_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
-	fi
-
-	# 5e: agentskills lock entries must exist on disk
-	if command -v jq >/dev/null 2>&1 && [[ -r "$lock" ]]; then
-		local names n
-		names=$(jq -r '(.skills // {}) | to_entries[] | select(.value.pluginName == null) | .key' "$lock" 2>/dev/null)
-		if [[ -n "$names" ]]; then
-			while IFS= read -r n; do
-				[[ -z "$n" ]] && continue
-				if [[ ! -d "$HOME/.agents/skills/$n" ]]; then
-					log "  LINT: agentskills lock pins '$n' but $HOME/.agents/skills/$n missing (re-run 'npx skills add')"
-					found=$((found + 1))
-				fi
-			done <<<"$names"
-		fi
 	fi
 
 	[[ "$found" -eq 0 ]] && log '  clean'
@@ -512,7 +495,7 @@ run_checks() {
 	rc4=$?
 	log ''
 
-	log '[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name, agentskills lock)'
+	log '[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name)'
 	check_lint
 	rc5=$?
 	log ''
