@@ -1,1 +1,5 @@
 skip-commit-generation-prompt = true
+
+[commit.generation]
+command = "codex exec -m gpt-5.6-luna -c model_reasoning_effort='low' -c system_prompt='' --sandbox=read-only --ephemeral --json - | jq -sr '[.[] | select(.item.type? == \"agent_message\")] | last.item.text'"
+template-append = "Use the form type(scope): subject. Write the subject line only, with no body."
