@@ -19,7 +19,6 @@ whitespace = off
 autocrlf = false
 safecrlf = false
 pager = delta
-attributesFile = ~/.gitattributes
 
 [advice]
 statusuoption = false
