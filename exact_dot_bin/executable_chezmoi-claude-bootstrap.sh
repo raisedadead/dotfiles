@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # chezmoi-claude-bootstrap — fresh-machine setup for the Claude Code rig.
 #
-# Idempotent. Run after `chezmoi init --apply` (clone + apply). Closes ARCHI
-# "Bootstrap" section gaps G18–G20: the cavemem install is a manual
-# sequence otherwise easy to forget.
+# Idempotent. Run after `chezmoi init --apply` (clone + apply). Installs what
+# chezmoi cannot: the cavemem package, the MCP merge, and the plugins.
 #
 # Steps (each idempotent — re-runs are safe):
 #   1. cavemem  — npm i -g cavemem on fnm-default node

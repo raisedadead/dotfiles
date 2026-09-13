@@ -15,6 +15,9 @@
 #                           5b. mcpServers entries must declare `type` (stdio/http/sse).
 #                           5c. log `claude --version` informationally (no pin — operator policy 2026-05-15).
 #                           5d. SKILL.md frontmatter `name:` must match parent directory.
+#                           5e. skill layers: ~/.claude/skills links resolve into ../../.agents/skills/<name>,
+#                               symlink_<name> source entries match a dot_agents/skills/<name>, and no
+#                               common skill is also a CLI-installed copy (skills lock).
 #
 # Usage:
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
@@ -37,7 +40,7 @@ case "${1:-}" in
 --test) MODE="test" ;;
 --rewake) MODE="rewake" ;;
 --help | -h)
-	sed -n '2,23p' "$0"
+	sed -n '2,26p' "$0"
 	exit 0
 	;;
 '') ;;
@@ -126,7 +129,7 @@ is_managed_path() {
 
 check_status() {
 	local out lines
-	if ! out="$(build_status)"; then
+	if ! out="$(build_status 2>/dev/null)"; then
 		log '  ERROR: chezmoi status failed'
 		return 1
 	fi
@@ -221,9 +224,9 @@ check_lint() {
 	fi
 
 	# 5d: skill name:dir frontmatter mismatch
-	local skill_root="$PRIV_SOURCE/dot_claude/skills"
-	if [[ -d "$skill_root" ]]; then
-		local sd skill_md fm_name dir_name
+	local skill_root sd skill_md fm_name dir_name
+	for skill_root in "$PRIV_SOURCE/dot_claude/skills" "$PRIV_SOURCE/dot_agents/skills"; do
+		[[ -d "$skill_root" ]] || continue
 		while IFS= read -r sd; do
 			skill_md="$sd/SKILL.md"
 			[[ -r "$skill_md" ]] || continue
@@ -237,6 +240,45 @@ check_lint() {
 				found=$((found + 1))
 			fi
 		done < <(find "$skill_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+	done
+
+	# 5e: skill layers
+	local link target name entry
+	local common_root="$PRIV_SOURCE/dot_agents/skills"
+	local lock="$HOME/.agents/.skill-lock.json"
+	[[ -n "${XDG_STATE_HOME:-}" ]] && lock="$XDG_STATE_HOME/skills/.skill-lock.json"
+	while IFS= read -r link; do
+		name=$(basename "$link")
+		target=$(readlink "$link")
+		if [[ ! -e "$link" ]]; then
+			log "  LINT: skill link $link is dangling"
+			found=$((found + 1))
+		elif [[ "$target" != "../../.agents/skills/$name" ]]; then
+			log "  LINT: skill link $link targets '$target', not '../../.agents/skills/$name'"
+			found=$((found + 1))
+		fi
+	done < <(find "$CLAUDE_DIR/skills" -mindepth 1 -maxdepth 1 -type l 2>/dev/null)
+	while IFS= read -r entry; do
+		name=$(basename "$entry")
+		name="${name#symlink_}"
+		target=$(<"$entry")
+		if [[ "$target" != "../../.agents/skills/$name" ]]; then
+			log "  LINT: $entry holds '$target', not '../../.agents/skills/$name'"
+			found=$((found + 1))
+		fi
+		if [[ ! -r "$common_root/$name/SKILL.md" ]]; then
+			log "  LINT: $entry has no $common_root/$name/SKILL.md"
+			found=$((found + 1))
+		fi
+	done < <(find "$PRIV_SOURCE/dot_claude/skills" -mindepth 1 -maxdepth 1 -type f -name 'symlink_*' 2>/dev/null)
+	if [[ -d "$common_root" && -r "$lock" ]] && command -v jq >/dev/null 2>&1; then
+		while IFS= read -r sd; do
+			name=$(basename "$sd")
+			if jq -e --arg n "$name" '.skills | has($n)' "$lock" >/dev/null 2>&1; then
+				log "  LINT: common skill '$name' is also a CLI-installed copy ($lock)"
+				found=$((found + 1))
+			fi
+		done < <(find "$common_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 	fi
 
 	[[ "$found" -eq 0 ]] && log '  clean'
@@ -422,7 +464,7 @@ run_checks() {
 	rc4=$?
 	log ''
 
-	log '[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name)'
+	log '[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name, skill layers)'
 	check_lint
 	rc5=$?
 	log ''
