@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # chezmoi-fixture-check — MAINTENANCE C4: apply a synthetic source to an
-# isolated destination and check the deployment boundary. Exits 1 on a failure.
+# isolated destination and check the deployment boundary. Exits 1 on a failed
+# check and 2 on a usage error or a missing chezmoi.
 set -euo pipefail
+umask 022
 
 usage() {
 	printf 'usage: chezmoi-fixture-check.sh [--keep]\n'
@@ -57,10 +59,17 @@ cz() {
 		--persistent-state "$STATE" --cache "$CACHE" "$@"
 }
 mode() {
-	stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+	local m
+	m=$(stat -c '%a' "$1" 2>/dev/null) || m=$(stat -f '%Lp' "$1")
+	printf '%s\n' "$m"
 }
+if command -v sha256sum >/dev/null 2>&1; then
+	HASH=(sha256sum)
+else
+	HASH=(shasum -a 256)
+fi
 snapshot() {
-	(cd "$DST" && find . -type f -exec shasum -a 256 {} + | sort)
+	(cd "$DST" && find . -type f -exec "${HASH[@]}" {} + | sort)
 }
 
 FAILED=0
@@ -83,7 +92,8 @@ fi
 before="$(snapshot)"
 cz apply
 after="$(snapshot)"
-if [[ "$before" == "$after" && -z "$(cz status)" ]]; then
+state="$(cz status)"
+if [[ "$before" == "$after" && -z "$state" ]]; then
 	pass '2 a second apply leaves the state unchanged'
 else
 	fail '2 second apply'
@@ -121,10 +131,11 @@ exact=no
 [[ -f "$SRC/dot_config/shared/c.conf" ]] && plain=yes
 [[ -f "$SRC/dot_config/exact_owned/new.conf" ]] && exact=yes
 if [[ "$(cat "$SRC/dot_config/shared/b.conf")" == "plain edited" &&
-"$(cat "$SRC/dot_config/exact_owned/a.conf")" == "exact edited" ]]; then
-	pass "6 a named capture takes the named files; sibling captured: plain=$plain exact=$exact (review)"
+"$(cat "$SRC/dot_config/exact_owned/a.conf")" == "exact edited" &&
+"$plain" == no && "$exact" == yes ]]; then
+	pass '6 a named capture takes the named files and an exact sibling, not a plain sibling'
 else
-	fail '6 named capture'
+	fail "6 named capture: plain sibling captured=$plain exact sibling captured=$exact"
 fi
 
 printf 'checks failed: %s\n' "$FAILED"
