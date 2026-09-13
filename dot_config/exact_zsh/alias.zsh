@@ -34,7 +34,7 @@ can_haz lazygit && alias g="lazygit"
 #----------------------------
 # Brewfile
 #----------------------------
-can_haz brew && alias bu="cd ~/.config/brewfile && just update && just save && cd -"
+can_haz brew && alias bu="cd ~/.config/brewfile && just update && just dump --all && just commit && just sync && cd -"
 
 #----------------------------
 # Claude
