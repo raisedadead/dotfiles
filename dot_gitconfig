@@ -39,6 +39,8 @@ submoduleSummary = true
 update = merge
 [submodule "dot_codex"]
 update = merge
+[submodule "dot_agents"]
+update = merge
 
 [merge]
 conflictstyle = diff3

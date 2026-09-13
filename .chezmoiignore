@@ -23,6 +23,8 @@ docs
 !.codex/hooks.json
 !.codex/hooks
 !.codex/rules
+!.codex/skills
+.codex/skills/.system
 .codex/hooks/*
 !.codex/hooks/codex_hooks.py
 !.codex/hooks/test_codex_hooks.py
