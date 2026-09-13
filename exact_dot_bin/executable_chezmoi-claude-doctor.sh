@@ -266,56 +266,6 @@ check_drift() {
 	return "$found"
 }
 
-check_env_schema() {
-	local cache="$CLAUDE_DIR/markers/settings-schema.json"
-	local settings="$PRIV_SOURCE/dot_claude/settings.json"
-	mkdir -p "$(dirname "$cache")"
-	if ! command -v jq >/dev/null 2>&1 || [[ ! -r "$settings" ]]; then
-		log '  skip (jq or settings.json missing)'
-		return 0
-	fi
-	local age=999
-	if [[ -r "$cache" ]]; then
-		age=$((($(date +%s) - $(stat -f %m "$cache" 2>/dev/null || stat -c %Y "$cache" 2>/dev/null || echo 0)) / 86400))
-	fi
-	if [[ ! -r "$cache" || "$age" -gt 7 ]]; then
-		if command -v curl >/dev/null 2>&1 && curl -fsSL --max-time 5 -o "${cache}.tmp" "https://json.schemastore.org/claude-code-settings.json" 2>/dev/null; then
-			mv "${cache}.tmp" "$cache"
-		else
-			rm -f "${cache}.tmp"
-		fi
-	fi
-	if [[ ! -r "$cache" ]]; then
-		log '  skip (offline, no cache)'
-		return 0
-	fi
-	local schema_keys settings_keys found=0
-	schema_keys=$(jq -r '(.properties.env.properties // {}) | keys[]' "$cache" 2>/dev/null)
-	settings_keys=$(jq -r '(.env // {}) | keys[]' "$settings" 2>/dev/null)
-	if [[ -z "$settings_keys" ]]; then
-		log '  clean'
-		return 0
-	fi
-	local known_undocumented="CLAUDE_AFK_TIMEOUT_MS
-CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL
-CLAUDE_CODE_ENABLE_TODO_TOOLS
-CLAUDE_CODE_TODO_REMINDER_MODE"
-	local k
-	while IFS= read -r k; do
-		[[ -z "$k" ]] && continue
-		if ! grep -qxF "$k" <<<"$schema_keys"; then
-			if grep -qxF "$k" <<<"$known_undocumented"; then
-				log "  INFO: env.$k undocumented-but-real (schemastore lag, allowlisted)"
-			else
-				log "  WARN: env.$k not in schemastore — check for a typo"
-				found=$((found + 1))
-			fi
-		fi
-	done <<<"$settings_keys"
-	[[ "$found" -eq 0 ]] && log '  clean'
-	return "$found"
-}
-
 check_plugin_src_drift() {
 	local installed="$CLAUDE_DIR/plugins/installed_plugins.json"
 	if ! command -v jq >/dev/null 2>&1 || [[ ! -r "$installed" ]]; then
@@ -503,27 +453,23 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/6] drift (source vs rendered sha256: settings.json, hooks.py, hook_config.json)'
+	log '[warn 1/5] drift (source vs rendered sha256: settings.json, hooks.py, hook_config.json)'
 	check_drift
 	log ''
 
-	log '[warn 2/6] env-schema (settings.json env{} vs schemastore.org/claude-code-settings.json)'
-	check_env_schema
-	log ''
-
-	log '[warn 3/6] first-party plugin drift (installed sha vs claude-code-plugins source HEAD)'
+	log '[warn 2/5] first-party plugin drift (installed sha vs claude-code-plugins source HEAD)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 4/6] cavemem ABI probe + embedder (@xenova) presence'
+	log '[warn 3/5] cavemem ABI probe + embedder (@xenova) presence'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 5/6] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 4/5] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 6/6] user agents (cap of 4, 0-spawn-in-30d staleness via subagent-spawns.jsonl)'
+	log '[warn 5/5] user agents (cap of 4, 0-spawn-in-30d staleness via subagent-spawns.jsonl)'
 	check_user_agents
 	log ''
 
