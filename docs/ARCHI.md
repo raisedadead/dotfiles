@@ -30,7 +30,7 @@ Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures e
 
 `exact_dot_bin`, `dot_config/exact_zsh`, and `dot_config/exact_git` own their target directories. Apply removes an entry there that the source does not hold. Keep generated state elsewhere. Completion data lives in `~/.zfunc`, `~/.zcompdump`, and `$XDG_CACHE_HOME/zsh`. Plugin checkouts live under `$XDG_DATA_HOME/zsh/plugins`.
 
-A `re-add` of an exact directory captures new children and removes source entries for deleted children. A `re-add` of one child file also captures new siblings. Inspect the directory before a capture and the source diff after it. Implementation: [readdcmd.go](https://github.com/twpayne/chezmoi/blob/v2.72.1/internal/cmd/readdcmd.go).
+A `re-add` of an exact directory captures new children and removes source entries for deleted children. Inside an exact directory, a `re-add` of one child file also captures new siblings; outside one it takes the named file only (`chezmoi-fixture-check.sh` check 6 shows both). Inspect the directory before a capture and the source diff after it. Implementation: [readdcmd.go](https://github.com/twpayne/chezmoi/blob/v2.72.1/internal/cmd/readdcmd.go).
 
 [.chezmoiignore](../.chezmoiignore) controls deployment. Git ignores do not. Its paths are relative to `$HOME`, without a leading `/`. An untracked source file deploys. Do not track authentication, sessions, databases, logs, caches, installed plugins, or skill symlinks. Outside an exact directory, a removed source entry leaves the target in place. Remove that orphan yourself.
 
@@ -141,9 +141,11 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
-SessionStart registers the main marker and sets the session title. The doctor runs beside it as an `asyncRewake` hook at startup and wakes Claude with the issue lines when it finds any. TaskCreated denies a task name outside the `<GROUP><N> <title>` form. PreToolUse evaluates command and file rules and spawn contracts. PostToolUse formats, validates, queues project checks, and records mutations. SubagentStop records completed review agents. Stop handles failure suppression, review, length, claims, queued validators, and notification. SessionEnd cleans session state. Read the dispatcher for the other events and the error paths.
+Skills have four kinds. A personal skill is Claude-only and lives in `dot_claude/skills/<name>/`. A common skill serves every agent: it lives in `dot_agents/skills/<name>/` (target `~/.agents/skills/`, which Codex reads natively) and reaches Claude through a `symlink_<name>` entry in `dot_claude/skills/` with the content `../../.agents/skills/<name>`. A third-party skill is installed with `npx skills add <repo> --skill <name> -g -a claude-code -a codex -y`, which writes the copy under `~/.agents/skills/` and the link under `~/.claude/skills/`; both stay unmanaged, and `docs/skills.tsv` lists them for replay. A plugin skill stays in its plugin and is never linked. A Codex-only personal skill lives in `dot_codex/skills/<name>/`; `.chezmoiignore` allows that directory and keeps Codex's own `.system/` tree out. Capture one skill directory at a time: a whole-directory add captures the links and the copies. Doctor lint 5e checks the links and the source entries.
 
-The review request belongs to the operator. Keep that wording in the kernel and in the gate message. A completed review-class agent satisfies the marker. A planned or crashed review does not. A workflow agent needs the recognized reviewer type. A shell-driven edit is outside the mutation recorder, so the agent still owes the review.
+SessionStart registers the main marker and sets the session title. The doctor runs beside it as an `asyncRewake` hook at startup and wakes Claude with the issue lines when it finds any. TaskCreated denies a task name outside the `<GROUP><N> <title>` form. PreToolUse evaluates command and file rules and spawn contracts. PostToolUse formats, validates, queues project checks, and records mutations. SubagentStop clears the mutation ledger when a review agent completes. Stop handles failure suppression, review, claims, queued validators, and notification; a continued Stop skips the gates and the sound but still drains the validator queue. SessionEnd cleans session state. Read the dispatcher for the other events and the error paths.
+
+The review request belongs to the operator. Keep that wording in the kernel and in the gate message. A completed review-class agent clears the ledger of mutated files, so a later edit gates again within the one-block-per-session cap. A planned or crashed review clears nothing. A workflow agent needs the recognized reviewer type. A shell-driven edit is outside the mutation recorder, so the agent still owes the review.
 
 ### Hook gotchas
 
@@ -155,7 +157,6 @@ The review request belongs to the operator. Keep that wording in the kernel and 
 - Test a new hook regex with long adverse input. A nested quantifier can stall the hook. A tool matcher matches the full name, not a substring.
 - `git commit -F` is outside the `-m` command-string checks. Malformed hook input and several error paths return without a denial. Inspect the handler before you claim enforcement.
 - The claim checker rejects on exit 1. A missing plugin, a timeout, or another error passes. It checks claim form, not truth. Resolve its path through the installed-plugin registry.
-- Stop length checks run after the first reply is visible. Keep the kernel and the output style short.
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`.
 
@@ -186,7 +187,8 @@ The private [owner plan](../dot_codex/docs/PLAN.md) and its archive preserve aud
 | `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift                                                                                 |
 | `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                     |
 | `chezmoi-claude-hooks-test.sh --all`   | Runs the source test suites                                                                                       |
+| `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                             |
 | `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands |
-| `rig-change-review`, `code-review`     | Review a rig change, or any other source change                                                                   |
+| `rig-change-review`, `lens-review`     | Review a rig change, or any other source change                                                                   |
 
 The workflow directory registers scripts through `meta.name`. Operator-only utilities without an automated consumer: `cavemem-seed.ts`, `claude-flag-audit.sh`, `tailscale-mgmt.sh`. `tailscale-mgmt.sh` reads `TAILSCALE_OP_ITEM` from `~/.config/tailscale-mgmt.env`, an encrypted entry.

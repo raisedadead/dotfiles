@@ -54,7 +54,7 @@ Run `codex doctor --summary`. Report its failures separately from hook results. 
 
 ### C4: Deployment boundary and live behavior
 
-Render and apply the selected rig files to an isolated destination and state file. Verify that unmanaged state survives and owner documents are absent. Compare installed named files with source. After approved activation, test an allowed patch, a blocked disposable private path, invalid JSON, and corrected JSON in a disposable directory. Record the client and tool path tested.
+Run `~/.bin/chezmoi-fixture-check.sh` (`--keep` retains the fixture). It applies a synthetic source to an isolated destination and state file and checks six boundaries: rendered paths and permissions, an unchanged second apply, survival outside an exact directory, removal inside one, an absent excluded document, and what a named capture takes from its siblings. Then render and apply the selected rig files to an isolated destination and state file. Verify that unmanaged state survives and owner documents are absent. Compare installed named files with source. After approved activation, test an allowed patch, a blocked disposable private path, invalid JSON, and corrected JSON in a disposable directory. Record the client and tool path tested.
 
 ## Terminal stack
 
@@ -214,9 +214,13 @@ Expected: `lastError` is null. MCP connects
 
 ### M10
 
-Compare deployed skill directories and symlinks with source `cmd-*` and plugin registrations. Run `/skill-doctor` in a session
+Run `npx skills check -g`, then `npx skills update -g -y` after a review of the reported changes. Compare `npx skills list -g` with `docs/skills.tsv` (one line per third-party skill, `source<TAB>name`; add the line by hand with each install). Replay a missing skill with the loop below. Run `find ~/.claude/skills -maxdepth 1 -type l ! -lname '../../.agents/skills/*'` and `/skill-doctor` in a session
 
-Expected: Each skill has an owner. No broken symlink. No never-invoked skill that you want to keep. Unused plugins reviewed
+```bash
+while IFS=$'\t' read -r src name; do npx skills add "$src" --skill "$name" -g -a claude-code -a codex -y; done < ~/.dotfiles/docs/skills.tsv
+```
+
+Expected: Each skill is personal, common, third-party, or plugin. The find prints nothing. `npx skills list -g` equals the manifest. No never-invoked skill that you want to keep. Unused plugins reviewed
 
 ### M11
 
