@@ -30,7 +30,7 @@ Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures e
 
 `exact_dot_bin`, `dot_config/exact_zsh`, and `dot_config/exact_git` own their target directories. Apply removes an entry there that the source does not hold. Keep generated state elsewhere. Completion data lives in `~/.zfunc`, `~/.zcompdump`, and `$XDG_CACHE_HOME/zsh`. Plugin checkouts live under `$XDG_DATA_HOME/zsh/plugins`.
 
-A `re-add` of an exact directory captures new children and removes source entries for deleted children. Inside an exact directory, a `re-add` of one child file also captures new siblings; outside one it takes the named file only (`chezmoi-fixture-check.sh` check 6 shows both). Inspect the directory before a capture and the source diff after it. Implementation: [readdcmd.go](https://github.com/twpayne/chezmoi/blob/v2.72.1/internal/cmd/readdcmd.go).
+A `re-add` of an exact directory captures new children and removes source entries for deleted children. Inside an exact directory, a `re-add` of one child file also captures new siblings; outside one it takes the named file only (`chezmoi-fixture-check.sh` check 6 asserts both). Inspect the directory before a capture and the source diff after it. Implementation: [readdcmd.go](https://github.com/twpayne/chezmoi/blob/v2.72.1/internal/cmd/readdcmd.go).
 
 [.chezmoiignore](../.chezmoiignore) controls deployment. Git ignores do not. Its paths are relative to `$HOME`, without a leading `/`. An untracked source file deploys. Do not track authentication, sessions, databases, logs, caches, installed plugins, or skill symlinks. Outside an exact directory, a removed source entry leaves the target in place. Remove that orphan yourself.
 

@@ -7,7 +7,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Change                                 | Checks                                                                  |
 | -------------------------------------- | ----------------------------------------------------------------------- |
 | Documentation                          | Local links, code blocks, preserved constraints, and `git diff --check` |
-| Shared deployment or Git hooks         | S1 and S2 below; M15 and M16 fixture checks                             |
+| Shared deployment or Git hooks         | S1, S2, and C4 below; M15 and M16 fixture checks                        |
 | Codex rig                              | C1 to C4 below                                                          |
 | Claude dispatcher or hook rules        | M1 and M4                                                               |
 | Claude validator or formatter registry | Spec smoke test                                                         |
