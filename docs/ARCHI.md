@@ -1,6 +1,6 @@
 # How this setup works
 
-This guide explains ownership, load order, and constraints that matter when you change the setup. [README.md](../README.md) holds the install steps. [README.md](README.md) here holds the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [AGENTS.md](../AGENTS.md) holds the editing rules. Read versions, revisions, and inventories from the source files or the tools, not from here.
+This guide explains ownership, load order, and constraints that matter when you change the setup. [README.md](../README.md) holds the install steps. [README.md](README.md) here holds the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [AGENTS.md](../AGENTS.md) is the entry point for every coding agent. Read versions, revisions, and inventories from the source files or the tools, not from here.
 
 ## Contents
 
@@ -8,6 +8,7 @@ This guide explains ownership, load order, and constraints that matter when you 
 - [Private submodules](#private-submodules)
 - [Terminal stack](#terminal-stack)
 - [Desktop and utilities](#desktop-and-utilities)
+- [Agent rigs](#agent-rigs)
 - [Claude Code](#claude-code)
 - [Codex](#codex)
 - [Operator tools](#operator-tools)
@@ -127,6 +128,56 @@ AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchy
 
 Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `executable_` marks a program, not a sourced file. `awake` stores PID, deadline, and spec state. Its process check cannot tell a reused PID from another `caffeinate`.
 
+## Agent rigs
+
+Three coding agents run on this machine. Each owns its own global kernel and its own runtime. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
+
+| Rig           | Source        | Target         | Kernel      | Rig reference                 | Checks    |
+| ------------- | ------------- | -------------- | ----------- | ----------------------------- | --------- |
+| Claude Code   | `dot_claude/` | `~/.claude/`   | `CLAUDE.md` | [Claude Code](#claude-code)   | M1 to M16 |
+| Codex         | `dot_codex/`  | `~/.codex/`    | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md) | C1 to C4  |
+| Pi            | Unmanaged     | `~/.pi/agent/` | `AGENTS.md` | `~/DEV/rd/pi-kit`             | None here |
+| Shared skills | `dot_agents/` | `~/.agents/`   | None        | [Skills](#skills)             | S1, S2    |
+
+The operator keeps Pi outside chezmoi. Its source repository is outside this deployment.
+
+### The rig contract
+
+A managed rig satisfies each condition below.
+
+- The source is `dot_<agent>/`, an orphan branch of `raisedadead/dotfiles-private`. See [Private submodules](#private-submodules).
+- The target is `~/.<agent>/`. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out of it. An untracked source file deploys, so a rig that needs a strict boundary uses an allow list instead. Codex is the one rig that does. Do not make the target an exact directory.
+- Authentication, trust records, sessions, databases, logs, caches, generated memories, and installed plugins stay unmanaged.
+- `.githooks/pre-commit` runs gitleaks. `.githooks/post-commit` bumps the parent gitlink.
+- Capture follows [Deployment and capture](#deployment-and-capture): edit the target, validate, `chezmoi re-add <target>`, then commit in the submodule.
+- [MAINTENANCE.md](MAINTENANCE.md) holds a check row for the rig.
+
+### Project instructions
+
+Codex and Pi read `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and does not read `AGENTS.md`, so `CLAUDE.md` is a symlink that holds `AGENTS.md`. This repository uses that layout. The `cmd-agents-md` skill converts another repository. A global kernel is not a project file.
+
+### Skills
+
+| Kind        | Home                                                                 | Reaches                                                                                                                                                 |
+| ----------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Personal    | `dot_claude/skills/<name>/` or `dot_codex/skills/<name>/`            | That agent alone                                                                                                                                        |
+| Common      | `dot_agents/skills/<name>/`                                          | Pi reads `~/.agents/skills/` directly. Claude needs a `symlink_<name>` entry. Codex: read the note below                                                |
+| Third-party | `npx skills add <repo> --skill <name> -g -a claude-code -a codex -y` | An unmanaged copy under `~/.agents/skills/` and an unmanaged link under `~/.claude/skills/`. One line in `docs/skills.tsv`, which lists them for replay |
+| Plugin      | Its plugin                                                           | Never linked                                                                                                                                            |
+
+Install a third-party skill with the command above, never by hand. Run `npx skills add <repo> -l` first to read the skill names. Capture one skill directory at a time: a whole-directory add takes the links and the copies with it.
+
+UNVERIFIED: that Codex loads a skill from `~/.agents/skills` at run time. The Codex binary names that path. `~/.codex/skills/` holds no link to it. Pi resolves the same directory in its doctor.
+
+### How a rig joins
+
+1. Satisfy the rig contract above.
+1. Run `dotfiles-privatize.sh <dir>` to create the submodule branch.
+1. Add the rig's entries to [.chezmoiignore](../.chezmoiignore).
+1. Add a row to the rig table and a section to this document.
+1. Add a check row to [MAINTENANCE.md](MAINTENANCE.md).
+1. Name [AGENTS.md](../AGENTS.md) and this document in the rig's own kernel. Neither managed rig does this yet; each agent must add the line to its own kernel.
+
 ## Claude Code
 
 | Source                                                                                                         | Owns                                                          |
@@ -142,7 +193,7 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
-Skills have four kinds. A personal skill is Claude-only and lives in `dot_claude/skills/<name>/`. A common skill serves every agent: it lives in `dot_agents/skills/<name>/` (target `~/.agents/skills/`, which Codex reads natively) and reaches Claude through a `symlink_<name>` entry in `dot_claude/skills/` with the content `../../.agents/skills/<name>`. A third-party skill is installed with `npx skills add <repo> --skill <name> -g -a claude-code -a codex -y`, which writes the copy under `~/.agents/skills/` and the link under `~/.claude/skills/`; both stay unmanaged, and `docs/skills.tsv` lists them for replay. A plugin skill stays in its plugin and is never linked. A Codex-only personal skill lives in `dot_codex/skills/<name>/`; `.chezmoiignore` allows that directory and keeps Codex's own `.system/` tree out. Capture one skill directory at a time: a whole-directory add captures the links and the copies. Doctor lint 5e checks the links and the source entries.
+[Skills](#skills) holds the four kinds and the shared store. A common skill reaches Claude through a `symlink_<name>` entry in `dot_claude/skills/` with the content `../../.agents/skills/<name>`. Doctor lint 5e checks the links and the source entries.
 
 SessionStart registers the main marker and sets the session title. The doctor runs beside it as an `asyncRewake` hook at startup and wakes Claude with the issue lines when it finds any. TaskCreated denies a task name outside the `<GROUP><N> <title>` form. PreToolUse evaluates command and file rules and spawn contracts. PostToolUse formats, validates, queues project checks, and records mutations. SubagentStop clears the mutation ledger when a review agent completes. Stop handles failure suppression, review, claims, queued validators, and notification; a continued Stop skips the gates and the sound but still drains the validator queue. SessionEnd cleans session state. Read the dispatcher for the other events and the error paths.
 
@@ -167,7 +218,7 @@ First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed 
 
 `settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi diff ~/.claude.json` and connectivity with `claude mcp list`. A duplicate server name at two scopes can split OAuth state.
 
-Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`. If search raises `Maximum call stack size exceeded`, use the timeline and observation tools. Keep native `autoMemoryEnabled` off. A native write creates target drift. The Pi runtime is `~/.pi/agent`. Its source is `~/DEV/rd/pi-kit`, outside this deployment.
+Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`. If search raises `Maximum call stack size exceeded`, use the timeline and observation tools. Keep native `autoMemoryEnabled` off. A native write creates target drift.
 
 ### Statusline
 
@@ -177,7 +228,7 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 
 `dot_codex/` owns the global instructions, code-style guide, rig reference, native command rules, hook registration, and Python hook source and tests. Read [RIG.md](../dot_codex/RIG.md) for behavior and limits. The hook uses Homebrew Python 3.11 or later. It does not load Claude files or require Claude plugins.
 
-Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. New managed files need an explicit addition to both lists.
+Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. New managed files need an explicit addition to both lists. `.chezmoiignore` allows `skills/` and keeps Codex's own `.system/` tree out.
 
 The private [owner plan](../dot_codex/docs/PLAN.md) and its archive preserve audit evidence and deferred decisions. They are source-only documents. A passing hook suite does not prove live interception. Review new hook definitions with `/hooks`, restart the client, and use disposable fixtures for live checks.
 
