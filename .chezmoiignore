@@ -6,6 +6,8 @@ install.sh
 .config/brewfile
 .config/aerospace/scripts/test_*.lua
 **/__pycache__
+.DS_Store
+**/.DS_Store
 .config/zsh/.zcompcache
 .config/zsh/.zsh_sessions
 .bin/test_*.py
