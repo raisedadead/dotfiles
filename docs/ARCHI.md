@@ -170,7 +170,7 @@ Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` 
 
 UNVERIFIED: that Codex loads a skill from `~/.agents/skills` at run time. The Codex binary names that path. `~/.codex/skills/` holds no link to it.
 
-Pi's doctor governs `~/.agents/skills/`. `pi-kit/packages/doctor/src/index.ts:426` compares that directory with the `externalSkills` list in `~/.pi/agent/manifest.json` by exact set equality, and `:454` requires the `npx skills` lock to own each entry. A common skill cannot pass both. It fails the set equality until the manifest lists it, and it then fails the lock check, because chezmoi writes the skill and `npx skills` never records it. The conflict is open with the Pi rig.
+Pi's doctor governs `~/.agents/skills/`. `pi-kit/packages/doctor/src/index.ts:426` compares that directory with the `externalSkills` list in `~/.pi/agent/manifest.json` by exact set equality, and `:454` requires the `npx skills` lock to own each entry. A common skill fails the set equality, because chezmoi writes it and the manifest does not list it. The Pi rig accepts a named chezmoi-managed skill and keeps the lock check for a third-party one. That change is not released, so `ghsa-draft` still fails `skills.external` today.
 
 ## Claude Code
 
