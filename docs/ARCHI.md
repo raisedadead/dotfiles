@@ -33,7 +33,7 @@ Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures e
 
 A `re-add` of an exact directory captures new children and removes source entries for deleted children. Inside an exact directory, a `re-add` of one child file also captures new siblings; outside one it takes the named file only (`chezmoi-fixture-check.sh` check 6 asserts both). Inspect the directory before a capture and the source diff after it. Implementation: [readdcmd.go](https://github.com/twpayne/chezmoi/blob/v2.72.1/internal/cmd/readdcmd.go).
 
-[.chezmoiignore](../.chezmoiignore) controls deployment. Git ignores do not. Its paths are relative to `$HOME`, without a leading `/`. An untracked source file deploys. Do not track authentication, sessions, databases, logs, caches, installed plugins, or skill symlinks. Outside an exact directory, a removed source entry leaves the target in place. Remove that orphan yourself.
+[.chezmoiignore](../.chezmoiignore) controls deployment. Git ignores do not. Its paths are relative to `$HOME`, without a leading `/`. An untracked source file deploys. Do not track authentication, trust records, sessions, databases, logs, caches, generated memories, installed plugins, or skill symlinks. Outside an exact directory, a removed source entry leaves the target in place. Remove that orphan yourself.
 
 Stage a shell startup change with an isolated destination and state file before a broad apply. A broken `.zshrc` affects every new shell.
 
@@ -139,18 +139,17 @@ Three coding agents run on this machine. Each owns its own global kernel and its
 | Pi            | Unmanaged     | `~/.pi/agent/` | `AGENTS.md` | `~/DEV/rd/pi-kit`             | None here |
 | Shared skills | `dot_agents/` | `~/.agents/`   | None        | [Skills](#skills)             | S1, S2    |
 
-The operator keeps Pi outside chezmoi. Its source repository is outside this deployment.
+Pi stays outside chezmoi by the operator's decision. This is intentional, not a gap to fix.
 
 ### The rig contract
 
-A managed rig satisfies each condition below.
+A managed rig is a `dot_<agent>/` submodule that deploys to `~/.<agent>/`. [Private submodules](#private-submodules) holds the branch layout and the hooks. [Deployment and capture](#deployment-and-capture) holds the capture loop and the state that stays unmanaged. Three conditions belong to a rig alone:
 
-- The source is `dot_<agent>/`, an orphan branch of `raisedadead/dotfiles-private`. See [Private submodules](#private-submodules).
-- The target is `~/.<agent>/`. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out of it. An untracked source file deploys, so a rig that needs a strict boundary uses an allow list instead. Codex is the one rig that does. Do not make the target an exact directory.
-- Authentication, trust records, sessions, databases, logs, caches, generated memories, and installed plugins stay unmanaged.
-- `.githooks/pre-commit` runs gitleaks. `.githooks/post-commit` bumps the parent gitlink.
-- Capture follows [Deployment and capture](#deployment-and-capture): edit the target, validate, `chezmoi re-add <target>`, then commit in the submodule.
+- Do not make the target an exact directory. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out, but an untracked source file still deploys. A rig that needs a strict boundary uses an allow list. Codex is the one rig that does.
 - [MAINTENANCE.md](MAINTENANCE.md) holds a check row for the rig.
+- The rig's own kernel names [AGENTS.md](../AGENTS.md) and this document. Each agent adds that line to its own kernel. No rig satisfies this condition yet.
+
+To add a rig: run `dotfiles-privatize.sh <dir>`, add the rig's entries to [.chezmoiignore](../.chezmoiignore), add a row to the table above, and add the check row.
 
 ### Project instructions
 
@@ -167,16 +166,11 @@ Codex and Pi read `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and do
 
 Install a third-party skill with the command above, never by hand. Run `npx skills add <repo> -l` first to read the skill names. Capture one skill directory at a time: a whole-directory add takes the links and the copies with it.
 
-UNVERIFIED: that Codex loads a skill from `~/.agents/skills` at run time. The Codex binary names that path. `~/.codex/skills/` holds no link to it. Pi resolves the same directory in its doctor.
+Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` is advisory and does not (anthropics/claude-code#37683). A `cmd-*` skill sets `disable-model-invocation: false`. Keep the trigger phrases disjoint across skills. Write a path with forward slashes, never with a backslash. The `whetstone` plugin's `skill-smith` lints the rest.
 
-### How a rig joins
+UNVERIFIED: that Codex loads a skill from `~/.agents/skills` at run time. The Codex binary names that path. `~/.codex/skills/` holds no link to it.
 
-1. Satisfy the rig contract above.
-1. Run `dotfiles-privatize.sh <dir>` to create the submodule branch.
-1. Add the rig's entries to [.chezmoiignore](../.chezmoiignore).
-1. Add a row to the rig table and a section to this document.
-1. Add a check row to [MAINTENANCE.md](MAINTENANCE.md).
-1. Name [AGENTS.md](../AGENTS.md) and this document in the rig's own kernel. Neither managed rig does this yet; each agent must add the line to its own kernel.
+Pi's doctor governs `~/.agents/skills/`. `pi-kit/packages/doctor/src/index.ts:426` compares that directory with the `externalSkills` list in `~/.pi/agent/manifest.json` by exact set equality, and `:454` requires the `npx skills` lock to own each entry. A common skill cannot pass both. It fails the set equality until the manifest lists it, and it then fails the lock check, because chezmoi writes the skill and `npx skills` never records it. The conflict is open with the Pi rig.
 
 ## Claude Code
 
