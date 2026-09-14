@@ -147,7 +147,7 @@ A managed rig is a `dot_<agent>/` submodule that deploys to `~/.<agent>/`. [Priv
 
 - Do not make the target an exact directory. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out, but an untracked source file still deploys. A rig that needs a strict boundary uses an allow list. Codex is the one rig that does.
 - [MAINTENANCE.md](MAINTENANCE.md) holds a check row for the rig.
-- The rig's own kernel names this document, which links [AGENTS.md](../AGENTS.md) and the rest. One pointer is enough. Claude Code does this. Codex and Pi do not yet.
+- The rig's own kernel names this document, which links [AGENTS.md](../AGENTS.md) and the rest. One pointer is enough.
 
 To add a rig: run `dotfiles-privatize.sh <dir>`, add the rig's entries to [.chezmoiignore](../.chezmoiignore), add a row to the table above, and add the check row.
 
