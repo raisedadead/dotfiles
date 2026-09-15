@@ -210,7 +210,7 @@ Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy
 
 First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed file from `installPath` in `~/.claude/plugins/installed_plugins.json`. A cache directory name can be a version, not a SHA. A plugin-registered hook runs outside the dispatcher. Disable the plugin in `enabledPlugins` to stop it. Read the manifest and the hook registrations before you enable one.
 
-`settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi diff ~/.claude.json` and connectivity with `claude mcp list`. A duplicate server name at two scopes can split OAuth state.
+`settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi-claude-doctor.sh` check 4, which compares the `mcpServers` key alone. Do not use `chezmoi diff ~/.claude.json`: Claude Code writes other keys at run time, and a whole-file diff reports a false drift. Probe connectivity with `claude mcp list`. A duplicate server name at two scopes can split OAuth state.
 
 Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`. If search raises `Maximum call stack size exceeded`, use the timeline and observation tools. Keep native `autoMemoryEnabled` off. A native write creates target drift.
 

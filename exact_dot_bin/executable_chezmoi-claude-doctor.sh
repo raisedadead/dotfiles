@@ -9,7 +9,7 @@
 #   3. shape filter     — unmanaged top-level config-shape files (*.md/.toml/.yaml/.yml/.kdl/.ini)
 #                         (catches hand-edited orphan docs like the original RTK.md case).
 #   4. mcp drift        — settings.json.mcpServers (canonical) vs ~/.claude.json (runtime),
-#                         delegated to `chezmoi diff ~/.claude.json`.
+#                         compared with jq on .mcpServers, plus a 0600 mode check.
 #   5. lint             — schema-shape checks against ARCHI "Drift detection" gaps:
 #                           5a. enabledPlugins values must be boolean (array form silently disables in CC 2.1.x).
 #                           5b. mcpServers entries must declare `type` (stdio/http/sse).
@@ -171,19 +171,47 @@ check_shape() {
 }
 
 check_mcp() {
-	local out
-	if ! command -v chezmoi >/dev/null 2>&1; then
-		log '  skip (chezmoi missing)'
+	local settings="$PRIV_SOURCE/dot_claude/settings.json"
+	local runtime="$HOME/.claude.json"
+	local canonical live mode out found=0
+	if ! command -v jq >/dev/null 2>&1; then
+		log '  skip (jq missing)'
 		return 0
 	fi
-	out=$(chezmoi diff "$HOME/.claude.json" 2>/dev/null) || true
-	if [[ -z "$out" ]]; then
-		log '  clean'
+	if [[ ! -r "$settings" ]]; then
+		log '  skip (dot_claude/settings.json unreadable)'
 		return 0
 	fi
-	log '  DRIFT between dot_claude/settings.json and ~/.claude.json'
+	if [[ ! -r "$runtime" ]]; then
+		log '  DRIFT: ~/.claude.json is absent or unreadable'
+		return 1
+	fi
+	if ! jq empty "$settings" 2>/dev/null; then
+		log '  LINT: dot_claude/settings.json is not valid JSON'
+		return 1
+	fi
+	mode=$(stat -f '%Lp' "$runtime" 2>/dev/null)
+	if [[ "$mode" != 600 ]]; then
+		log "  DRIFT: ~/.claude.json mode is ${mode:-unknown}, not 600"
+		found=$((found + 1))
+	fi
+	if ! canonical=$(jq -Se '.mcpServers' "$settings" 2>/dev/null); then
+		log '  skip (settings.json declares no mcpServers; apply is a passthrough)'
+		return "$found"
+	fi
+	if ! live=$(jq -S '.mcpServers // {}' "$runtime" 2>/dev/null); then
+		log '  LINT: ~/.claude.json is not valid JSON'
+		return $((found + 1))
+	fi
+	if [[ "$canonical" == "$live" ]]; then
+		[[ "$found" -eq 0 ]] && log '  clean'
+		return "$found"
+	fi
+	log '  DRIFT in mcpServers (dot_claude/settings.json is canonical)'
+	out=$(diff -u --label '.claude.json' --label 'settings.json' \
+		<(printf '%s\n' "$live") <(printf '%s\n' "$canonical"))
 	printf '%s\n' "$out" | sed 's/^/  /' | while IFS= read -r line; do log "$line"; done
-	return 1
+	return $((found + 1))
 }
 
 # Lint stage: schema-shape checks against ARCHI "Drift detection" gaps. Each sub-check
