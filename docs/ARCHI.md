@@ -164,6 +164,8 @@ Codex and Pi read `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and do
 | Third-party | `npx skills add <repo> --skill <name> -g -a claude-code -a codex -y` | An unmanaged copy under `~/.agents/skills/` and an unmanaged link under `~/.claude/skills/`. One line in `docs/skills.tsv`, which lists them for replay |
 | Plugin      | Its plugin                                                           | Never linked                                                                                                                                            |
 
+A third-party description is written as if that skill were the only one installed, so the descriptions collide. [SKILLS.md](SKILLS.md) holds the order in which skills compose. The Claude kernel holds the precedence that breaks a tie.
+
 Install a third-party skill with the command above, never by hand. Run `npx skills add <repo> -l` first to read the skill names. Capture one skill directory at a time: a whole-directory add takes the links and the copies with it.
 
 Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` is advisory and does not (anthropics/claude-code#37683). A `cmd-*` skill sets `disable-model-invocation: false`. Keep the trigger phrases disjoint across skills. Write a path with forward slashes, never with a backslash. The `whetstone` plugin's `skill-smith` lints the rest.
