@@ -18,7 +18,7 @@ local mode = sbar.add("item", "mode_indicator", {
 		color = colors.crust,
 		padding_right = 9,
 	},
-	background = { color = colors.red, corner_radius = 6, height = 24 },
+	background = { color = colors.red, corner_radius = 5, height = 20 },
 })
 
 mode:subscribe("aerospace_mode_change", function(env)

@@ -17,12 +17,12 @@ on-mode-changed = [
 
 
 [gaps]
-inner.horizontal = 10
-inner.vertical = 10
-outer.left = 20
-outer.right = 20
-outer.top = 15
-outer.bottom = 60
+inner.horizontal = 8
+inner.vertical = 8
+outer.left = 8
+outer.right = 8
+outer.top = 8
+outer.bottom = 38
 
 # Key tiers:
 #

@@ -79,7 +79,7 @@ for index, sid in ipairs(workspaces) do
 			padding_left = 0,
 			padding_right = 9,
 		},
-		background = { color = colors.mauve, corner_radius = 6, height = 24, drawing = "off" },
+		background = { color = colors.mauve, corner_radius = 5, height = 20, drawing = "off" },
 		click_script = aerospace .. " workspace " .. sid,
 	})
 	spaces[sid] = space

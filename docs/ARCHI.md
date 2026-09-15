@@ -126,6 +126,10 @@ Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config
 
 AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchybar/lua/items/spaces.lua`, and the bracket in `sketchybarrc`. Update the three together. Read layout keys and triggers from the AeroSpace source. An unmatched window follows the floating catch-all rule. A GUI-launched rule script needs absolute executable paths. `lockf` serializes layout changes. Keep scalar horizontal gaps in the TOML.
 
+For a bottom SketchyBar with `y_offset = 0` and an auto-hidden Dock, set AeroSpace `outer.bottom` to the bar height plus the window gap: `30 + 8 = 38`. AeroSpace already excludes the native menu bar from its work area; `outer.top = 8` adds space below it. Gaps affect tiled windows.
+
+The bar's `height` in `sketchybarrc` sets its full area. The visible panels use `background.height` and `corner_radius` in `sketchybarrc`, `lua/items/front_app.lua`, and `lua/items/widgets.lua`; keep those three in sync. Workspace and mode highlights have their own smaller backgrounds in `spaces.lua` and `mode.lua`. Horizontal panel placement uses the bar's `margin` plus `padding_left` and `padding_right`. After a height or offset change, query `sketchybar --query bar` and check the screen geometry before adjusting AeroSpace's bottom gap. [SketchyBar properties](https://felixkratz.github.io/SketchyBar/config/bar) describe these controls.
+
 Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `executable_` marks a program, not a sourced file. `awake` stores PID, deadline, and spec state. Its process check cannot tell a reused PID from another `caffeinate`.
 
 ## Agent rigs
