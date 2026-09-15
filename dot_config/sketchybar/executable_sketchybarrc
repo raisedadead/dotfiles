@@ -17,7 +17,7 @@ sbar.bar({
 	padding_left = 8,
 	padding_right = 8,
 	corner_radius = 0,
-	y_offset = 0,
+	y_offset = 3,
 	margin = 0,
 	topmost = "window",
 	sticky = "on",
