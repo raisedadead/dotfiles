@@ -121,7 +121,8 @@ backspace = ['close-all-windows-but-current', 'mode main']
 [[on-window-detected]]
 if = '''
 test %{app-bundle-id} = com.sindresorhus.Dato \
-  || test %{app-bundle-id} = com.apple.ScreenContinuity
+  || test %{app-bundle-id} = com.apple.ScreenContinuity \
+  || test %{app-bundle-id} = com.surteesstudios.Bartender
 '''
 run = 'layout floating'
 
