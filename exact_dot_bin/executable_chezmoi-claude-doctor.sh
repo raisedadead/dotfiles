@@ -358,7 +358,7 @@ check_cavemem_abi() {
 	out=$(printf '%s' '{"session_id":"doctor","tool_name":"Read","cwd":"/tmp"}' |
 		timeout 5 "$node_bin" "$bin" hook run post-tool-use --ide claude-code 2>&1) || rc=$?
 	if [[ "$rc" -ne 0 || "$out" != *'"ok":true'* ]]; then
-		log '  WARN: cavemem hook failing - node ABI drift? run cavemem-repair workflow or rebuild better-sqlite3'
+		log '  WARN: cavemem hook failing - run chezmoi-claude-bootstrap.sh --only cavemem or the cavemem-repair workflow'
 		return 1
 	fi
 	local bsql="$HOME/.local/share/fnm/aliases/default/lib/node_modules/cavemem/node_modules/better-sqlite3/package.json"

@@ -116,6 +116,7 @@ step_cavemem() {
 	if ((CHECK_ONLY)); then
 		[[ -z "$bin" ]] && warn "cavemem missing — run '--only cavemem'"
 		[[ -n "$bin" && ! -d "$xenova" ]] && warn "@xenova/transformers missing (undeclared cavemem dep) — run '--only cavemem'"
+		[[ -n "$bin" && -d "$xenova" ]] && warn "cavemem present but 'cavemem --version' fails — run '--only cavemem'"
 		return 1
 	fi
 	if ! command -v npm >/dev/null 2>&1; then
@@ -123,8 +124,12 @@ step_cavemem() {
 		return 1
 	fi
 	p "installing cavemem + @xenova/transformers via npm…"
-	npm i -g cavemem @xenova/transformers --allow-scripts=better-sqlite3,sharp,protobufjs || {
-		err "npm i -g cavemem @xenova/transformers failed"
+	npm i -g --ignore-scripts cavemem || {
+		err "npm i -g cavemem failed"
+		return 1
+	}
+	npm i -g @xenova/transformers --allow-scripts=sharp,protobufjs || {
+		err "npm i -g @xenova/transformers failed"
 		return 1
 	}
 	cavemem_pin_bsql || {
