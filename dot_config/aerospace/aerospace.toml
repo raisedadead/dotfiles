@@ -115,57 +115,29 @@ backspace = ['close-all-windows-but-current', 'mode main']
 # only apps that live on a workspace all day are tiled there.
 #
 # AeroSpace runs the FIRST matching rule and stops, so order is load-bearing.
+# `~=` is a case-insensitive regex substring on the bundle id.
 # Any new "app X belongs on workspace N" rule must go ABOVE the catch-all.
 
 # Float, but keep their own position — these place themselves deliberately.
 [[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.sindresorhus.Dato \
-  || test %{app-bundle-id} = com.apple.ScreenContinuity \
-  || test %{app-bundle-id} = com.surteesstudios.Bartender
-'''
+if = 'test %{app-bundle-id} ~= "dato|screencontinuity|bartender"'
 run = 'layout floating'
 
 [[on-window-detected]]
-if = '''
-test %{app-bundle-id} = net.imput.helium \
-  || test %{app-bundle-id} = com.apple.Safari \
-  || test %{app-bundle-id} = com.google.Chrome \
-  || test %{app-bundle-id} = com.brave.Browser.origin \
-  || test %{app-bundle-id} = com.brave.Browser \
-  || test %{app-bundle-id} = org.mozilla.firefox
-'''
-run = [
-  'move-node-to-workspace 1',
-]
+if = 'test %{app-bundle-id} ~= "helium|safari|chrome|brave|firefox"'
+run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.mitchellh.ghostty \
-  || test %{app-bundle-id} = com.microsoft.VSCode
-'''
-run = [
-  'move-node-to-workspace 2',
-]
+if = 'test %{app-bundle-id} ~= "ghostty|vscode"'
+run = 'move-node-to-workspace 2'
 
 [[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.anthropic.claudefordesktop \
-  || test %{app-bundle-id} = com.openai.codex
-'''
-run = [
-  'move-node-to-workspace 3',
-]
+if = 'test %{app-bundle-id} ~= "claudefordesktop|openai.codex"'
+run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
-if = '''
-test %{app-bundle-id} = com.readdle.SparkDesktop \
-  || test %{app-bundle-id} = com.spotify.client \
-  || test %{app-bundle-id} = net.whatsapp.WhatsApp
-'''
-run = [
-  'move-node-to-workspace 4',
-]
+if = 'test %{app-bundle-id} ~= "sparkdesktop|spotify|whatsapp"'
+run = 'move-node-to-workspace 4'
 
 # Everything else: float, centered, on whichever workspace is already focused.
 [[on-window-detected]]
