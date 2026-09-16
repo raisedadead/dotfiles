@@ -28,14 +28,24 @@ local function tint(value, fallback)
 	return fallback
 end
 
-for _, provider in ipairs(providers) do
+for index, provider in ipairs(providers) do
 	local name = "usage." .. provider.id
+	local rightmost = index == 1
 	items[provider.id] = sbar.add("item", name, {
 		position = "right",
-		padding_left = 4,
-		padding_right = 4,
-		icon = { string = icons.app(provider.label), color = provider.color, font = { family = colors.app_font, size = 16 } },
-		label = { string = "—", font = { size = 12, features = "tnum" } },
+		padding_left = rightmost and 0 or 4,
+		padding_right = rightmost and 4 or 0,
+		icon = {
+			string = icons.app(provider.label),
+			color = provider.color,
+			font = { family = colors.app_font, size = 17 },
+			padding_left = rightmost and 4 or 10,
+		},
+		label = {
+			string = "—",
+			font = { size = 13, features = "tnum" },
+			padding_right = rightmost and 10 or 4,
+		},
 	})
 	table.insert(names, name)
 end

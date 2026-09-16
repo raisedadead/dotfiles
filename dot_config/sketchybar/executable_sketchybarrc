@@ -11,11 +11,11 @@ sbar.hotload(false)
 
 sbar.bar({
 	position = "bottom",
-	height = 30,
+	height = 34,
 	blur_radius = 20,
 	color = colors.bar,
-	padding_left = 8,
-	padding_right = 8,
+	padding_left = 10,
+	padding_right = 10,
 	corner_radius = 0,
 	y_offset = 3,
 	margin = 0,
@@ -27,20 +27,20 @@ sbar.bar({
 sbar.default({
 	updates = "when_shown",
 	icon = {
-		font = { family = colors.icon_font, style = "Regular", size = 15.0 },
+		font = { family = colors.icon_font, style = "Regular", size = 16.0 },
 		color = colors.text,
-		padding_left = 8,
-		padding_right = 4,
+		padding_left = 10,
+		padding_right = 5,
 	},
 	label = {
-		font = { family = colors.font, style = "Regular", size = 13.0 },
+		font = { family = colors.font, style = "Regular", size = 14.0 },
 		color = colors.text,
-		padding_left = 4,
-		padding_right = 8,
+		padding_left = 5,
+		padding_right = 10,
 	},
-	background = { height = 20, corner_radius = 5 },
-	padding_left = 3,
-	padding_right = 3,
+	background = { height = 22, corner_radius = 5 },
+	padding_left = 4,
+	padding_right = 4,
 })
 
 sbar.add("event", "aerospace_workspace_change")
@@ -66,7 +66,7 @@ sbar.add("bracket", "left_island", {
 	background = {
 		color = colors.island,
 		corner_radius = 8,
-		height = 24,
+		height = 28,
 		border_width = 1,
 		border_color = colors.island_border,
 	},

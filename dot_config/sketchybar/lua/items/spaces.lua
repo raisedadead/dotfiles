@@ -52,10 +52,10 @@ for index, sid in ipairs(workspaces) do
 		separators[sid] = sbar.add("item", "space.separator." .. sid, {
 			position = "left",
 			drawing = "off",
-			width = 12,
+			width = 14,
 			icon = {
 				string = "│",
-				font = { family = colors.font, size = 12 },
+				font = { family = colors.font, size = 13 },
 				color = colors.surface2,
 				padding_left = 3,
 				padding_right = 3,
@@ -68,18 +68,18 @@ for index, sid in ipairs(workspaces) do
 		drawing = "off",
 		icon = {
 			string = sid,
-			font = { family = colors.font, style = "Bold", size = 14.0 },
+			font = { family = colors.font, style = "Bold", size = 15.0 },
 			color = colors.overlay2,
-			padding_left = 9,
-			padding_right = 4,
+			padding_left = 10,
+			padding_right = 5,
 		},
 		label = {
-			font = { family = colors.app_font, style = "Regular", size = 14.0 },
+			font = { family = colors.app_font, style = "Regular", size = 15.0 },
 			color = colors.overlay2,
 			padding_left = 0,
-			padding_right = 9,
+			padding_right = 10,
 		},
-		background = { color = colors.mauve, corner_radius = 5, height = 20, drawing = "off" },
+		background = { color = colors.mauve, corner_radius = 5, height = 22, drawing = "off" },
 		click_script = aerospace .. " workspace " .. sid,
 	})
 	spaces[sid] = space
