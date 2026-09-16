@@ -124,7 +124,7 @@ Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config
 
 ## Desktop and utilities
 
-AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchybar/lua/items/spaces.lua`, and the bracket in `sketchybarrc`. Update the three together. Read layout keys and triggers from the AeroSpace source. An unmatched window follows the floating catch-all rule. A GUI-launched rule script needs absolute executable paths. `lockf` serializes layout changes. Keep scalar horizontal gaps in the TOML.
+AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchybar/lua/items/spaces.lua`, and the bracket in `sketchybarrc`. Update the three together. Read layout keys and triggers from the AeroSpace source. An unmatched window follows the floating catch-all rule. A GUI-launched rule script needs absolute executable paths. `lockf` serializes layout changes. Keep `outer.bottom` scalar in the TOML, because `aeroplace` reads it with a line match.
 
 For a bottom SketchyBar and an auto-hidden Dock, set AeroSpace `outer.bottom` to the bar height plus its measured bottom inset and the window gap: `30 + 6 + 8 = 44`. AeroSpace already excludes the native menu bar from its work area; `outer.top = 8` adds space below it. Gaps affect tiled windows.
 

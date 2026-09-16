@@ -78,29 +78,20 @@ ctrl-alt-leftSquareBracket = 'workspace prev'
 ctrl-alt-rightSquareBracket = 'workspace next'
 
 # Custom layouts run only on demand, with the focused window as primary.
-ctrl-alt-w = 'exec-and-forget /opt/homebrew/bin/lua "${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/scripts/layout-run.lua" 50'
-ctrl-alt-e = 'exec-and-forget /opt/homebrew/bin/lua "${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/scripts/layout-run.lua" 60'
+ctrl-alt-w = 'exec-and-forget /opt/homebrew/bin/lua "${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/scripts/layout-run.lua"'
 ctrl-alt-enter = 'fullscreen'
 ctrl-alt-slash = 'layout tiles horizontal vertical'
-ctrl-alt-comma = 'layout accordion horizontal vertical'
 # Windows float by default (see the rules below); this is the escape hatch that
 # pulls one into the tiling tree, and back out again.
 ctrl-alt-f = 'layout floating tiling'
-# Reset: pull the focused window back into the tiling tree, then collapse that
-# tree to a flat row. The first step exists because windows float by default
-# here (catch-all rule below) and flatten-workspace-tree only touches the tiling
-# tree — on a floating window the bare reset is a silent no-op.
-# Scope caveat: `layout tiling` acts on the FOCUSED window only. AeroSpace has no
-# all-windows-in-workspace form (`--root` rejects tiling/floating), so a
-# workspace of floaters still needs one reset per window.
 ctrl-alt-shift-r = ['layout tiling', 'flatten-workspace-tree']
 ctrl-alt-c = [
   'layout floating',
-  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
+  'exec-and-forget ~/.local/bin/aeroplace center',
 ]
 ctrl-alt-r = [
   'layout floating',
-  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh cycle',
+  'exec-and-forget ~/.local/bin/aeroplace cycle',
 ]
 ctrl-alt-minus = 'resize smart -50'
 ctrl-alt-equal = 'resize smart +50'
@@ -124,7 +115,7 @@ if = 'test %{app-bundle-id} ~= "dato|screencontinuity|bartender"'
 run = 'layout floating'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} ~= "helium|safari|chrome|brave|firefox"'
+if = 'test %{app-bundle-id} ~= "sparkdesktop|spotify|whatsapp"'
 run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
@@ -132,11 +123,11 @@ if = 'test %{app-bundle-id} ~= "ghostty|vscode"'
 run = 'move-node-to-workspace 2'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} ~= "claudefordesktop|openai.codex"'
+if = 'test %{app-bundle-id} ~= "helium|safari|chrome|brave|firefox"'
 run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} ~= "sparkdesktop|spotify|whatsapp"'
+if = 'test %{app-bundle-id} ~= "claudefordesktop|openai.codex|open-design"'
 run = 'move-node-to-workspace 4'
 
 # Everything else: float, centered, on whichever workspace is already focused.
@@ -144,5 +135,5 @@ run = 'move-node-to-workspace 4'
 if = 'true'
 run = [
   'layout floating',
-  'exec-and-forget ~/.config/aerospace/scripts/place-window.sh center',
+  'exec-and-forget ~/.local/bin/aeroplace center',
 ]

@@ -69,22 +69,11 @@ local function run(arguments, fixture)
         elseif command:find('list-workspaces --focused', 1, true) then
           output = fixture.workspace or '1'
         elseif command:find('list-windows --workspace', 1, true) then
-          output = fixture.rows or '11|1|h_tiles\n22|1|floating\n33|1|v_accordion'
-        elseif command:find('config --config-path', 1, true) then
-          output = '/fixture/aerospace.toml'
-        elseif command:match('^/usr/bin/osascript ') then
-          output = '1000'
+          output = fixture.rows or '11|h_tiles\n22|floating\n33|v_accordion'
         else
           error('Unexpected read: ' .. command)
         end
         return {read = function() return output end, close = function() return true end}
-      end,
-      open = function(path)
-        assert(path == '/fixture/aerospace.toml', 'Unexpected file read')
-        return {
-          read = function() return '[gaps]\nouter.left = 15\nouter.right = 15\ninner.horizontal = 10\n' end,
-          close = function() end,
-        }
       end,
     }
     env.dofile = function(path) return assert(loadfile(path, 't', env))() end
@@ -100,55 +89,68 @@ local function test(name, body)
   print('PASS: ' .. name)
 end
 
-test('default is rejected before querying or changing window state', function()
-  local ok, failure, state = run({'default'})
-  assert(not ok and tostring(failure):find('Usage:', 1, true), 'default must fail with usage')
-  assert(#state.reads == 0 and #state.actions == 0 and state.locks == 0)
-end)
+local function plan_of(state)
+  assert(#state.actions == 1, 'The whole plan must travel as one eval')
+  local argv = words(state.actions[1])
+  assert(argv[1] == 'eval', state.actions[1])
+  return argv[2]
+end
 
-test('50:50 includes floating windows and keeps the primary captured before locking', function()
-  local ok, failure, state = run({'50'}, {focus_after_lock = '33|2'})
+test('the plan travels as one eval and balances last', function()
+  local ok, failure, state = run({}, {focus_after_lock = '33|2'})
   assert(ok, failure)
   assert(state.locks == 1)
-  assert(state.actions[#state.actions] == 'resize width 485 --window-id 22')
-  local actions = table.concat(state.actions, '\n')
-  assert(actions:find('layout --window-id 22 tiling', 1, true), 'Floating primary was excluded')
-  assert(not actions:find('999', 1, true), 'Stale callback window was used')
+  local plan = plan_of(state)
+  assert(plan:match("balance%-sizes %-%-workspace '1'$"), plan)
+  assert(plan:find('layout --window-id 22 tiling', 1, true), 'Floating primary was excluded')
+  assert(plan:find('move left --window-id 22', 1, true), 'Focused window was not made primary')
+  assert(not plan:find('999', 1, true), 'Stale callback window was used')
 end)
 
-test('60:40 sizes the focused primary using the monitor and configured gaps', function()
-  local ok, failure, state = run({'60'})
+test('the secondary column is tiled rather than stacked', function()
+  local ok, failure, state = run({})
   assert(ok, failure)
-  assert(state.actions[#state.actions] == 'resize width 581 --window-id 22')
+  assert(plan_of(state):find('--root v_tiles', 1, true))
 end)
 
 test('a primary closed while waiting for the lock falls back to a present window', function()
-  local ok, failure, state = run({'50'}, {rows = '11|1|h_tiles\n33|1|h_tiles'})
+  local ok, failure, state = run({}, {rows = '11|h_tiles\n33|h_tiles'})
   assert(ok, failure)
-  assert(state.actions[#state.actions] == 'resize width 485 --window-id 11')
+  assert(plan_of(state):find('move left --window-id 11', 1, true))
 end)
 
 test('an empty workspace does not issue window commands', function()
-  local ok, failure, state = run({'50'}, {focus = '', rows = ''})
+  local ok, failure, state = run({}, {focus = '', rows = ''})
   assert(ok, failure)
   assert(state.locks == 1 and #state.actions == 0)
 end)
 
 test('a failed lock prevents window commands', function()
-  local ok, failure, state = run({'50'}, {lock_fails = true})
+  local ok, failure, state = run({}, {lock_fails = true})
   assert(not ok and tostring(failure):find('Command failed:', 1, true))
   assert(#state.actions == 0)
 end)
 
-test('a failed movement prevents subsequent balancing and resizing', function()
-  local ok, failure, state = run({'50'}, {fail_action = 'move '})
+test('a failed eval surfaces as a command failure', function()
+  local ok, failure, state = run({}, {fail_action = 'eval '})
   assert(not ok and tostring(failure):find('Command failed:', 1, true))
-  assert(state.actions[#state.actions]:match('^move '))
+  assert(state.actions[#state.actions]:match('^eval '))
 end)
 
-test('a quoted workspace name survives the lock handoff', function()
-  local ok, failure, state = run({'50', "work's space"}, {focus = "22|work's space"})
+test('an explicit workspace survives the lock handoff', function()
+  local ok, failure, state = run({'2'}, {focus = '22|2'})
   assert(ok, failure)
-  assert(state.actions[#state.actions] == 'resize width 485 --window-id 22')
-  assert(table.concat(state.actions, '\n'):find("--workspace 'work'\\''s space'", 1, true))
+  assert(plan_of(state):match("balance%-sizes %-%-workspace '2'$"))
+end)
+
+test('a workspace name with whitespace survives the lock handoff', function()
+  local ok, failure, state = run({'work space'}, {focus = '22|work space'})
+  assert(ok, failure)
+  assert(state.locks == 1)
+  assert(plan_of(state):match("balance%-sizes %-%-workspace 'work space'$"))
+end)
+
+test('a workspace name with an apostrophe is rejected, not mangled', function()
+  local ok, failure = run({"work's space"}, {focus = "22|work's space"})
+  assert(not ok and tostring(failure):find('cannot quote an apostrophe', 1, true), failure)
 end)

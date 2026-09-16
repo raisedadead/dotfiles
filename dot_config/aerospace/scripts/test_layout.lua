@@ -76,7 +76,7 @@ local function assert_shape(root, ids, primary)
   assert(root.layout == 'h_tiles' and root.children[1] == primary, 'Primary must be left')
   assert(#root.children == math.min(#ids, 2), 'Expected one primary and at most one secondary column')
   if #ids > 2 then
-    assert(root.children[2].layout == 'v_accordion', 'Secondary column must be a vertical accordion')
+    assert(root.children[2].layout == 'v_tiles', 'Secondary column must be vertical tiles')
   end
   local actual, expected = leaves(root), {table.unpack(ids)}
   table.sort(actual)
