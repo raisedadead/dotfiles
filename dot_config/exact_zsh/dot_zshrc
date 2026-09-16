@@ -135,6 +135,11 @@ export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
   (( $#_c > 50 )) && rm -f -- "${(@)_c[51,-1]}"
 } >/dev/null 2>&1 &!
 
+() {
+  local -a _m=( "${XDG_STATE_HOME:-$HOME/.local/state}"/fnm_multishells/*(N@md+30) )
+  (( $#_m )) && rm -f -- "$_m[@]"
+} >/dev/null 2>&1 &!
+
 # Performance profiling
 [[ "$ZPROF" = true ]] && zprof
 #-----------------------------------------------------------
