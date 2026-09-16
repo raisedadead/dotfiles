@@ -1,3 +1,5 @@
+local crust = 0xff11111b
+
 return {
 	rosewater = 0xfff5e0dc,
 	flamingo = 0xfff2cdcd,
@@ -25,10 +27,10 @@ return {
 	surface0 = 0xff313244,
 	base = 0xff1e1e2e,
 	mantle = 0xff181825,
-	crust = 0xff11111b,
+	crust = crust,
 
 	bar = 0x00000000,
-	island = 0xff11111b,
+	island = crust,
 	island_border = 0xff313244,
 
 	font = "Berkeley Mono",
