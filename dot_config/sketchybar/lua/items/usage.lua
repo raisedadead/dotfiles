@@ -28,7 +28,7 @@ local function tint(value, fallback)
 	return fallback
 end
 
-for i, provider in ipairs(providers) do
+for _, provider in ipairs(providers) do
 	local name = "usage." .. provider.id
 	items[provider.id] = sbar.add("item", name, {
 		position = "right",
@@ -38,16 +38,6 @@ for i, provider in ipairs(providers) do
 		label = { string = "—", font = { size = 12, features = "tnum" } },
 	})
 	table.insert(names, name)
-	if i < #providers then
-		local separator = name .. ".separator"
-		sbar.add("item", separator, {
-			position = "right",
-			width = 10,
-			icon = { string = "│", font = { family = colors.font, size = 12 }, color = colors.surface2, padding_left = 2, padding_right = 2 },
-			label = { drawing = false },
-		})
-		table.insert(names, separator)
-	end
 end
 local owner = items.claude
 owner:set({
