@@ -28,7 +28,7 @@ return {
 	crust = 0xff11111b,
 
 	bar = 0x00000000,
-	island = 0xff322e55,
+	island = 0xff11111b,
 	island_border = 0xff313244,
 
 	font = "Berkeley Mono",
