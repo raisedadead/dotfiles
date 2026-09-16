@@ -208,9 +208,9 @@ Expected: Fewer than 400 files. No non-exempt file older than two days
 
 ### M9
 
-Inspect the Cavemem worker state and M3
+Inspect the Cavemem worker state and M3. Read the `better-sqlite3` version under `~/.local/share/fnm/aliases/default/lib/node_modules/cavemem/node_modules`
 
-Expected: `lastError` is null. MCP connects
+Expected: `lastError` is null. MCP connects. The `better-sqlite3` major is 12 or higher
 
 ### M10
 

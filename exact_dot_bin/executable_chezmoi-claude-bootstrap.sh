@@ -69,16 +69,53 @@ skipped() {
 	return 1
 }
 
+FNM_DEFAULT_BIN="$HOME/.local/share/fnm/aliases/default/bin"
+CAVEMEM_DIR="$HOME/.local/share/fnm/aliases/default/lib/node_modules/cavemem"
+BSQL_PIN="better-sqlite3@12.11.1" # workaround: WiseLibs/better-sqlite3#1515
+BSQL_MIN_MAJOR=12
+
+cavemem_bsql_major() {
+	"$FNM_DEFAULT_BIN/node" -e 'console.log(require(process.argv[1]).version.split(".")[0])' \
+		"$CAVEMEM_DIR/node_modules/better-sqlite3/package.json" 2>/dev/null || echo 0
+}
+
+cavemem_pin_bsql() {
+	(
+		cd "$CAVEMEM_DIR" || exit 1
+		[[ -e .npmrc ]] && {
+			err "$CAVEMEM_DIR/.npmrc exists — remove it first"
+			exit 1
+		}
+		trap 'rm -f .npmrc' EXIT INT TERM
+		export PATH="$FNM_DEFAULT_BIN:$PATH"
+		printf 'allow-scripts=better-sqlite3\n' >.npmrc
+		npm i --no-save "$BSQL_PIN"
+	)
+}
+
 step_cavemem() {
 	local bin xenova="$HOME/.local/share/fnm/aliases/default/lib/node_modules/@xenova/transformers"
 	bin=$(command -v cavemem 2>/dev/null)
 	if [[ -n "$bin" ]] && cavemem --version >/dev/null 2>&1 && [[ -d "$xenova" ]]; then
-		ok "cavemem present ($($bin --version 2>/dev/null | head -1)) + @xenova embedder"
+		if (($(cavemem_bsql_major) >= BSQL_MIN_MAJOR)); then
+			ok "cavemem present ($($bin --version 2>/dev/null | head -1)) + @xenova embedder + $BSQL_PIN"
+			return 0
+		fi
+		if ((CHECK_ONLY)); then
+			warn "cavemem better-sqlite3 $(cavemem_bsql_major).x aborts in GC on Node 24 (WiseLibs/better-sqlite3#1515) — run '--only cavemem'"
+			return 1
+		fi
+		p "pinning $BSQL_PIN under cavemem…"
+		cavemem_pin_bsql || {
+			err "npm i --no-save $BSQL_PIN failed"
+			return 1
+		}
+		ok "cavemem better-sqlite3 pinned to $(cavemem_bsql_major).x"
 		return 0
 	fi
 	if ((CHECK_ONLY)); then
-		[[ -z "$bin" ]] && warn "cavemem missing — run 'npm i -g cavemem @xenova/transformers --allow-scripts=sharp,protobufjs'"
-		[[ -n "$bin" && ! -d "$xenova" ]] && warn "@xenova/transformers missing (undeclared cavemem dep) — run 'npm i -g @xenova/transformers --allow-scripts=sharp,protobufjs'"
+		[[ -z "$bin" ]] && warn "cavemem missing — run '--only cavemem'"
+		[[ -n "$bin" && ! -d "$xenova" ]] && warn "@xenova/transformers missing (undeclared cavemem dep) — run '--only cavemem'"
 		return 1
 	fi
 	if ! command -v npm >/dev/null 2>&1; then
@@ -86,11 +123,15 @@ step_cavemem() {
 		return 1
 	fi
 	p "installing cavemem + @xenova/transformers via npm…"
-	npm i -g cavemem @xenova/transformers --allow-scripts=sharp,protobufjs || {
+	npm i -g cavemem @xenova/transformers --allow-scripts=better-sqlite3,sharp,protobufjs || {
 		err "npm i -g cavemem @xenova/transformers failed"
 		return 1
 	}
-	ok "cavemem + @xenova embedder installed"
+	cavemem_pin_bsql || {
+		err "npm i --no-save $BSQL_PIN failed"
+		return 1
+	}
+	ok "cavemem + @xenova embedder installed, better-sqlite3 pinned to $(cavemem_bsql_major).x"
 }
 
 step_mcp() {

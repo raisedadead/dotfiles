@@ -361,6 +361,17 @@ check_cavemem_abi() {
 		log '  WARN: cavemem hook failing - node ABI drift? run cavemem-repair workflow or rebuild better-sqlite3'
 		return 1
 	fi
+	local bsql="$HOME/.local/share/fnm/aliases/default/lib/node_modules/cavemem/node_modules/better-sqlite3/package.json"
+	if [[ ! -f "$bsql" ]]; then
+		log '  WARN: better-sqlite3 not found under cavemem - run chezmoi-claude-bootstrap.sh --only cavemem'
+		return 1
+	fi
+	local major
+	major=$("$node_bin" -e 'console.log(require(process.argv[1]).version.split(".")[0])' "$bsql" 2>/dev/null || echo 0)
+	if ((major < 12)); then
+		log "  WARN: cavemem better-sqlite3 ${major}.x aborts in GC on Node 24 (WiseLibs/better-sqlite3#1515) - run chezmoi-claude-bootstrap.sh --only cavemem"
+		return 1
+	fi
 	log '  clean'
 	return 0
 }
