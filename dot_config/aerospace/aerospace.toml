@@ -73,7 +73,8 @@ ctrl-alt-shift-3 = 'move-node-to-workspace 3 --focus-follows-window'
 ctrl-alt-shift-4 = 'move-node-to-workspace 4 --focus-follows-window'
 ctrl-alt-shift-5 = 'move-node-to-workspace 5 --focus-follows-window'
 
-ctrl-alt-tab = 'workspace-back-and-forth'
+ctrl-alt-tab = 'workspace next --wrap-around'
+ctrl-alt-shift-tab = 'workspace prev --wrap-around'
 ctrl-alt-leftSquareBracket = 'workspace prev'
 ctrl-alt-rightSquareBracket = 'workspace next'
 
