@@ -1,6 +1,6 @@
 # How this setup works
 
-This guide explains ownership, load order, and constraints that matter when you change the setup. [README.md](../README.md) holds the install steps. [README.md](README.md) here holds the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [AGENTS.md](../AGENTS.md) is the entry point for every coding agent. Read versions, revisions, and inventories from the source files or the tools, not from here.
+This guide explains ownership, load order, and constraints that matter when you change the setup. [README.md](README.md) here holds the install steps and the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [AGENTS.md](../AGENTS.md) is the entry point for every coding agent. Read versions, revisions, and inventories from the source files or the tools, not from here.
 
 ## Contents
 

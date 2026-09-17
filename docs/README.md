@@ -1,8 +1,38 @@
-# Daily use
+# Install and daily use
 
 The **source** is the configuration stored in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To capture a change means to copy it from the target back into chezmoi source. This happens only when you run a capture command.
 
 Private sources `dot_claude/` and `dot_codex/` deploy to `~/.claude` and `~/.codex`. The Codex source manages named rig files only; its authentication and runtime state stay local.
+
+## Install or recover a machine
+
+1. Install Homebrew and 1Password. Enable the 1Password SSH agent.
+
+1. Restore the age identity from 1Password to `~/.config/chezmoi/age-identity.txt` and set its mode to `600`. The private repository README names the item.
+
+1. Initialize and install the dotfiles:
+
+   ```sh
+   brew install chezmoi git
+   chezmoi init --source ~/.dotfiles git@github.com:raisedadead/dotfiles.git
+   ~/.dotfiles/install.sh
+   ```
+
+The installer configures Git hooks, initializes private submodules, applies the configuration, and offers to install packages from the [Brewfile repository](https://github.com/raisedadead/Brewfile).
+
+- Keep `--source ~/.dotfiles` on `chezmoi init`; the default source path is different.
+- The age identity is not in Git. Without the 1Password copy, encrypted files cannot be recovered.
+- The submodules clone over SSH, so the 1Password SSH agent must work first: `ssh -T git@github.com`.
+- A clone without submodules needs `git -C ~/.dotfiles submodule update --init`; the doctor fails until then.
+- `install.sh` takes no arguments. `chezmoi-claude-bootstrap.sh` accepts `--check`, `--only`, and `--skip`.
+
+### Claude Code
+
+Run `~/.bin/chezmoi-claude-bootstrap.sh` to install its runtime prerequisites. See the [Claude checks](MAINTENANCE.md#claude-code).
+
+### Codex
+
+The rig needs Homebrew Python 3.11 or later at `/opt/homebrew/bin/python3`. Run the [Codex checks](MAINTENANCE.md#codex). In a fresh Codex CLI session, open `/hooks` and review new or changed hook definitions. Restart the client after activation. Authentication and hook trust stay local to each machine.
 
 ## Daily loop
 
@@ -83,6 +113,8 @@ chezmoi cat <target>            # render a target without applying
 chezmoi doctor                  # environment check
 ```
 
+Tab completes chezmoi target paths. Ctrl+T continues the path argument; `<C-g>` in that picker includes Git-ignored paths.
+
 ## Git and private submodules
 
 ```sh
@@ -95,17 +127,6 @@ Hooks: `pre-commit` in both repos runs gitleaks on the staged diff. The submodul
 The operator runs `home push`. It pushes each initialized submodule recursively, then the parent. A failed submodule push stops the command. `home push` takes no extra arguments. Other `home` commands pass through to chezmoi.
 
 Move an existing, tracked directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push`.
-
-## Recover a machine
-
-Follow [README.md](../README.md).
-
-- Keep `--source ~/.dotfiles` on `chezmoi init`; the default source path is different.
-- The age identity is not in Git. Without the 1Password copy, encrypted files cannot be recovered.
-- The submodules clone over SSH, so the 1Password SSH agent must work first: `ssh -T git@github.com`.
-- A clone without submodules needs `git -C ~/.dotfiles submodule update --init`; the doctor fails until then.
-- `install.sh` takes no arguments. `chezmoi-claude-bootstrap.sh` accepts `--check`, `--only`, and `--skip`.
-- Tab completes chezmoi target paths. Ctrl+T continues the path argument; `<C-g>` in that picker includes Git-ignored paths.
 
 ## Checks
 

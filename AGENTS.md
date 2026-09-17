@@ -10,7 +10,7 @@ Three coding agents run here: Claude Code, Codex, and Pi. [Agent rigs](docs/ARCH
 - [docs/ARCHI.md](docs/ARCHI.md): ownership, load order, the agent rigs, and the constraints. It is the main context for this project.
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md): the checks. Its first table selects the checks for your change.
 - [docs/SKILLS.md](docs/SKILLS.md): the order in which skills compose. The Claude kernel holds the precedence.
-- [docs/README.md](docs/README.md): the chezmoi commands for daily work.
+- [docs/README.md](docs/README.md): the install steps and the chezmoi commands for daily work.
 
 The files under `docs/` are shared. Every coding agent reads them.
 
