@@ -564,7 +564,7 @@ run_checks() {
 self_test() {
 	local mk_md="$CLAUDE_DIR/.doctor-test.md"
 	local mk_in_dir="$CLAUDE_DIR/hooks/.doctor-test-orphan.tmp"
-	local worktree out line
+	local worktree out line seen
 	OUTSIDE_DIR=$(mktemp -d -t chezmoi-claude-doctor-outside.XXXXXX) || return 1
 
 	log '[test] phase 1: rewake scope'
@@ -577,11 +577,12 @@ self_test() {
 		return 1
 	fi
 	worktree=""
+	seen=0
 	while IFS= read -r line; do
 		[[ "$line" == worktree\ * ]] || continue
-		line="${line#worktree }"
-		[[ "$line" == "$PUB_SOURCE" ]] && continue
-		worktree="$line"
+		seen=$((seen + 1))
+		[[ "$seen" -eq 1 ]] && continue
+		worktree="${line#worktree }"
 		break
 	done < <(git -C "$PUB_SOURCE" worktree list --porcelain 2>/dev/null)
 	if [[ -z "$worktree" ]]; then
