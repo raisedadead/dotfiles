@@ -60,6 +60,31 @@ require() {
 	}
 }
 
+git_common_dir() {
+	git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null
+}
+
+rewake_applies() {
+	local here root
+	command -v git >/dev/null 2>&1 || return 0
+	root=$(git_common_dir "$PUB_SOURCE")
+	[[ -n "$root" ]] || return 0
+	here=$(git_common_dir "$1")
+	[[ -n "$here" ]] || return 1
+	[[ "$here" == "$root" || "$here" == "$root"/* ]]
+}
+
+session_cwd() {
+	local payload="" cwd=""
+	if [[ ! -t 0 ]]; then
+		IFS= read -r -d '' -t 1 payload || true
+	fi
+	if [[ -n "$payload" ]] && command -v jq >/dev/null 2>&1; then
+		cwd=$(jq -r '.cwd // empty' <<<"$payload" 2>/dev/null)
+	fi
+	printf '%s' "${cwd:-$PWD}"
+}
+
 build_managed() {
 	[[ -d "$PUB_SOURCE" ]] || return 0
 	chezmoi managed --source "$PUB_SOURCE" --path-style absolute 2>/dev/null | sort -u
@@ -533,15 +558,44 @@ run_checks() {
 self_test() {
 	local mk_md="$CLAUDE_DIR/.doctor-test.md"
 	local mk_in_dir="$CLAUDE_DIR/hooks/.doctor-test-orphan.tmp"
+	local worktree out outside
+	outside=$(mktemp -d -t chezmoi-claude-doctor-outside.XXXXXX) || return 1
 
-	log '[test] phase 1: clean baseline'
+	log '[test] phase 1: rewake scope'
+	if ! rewake_applies "$PUB_SOURCE"; then
+		err '[test] FAIL: rewake skipped in the source repository'
+		return 1
+	fi
+	if ! rewake_applies "$PUB_SOURCE/dot_claude"; then
+		err '[test] FAIL: rewake skipped in a source submodule'
+		return 1
+	fi
+	worktree=$(git -C "$PUB_SOURCE" worktree list --porcelain 2>/dev/null |
+		awk '/^worktree /{print $2}' | sed -n '2p')
+	if [[ -n "$worktree" ]] && ! rewake_applies "$worktree"; then
+		err "[test] FAIL: rewake skipped in worktree $worktree"
+		return 1
+	fi
+	if rewake_applies "$outside"; then
+		rmdir "$outside"
+		err '[test] FAIL: rewake ran outside the source repository'
+		return 1
+	fi
+	if ! out=$(cd "$outside" && "$0" --rewake 2>&1 </dev/null) || [[ -n "$out" ]]; then
+		rmdir "$outside"
+		err '[test] FAIL: --rewake outside the source repository must exit 0 and stay silent'
+		return 1
+	fi
+	rmdir "$outside"
+
+	log '[test] phase 2: clean baseline'
 	if ! "$0" --quiet >/dev/null 2>&1; then
 		err '[test] FAIL: pre-existing drift; full report:'
 		"$0" >&2 || true
 		return 1
 	fi
 
-	log '[test] phase 2: synthesize top-level *.md orphan'
+	log '[test] phase 3: synthesize top-level *.md orphan'
 	: >"$mk_md"
 	build_managed >"$MANAGED_FILE" # rebuild (managed list unchanged but be safe)
 	if "$0" --quiet >/dev/null 2>&1; then
@@ -551,7 +605,7 @@ self_test() {
 	fi
 	rm -f "$mk_md"
 
-	log '[test] phase 3: synthesize file inside managed dir (~/.claude/hooks/)'
+	log '[test] phase 4: synthesize file inside managed dir (~/.claude/hooks/)'
 	: >"$mk_in_dir"
 	if "$0" --quiet >/dev/null 2>&1; then
 		rm -f "$mk_in_dir"
@@ -560,7 +614,7 @@ self_test() {
 	fi
 	rm -f "$mk_in_dir"
 
-	log '[test] phase 4: clean state restored'
+	log '[test] phase 5: clean state restored'
 	if ! "$0" --quiet >/dev/null 2>&1; then
 		err '[test] FAIL: doctor still reports drift after cleanup'
 		return 1
@@ -575,6 +629,10 @@ require find
 require sed
 require grep
 require sort
+
+if [[ "$MODE" == "rewake" ]] && ! rewake_applies "$(session_cwd)"; then
+	exit 0
+fi
 
 MANAGED_FILE=$(mktemp -t chezmoi-claude-doctor.XXXXXX) || exit 2
 trap 'rm -f "$MANAGED_FILE"' EXIT
