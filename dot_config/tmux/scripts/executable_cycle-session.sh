@@ -5,22 +5,25 @@ set -euo pipefail
 # Usage: cycle-session.sh -n | -p
 
 direction="${1:--n}"
-current=$(tmux display-message -p '#{session_name}')
+current=$(tmux display-message -p '#{session_id}' 2>/dev/null) || exit 0
 
-mapfile -t sessions < <(tmux list-sessions -f '#{!=:#{@parked},1}' -F '#{session_name}')
+mapfile -t sessions < <(tmux list-sessions -f '#{!=:#{@parked},1}' -F '#{session_id}')
 count=${#sessions[@]}
 
 [[ "$count" -le 1 ]] && exit 0
 
 idx=0
 for i in "${!sessions[@]}"; do
-  [[ "${sessions[$i]}" == "$current" ]] && { idx=$i; break; }
+	[[ "${sessions[$i]}" == "$current" ]] && {
+		idx=$i
+		break
+	}
 done
 
 if [[ "$direction" == "-n" ]]; then
-  next=$(( (idx + 1) % count ))
+	next=$(((idx + 1) % count))
 else
-  next=$(( (idx - 1 + count) % count ))
+	next=$(((idx - 1 + count) % count))
 fi
 
 tmux switch-client -t "${sessions[$next]}"

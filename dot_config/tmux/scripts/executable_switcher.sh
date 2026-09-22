@@ -42,13 +42,18 @@ _BM_SET=$'\n'"$(bookmarks_raw)"$'\n'
 is_bookmarked() { [[ -n "$1" && "$_BM_SET" == *$'\n'"$1"$'\n'* ]]; }
 
 toggle_bookmark() {
-	local path="${1%/}" tmp
+	local path="${1%/}" tmp rc
 	[[ -n "$path" && -d "$path" ]] || return 1
-	mkdir -p "${BOOKMARKS_FILE%/*}"
+	mkdir -p "${BOOKMARKS_FILE%/*}" || return 1
 	if is_bookmarked "$path"; then
-		tmp=$(mktemp "${BOOKMARKS_FILE}.XXXXXX")
-		grep -vxF -- "$path" "$BOOKMARKS_FILE" >"$tmp" 2>/dev/null
-		mv "$tmp" "$BOOKMARKS_FILE"
+		tmp=$(mktemp "${BOOKMARKS_FILE}.XXXXXX") || return 1
+		rc=0
+		grep -vxF -- "$path" "$BOOKMARKS_FILE" >"$tmp" 2>/dev/null || rc=$?
+		if ((rc > 1)); then
+			rm -f "$tmp"
+			return 1
+		fi
+		mv "$tmp" "$BOOKMARKS_FILE" || rm -f "$tmp"
 	else
 		printf '%s\n' "$path" >>"$BOOKMARKS_FILE"
 	fi
