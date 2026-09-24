@@ -67,7 +67,7 @@ git -C ~/.dotfiles/dot_codex add CODE_STYLE.md
 git -C ~/.dotfiles/dot_codex commit -m "docs(codex): update code style"
 ```
 
-Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Git and deployment rules allow only the selected rig files. The private owner plan and audit archive stay in source under `dot_codex/docs/`.
+Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Git and deployment rules allow only the selected rig files. The rig plan, `docs/`, and `archive/` are managed targets. `docs/AGENT-CASES.md` stays in source only.
 
 ## Restore a target from source
 

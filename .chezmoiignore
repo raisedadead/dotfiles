@@ -17,11 +17,14 @@ install.sh
 .claude/output-styles/*.original.md
 docs
 
-.codex/docs
 .codex/*
 !.codex/AGENTS.md
 !.codex/CODE_STYLE.md
+!.codex/PLAN.md
 !.codex/RIG.md
+!.codex/archive
+!.codex/docs
+.codex/docs/AGENT-CASES.md
 !.codex/hooks.json
 !.codex/hooks
 !.codex/rules

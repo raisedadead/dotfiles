@@ -234,7 +234,7 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 
 Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. New managed files need an explicit addition to both lists. `.chezmoiignore` allows `skills/` and keeps Codex's own `.system/` tree out.
 
-The private [owner plan](../dot_codex/docs/PLAN.md) and its archive preserve audit evidence and deferred decisions. They are source-only documents. A passing hook suite does not prove live interception. Review new hook definitions with `/hooks`, restart the client, and use disposable fixtures for live checks.
+The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start at the [rig index](../dot_codex/docs/README.md). `docs/AGENT-CASES.md` is the only source-only document. A passing hook suite does not prove live interception. Review new hook definitions with `/hooks`, restart the client, and use disposable fixtures for live checks.
 
 ## Operator tools
 
