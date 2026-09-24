@@ -245,6 +245,7 @@ The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start
 | `chezmoi-claude-hooks-test.sh --all`   | Runs the source test suites                                                                                       |
 | `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                             |
 | `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands |
+| `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                 |
 | `rig-change-review`, `lens-review`     | Review a rig change, or any other source change                                                                   |
 
 The workflow directory registers scripts through `meta.name`. Operator-only utilities without an automated consumer: `cavemem-seed.ts`, `claude-flag-audit.sh`, `tailscale-mgmt.sh`. `tailscale-mgmt.sh` reads `TAILSCALE_OP_ITEM` from `~/.config/tailscale-mgmt.env`, an encrypted entry.

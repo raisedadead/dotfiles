@@ -1,0 +1,28 @@
+#!/bin/sh
+name=${0##*/}
+sig=
+if [ "$name" = pkill ]; then
+	case $1 in
+	-?*)
+		s=${1#-}
+		if kill -l "${s#SIG}" >/dev/null 2>&1; then
+			sig=$1
+			shift
+		fi
+		;;
+	esac
+fi
+while getopts ':ILafilnoqvxF:G:P:U:d:g:t:u:' _; do :; done
+i=0
+for arg in "$@"; do
+	i=$((i + 1))
+	case $arg in
+	-?*)
+		if [ "$i" -gt "$OPTIND" ]; then
+			printf '%s: option %s follows the pattern. BSD %s reads options only before the first pattern. Put every option first.\n' "$name" "$arg" "$name" >&2
+			exit 2
+		fi
+		;;
+	esac
+done
+exec "/usr/bin/$name" ${sig:+"$sig"} "$@"
