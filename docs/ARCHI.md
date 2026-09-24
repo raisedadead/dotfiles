@@ -232,7 +232,7 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 
 `dot_codex/` owns the global instructions, code-style guide, rig reference, native command rules, hook registration, and Python hook source and tests. Read [RIG.md](../dot_codex/RIG.md) for behavior and limits. The hook uses Homebrew Python 3.11 or later. It does not load Claude files or require Claude plugins.
 
-Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. New managed files need an explicit addition to both lists. `.chezmoiignore` allows `skills/` and keeps Codex's own `.system/` tree out.
+Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. A new managed file needs an explicit entry in both lists. The exceptions are `docs/` and `archive/`: both lists allow each of these directories whole. `.chezmoiignore` allows `skills/` and keeps Codex's own `.system/` tree out.
 
 The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start at the [rig index](../dot_codex/docs/README.md). `docs/AGENT-CASES.md` is the only source-only document. A passing hook suite does not prove live interception. Review new hook definitions with `/hooks`, restart the client, and use disposable fixtures for live checks.
 
