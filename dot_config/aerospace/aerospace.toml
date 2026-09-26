@@ -1,6 +1,8 @@
 config-version = 2
 start-at-login = true
 persistent-workspaces = ['1', '2', '3', '4', '5']
+default-root-container-layout = 'accordion'
+default-root-container-orientation = 'horizontal'
 
 after-startup-command = [
   'exec-and-forget /opt/homebrew/bin/sketchybar',
@@ -40,10 +42,10 @@ cmd-h = []
 cmd-alt-h = []
 
 # Focus
-ctrl-alt-h = 'focus left'
+ctrl-alt-h = 'focus left --boundaries-action wrap-around-the-workspace'
 ctrl-alt-j = 'focus down'
 ctrl-alt-k = 'focus up'
-ctrl-alt-l = 'focus right'
+ctrl-alt-l = 'focus right --boundaries-action wrap-around-the-workspace'
 
 # Move the window within the workspace tree
 ctrl-alt-shift-h = 'move left'
@@ -82,6 +84,7 @@ ctrl-alt-rightSquareBracket = 'workspace next'
 ctrl-alt-w = 'exec-and-forget /opt/homebrew/bin/lua "${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/scripts/layout-run.lua"'
 ctrl-alt-enter = 'fullscreen'
 ctrl-alt-slash = 'layout tiles horizontal vertical'
+ctrl-alt-comma = 'layout accordion horizontal vertical'
 # Windows float by default (see the rules below); this is the escape hatch that
 # pulls one into the tiling tree, and back out again.
 ctrl-alt-f = 'layout floating tiling'
