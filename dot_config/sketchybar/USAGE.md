@@ -15,10 +15,11 @@ Codex Spark rows are hidden. Other model limits appear only when the
 provider returns them.
 
 Background checks run every 15 minutes. A successful request sets a minimum
-15-minute interval from its start. Clicks, wake events, and restarts respect
-the saved deadline. A check before that deadline uses the cache; the next
-background check can therefore occur later. Failures delay requests for
-1 to 6 hours. A longer server retry delay takes precedence.
+14-minute interval from its start. Wake events and restarts respect the saved
+deadline. A check before that deadline uses the cache. A click forces a check,
+with a 30-second minimum between forced checks. A click does not override a
+rate-limit delay. Failures delay requests for 1 to 6 hours. A longer server
+retry delay takes precedence.
 
 Claude uses the CLI credential file or its current user's Keychain entry,
 with a service-only fallback for older entries. The Claude CLI owns token
