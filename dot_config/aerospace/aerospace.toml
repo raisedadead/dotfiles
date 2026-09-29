@@ -81,7 +81,7 @@ ctrl-alt-leftSquareBracket = 'workspace prev'
 ctrl-alt-rightSquareBracket = 'workspace next'
 
 # Custom layouts run only on demand, with the focused window as primary.
-ctrl-alt-w = 'exec-and-forget ~/.local/bin/aeroplace layout'
+ctrl-alt-w = 'exec-and-forget /opt/homebrew/bin/aeroplace layout'
 ctrl-alt-enter = 'fullscreen'
 ctrl-alt-slash = 'layout tiles horizontal vertical'
 ctrl-alt-comma = 'layout accordion horizontal vertical'
@@ -91,11 +91,11 @@ ctrl-alt-f = 'layout floating tiling'
 ctrl-alt-shift-r = ['layout tiling', 'flatten-workspace-tree', 'layout --root h_accordion']
 ctrl-alt-c = [
   'layout floating',
-  'exec-and-forget ~/.local/bin/aeroplace center',
+  'exec-and-forget /opt/homebrew/bin/aeroplace center',
 ]
 ctrl-alt-r = [
   'layout floating',
-  'exec-and-forget ~/.local/bin/aeroplace cycle',
+  'exec-and-forget /opt/homebrew/bin/aeroplace cycle',
 ]
 ctrl-alt-minus = 'resize smart -50'
 ctrl-alt-equal = 'resize smart +50'
@@ -139,5 +139,5 @@ run = 'move-node-to-workspace 4'
 if = 'true'
 run = [
   'layout floating',
-  'exec-and-forget ~/.local/bin/aeroplace center',
+  'exec-and-forget /opt/homebrew/bin/aeroplace center',
 ]
