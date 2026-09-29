@@ -16,6 +16,8 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 export ENHANCE_THEME="catppuccin_mocha"
 export DO_NOT_TRACK=1
+# Skips the Claude Code workspace trust dialog; it adds no sandbox.
+export CLAUDE_CODE_SANDBOXED=1
 
 # Homebrew (needs to be early in PATH)
 export HOMEBREW_PREFIX="/opt/homebrew"
