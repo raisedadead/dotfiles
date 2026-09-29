@@ -4,7 +4,6 @@ AGENTS.md
 install.sh
 .githooks
 .config/brewfile
-.config/aerospace/scripts/test_*.lua
 **/__pycache__
 .DS_Store
 **/.DS_Store
