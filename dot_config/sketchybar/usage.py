@@ -14,7 +14,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-INTERVAL = 900
+INTERVAL = 840
+FORCE_GAP = 30
 
 
 class Unavailable(Exception):
@@ -257,13 +258,16 @@ def main():
             print(json.dumps(read_state(path)))
             return
         state = read_state(path)
+        force = '--force' in sys.argv
         for name, fetch in PROVIDERS.items():
             previous = state.get(name) or {}
-            if time.time() < previous.get('next_attempt', 0):
+            now = time.time()
+            forced = force and now - previous.get('attempted_at', 0) > FORCE_GAP and previous.get('error') != 'Rate limited'
+            if now < previous.get('next_attempt', 0) and not forced:
                 continue
-            state[name] = dict(previous, next_attempt=time.time() + 3600)
+            state[name] = dict(previous, next_attempt=now + 3600, attempted_at=now)
             save_state(path, state)
-            state[name] = refresh(previous, fetch)
+            state[name] = dict(refresh(dict(previous, next_attempt=0), fetch), attempted_at=now)
             save_state(path, state)
         print(json.dumps(state))
 

@@ -112,12 +112,12 @@ local function render()
 	owner:set({ popup = { drawing = opened } })
 end
 
-local function update(cached)
+local function update(cached, force)
 	if pending then
 		return
 	end
 	pending = true
-	sbar.exec(command .. (cached and " --cached" or ""), function(data, exit_code)
+	sbar.exec(command .. (cached and " --cached" or "") .. (force and " --force" or ""), function(data, exit_code)
 		pending = false
 		if exit_code == 0 and type(data) == "table" then
 			snapshot = data
@@ -137,7 +137,7 @@ for _, provider in ipairs(providers) do
 		opened = not opened
 		if opened then
 			render()
-			update(false)
+			update(false, true)
 		end
 		owner:set({ popup = { drawing = opened } })
 	end)
