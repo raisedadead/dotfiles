@@ -190,9 +190,9 @@ Expected: Empty, or the drifted paths listed without an apply
 
 ### M6
 
-`rtk hook check 'git status'`; `rtk gain`
+`rtk hook check 'ls -la'`; `rtk hook check 'git status'`; `rtk gain`
 
-Expected: `rtk git status`, then a savings report
+Expected: `rtk ls -la`, then `No rewrite for: git status` (`git` is excluded), then a savings report
 
 ### M7
 
