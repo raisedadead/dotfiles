@@ -5,7 +5,7 @@
 # Five checks:
 #   1. chezmoi status   — managed files modified in place (drift in source-tracked content).
 #   2. coverage         — files inside managed top-level dirs that aren't themselves managed
-#                         (catches external installers dropping files into ~/.claude/hooks/, etc.).
+#                         (catches external installers dropping files into ~/.claude/agents/, etc.).
 #   3. shape filter     — unmanaged top-level config-shape files (*.md/.toml/.yaml/.yml/.kdl/.ini)
 #                         (catches hand-edited orphan docs like the original RTK.md case).
 #   4. mcp drift        — settings.json.mcpServers (canonical) vs ~/.claude.json (runtime),
@@ -564,7 +564,7 @@ run_checks() {
 
 self_test() {
 	local mk_md="$CLAUDE_DIR/.doctor-test.md"
-	local mk_in_dir="$CLAUDE_DIR/hooks/.doctor-test-orphan.tmp"
+	local mk_in_dir="$CLAUDE_DIR/agents/.doctor-test-orphan.tmp"
 	local worktree out line seen
 	OUTSIDE_DIR=$(mktemp -d -t chezmoi-claude-doctor-outside.XXXXXX) || return 1
 
@@ -628,7 +628,7 @@ self_test() {
 	fi
 	rm -f "$mk_md"
 
-	log '[test] phase 4: synthesize file inside managed dir (~/.claude/hooks/)'
+	log '[test] phase 4: synthesize file inside managed dir (~/.claude/agents/)'
 	: >"$mk_in_dir"
 	if "$SELF" --quiet >/dev/null 2>&1; then
 		rm -f "$mk_in_dir"
