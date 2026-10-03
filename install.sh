@@ -148,7 +148,7 @@ ok "Dotfiles applied."
 # ─────────────────────────────────────────────────────────────────────────────
 
 info "Setting up Node with fnm..."
-if fnm list | grep -q ' default'; then
+if [[ "$(fnm list)" == *' default'* ]]; then
 	ok "fnm default Node is set."
 else
 	lts="$(fnm ls-remote --lts --latest | awk '{print $1}')"
