@@ -15,7 +15,7 @@ local front_app = sbar.add("item", "front_app", {
 	},
 	background = {
 		color = colors.island,
-		corner_radius = 8,
+		corner_radius = 14,
 		height = 28,
 		border_width = 1,
 		border_color = colors.island_border,

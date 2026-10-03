@@ -11,13 +11,13 @@ sbar.hotload(false)
 
 sbar.bar({
 	position = "bottom",
-	height = 34,
+	height = 30,
 	blur_radius = 20,
 	color = colors.bar,
 	padding_left = 10,
 	padding_right = 10,
 	corner_radius = 0,
-	y_offset = 3,
+	y_offset = 0,
 	margin = 0,
 	topmost = "window",
 	sticky = "on",
@@ -65,7 +65,7 @@ sbar.add("bracket", "left_island", {
 }, {
 	background = {
 		color = colors.island,
-		corner_radius = 8,
+		corner_radius = 14,
 		height = 28,
 		border_width = 1,
 		border_color = colors.island_border,

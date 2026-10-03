@@ -30,8 +30,8 @@ return {
 	crust = crust,
 
 	bar = 0x00000000,
-	island = crust,
-	island_border = 0xff313244,
+	island = 0x6e000000,
+	island_border = 0xff5f5f5f,
 
 	font = "Berkeley Mono",
 	icon_font = "Symbols Nerd Font",
