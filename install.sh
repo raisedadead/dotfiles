@@ -196,14 +196,16 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 
 BOOTSTRAP="$HOME/.bin/chezmoi-claude-bootstrap.sh"
-if [ -x "$BOOTSTRAP" ] && check_cmd claude; then
-	info "Running the Claude Code rig bootstrap..."
-	"$BOOTSTRAP" || warn "Rig bootstrap reported a failure. Run $BOOTSTRAP --check."
-else
+if [ ! -x "$BOOTSTRAP" ]; then
+	warn "$BOOTSTRAP not found. Run 'chezmoi apply', then run it."
+elif ! check_cmd claude; then
 	ask "Install Claude Code, then run:"
 	echo ""
 	echo "  $BOOTSTRAP"
 	echo ""
+else
+	info "Running the Claude Code rig bootstrap..."
+	"$BOOTSTRAP" || warn "Rig bootstrap reported a failure. Run $BOOTSTRAP --check."
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
