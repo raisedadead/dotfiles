@@ -184,32 +184,35 @@ Pi's doctor governs `~/.agents/skills/`. `~/.pi/agent/manifest.json` holds two l
 
 ## Claude Code
 
-| Source                                                                                                         | Owns                                                          |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [dot_claude/settings.json](../dot_claude/settings.json)                                                        | Hook wiring, plugins, MCP declarations, statuslines, settings |
-| [hooks/executable_hooks.py](../dot_claude/hooks/executable_hooks.py)                                           | Event dispatcher and runtime decisions                        |
-| [hooks/hook_config.json](../dot_claude/hooks/hook_config.json)                                                 | Rule and gate configuration                                   |
-| [validators.json](../dot_claude/hooks/validators.json), [formatters.json](../dot_claude/hooks/formatters.json) | Tool registries                                               |
-| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                                 | Kernel and path-scoped instructions                           |
-| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/)        | Delegation contracts and reusable work                        |
-| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                                      | Memory configuration. The database stays unmanaged            |
-| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                            | RTK filters and hook exclusions; `git` is excluded            |
+| Source                                                                                                                       | Owns                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [dot_claude/settings.json](../dot_claude/settings.json)                                                                      | Hook wiring, plugins, MCP declarations, statuslines, settings |
+| [mods/rig/src/register.ts](../dot_claude/mods/rig/src/register.ts)                                                           | Rig mod: event hooks and runtime decisions                    |
+| [mods/rig/src/hook_config.json](../dot_claude/mods/rig/src/hook_config.json)                                                 | Rule and gate configuration                                   |
+| [validators.json](../dot_claude/mods/rig/src/validators.json), [formatters.json](../dot_claude/mods/rig/src/formatters.json) | Tool registries                                               |
+| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                                               | Kernel and path-scoped instructions                           |
+| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/)                      | Delegation contracts and reusable work                        |
+| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                                                    | Memory configuration. The database stays unmanaged            |
+| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                                          | RTK filters and hook exclusions; `git` is excluded            |
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
 [Skills](#skills) holds the four kinds and the shared store. A common skill reaches Claude through a `symlink_<name>` entry in `dot_claude/skills/` with the content `../../.agents/skills/<name>`. Doctor lint 5e checks the links and the source entries.
 
-SessionStart registers the main marker and sets the session title. The doctor runs beside it as an `asyncRewake` hook at startup and wakes Claude with the issue lines when it finds any. In `--rewake` mode it exits 0 at once unless the session's `cwd` is in the `PUB_SOURCE` or the `PRIV_SOURCE` repository, one of its worktrees, or one of its submodules. It reads that `cwd` from the hook payload on stdin and falls back to `$PWD`. It also exits 0 when `git` is absent, because it cannot identify the repository then. The guard runs before the dependency checks, so a missing dependency cannot wake a session elsewhere. A different repository gets no check and no wake, because you can only repair the drift in the source repository. A bare run ignores the guard and always reports. TaskCreated denies a task name outside the `<GROUP><N> <title>` form. TaskCreated and a PreToolUse call to `TaskUpdate`, `TaskList` or `TaskGet` record that the session uses tasks. PreToolUse evaluates command and file rules, spawn contracts, and `rubric_gates`: an edit to a file that a gate names is denied until the session reads the whole rubric, invokes its skill, or types it as a slash command. PostToolUse formats, validates, queues project checks, and records mutations. SubagentStop clears the mutation ledger when a review agent completes. Stop handles failure suppression, review, claims, tasks, queued validators, and notification. The task gate blocks once when the session changed `min_files` files or more and used no Task tool. It runs after the review and claim gates, so it waits for the next turn when one of them blocks; a continued Stop skips the gates and the sound but still drains the validator queue. SessionEnd cleans session state. Read the dispatcher for the other events and the error paths.
+The rig is a Claude Code mod in `dot_claude/mods/rig`. `CLAUDE_CODE_PLUGIN_DIRS` in `settings.json` loads it. It does not need the dossier or whetstone plugins. Edit `src/`, then run `./build.sh`, which writes `hooks/register.js`. Only `.claude-plugin/` and `hooks/` deploy. The Python dispatcher is retired. The settings `hooks` key keeps only the third-party hooks: rtk, cavemem, NotchBar, and the doctor.
+
+SessionStart registers the main marker and sets the session title. The doctor runs beside it as an `asyncRewake` hook at startup and wakes Claude with the issue lines when it finds any. In `--rewake` mode it exits 0 at once unless the session's `cwd` is in the `PUB_SOURCE` or the `PRIV_SOURCE` repository, one of its worktrees, or one of its submodules. It reads that `cwd` from the hook payload on stdin and falls back to `$PWD`. It also exits 0 when `git` is absent, because it cannot identify the repository then. The guard runs before the dependency checks, so a missing dependency cannot wake a session elsewhere. A different repository gets no check and no wake, because you can only repair the drift in the source repository. A bare run ignores the guard and always reports. TaskCreated denies a task name outside the `<GROUP><N> <title>` form. TaskCreated and a PreToolUse call to `TaskUpdate`, `TaskList` or `TaskGet` record that the session uses tasks. The `tool.call` hook evaluates command and file rules, spawn contracts, and `rubric_gates`: an edit to a file that a gate names is denied until the session reads the whole rubric, invokes its skill, or types it as a slash command. After an edit, the rig formats, validates, queues project checks, and records mutations. SubagentStop clears the mutation ledger when a review agent completes. Stop handles failure suppression, review, claims, tasks, queued validators, and notification. The task gate blocks once when the session changed `min_files` files or more and used no Task tool. It runs after the review and claim gates, so it waits for the next turn when one of them blocks; a continued Stop skips the gates and the sound but still drains the validator queue. SessionEnd cleans session state. Read `register.ts` for the other events and the error paths.
 
 The review request belongs to the operator. Keep that wording in the kernel and in the gate message. A completed review-class agent clears the ledger of mutated files, so a later edit gates again within the one-block-per-session cap. A planned or crashed review clears nothing. A workflow agent needs the recognized reviewer type. A shell-driven edit is outside the mutation recorder, so the agent still owes the review.
 
 ### Hook gotchas
 
-- Test with an isolated `MARKERS_DIR` and `MAIN_SESSION_MARKER`. A fake young main-session marker silences review and notification behavior.
+- Test with `claude plugin test dist` after `./build.sh`. The test kit has no `classic.PreToolUse`. Test that path through the exported `guardBash`.
+- Register each event once per matcher. A second registration fails validation.
 - Read the configuration before the fallback constants. An existing key wins. An edit to its fallback has no effect.
 - Stop uses `stop_hook_active` against a correction loop. Emit one JSON decision, then exit. A gate error must not discard the validator drain.
-- A project root can disappear before a queued validation runs. Handle `OSError`, including `FileNotFoundError`.
-- A spawn contract needs `OUTPUT:` and `DONE:`. A named agent also needs `REPORT:`. The gate checks presence, not quality. Roster writes need `fcntl.flock`.
+- A project root can disappear before a queued validation runs. Handle the missing directory.
+- A spawn contract needs `OUTPUT:` and `DONE:`. A named agent also needs `REPORT:`. The gate checks presence, not quality. Roster writes go through `$.store` updates.
 - Test a new hook regex with long adverse input. A nested quantifier can stall the hook. A tool matcher matches the full name, not a substring.
 - `git commit -F` is outside the `-m` command-string checks. Malformed hook input and several error paths return without a denial. Inspect the handler before you claim enforcement.
 - The claim checker rejects on exit 1. A missing plugin, a timeout, or another error passes. It checks claim form, not truth. Resolve its path through the installed-plugin registry.
@@ -218,7 +221,7 @@ Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy
 
 ### Plugins, MCP, and memory
 
-First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed file from `installPath` in `~/.claude/plugins/installed_plugins.json`. A cache directory name can be a version, not a SHA. A plugin-registered hook runs outside the dispatcher. Disable the plugin in `enabledPlugins` to stop it. Read the manifest and the hook registrations before you enable one.
+First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed file from `installPath` in `~/.claude/plugins/installed_plugins.json`. A cache directory name can be a version, not a SHA. A plugin-registered hook runs outside the rig mod. Disable the plugin in `enabledPlugins` to stop it. Read the manifest and the hook registrations before you enable one.
 
 `settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi-claude-doctor.sh` check 4, which compares the `mcpServers` key alone. Do not use `chezmoi diff ~/.claude.json`: Claude Code writes other keys at run time, and a whole-file diff reports a false drift. Probe connectivity with `claude mcp list`. A duplicate server name at two scopes can split OAuth state.
 
@@ -226,7 +229,7 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 
 ### Statusline
 
-[statusline.sh](../dot_claude/statusline/executable_statusline.sh) supplies `ICON_*` variables to [theme.omp.yaml](../dot_claude/statusline/theme.omp.yaml). Keep the YAML ASCII-clean. File tools lose PUA glyphs. The subagent statusline is a separate jq renderer. Effort reads `.effort.level`, then `CLAUDE_EFFORT`. `session-alert.py` reads the transcript for unresolved downgrade and API alerts. Keep `switchModelsOnFlag: false`. A source setting alone does not prove server behavior.
+The rig mod renders the main statusline from `src/statusline.ts`. It shows the effort from the Stop event and an alert for the last API error. The subagent statusline is a separate jq renderer. Keep `switchModelsOnFlag: false`. A source setting alone does not prove server behavior.
 
 ## Codex
 
@@ -242,7 +245,6 @@ The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift                                                                                 |
 | `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                     |
-| `chezmoi-claude-hooks-test.sh --all`   | Runs the source test suites                                                                                       |
 | `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                             |
 | `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands |
 | `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                 |

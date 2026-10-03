@@ -9,7 +9,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Documentation                          | Local links, code blocks, preserved constraints, and `git diff --check` |
 | Shared deployment or Git hooks         | S1, S2, and C4 below; M15 and M16 fixture checks                        |
 | Codex rig                              | C1 to C4 below                                                          |
-| Claude dispatcher or hook rules        | M1 and M4                                                               |
+| Claude rig mod or hook rules           | M1 and M4                                                               |
 | Claude validator or formatter registry | Spec smoke test                                                         |
 | Claude plugin                          | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop    | Applicable terminal probes below and the component's own checks         |
@@ -178,9 +178,9 @@ Expected: Configured servers connect. No scope conflict
 
 ### M4
 
-`~/.bin/chezmoi-claude-hooks-test.sh --all`
+`cd ~/.dotfiles/dot_claude/mods/rig && ./build.sh && claude plugin test dist`
 
-Expected: Both suites pass. Report each count
+Expected: All tests pass. Report the count
 
 ### M5
 
@@ -264,4 +264,4 @@ This optional Claude plugin check is separate from general documentation validat
 bash "$(jq -r '.plugins["whetstone@raisedadead-plugins"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/claim-check" AGENTS.md docs/README.md docs/ARCHI.md docs/MAINTENANCE.md
 ```
 
-A dispatcher or hook-rule edit needs M4. A validator or formatter registry edit needs the spec smoke test. A plugin upgrade needs M1 to M3. A shell, Ghostty, tmux, or Neovim change needs the terminal checks. The doctor does not replace them.
+A rig mod or hook-rule edit needs M4. A validator or formatter registry edit needs the spec smoke test. A plugin upgrade needs M1 to M3. A shell, Ghostty, tmux, or Neovim change needs the terminal checks. The doctor does not replace them.

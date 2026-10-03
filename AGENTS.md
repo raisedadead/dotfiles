@@ -23,4 +23,4 @@ The files under `docs/` are shared. Every coding agent reads them.
 - Before you change an installed target, show its proposed diff and ask the operator.
 - Each agent owns its own global kernel. Do not edit another agent's kernel. Report the change you want instead.
 
-The operator requests a completed reviewer before completion for each non-trivial source change that affects two or more source files. The operator owns pushes, pull requests, releases, and infrastructure changes.
+The operator requests a completed reviewer before completion for each non-trivial source change. The operator owns pushes, pull requests, releases, and infrastructure changes.

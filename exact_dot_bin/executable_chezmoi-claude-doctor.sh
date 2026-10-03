@@ -445,10 +445,10 @@ check_user_agents() {
 	fi
 	local out found
 	out=$(
-		python3 - "$agents_dir" "$CLAUDE_DIR/markers/subagent-spawns.jsonl" 4 <<'PYEOF'
-import calendar, json, os, sys, time
+		python3 - "$agents_dir" "$CLAUDE_DIR/markers/subagent-spawns" 4 <<'PYEOF'
+import calendar, glob, json, os, sys, time
 
-agents_dir, log_path, cap = sys.argv[1], sys.argv[2], int(sys.argv[3])
+agents_dir, log_dir, cap = sys.argv[1], sys.argv[2], int(sys.argv[3])
 names = sorted(f[:-3] for f in os.listdir(agents_dir) if f.endswith(".md"))
 window, now = 30 * 86400, time.time()
 issues = []
@@ -457,19 +457,20 @@ if len(names) > cap:
     issues.append("%d user agents exceed the cap of %d - see ARCHI 'Instructions & agents'" % (len(names), cap))
 
 spawns = {}
-try:
-    with open(log_path) as fh:
-        for line in fh:
-            try:
-                entry = json.loads(line)
-                ts = calendar.timegm(time.strptime(entry.get("ts", ""), "%Y-%m-%dT%H:%M:%SZ"))
-            except (ValueError, TypeError):
-                continue
-            if now - ts <= window:
-                key = entry.get("agent_type", "")
-                spawns[key] = spawns.get(key, 0) + 1
-except OSError:
-    pass
+for log_path in glob.glob(os.path.join(log_dir, "*.jsonl")):
+    try:
+        with open(log_path) as fh:
+            for line in fh:
+                try:
+                    entry = json.loads(line)
+                    ts = calendar.timegm(time.strptime(entry.get("ts", ""), "%Y-%m-%dT%H:%M:%SZ"))
+                except (ValueError, TypeError):
+                    continue
+                if now - ts <= window:
+                    key = entry.get("agent_type", "")
+                    spawns[key] = spawns.get(key, 0) + 1
+    except OSError:
+        pass
 
 for name in names:
     if now - os.path.getmtime(os.path.join(agents_dir, name + ".md")) < window:
@@ -554,7 +555,7 @@ run_checks() {
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 4/4] user agents (cap of 4, 0-spawn-in-30d staleness via subagent-spawns.jsonl)'
+	log '[warn 4/4] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
 	check_user_agents
 	log ''
 

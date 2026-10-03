@@ -10,7 +10,11 @@ install.sh
 .config/zsh/.zcompcache
 .config/zsh/.zsh_sessions
 .bin/test_*.py
-.claude/hooks/test_*.py
+.claude/mods/*/src
+.claude/mods/*/tests
+.claude/mods/*/parity
+.claude/mods/*/dist
+.claude/mods/*/build.sh
 .claude/rules/*.original.md
 .claude/skills/**/*.original.md
 .claude/skills/synced
