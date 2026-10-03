@@ -12,16 +12,16 @@
 
 ["Library/Fonts/sketchybar-app-font.ttf"]
     type = "file"
-    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v2.0.84/sketchybar-app-font.ttf"
+    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.5/sketchybar-app-font.ttf"
     refreshPeriod = "0"
     ["Library/Fonts/sketchybar-app-font.ttf".checksum]
-        sha256 = "9f0653faf37a9e53ac64494d28849be1d3c70da093bdb8d42996427b8165f004"
+        sha256 = "4abab88e1886f698be435086ce0cd30fa5232111c54079d7d2447c67ca11aecb"
 
 # sketchybar EXECUTES this file as Lua. The checksum is the control that stops
 # an upstream change running here unread.
 [".config/sketchybar/lua/icon_map.lua"]
     type = "file"
-    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v2.0.84/icon_map.lua"
+    url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.5/icon_map.lua"
     refreshPeriod = "0"
     [".config/sketchybar/lua/icon_map.lua".checksum]
-        sha256 = "4b0c2115086d84c2663029cc6139cff65e31d151fa99b5a9db19e2940e5cad65"
+        sha256 = "b4180f13cb26b03e3cb09e554c5406f527b49ebdf31aba43ffa724c99f4e715b"
