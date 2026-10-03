@@ -52,7 +52,7 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 
 info "Installing core tools..."
-for tool in chezmoi git; do
+for tool in chezmoi git fnm; do
 	if check_cmd "$tool"; then
 		ok "$tool is installed."
 	else
@@ -144,7 +144,22 @@ chezmoi apply --source "$DOTFILES_DIR"
 ok "Dotfiles applied."
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 6. Packages
+# 6. Node
+# ─────────────────────────────────────────────────────────────────────────────
+
+info "Setting up Node with fnm..."
+if fnm list | grep -q ' default'; then
+	ok "fnm default Node is set."
+else
+	lts="$(fnm ls-remote --lts --latest | awk '{print $1}')"
+	fnm install "$lts"
+	fnm default "$lts"
+	ok "Node $lts installed and set as the fnm default."
+fi
+eval "$(fnm env --shell bash)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. Packages
 # ─────────────────────────────────────────────────────────────────────────────
 
 info "Setting up Brewfile repo..."
@@ -174,6 +189,21 @@ if [ -f "$BREWFILE" ]; then
 	fi
 else
 	warn "Brewfile not found at $BREWFILE — skipping."
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. Claude Code rig
+# ─────────────────────────────────────────────────────────────────────────────
+
+BOOTSTRAP="$HOME/.bin/chezmoi-claude-bootstrap.sh"
+if [ -x "$BOOTSTRAP" ] && check_cmd claude; then
+	info "Running the Claude Code rig bootstrap..."
+	"$BOOTSTRAP" || warn "Rig bootstrap reported a failure. Run $BOOTSTRAP --check."
+else
+	ask "Install Claude Code, then run:"
+	echo ""
+	echo "  $BOOTSTRAP"
+	echo ""
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
