@@ -19,13 +19,13 @@ Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including an installer or runtime write. Capture one target at a time when the list holds a change you did not make. Revert the rest with `chezmoi apply <target>`.
 
-| Kind                                       | Source                                                                       | Maintenance                                         |
-| ------------------------------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------- |
-| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                                     | Edit the target and `re-add`. `re-add` re-encrypts  |
-| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_aws/encrypted_private_config.tmpl.age` | Edit the source. `re-add` skips templates           |
-| Modify script                              | `modify_private_dot_claude.json`                                             | Edit the source. It merges into the existing target |
-| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                            | Change the pinned revision or checksum              |
-| Repository document, `docs/`, `install.sh` | Root files                                                                   | Edit the source. Not deployed                       |
+| Kind                                       | Source                                                                                                     | Maintenance                                         |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                                                                   | Edit the target and `re-add`. `re-add` re-encrypts  |
+| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_aws/encrypted_private_config.tmpl.age`, `dot_pi/agent/mcp.json.tmpl` | Edit the source. `re-add` skips templates           |
+| Modify script                              | `modify_private_dot_claude.json`, `dot_pi/agent/modify_settings.json`                                      | Edit the source. It merges into the existing target |
+| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                                                          | Change the pinned revision or checksum              |
+| Repository document, `docs/`, `install.sh` | Root files                                                                                                 | Edit the source. Not deployed                       |
 
 `re-add` does not capture templates, modify targets, externals, or symlink entries. Before an apply, read `chezmoi status` and `chezmoi diff`. Column one `M` is a target edit. Column one `D` is a deleted target. Do not delete the chezmoi state to resolve drift.
 
@@ -140,12 +140,12 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 Three coding agents run on this machine. Each owns its own global kernel and its own runtime. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
 
-| Rig           | Source        | Target         | Kernel      | Rig reference                 | Checks    |
-| ------------- | ------------- | -------------- | ----------- | ----------------------------- | --------- |
-| Claude Code   | `dot_claude/` | `~/.claude/`   | `CLAUDE.md` | [Claude Code](#claude-code)   | M1 to M16 |
-| Codex         | `dot_codex/`  | `~/.codex/`    | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md) | C1 to C4  |
-| Pi            | `dot_pi/`     | `~/.pi/`       | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)    | P1        |
-| Shared skills | `dot_agents/` | `~/.agents/`   | None        | [Skills](#skills)             | S1, S2    |
+| Rig           | Source        | Target       | Kernel      | Rig reference                 | Checks    |
+| ------------- | ------------- | ------------ | ----------- | ----------------------------- | --------- |
+| Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [Claude Code](#claude-code)   | M1 to M16 |
+| Codex         | `dot_codex/`  | `~/.codex/`  | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md) | C1 to C4  |
+| Pi            | `dot_pi/`     | `~/.pi/`     | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)    | P1        |
+| Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)             | S1, S2    |
 
 `.chezmoiignore` holds an allow list for `.pi`. It names each managed file. Credentials, MCP tokens, trust records, and sessions stay unmanaged.
 
@@ -153,7 +153,7 @@ Three coding agents run on this machine. Each owns its own global kernel and its
 
 A managed rig is a `dot_<agent>/` submodule that deploys to `~/.<agent>/`. [Private submodules](#private-submodules) holds the branch layout and the hooks. [Deployment and capture](#deployment-and-capture) holds the capture loop and the state that stays unmanaged. Three conditions belong to a rig alone:
 
-- Do not make the target an exact directory. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out, but an untracked source file still deploys. A rig that needs a strict boundary uses an allow list. Codex is the one rig that does.
+- Do not make the target an exact directory. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out, but an untracked source file still deploys. A rig that needs a strict boundary uses an allow list. Codex and Pi do.
 - [MAINTENANCE.md](MAINTENANCE.md) holds a check row for the rig.
 - The rig's own kernel names this document, which links [AGENTS.md](../AGENTS.md) and the rest. One pointer is enough.
 
@@ -180,7 +180,7 @@ Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` 
 
 UNVERIFIED: that Codex loads a skill from `~/.agents/skills` at run time. The Codex binary names that path. `~/.codex/skills/` holds no link to it.
 
-Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning.
+Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/` with `npx skills add <repo> --skill <name> -g -a pi --copy -y`. `dot_pi/skills.tsv` lists those skills for replay.
 
 ## Claude Code
 

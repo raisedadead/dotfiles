@@ -61,7 +61,7 @@ Run `~/.bin/chezmoi-fixture-check.sh` (`--keep` retains the fixture). It applies
 
 ### P1: Submodule and deployment boundary
 
-Run `git -C ~/.dotfiles/dot_pi status -sb` and expect the `dot_pi` branch. Run `chezmoi status ~/.pi` and expect no output. Run `cd ~/.dotfiles/dot_pi && npm test` and expect exit 0.
+Run `git -C ~/.dotfiles/dot_pi status -sb` and expect the `dot_pi` branch. Run `chezmoi status ~/.pi` and expect no output. Run `cd ~/.dotfiles/dot_pi && npm test` and expect exit 0. Run `pi mcp list` and expect 5 connected servers. Compare `ls ~/.pi/agent/skills` with the names in `dot_pi/skills.tsv`.
 
 ## Terminal stack
 

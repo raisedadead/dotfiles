@@ -2,7 +2,7 @@
 
 The **source** is the configuration stored in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To capture a change means to copy it from the target back into chezmoi source. This happens only when you run a capture command.
 
-Private sources `dot_claude/` and `dot_codex/` deploy to `~/.claude` and `~/.codex`. The Codex source manages named rig files only; its authentication and runtime state stay local.
+Private sources `dot_claude/`, `dot_codex/` and `dot_pi/` deploy to `~/.claude`, `~/.codex` and `~/.pi`. The Codex and Pi sources manage named rig files only; their authentication and runtime state stay local.
 
 ## Install or recover a machine
 
@@ -33,6 +33,10 @@ Run `~/.bin/chezmoi-claude-bootstrap.sh` to install its runtime prerequisites. S
 ### Codex
 
 The rig needs Homebrew Python 3.11 or later at `/opt/homebrew/bin/python3`. Run the [Codex checks](MAINTENANCE.md#codex). In a fresh Codex CLI session, open `/hooks` and review new or changed hook definitions. Restart the client after activation. Authentication and hook trust stay local to each machine.
+
+### Pi
+
+Install Pi with `npm install -g @earendil-works/pi-coding-agent@1.0.3`. In `pi`, run `/login` for `openai`, `openrouter` and `typesafe`. Run `pi mcp login cloudflare` and `pi mcp login sentry`. Replay the Pi skills with the loop in [RIG.md](../dot_pi/RIG.md#change-the-rig). Run `npm ci` in `~/.dotfiles/dot_pi`, then the [Pi checks](MAINTENANCE.md#pi). Authentication, MCP tokens and sessions stay local to each machine.
 
 ## Daily loop
 
@@ -68,6 +72,17 @@ git -C ~/.dotfiles/dot_codex commit -m "docs(codex): update code style"
 ```
 
 Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Git and deployment rules allow only the selected rig files. The rig plan, `docs/`, and `archive/` are managed targets. `docs/AGENT-CASES.md` stays in source only.
+
+## A managed Pi file
+
+```sh
+cd ~/.dotfiles/dot_pi && npm test
+git -C ~/.dotfiles/dot_pi add <files>
+git -C ~/.dotfiles/dot_pi commit -m "fix(rig): ..."
+chezmoi diff ~/.pi && chezmoi apply ~/.pi
+```
+
+Edit the source in `dot_pi/`, not the target. The Pi guard blocks an edit under `~/.pi/agent/`, and `settings.json` and `mcp.json` come from a modify script and a template. Run `/reload` in an open Pi session.
 
 ## Restore a target from source
 

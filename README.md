@@ -6,16 +6,16 @@
 
 ## Tool chain
 
-| Concern    | Tools                                                                                                                                |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Deployment | [chezmoi](https://www.chezmoi.io), [age](https://age-encryption.org) encryption, [1Password](https://1password.com) for keys and SSH |
-| Packages   | [Homebrew](https://brew.sh), from a separate [Brewfile repository](https://github.com/raisedadead/Brewfile)                          |
-| Terminal   | [Ghostty](https://ghostty.org), [tmux](https://github.com/tmux/tmux), [zsh](https://www.zsh.org)                                     |
-| Editor     | [Neovim](https://neovim.io) with [LazyVim](https://www.lazyvim.org)                                                                  |
-| Desktop    | [AeroSpace](https://github.com/nikitabobko/AeroSpace), [SketchyBar](https://felixkratz.github.io/SketchyBar)                         |
-| Agents     | [Claude Code](https://claude.com/claude-code), [Codex](https://developers.openai.com/codex)                                          |
+| Concern    | Tools                                                                                                                                   |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Deployment | [chezmoi](https://www.chezmoi.io), [age](https://age-encryption.org) encryption, [1Password](https://1password.com) for keys and SSH    |
+| Packages   | [Homebrew](https://brew.sh), from a separate [Brewfile repository](https://github.com/raisedadead/Brewfile)                             |
+| Terminal   | [Ghostty](https://ghostty.org), [tmux](https://github.com/tmux/tmux), [zsh](https://www.zsh.org)                                        |
+| Editor     | [Neovim](https://neovim.io) with [LazyVim](https://www.lazyvim.org)                                                                     |
+| Desktop    | [AeroSpace](https://github.com/nikitabobko/AeroSpace), [SketchyBar](https://felixkratz.github.io/SketchyBar)                            |
+| Agents     | [Claude Code](https://claude.com/claude-code), [Codex](https://developers.openai.com/codex), [Pi](https://github.com/earendil-works/pi) |
 
-This public repository holds the shared configuration. The two agent rigs and the other private directories are submodules of a private repository, one branch per directory. Read [Agent rigs](docs/ARCHI.md#agent-rigs) for the map.
+This public repository holds the shared configuration. The three agent rigs and the other private directories are submodules of a private repository, one branch per directory. Read [Agent rigs](docs/ARCHI.md#agent-rigs) for the map.
 
 ## Documents
 
