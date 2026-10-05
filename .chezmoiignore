@@ -21,6 +21,7 @@ install.sh
 !.pi/agent/rules
 !.pi/agent/agents
 !.pi/agent/extensions
+!.pi/agent/themes
 .claude/mods/*/src
 .claude/mods/*/tests
 .claude/mods/*/parity
