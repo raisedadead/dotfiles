@@ -76,13 +76,13 @@ Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Gi
 ## A managed Pi file
 
 ```sh
+chezmoi re-add ~/.pi/agent/extensions/router.ts
 cd ~/.dotfiles/dot_pi && npm test
-git -C ~/.dotfiles/dot_pi add <files>
+git -C ~/.dotfiles/dot_pi add agent/extensions/router.ts
 git -C ~/.dotfiles/dot_pi commit -m "fix(rig): ..."
-chezmoi diff ~/.pi && chezmoi apply ~/.pi
 ```
 
-Edit the source in `dot_pi/`, not the target. The Pi guard blocks an edit under `~/.pi/agent/`, and `settings.json` and `mcp.json` come from a modify script and a template. Run `/reload` in an open Pi session.
+Edit the `settings.json` keys in `dot_pi/agent/modify_settings.json` and the MCP servers in `dot_pi/agent/mcp.json.tmpl`, then run `chezmoi apply ~/.pi`. `re-add` skips both. Run `/reload` in an open Pi session.
 
 ## Restore a target from source
 
