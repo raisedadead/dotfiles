@@ -39,7 +39,7 @@ Stage a shell startup change with an isolated destination and state file before 
 
 ### Private submodules
 
-`dot_claude/`, `dot_codex/`, and `dot_agents/` are git submodules of `raisedadead/dotfiles-private`, on branches with the same names. Each has an independent history. The following Claude example also describes the Codex capture and gitlink flow. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
+`dot_claude/`, `dot_codex/`, `dot_agents/`, and `dot_pi/` are git submodules of `raisedadead/dotfiles-private`, on branches with the same names. Each has an independent history. The following Claude example also describes the Codex capture and gitlink flow. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
 
 Both repos run `gitleaks` in `.githooks/pre-commit` and exit 1 on a finding. The parent `.githooks/pre-push` resolves the gitlink of each commit in each pushed range. It exits 1 when that submodule commit is on no remote, or when it cannot check it. A clone of the parent cannot check out such a commit.
 
@@ -144,10 +144,10 @@ Three coding agents run on this machine. Each owns its own global kernel and its
 | ------------- | ------------- | -------------- | ----------- | ----------------------------- | --------- |
 | Claude Code   | `dot_claude/` | `~/.claude/`   | `CLAUDE.md` | [Claude Code](#claude-code)   | M1 to M16 |
 | Codex         | `dot_codex/`  | `~/.codex/`    | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md) | C1 to C4  |
-| Pi            | Unmanaged     | `~/.pi/agent/` | `AGENTS.md` | `~/DEV/rd/pi-kit`             | None here |
+| Pi            | `dot_pi/`     | `~/.pi/`       | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)    | P1        |
 | Shared skills | `dot_agents/` | `~/.agents/`   | None        | [Skills](#skills)             | S1, S2    |
 
-Pi stays outside chezmoi by the operator's decision. This is intentional, not a gap to fix.
+The Pi rig deploys nothing until its cutover: `.chezmoiignore` ignores `.pi`. After the cutover, an allow list names each managed file. Credentials, MCP tokens, trust records, and sessions stay unmanaged.
 
 ### The rig contract
 
@@ -180,7 +180,7 @@ Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` 
 
 UNVERIFIED: that Codex loads a skill from `~/.agents/skills` at run time. The Codex binary names that path. `~/.codex/skills/` holds no link to it.
 
-Pi's doctor governs `~/.agents/skills/`. `~/.pi/agent/manifest.json` holds two lists for it. `externalSkills` names the third-party skills that must be present, and the `npx skills` lock must own each one. `managedSharedSkills` names the chezmoi-managed common skills that are allowed to be present. A name in the directory that neither list holds fails the `skills.external` check. Add each new common skill to `managedSharedSkills`, or ask the Pi rig to, or that check fails.
+Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning.
 
 ## Claude Code
 

@@ -9,6 +9,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Documentation                          | Local links, code blocks, preserved constraints, and `git diff --check` |
 | Shared deployment or Git hooks         | S1, S2, and C4 below; M15 and M16 fixture checks                        |
 | Codex rig                              | C1 to C4 below                                                          |
+| Pi rig                                 | P1 below                                                                |
 | Claude rig mod or hook rules           | M1 and M4                                                               |
 | Claude validator or formatter registry | Spec smoke test                                                         |
 | Claude plugin                          | M1 to M3                                                                |
@@ -55,6 +56,12 @@ Run `codex doctor --summary`. Report its failures separately from hook results. 
 ### C4: Deployment boundary and live behavior
 
 Run `~/.bin/chezmoi-fixture-check.sh` (`--keep` retains the fixture). It applies a synthetic source to an isolated destination and state file and checks six boundaries: rendered paths and permissions, an unchanged second apply, survival outside an exact directory, removal inside one, an absent excluded document, and what a named capture takes from its siblings. Then render and apply the selected rig files to an isolated destination and state file. Verify that unmanaged state survives and owner documents are absent. Compare installed named files with source. After approved activation, test an allowed patch, a blocked disposable private path, invalid JSON, and corrected JSON in a disposable directory. Record the client and tool path tested.
+
+## Pi
+
+### P1: Submodule and deployment boundary
+
+Run `git -C ~/.dotfiles/dot_pi status -sb` and expect the `dot_pi` branch. Run `chezmoi managed --path-style=absolute | grep -c '/.pi/'`. Until the rig cutover, expect `0`.
 
 ## Terminal stack
 
