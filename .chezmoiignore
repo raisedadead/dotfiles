@@ -10,6 +10,7 @@ install.sh
 .config/zsh/.zcompcache
 .config/zsh/.zsh_sessions
 .bin/test_*.py
+.pi
 .claude/mods/*/src
 .claude/mods/*/tests
 .claude/mods/*/parity
