@@ -147,7 +147,7 @@ Three coding agents run on this machine. Each owns its own global kernel and its
 | Pi            | `dot_pi/`     | `~/.pi/`       | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)    | P1        |
 | Shared skills | `dot_agents/` | `~/.agents/`   | None        | [Skills](#skills)             | S1, S2    |
 
-The Pi rig deploys nothing until its cutover: `.chezmoiignore` ignores `.pi`. After the cutover, an allow list names each managed file. Credentials, MCP tokens, trust records, and sessions stay unmanaged.
+`.chezmoiignore` holds an allow list for `.pi`. It names each managed file. Credentials, MCP tokens, trust records, and sessions stay unmanaged.
 
 ### The rig contract
 
