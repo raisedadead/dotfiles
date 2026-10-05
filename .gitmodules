@@ -10,3 +10,7 @@
 	path = dot_agents
 	url = git@github.com:raisedadead/dotfiles-private.git
 	branch = dot_agents
+[submodule "dot_pi"]
+	path = dot_pi
+	url = git@github.com:raisedadead/dotfiles-private.git
+	branch = dot_pi
