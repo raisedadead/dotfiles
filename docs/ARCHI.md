@@ -218,7 +218,7 @@ The review request belongs to the operator. Keep that wording in the kernel and 
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
-After `EnterWorktree`, the same check also applies to a `!` command that you type. It refuses `git -C ~/<path>`, because it treats `~` as a runtime value. It accepts an absolute path and `"$HOME/<path>"`. Tested with `git status` on 2.1.289 and 2.1.291; `push` is not tested. Rig hooks do not receive `!` commands, so the rig does not cause this refusal and cannot prevent it. When Remote Control is connected, the terminal shows only `detail withheld on this connection`. Start the session with `--debug-file <path>` to read the reason.
+After `EnterWorktree`, the same check also applies to a `!` command that you type. It refuses `git -C ~/<path>`, because it treats `~` as a runtime value. It accepts an absolute path and `"$HOME/<path>"`. Tested with `git status` on 2.1.289 and 2.1.291; `push` is not tested. Rig hooks do not receive `!` commands, so the rig does not cause this refusal and cannot prevent it. When Remote Control is connected, the terminal shows only `detail withheld on this connection`. Start the session with `--debug-file <path>` to read the reason (anthropics/claude-code#99855).
 
 ### Plugins, MCP, and memory
 
