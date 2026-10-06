@@ -1,2 +1,4 @@
 noreply@mrugesh.dev ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJZmuLl4e2SPr0V6eX5/hwh/B/Ve7+5nM69qYAWDVC7U ssh-raisedadead-ed25519
 aichat@mrugesh.dev ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJZmuLl4e2SPr0V6eX5/hwh/B/Ve7+5nM69qYAWDVC7U ssh-raisedadead-ed25519
+noreply@mrugesh.dev namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2PjmTZnhALYZaEqn4z5/1NH2foqA6LRdTY98r8NBSU git-signing
+aichat@mrugesh.dev namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2PjmTZnhALYZaEqn4z5/1NH2foqA6LRdTY98r8NBSU git-signing
