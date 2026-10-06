@@ -218,6 +218,8 @@ The review request belongs to the operator. Keep that wording in the kernel and 
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
+After `EnterWorktree`, the same check also applies to a `!` command that you type. It refuses `git -C ~/<path>`, because it treats `~` as a runtime value. It accepts an absolute path and `"$HOME/<path>"`. Tested with `git status` on 2.1.289 and 2.1.291; `push` is not tested. Rig hooks do not receive `!` commands, so the rig does not cause this refusal and cannot prevent it. When Remote Control is connected, the terminal shows only `detail withheld on this connection`. Start the session with `--debug-file <path>` to read the reason.
+
 ### Plugins, MCP, and memory
 
 First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed file from `installPath` in `~/.claude/plugins/installed_plugins.json`. A cache directory name can be a version, not a SHA. A plugin-registered hook runs outside the rig mod. Disable the plugin in `enabledPlugins` to stop it. Read the manifest and the hook registrations before you enable one.
