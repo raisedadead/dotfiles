@@ -36,7 +36,7 @@ The rig needs Homebrew Python 3.11 or later at `/opt/homebrew/bin/python3`. Run 
 
 ### Pi
 
-Install Pi with its installer: `curl -fsSL https://pi.dev/install.sh | sh`. It installs the latest release under `~/.pi/agent/install/` with pinned dependencies, and `pi update` updates it. The command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`; chezmoi manages that link, because `~/.bin` is an exact directory. After an update, run the [Pi checks](MAINTENANCE.md#pi) and bump the Pi versions in `dot_pi/package.json`. In `pi`, run `/login` for `openai`, `openrouter` and `typesafe`. Run `pi mcp login cloudflare` and `pi mcp login sentry`. Replay the Pi skills with the loop in [RIG.md](../dot_pi/RIG.md#change-the-rig). Run `npm ci` in `~/.dotfiles/dot_pi`, then the [Pi checks](MAINTENANCE.md#pi). Authentication, MCP tokens and sessions stay local to each machine.
+Do not install Pi or a Pi package with `npm install -g`. Install npm-global tools only on the fnm default Node. Install Pi with its installer: `curl -fsSL https://pi.dev/install.sh | sh`. It installs the latest release under `~/.pi/agent/install/` with pinned dependencies, and `pi update` updates it. The command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`; chezmoi manages that link, because `~/.bin` is an exact directory. After an update, run the [Pi checks](MAINTENANCE.md#pi) and bump the Pi versions in `dot_pi/package.json`. In `pi`, run `/login` for `openai`, `openrouter` and `typesafe`. Run `pi mcp login cloudflare` and `pi mcp login sentry`. Replay the Pi skills with the loop in [RIG.md](../dot_pi/RIG.md#change-the-rig). Run `npm ci` in `~/.dotfiles/dot_pi`, then the [Pi checks](MAINTENANCE.md#pi). Authentication, MCP tokens and sessions stay local to each machine.
 
 ## Daily loop
 
