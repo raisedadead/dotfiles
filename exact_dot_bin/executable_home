@@ -9,5 +9,35 @@ if [ "$#" -ne 1 ]; then
 	exit 2
 fi
 
-chezmoi git -- submodule foreach --recursive 'git push' &&
-	chezmoi git -- push
+root=$(chezmoi source-path) || exit 1
+logs=$(mktemp -d) || exit 1
+trap 'rm -rf "$logs"' EXIT
+
+ahead() {
+	git -C "$1" rev-parse --git-dir >/dev/null 2>&1 || return 1
+	count=$(git -C "$1" rev-list --count '@{u}..HEAD' 2>/dev/null) || return 0
+	[ "$count" -gt 0 ]
+}
+
+modules=$(git -C "$root" config --file .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}')
+pushed=''
+for path in $modules; do
+	ahead "$root/$path" || continue
+	pushed="$pushed $path"
+	(git -C "$root/$path" push >"$logs/$path.log" 2>&1; echo $? >"$logs/$path.rc") &
+done
+wait
+
+failed=0
+for path in $pushed; do
+	printf "Entering '%s'\n" "$path"
+	cat "$logs/$path.log"
+	[ "$(cat "$logs/$path.rc")" = 0 ] || failed=1
+done
+[ "$failed" = 0 ] || exit 1
+
+if ! ahead "$root"; then
+	[ -n "$pushed" ] || printf '%s\n' 'Everything up-to-date'
+	exit 0
+fi
+git -C "$root" push
