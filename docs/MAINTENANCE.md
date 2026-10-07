@@ -64,7 +64,7 @@ Then render and apply the selected rig files to an isolated destination and stat
 ### P1: Submodule and deployment boundary
 
 - `git -C ~/.dotfiles/dot_pi status -sb`: expect the `dot_pi` branch.
-- `chezmoi status ~/.pi`: expect no output. A `chezmoi diff ~/.pi` of the directory prints nothing for the `modify_` and template targets, so read the status, then `chezmoi diff` each named file.
+- `chezmoi status ~/.pi`: expect no output. A `chezmoi diff` of a directory does not recurse without `--recursive` (chezmoi 2.73.0), so read the status, then run `chezmoi diff --recursive ~/.pi`.
 - `pi --version`: expect the `@earendil-works/pi-coding-agent` version in `dot_pi/package.json`.
 - `ls ~/.local/share/fnm/node-versions/*/installation/bin/pi`: expect no match.
 - `cd /tmp && pi -p --no-session "Reply with ok." < /dev/null`: expect `ok`.
