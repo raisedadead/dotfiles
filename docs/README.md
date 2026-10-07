@@ -47,7 +47,7 @@ Do not install Pi or a Pi package with `npm install -g`. Install npm-global tool
 1. Run `npm ci` in `~/.dotfiles/dot_pi`.
 1. Run the [Pi checks](MAINTENANCE.md#pi).
 
-The `pi` command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`. chezmoi manages that link, because `~/.bin` is an exact directory. `pi update` updates Pi. After an update, run the [Pi checks](MAINTENANCE.md#pi) and bump the Pi versions in `dot_pi/package.json`.
+The `pi` command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`. chezmoi manages that link, because `~/.bin` is an exact directory. `pi update` updates Pi. After an update, set the Pi versions in `dot_pi/package.json` to the `pi --version` value. Run `npm install` in `~/.dotfiles/dot_pi`. Then run the [Pi checks](MAINTENANCE.md#pi).
 
 ## Daily loop
 
