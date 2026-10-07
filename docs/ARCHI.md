@@ -133,7 +133,7 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 Three coding agents run on this machine. Each owns its own global kernel and its own runtime. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
 
-| Rig           | Source        | Target       | Kernel      | Rig reference                  | Checks    |
+| Rig           | Source        | Target       | Kernel      | System design                  | Checks    |
 | ------------- | ------------- | ------------ | ----------- | ------------------------------ | --------- |
 | Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [RIG.md](../dot_claude/RIG.md) | M1 to M16 |
 | Codex         | `dot_codex/`  | `~/.codex/`  | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md)  | C1 to C4  |
@@ -141,6 +141,10 @@ Three coding agents run on this machine. Each owns its own global kernel and its
 | Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)              | S1, S2    |
 
 ### The rig contract
+
+This document is the overview. Each rig's `RIG.md` is the system design of that rig, and the rig's code follows its `RIG.md`. A difference between a `RIG.md` and the code is a defect. Correct the code or the `RIG.md` in the same change.
+
+A rig's change loop follows one outline: change the source, show `chezmoi diff`, ask the operator, then apply. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
 
 A managed rig is a `dot_<agent>/` submodule that deploys to `~/.<agent>/`. [Private submodules](#private-submodules) holds the branch layout and the hooks. [Deployment and capture](#deployment-and-capture) holds the capture loop and the state that stays unmanaged. Three conditions belong to a rig alone:
 
