@@ -1,8 +1,8 @@
 # Install and daily use
 
-The **source** is the configuration stored in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To capture a change means to copy it from the target back into chezmoi source. This happens only when you run a capture command.
+The **source** is the configuration in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To **capture** a change is to copy it from the target back into the source. chezmoi captures a change only when you run a capture command.
 
-Private sources `dot_claude/`, `dot_codex/` and `dot_pi/` deploy to `~/.claude`, `~/.codex` and `~/.pi`. The Codex and Pi sources manage named rig files only; their authentication and runtime state stay local.
+The private sources `dot_claude/`, `dot_codex/`, and `dot_pi/` deploy to `~/.claude`, `~/.codex`, and `~/.pi`. The Codex and Pi sources manage only named rig files. Their authentication, hook trust, MCP tokens, sessions, and other runtime state stay local to each machine.
 
 ## Install or recover a machine
 
@@ -18,25 +18,36 @@ Private sources `dot_claude/`, `dot_codex/` and `dot_pi/` deploy to `~/.claude`,
    ~/.dotfiles/install.sh
    ```
 
-The installer configures Git hooks, initializes private submodules, applies the configuration, and offers to install packages from the [Brewfile repository](https://github.com/raisedadead/Brewfile).
-
-- Keep `--source ~/.dotfiles` on `chezmoi init`; the default source path is different.
-- The age identity is not in Git. Without the 1Password copy, encrypted files cannot be recovered.
-- The submodules clone over SSH, so the 1Password SSH agent must work first: `ssh -T git@github.com`.
-- A clone without submodules needs `git -C ~/.dotfiles submodule update --init`; the doctor fails until then.
-- `install.sh` takes no arguments. `chezmoi-claude-bootstrap.sh` accepts `--check`, `--only`, and `--skip`.
+- Keep `--source ~/.dotfiles` on `chezmoi init`. The default source path is different.
+- The age identity is not in Git. Without the 1Password copy, you cannot recover the encrypted files.
+- The submodules clone over SSH. Make sure that the 1Password SSH agent works first: `ssh -T git@github.com`.
+- A clone without submodules needs `git -C ~/.dotfiles submodule update --init`. The doctor fails until you run it.
+- `install.sh` takes no arguments.
 
 ### Claude Code
 
-Run `~/.bin/chezmoi-claude-bootstrap.sh` to install its runtime prerequisites. See the [Claude checks](MAINTENANCE.md#claude-code).
+Run `~/.bin/chezmoi-claude-bootstrap.sh` to install the runtime prerequisites. See the [Claude checks](MAINTENANCE.md#claude-code).
 
 ### Codex
 
-The rig needs Homebrew Python 3.11 or later at `/opt/homebrew/bin/python3`. Run the [Codex checks](MAINTENANCE.md#codex). In a fresh Codex CLI session, open `/hooks` and review new or changed hook definitions. Restart the client after activation. Authentication and hook trust stay local to each machine.
+The rig needs Homebrew Python 3.11 or later at `/opt/homebrew/bin/python3`.
+
+1. Run the [Codex checks](MAINTENANCE.md#codex).
+1. In a new Codex CLI session, open `/hooks`. Review the new or changed hook definitions.
+1. Restart the client after activation.
 
 ### Pi
 
-Do not install Pi or a Pi package with `npm install -g`. Install npm-global tools only on the fnm default Node. Install Pi with its installer: `curl -fsSL https://pi.dev/install.sh | sh`. It installs the latest release under `~/.pi/agent/install/` with pinned dependencies, and `pi update` updates it. The command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`; chezmoi manages that link, because `~/.bin` is an exact directory. After an update, run the [Pi checks](MAINTENANCE.md#pi) and bump the Pi versions in `dot_pi/package.json`. In `pi`, run `/login` for `openai`, `openrouter` and `typesafe`. Run `pi mcp login cloudflare` and `pi mcp login sentry`. Replay the Pi skills with the loop in [RIG.md](../dot_pi/RIG.md#change-the-rig). Run `npm ci` in `~/.dotfiles/dot_pi`, then the [Pi checks](MAINTENANCE.md#pi). Authentication, MCP tokens and sessions stay local to each machine.
+Do not install Pi or a Pi package with `npm install -g`. Install npm-global tools only on the fnm default Node.
+
+1. Install Pi with its installer: `curl -fsSL https://pi.dev/install.sh | sh`. It installs the latest release under `~/.pi/agent/install/` with pinned dependencies.
+1. In `pi`, run `/login` for `openai`, `openrouter`, and `typesafe`.
+1. Run `pi mcp login cloudflare` and `pi mcp login sentry`.
+1. Replay the Pi skills with the loop in [RIG.md](../dot_pi/RIG.md#change-the-rig).
+1. Run `npm ci` in `~/.dotfiles/dot_pi`.
+1. Run the [Pi checks](MAINTENANCE.md#pi).
+
+The `pi` command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`. chezmoi manages that link, because `~/.bin` is an exact directory. `pi update` updates Pi. After an update, run the [Pi checks](MAINTENANCE.md#pi) and bump the Pi versions in `dot_pi/package.json`.
 
 ## Daily loop
 
@@ -49,9 +60,9 @@ git -C ~/.dotfiles add dot_config/exact_zsh/dot_zshrc
 git -C ~/.dotfiles commit -m "feat(zsh): ..."
 ```
 
-`chezmoi status` prints two columns. Column one is the change since the last apply. Column two is what `chezmoi apply` would do. `MM` after a target edit is normal. No output means no drift.
+`chezmoi status` prints two columns. Column one is the change since the last apply. Column two is the change that `chezmoi apply` makes. `MM` after a target edit is normal. No output means no drift.
 
-Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including a change an installer or a runtime made.
+Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target. This includes a change from an installer or a runtime.
 
 ## A file under `~/.claude`
 
@@ -71,7 +82,7 @@ git -C ~/.dotfiles/dot_codex add CODE_STYLE.md
 git -C ~/.dotfiles/dot_codex commit -m "docs(codex): update code style"
 ```
 
-Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Git and deployment rules allow only the selected rig files. The rig plan, `docs/`, and `archive/` are managed targets. `docs/AGENT-CASES.md` stays in source only.
+Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Git and deployment rules allow only the selected rig files.
 
 ## A managed Pi file
 
@@ -82,7 +93,7 @@ git -C ~/.dotfiles/dot_pi add agent/extensions/router.ts
 git -C ~/.dotfiles/dot_pi commit -m "fix(rig): ..."
 ```
 
-Edit the `settings.json` keys in `dot_pi/agent/modify_settings.json` and the MCP servers in `dot_pi/agent/mcp.json.tmpl`, then run `chezmoi apply ~/.pi`. `re-add` skips both. Run `/reload` in an open Pi session.
+Edit the `settings.json` keys in `dot_pi/agent/modify_settings.json`. Edit the MCP servers in `dot_pi/agent/mcp.json.tmpl`. Then run `chezmoi apply ~/.pi`. `re-add` skips both files. Run `/reload` in an open Pi session.
 
 ## Restore a target from source
 
@@ -93,56 +104,40 @@ chezmoi apply <target>     # overwrite the target from source
 
 ## Track a new file
 
-| Case             | Command                                                                          | Source entry                                 |
-| ---------------- | -------------------------------------------------------------------------------- | -------------------------------------------- |
-| Plain file       | `chezmoi add <target>`                                                           | `dot_...`                                    |
-| Secret file      | `chezmoi add --encrypt <target>`                                                 | `encrypted_...age`; mode 600 adds `private_` |
-| Private rig file | Add a named target, inspect its source path, then commit in the owning submodule | inside the submodule                         |
+| Case             | Command                                                                                | Source entry                                 |
+| ---------------- | -------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Plain file       | `chezmoi add <target>`                                                                 | `dot_...`                                    |
+| Secret file      | `chezmoi add --encrypt <target>`                                                       | `encrypted_...age`; mode 600 adds `private_` |
+| Private rig file | Add a named target. Run `chezmoi source-path <target>`. Commit in the owning submodule | inside the submodule                         |
 
-`add --encrypt` skips the secrets scan. `re-add` re-encrypts an encrypted file. A plain `add` of a file that looks like a secret exits 1 (`add.secrets = "error"`).
+`add --encrypt` skips the secrets scan. `re-add` re-encrypts an encrypted file. A plain `add` of a file that looks like a secret exits 1.
 
 ## Files that need a source edit
 
-`re-add` does nothing for a template, a `modify_` script, an external, or a symlink entry. Edit the source, then apply:
+`re-add` does nothing for a template, a `modify_` script, an external, or a symlink entry. Edit the source, then apply it:
 
 ```sh
 chezmoi edit --apply <target>     # opens the source file, applies on exit
 chezmoi merge <target>            # three-way merge for a template
 ```
 
-Templates today: `dot_config/glow/glow.yml.tmpl`, `dot_aws/encrypted_private_config.tmpl.age`. Externals: [.chezmoiexternal.toml](../.chezmoiexternal.toml). Modify script: `modify_private_dot_claude.json`.
-
 ## Exact directories
 
-`~/.bin`, `~/.config/git`, and `~/.config/zsh` are exact. `chezmoi apply` removes a file there that the source does not hold. Keep generated state elsewhere.
-
-## Inspect
-
-```sh
-chezmoi status                  # drift summary
-chezmoi diff                    # full diff, target versus source
-chezmoi verify; echo $?         # 0 when nothing differs
-chezmoi managed                 # every managed path
-chezmoi source-path <target>    # the source file for a target
-chezmoi cat <target>            # render a target without applying
-chezmoi doctor                  # environment check
-```
-
-Tab completes chezmoi target paths. Ctrl+T continues the path argument; `<C-g>` in that picker includes Git-ignored paths.
+`~/.bin`, `~/.config/git`, and `~/.config/zsh` are exact. In these directories, `chezmoi apply` removes each file that the source does not hold. Do not keep generated state there.
 
 ## Git and private submodules
 
 ```sh
-git -C ~/.dotfiles status                              # lists pending submodule commits
-home push                                             # pushes submodules, then the parent
+git -C ~/.dotfiles status    # lists pending submodule commits
+home push                    # pushes submodules, then the parent
 ```
 
-Hooks: `pre-commit` in both repos runs gitleaks on the staged diff. The submodule `post-commit` bumps the parent gitlink. The parent `pre-push` exits 1 while a recorded submodule commit is on no remote. Details: [ARCHI.md](ARCHI.md#private-submodules).
+The operator runs `home push`. A failed submodule push stops the command.
 
-The operator runs `home push`. It pushes each initialized submodule recursively, then the parent. A failed submodule push stops the command. `home push` takes no extra arguments. Other `home` commands pass through to chezmoi.
+`pre-commit` in both repos runs gitleaks on the staged diff. The parent `pre-push` exits 1 while a recorded submodule commit is on no remote. [ARCHI.md](ARCHI.md#private-submodules) holds the hook details.
 
 Move an existing, tracked directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push`.
 
 ## Checks
 
-[MAINTENANCE.md](MAINTENANCE.md) holds the probes. Start with `chezmoi status` and the checks for the component you changed. Use `gitleaks git . --redact --exit-code 1` for a repository secret scan.
+[MAINTENANCE.md](MAINTENANCE.md) holds the probes. Start with `chezmoi status` and the checks for the component that you changed. For a repository secret scan, run `gitleaks git . --redact --exit-code 1`.

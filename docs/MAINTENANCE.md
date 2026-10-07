@@ -15,19 +15,19 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Claude plugin                          | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop    | Applicable terminal probes below and the component's own checks         |
 
-Use disposable fixtures for checks that write files or send keys. Do not exercise them against the operator's live windows or sessions.
+Use disposable fixtures for checks that write files or send keys. Do not run them against the operator's live windows or sessions.
 
 ## Shared deployment
 
 ### S1: Source and target drift
 
-Run `chezmoi status`. Read named diffs without applying. Report drifted paths; do not print secret values. An empty status is the pass criterion.
+Run `chezmoi status`. Read each named diff. Do not apply. Report the drifted paths. Do not print secret values. Pass: an empty status.
 
 ### S2: Private submodules
 
-Run `git submodule status` and inspect each submodule's `core.hooksPath`. Expect `.githooks`. A leading `+` means the checkout differs from the recorded commit; it does not establish ahead, behind, or divergence. Inspect ancestry before proposing a repair. A leading `-` means the submodule is not initialized.
+Run `git submodule status`. Read the `core.hooksPath` of each submodule and expect `.githooks`. A leading `+` means that the checkout differs from the recorded commit. It does not show ahead, behind, or divergence. Inspect the ancestry before you propose a repair. A leading `-` means that the submodule is not initialized.
 
-Check `push.recurseSubmodules`, `submodule.recurse`, and `status.submoduleSummary`: expect `on-demand`, `false`, and `true`. Expect `merge` for each managed submodule's update setting.
+Expect `push.recurseSubmodules` `on-demand`, `submodule.recurse` `false`, and `status.submoduleSummary` `true`. Expect `merge` for the update setting of each managed submodule.
 
 ## Codex
 
@@ -39,7 +39,7 @@ ruff check --no-cache ~/.dotfiles/dot_codex/hooks
 ruff format --check --no-cache ~/.dotfiles/dot_codex/hooks
 ```
 
-Expect the suite and style checks to pass. Report failures and skipped tools.
+Expect the suite and the style checks to pass. Report failures and skipped tools.
 
 ### C2: Native command rules
 
@@ -47,23 +47,41 @@ Expect the suite and style checks to pass. Report failures and skipped tools.
 codex execpolicy check --rules ~/.dotfiles/dot_codex/rules/safety.rules -- git push
 ```
 
-Expect `forbidden`. This checks a command vector; it does not execute a push.
+Expect `forbidden`. The check reads a command vector. It does not run a push.
 
 ### C3: Installation health
 
-Run `codex doctor --summary`. Report its failures separately from hook results. Do not repair during this check.
+Run `codex doctor --summary`. Report its failures separately from the hook results.
 
 ### C4: Deployment boundary and live behavior
 
-Run `~/.bin/chezmoi-fixture-check.sh` (`--keep` retains the fixture). It applies a synthetic source to an isolated destination and state file and checks six boundaries: rendered paths and permissions, an unchanged second apply, survival outside an exact directory, removal inside one, an absent excluded document, and what a named capture takes from its siblings. Then render and apply the selected rig files to an isolated destination and state file. Verify that unmanaged state survives and owner documents are absent. Compare installed named files with source. After approved activation, test an allowed patch, a blocked disposable private path, invalid JSON, and corrected JSON in a disposable directory. Record the client and tool path tested.
+Run `~/.bin/chezmoi-fixture-check.sh`. It applies a synthetic source to an isolated destination and state file. It checks six boundaries: rendered paths and permissions, an unchanged second apply, survival outside an exact directory, removal inside one, an absent excluded document, and what a named capture takes from its siblings.
+
+Then render and apply the selected rig files to an isolated destination and state file. Verify that unmanaged state survives and that owner documents are absent. Compare the installed named files with the source. After approved activation, test an allowed patch, a blocked disposable private path, invalid JSON, and corrected JSON in a disposable directory. Record the client and the tool path that you tested.
 
 ## Pi
 
 ### P1: Submodule and deployment boundary
 
-Run `git -C ~/.dotfiles/dot_pi status -sb` and expect the `dot_pi` branch. Run `chezmoi diff ~/.pi` and expect no output; Pi rewrites `settings.json`, so `chezmoi status` can show column one `M`. Run `pi --version` and expect the `@earendil-works/pi-coding-agent` version in `dot_pi/package.json`. Run `ls ~/.local/share/fnm/node-versions/*/installation/bin/pi` and expect no match. Run `cd /tmp && pi -p --no-session "Reply with ok." < /dev/null` and expect `ok`. Start `pi` once and expect no error or warning above the editor. Run `cd ~/.dotfiles/dot_pi && npm test` and expect exit 0. Run `pi mcp list` and expect 6 connected servers. Compare `ls ~/.pi/agent/skills` with the names in `dot_pi/skills.tsv`.
+- `git -C ~/.dotfiles/dot_pi status -sb`: expect the `dot_pi` branch.
+- `chezmoi diff ~/.pi`: expect no output. Pi rewrites `settings.json`, so `chezmoi status` can show column one `M`.
+- `pi --version`: expect the `@earendil-works/pi-coding-agent` version in `dot_pi/package.json`.
+- `ls ~/.local/share/fnm/node-versions/*/installation/bin/pi`: expect no match.
+- `cd /tmp && pi -p --no-session "Reply with ok." < /dev/null`: expect `ok`.
+- Start `pi` once: expect no error or warning above the editor.
+- `cd ~/.dotfiles/dot_pi && npm test`: expect exit 0.
+- `pi mcp list`: expect 6 connected servers.
+- `ls ~/.pi/agent/skills`: expect the names in `dot_pi/skills.tsv`.
 
 ## Terminal stack
+
+Rules for tmux probes:
+
+- Give each tmux probe a unique `-L` or `-S`. Use the same flag for cleanup.
+- `-f /dev/null` selects a config, not a server.
+- `TMUX_TMPDIR` does not override an inherited `$TMUX`.
+- Read the parse output. tmux can exit 0 with an error in it.
+- Do not run the completed command in a completion test.
 
 ### T1
 
@@ -161,8 +179,6 @@ Shader on and off with equal window size, display, text, focus, and scroll workl
 
 Expected: CPU and GPU or energy recorded separately
 
-Give every tmux probe a unique `-L` or `-S`, including cleanup. `-f /dev/null` selects a config, not a server. `TMUX_TMPDIR` does not override an inherited `$TMUX`. Read the parse output; tmux can exit 0 with an error in it. Use disposable fixtures for write and key-routing checks. A completion test must not run the completed command.
-
 ## Claude Code
 
 ### M1
@@ -175,7 +191,7 @@ Expected: Exit 0. No `WARN:`, `ORPHAN:`, or `LINT:` line
 
 `claude plugin list`; compare `gitCommitSha` with `git -C ~/DEV/rd/claude-code-plugins rev-parse HEAD`
 
-Expected: Expected plugins enabled. First-party revisions agree, or the gap is reported
+Expected: The expected plugins are enabled. First-party revisions agree, or you report the gap
 
 ### M3
 
@@ -193,7 +209,7 @@ Expected: All tests pass. Report the count
 
 `chezmoi diff`
 
-Expected: Empty, or the drifted paths listed without an apply
+Expected: Empty. Otherwise, list the drifted paths. Do not apply
 
 ### M6
 
@@ -221,7 +237,7 @@ Expected: `lastError` is null. MCP connects. The `better-sqlite3` major is 12 or
 
 ### M10
 
-Run `npx skills check -g`, then `npx skills update -g -y` after a review of the reported changes. Compare `npx skills list -g` with `docs/skills.tsv` (one line per third-party skill, `source<TAB>name`; add the line by hand with each install). Replay a missing skill with the loop below. Run `find ~/.claude/skills -maxdepth 1 -type l ! -lname '../../.agents/skills/*'` and `/skill-doctor` in a session
+Run `npx skills check -g`. Review the reported changes, then run `npx skills update -g -y`. Compare `npx skills list -g` with `docs/skills.tsv`. The manifest has one `source<TAB>name` line for each third-party skill. Add the line by hand at each install. Replay a missing skill with the loop below. Run `find ~/.claude/skills -maxdepth 1 -type l ! -lname '../../.agents/skills/*'`. Run `/skill-doctor` in a session
 
 ```bash
 while IFS=$'\t' read -r src name; do npx skills add "$src" --skill "$name" -g -a claude-code -a codex -y; done < ~/.dotfiles/docs/skills.tsv
@@ -265,10 +281,10 @@ Feed `.githooks/pre-push` a stdin ref line whose sha records a pushed submodule 
 
 Expected: Exit 0, then exit 1 with the submodule, the gitlink, and the push command
 
-This optional Claude plugin check is separate from general documentation validation.
+M12 needs the optional whetstone Claude plugin. It is separate from the documentation checks.
 
 ```sh
 bash "$(jq -r '.plugins["whetstone@raisedadead-plugins"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/claim-check" AGENTS.md docs/README.md docs/ARCHI.md docs/MAINTENANCE.md
 ```
 
-A rig mod or hook-rule edit needs M4. A validator or formatter registry edit needs the spec smoke test. A plugin upgrade needs M1 to M3. A shell, Ghostty, tmux, or Neovim change needs the terminal checks. The doctor does not replace them.
+The doctor (M1) does not replace the checks in [Choose checks for your change](#choose-checks-for-your-change).

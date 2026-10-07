@@ -15,7 +15,7 @@
 | Desktop    | [AeroSpace](https://github.com/nikitabobko/AeroSpace), [SketchyBar](https://felixkratz.github.io/SketchyBar)                            |
 | Agents     | [Claude Code](https://claude.com/claude-code), [Codex](https://developers.openai.com/codex), [Pi](https://github.com/earendil-works/pi) |
 
-This public repository holds the shared configuration. The three agent rigs and the other private directories are submodules of a private repository, one branch per directory. Read [Agent rigs](docs/ARCHI.md#agent-rigs) for the map.
+This public repository holds the shared configuration. The three agent rigs and the other private directories are submodules of a private repository. Each directory has its own branch. Read [Agent rigs](docs/ARCHI.md#agent-rigs) for the map.
 
 ## Documents
 
