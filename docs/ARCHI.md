@@ -146,6 +146,8 @@ This document is the overview. Each rig's `RIG.md` is the system design of that 
 
 A rig's change loop follows one outline: change the source, show `chezmoi diff`, ask the operator, then apply. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
 
+Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
+
 A managed rig is a `dot_<agent>/` submodule that deploys to `~/.<agent>/`. [Private submodules](#private-submodules) holds the branch layout and the hooks. [Deployment and capture](#deployment-and-capture) holds the capture loop and the state that stays unmanaged. Three conditions belong to a rig alone:
 
 - Do not make the target an exact directory. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out, but an untracked source file still deploys. A rig that needs a strict boundary uses an allow list. Codex and Pi do.
