@@ -27,19 +27,19 @@ gui:
       - bold
     defaultFgColor:
       - "#cdd6f4"
-  authorColors:
-    "*": "#b4befe"
-  branchColorPatterns:
-    "^main$": "#fab387"
-    "^master$": "#fab387"
-    "^develop": "#cba6f7"
-    "^feature/": "#89dceb"
-    "^hotfix/": "#f38ba8"
-    "^release/": "#fab387"
-    "^bugfix/": "#f38ba8"
-    "^fix/": "#f38ba8"
-    "^chore/": "#7f849c"
-    "^docs/": "#89dceb"
+    authorColors:
+      "*": "#b4befe"
+    branchColorPatterns:
+      "^main$": "#fab387"
+      "^master$": "#fab387"
+      "^develop": "#cba6f7"
+      "^feature/": "#89dceb"
+      "^hotfix/": "#f38ba8"
+      "^release/": "#fab387"
+      "^bugfix/": "#f38ba8"
+      "^fix/": "#f38ba8"
+      "^chore/": "#7f849c"
+      "^docs/": "#89dceb"
 git:
   log:
     order: default
