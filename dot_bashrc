@@ -26,3 +26,5 @@ export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
 [[ -d "$HOME/.bin" ]] && export PATH="$HOME/.bin:$PATH"
 export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
 [[ -d "$PNPM_HOME/bin" ]] && export PATH="$PNPM_HOME/bin:$PATH"
+
+command -v wt >/dev/null 2>&1 && eval "$(wt config shell init bash)"
