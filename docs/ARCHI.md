@@ -69,20 +69,11 @@ The shader chain is cursor warp, then text glow. The default animation mode rend
 
 ### zsh startup and PATH
 
-| File                                                          | Owns                                                                                         |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `~/.zshenv`                                                   | Sets `ZDOTDIR` and sources its `.zshenv`. zsh does not reread it after the directory changes |
-| `.config/zsh/.zshenv`                                         | Environment and `path.zsh`                                                                   |
-| `.config/zsh/.zprofile`                                       | Reapplies PATH after macOS `path_helper`                                                     |
-| `.config/zsh/.zshrc`                                          | Interactive setup, in order                                                                  |
-| `.config/zsh/plugins.zsh`, `plugins.lock`                     | Pinned plugins and explicit updates                                                          |
-| `.config/zsh/completions.zsh`                                 | Completion cache and generated providers                                                     |
-| `.config/zsh/fzf.zsh`                                         | Picker behavior and theme                                                                    |
-| `.config/zsh/alias.zsh`, `private.zsh`, `~/.bin/functions.sh` | Aliases, 1Password shell integration, helpers                                                |
+`~/.zshenv` sets `ZDOTDIR` and sources `.config/zsh/.zshenv`. zsh does not reread `~/.zshenv` after the directory changes. `.zprofile` reapplies PATH after macOS `path_helper`.
 
-[path.zsh](../dot_config/exact_zsh/path.zsh) prepends in order. The last prepend wins. User commands and the fnm default come before Homebrew. `.zprofile` restores that order after `path_helper`. [dot_bashrc](../dot_bashrc) carries the fnm prepend too. A GUI process reads no shell startup file and needs its own PATH.
+[path.zsh](../dot_config/exact_zsh/path.zsh) prepends in order, so the last prepend wins. User commands and the fnm default come before Homebrew. [dot_bashrc](../dot_bashrc) carries the fnm prepend too. Keep the two in sync. A GUI process reads no shell startup file and needs its own PATH.
 
-Startup order: options and keymaps, prompt, pinned plugins, fzf, unique fpath and compinit, fzf-tab, widget wrappers, tool integrations, aliases and functions, fnm. fzf-tab loads after compinit and before highlighting and autosuggestions. Atuin loads after fzf and owns Ctrl+R. There is no deferred loading and no plugin manager.
+Keep the `.zshrc` order. fzf-tab loads after compinit and before highlighting and autosuggestions. Atuin loads after fzf and owns Ctrl+R.
 
 `plugins.lock` records repository and commit. A missing plugin clones at that commit. A changed lock synchronizes an existing checkout at the next startup. A local edit in a checkout causes an error. `zsh-plugin-update` fetches the upstream heads and records the new pins. Capture the lock after it. Keep checkout state out of the exact zsh directory.
 
@@ -90,9 +81,11 @@ The completion cache signature includes provider directories, metadata, and entr
 
 chezmoi keeps its packaged `_chezmoi` completion with `completion.custom = false`. Its custom path candidates can fail on a tilde prefix ([Cobra issue](https://github.com/spf13/cobra/issues/1577)). A scoped completion style includes dotfiles. The native fallback can offer an unmanaged path.
 
-Ctrl+T replaces the shell argument at the cursor. An existing directory becomes the search root. A remaining fragment becomes the query. It keeps the other arguments, quotes the inserted path, and leaves the buffer intact on cancel. It does not evaluate variables or command substitutions. It lists files and directories recursively, includes hidden paths, and respects Git ignores. `<C-g>` includes Git-ignored entries for that call. Alt+C uses the same ignore policy.
+Ctrl+T replaces the shell argument at the cursor. An existing directory becomes the search root, and the rest becomes the query. It does not evaluate variables or command substitutions. It respects Git ignores. `<C-g>` includes the ignored entries for that call.
 
-Emacs mode is the default. Ctrl+Z toggles `vicmd`. Ctrl+F opens `mdr`. Dot-prefixed forward-motion widgets move without accepting an autosuggestion. Ctrl+E and Ctrl+Shift+E accept one. Keep `DIRENV_LOG_FORMAT` exported above the direnv hook.
+`.zshrc` and `.bashrc` load the worktrunk wrapper with `wt config shell init`. Do not run `wt config shell install`, because it writes the deployed files. An agent shell does not load the wrapper, so `wt switch` cannot change its directory there. Move a Claude session with `EnterWorktree`.
+
+Keep `DIRENV_LOG_FORMAT` exported above the direnv hook.
 
 OMP cache cleanup matches UUID session caches only. Do not include `init.*.zsh` or bare `omp.cache`. Keep the array slice `"${(@)_c[51,-1]}"`. Without `(@)` the slice joins the paths and removes nothing.
 
@@ -104,13 +97,13 @@ A tmux test server needs a unique `-L` or `-S` on every command, including subpr
 
 Use tmux `-N` notes for binding descriptions. [keys](../exact_dot_bin/executable_keys) reads tool reports at runtime. State the fzf options at each popup call, because an inherited `FZF_DEFAULT_OPTS` can change height or truncation. `--keep-right` also truncates headers and footers from the left. Test the real popup width.
 
-[Switcher](../dot_config/tmux/scripts/executable_switcher.sh) combines sessions, projects, config roots, and zoxide. Files walks the pane directory without a depth or row cap. Grep reloads ripgrep for the current expression. An empty query produces no rows. Rows carry the target path separately from the display text. Bookmarks live at `$XDG_STATE_HOME/switcher/bookmarks`, one absolute directory per line, unmanaged. `~/.config/switcher/projects.json` is optional.
+[Switcher](../dot_config/tmux/scripts/executable_switcher.sh) rows carry the target path apart from the display text. Its bookmarks live unmanaged at `$XDG_STATE_HOME/switcher/bookmarks`, one absolute directory per line.
 
 [reader.sh](../dot_config/tmux/scripts/executable_reader.sh) and [mdr](../exact_dot_bin/executable_mdr) share actions through mdr subcommands but keep separate fzf bindings. Update both together. Rows are NUL-delimited with the path after the first tab. Sanitize only the display text. A positive ripgrep glob is an inclusion rule. Off-repository walks stop at depth six.
 
 Force color and pager options in previews. bat and glow behave differently off a TTY. Glow does not expand `~` in its style path, so its configuration is a template. Keep the temporary-file removal before `exec glow`. An EXIT trap does not run after exec.
 
-Sessions are parked by hand with `@parked`. There is no automatic restore. The first window is `Main`. Later windows use the shared `@cmd_name` mapping. [input-lib.sh](../dot_config/tmux/scripts/input-lib.sh) needs Homebrew Bash for namerefs.
+[input-lib.sh](../dot_config/tmux/scripts/input-lib.sh) needs Homebrew Bash for namerefs.
 
 A tmux reload adds or overwrites bindings and options. A removed source line does not clear runtime state. Unbind or unset explicitly. A `run-shell` string expands formats before the child command. Double `#` when the inner command needs the format. `M-\\` cannot be a menu shortcut, because ESC-backslash ends a DCS ([tmux issue](https://github.com/tmux/tmux/issues/4386)).
 
@@ -130,9 +123,9 @@ Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config
 
 AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchybar/lua/items/spaces.lua`, and the bracket in `sketchybarrc`. Update the three together. Read layout keys and triggers from the AeroSpace source. An unmatched window follows the floating catch-all rule. A GUI-launched rule script needs absolute executable paths. `ctrl-alt-w` runs `aeroplace layout`, which serializes layout changes with `lockf`. Keep `outer.bottom` scalar in the TOML, because `aeroplace` reads it with a line match.
 
-For a bottom SketchyBar and an auto-hidden Dock, set AeroSpace `outer.bottom` to the bar height plus its measured bottom inset and the window gap: `30 + 6 + 8 = 44`. `y_offset = 3` raises the bar 6 pt. The bar copies the Thaw menu bar: 30 pt high, with 28 pt capsule panels and a 1 pt grey border. AeroSpace already excludes the native menu bar from its work area; `outer.top = 8` adds space below it. Gaps affect tiled windows.
+Set AeroSpace `outer.bottom` to the bar height plus its measured bottom inset plus the window gap: `30 + 6 + 8 = 44`. `y_offset = 3` raises the bar 6 pt. AeroSpace already excludes the native menu bar from its work area.
 
-The bar's `height` in `sketchybarrc` sets its full area. The visible panels use `background.height` and `corner_radius` in `sketchybarrc`, `lua/items/front_app.lua`, and `lua/items/widgets.lua`; keep those three in sync. Workspace and mode highlights have their own smaller backgrounds in `spaces.lua` and `mode.lua`. Horizontal panel placement uses the bar's `margin` plus `padding_left` and `padding_right`. After a height or offset change, query `sketchybar --query bar` and check the screen geometry before adjusting AeroSpace's bottom gap. [SketchyBar properties](https://felixkratz.github.io/SketchyBar/config/bar) describe these controls.
+Keep `background.height` and `corner_radius` the same in `sketchybarrc`, `lua/items/front_app.lua`, and `lua/items/widgets.lua`. After a height or offset change, run `sketchybar --query bar` and check the screen geometry before you change the AeroSpace bottom gap ([SketchyBar properties](https://felixkratz.github.io/SketchyBar/config/bar)).
 
 Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `executable_` marks a program, not a sourced file. `awake` stores PID, deadline, and spec state. Its process check cannot tell a reused PID from another `caffeinate`.
 
@@ -140,14 +133,12 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 Three coding agents run on this machine. Each owns its own global kernel and its own runtime. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
 
-| Rig           | Source        | Target       | Kernel      | Rig reference                 | Checks    |
-| ------------- | ------------- | ------------ | ----------- | ----------------------------- | --------- |
-| Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [Claude Code](#claude-code)   | M1 to M16 |
-| Codex         | `dot_codex/`  | `~/.codex/`  | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md) | C1 to C4  |
-| Pi            | `dot_pi/`     | `~/.pi/`     | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)    | P1        |
-| Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)             | S1, S2    |
-
-`.chezmoiignore` holds an allow list for `.pi`. It names each managed file. Credentials, MCP tokens, trust records, and sessions stay unmanaged.
+| Rig           | Source        | Target       | Kernel      | Rig reference                  | Checks    |
+| ------------- | ------------- | ------------ | ----------- | ------------------------------ | --------- |
+| Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [RIG.md](../dot_claude/RIG.md) | M1 to M16 |
+| Codex         | `dot_codex/`  | `~/.codex/`  | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md)  | C1 to C4  |
+| Pi            | `dot_pi/`     | `~/.pi/`     | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)     | P1        |
+| Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)              | S1, S2    |
 
 ### The rig contract
 
@@ -184,37 +175,20 @@ Pi loads every skill under `~/.agents/skills/`. When two skills have the same na
 
 ## Claude Code
 
-| Source                                                                                                                       | Owns                                                          |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [dot_claude/settings.json](../dot_claude/settings.json)                                                                      | Hook wiring, plugins, MCP declarations, statuslines, settings |
-| [mods/rig/src/register.ts](../dot_claude/mods/rig/src/register.ts)                                                           | Rig mod: event hooks and runtime decisions                    |
-| [mods/rig/src/hook_config.json](../dot_claude/mods/rig/src/hook_config.json)                                                 | Rule and gate configuration                                   |
-| [validators.json](../dot_claude/mods/rig/src/validators.json), [formatters.json](../dot_claude/mods/rig/src/formatters.json) | Tool registries                                               |
-| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                                               | Kernel and path-scoped instructions                           |
-| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/)                      | Delegation contracts and reusable work                        |
-| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                                                    | Memory configuration. The database stays unmanaged            |
-| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                                          | RTK filters and hook exclusions; `git` is excluded            |
+| Source                                                                                                  | Owns                                                          |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [dot_claude/settings.json](../dot_claude/settings.json)                                                 | Hook wiring, plugins, MCP declarations, statuslines, settings |
+| [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                                     | Rig mod: hooks, gates, guard, checks, open items, statusline  |
+| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                          | Kernel and path-scoped instructions                           |
+| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/) | Delegation contracts and reusable work                        |
+| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                               | Memory configuration. The database stays unmanaged            |
+| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                     | RTK filters and hook exclusions; `git` is excluded            |
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
 [Skills](#skills) holds the four kinds and the shared store. A common skill reaches Claude through a `symlink_<name>` entry in `dot_claude/skills/` with the content `../../.agents/skills/<name>`. Doctor lint 5e checks the links and the source entries.
 
-The rig is a Claude Code mod in `dot_claude/mods/rig`. `CLAUDE_CODE_PLUGIN_DIRS` in `settings.json` loads it. It does not need the dossier or whetstone plugins. Edit `src/`, then run `./build.sh`, which writes `hooks/register.js`. Only `.claude-plugin/` and `hooks/` deploy. The Python dispatcher is retired. The settings `hooks` key keeps only the third-party hooks: rtk, cavemem, NotchBar, and the doctor.
-
-SessionStart registers the main marker and sets the session title. The doctor runs beside it as an `asyncRewake` hook at startup and wakes Claude with the issue lines when it finds any. In `--rewake` mode it exits 0 at once unless the session's `cwd` is in the `PUB_SOURCE` or the `PRIV_SOURCE` repository, one of its worktrees, or one of its submodules. It reads that `cwd` from the hook payload on stdin and falls back to `$PWD`. It also exits 0 when `git` is absent, because it cannot identify the repository then. The guard runs before the dependency checks, so a missing dependency cannot wake a session elsewhere. A different repository gets no check and no wake, because you can only repair the drift in the source repository. A bare run ignores the guard and always reports. TaskCreated denies a task name outside the `<GROUP><N> <title>` form. TaskCreated and a PreToolUse call to `TaskUpdate`, `TaskList` or `TaskGet` record that the session uses tasks. The `tool.call` hook evaluates command and file rules, spawn contracts, and `rubric_gates`: an edit to a file that a gate names is denied until the session reads the whole rubric, invokes its skill, or types it as a slash command. After an edit, the rig formats, validates, queues project checks, and records mutations. SubagentStop clears the mutation ledger when a review agent completes. Stop handles failure suppression, review, tasks, queued validators, and the sound. The interface gate blocks once when the session changed a UI file in `stop.interface_gate.extensions` and neither invoked nor typed a skill in `stop.interface_gate.skills`. It ignores test and spec files and skips a session in which none of those skills is installed. The task gate blocks once when the session changed `min_files` files or more and used no Task tool. It runs after the review and interface gates, so it waits for the next turn when either blocks; a continued Stop skips the gates and the sound but still drains the validator queue. The claim gate belongs to the whetstone plugin. Stop also captures the open items of the last answer. One `haiku` call through `$.model.complete` lists each item that the answer skipped, deferred, put off, left as a follow-up, marked `UNVERIFIED`, left in progress, or left to the operator. The answer needs no fixed line format. When the call fails or its reply is not JSON, a line parse reads the `- deferred`, `- skipped:`, `- in-progress:` and `<ID> [H]` lines instead. Stop drops an item that starts with a task ID such as `T3`, cites `(T3)` or a dossier row such as `§T`, cites the ID of an open TaskList task, or contains its title of two or more words in whole words. It reads the open tasks from `~/.claude/tasks/session-<first 8 characters of the session ID>/`. An operator item stays in all cases. Stop records each item on one line of at most 300 characters in `~/.claude/markers/deferred/<session>.json`, and does not block. An item whose trigger names a date, a `PR #N` merge, or a branch merge gets a check. A branch merge reads `merge`, `merges`, `merged`, `is merged`, `has merged` or `gets merged`. The branch name must be `this branch`, in backticks, contain a `/`, or come before the word `branch`. A trigger in another repository gets no check. An item without a check stays open. After each Stop, the local date or `gh pr view` in the recorded directory checks the open triggers. A branch fires only when its pull request shows `MERGED`. A Stop that finds items or recorded items rewrites the file, and the marker sweep deletes it after 32 days without a write. A skipped item stays until you drop it. The in-progress items show only the last answer's list. A red band above the prompt shows the count of open items and the fired count. `show` lists the items: the fired triggers first, then the `[H] operator` items, the open triggers, and the other kinds. `[send]` submits `Work on this open item: <item>` as a new prompt and removes the item. When the work stays open, the next answer lists it again. `[X]` drops an item. An operator item has `[done]` and `[X]` and no `[send]`. Each one removes the item and submits a prompt that tells the main chat to update the TaskList task or dossier row. Stop folds an item that differs only in case, spacing or punctuation into the recorded item. The capture prompt also gives the recorded items, so that the model can repeat their text. A resume adds each fired item to the context once. SessionEnd cleans session state. Read `register.ts`, `context.ts`, and `statusline.ts` in `src/` for the other events and the error paths.
-
-The review request belongs to the operator. Keep that wording in the kernel and in the gate message. A completed review-class agent clears the ledger of mutated files, so a later edit gates again within the one-block-per-session cap. A planned or crashed review clears nothing. A workflow agent needs the recognized reviewer type. A shell-driven edit is outside the mutation recorder, so the agent still owes the review.
-
-### Hook gotchas
-
-- Test with `claude plugin test dist` after `./build.sh`. The test kit has no `classic.PreToolUse`. Test that path through the exported `guardBash`.
-- Register each event once per matcher. A second registration fails validation.
-- Read the configuration before the fallback constants. An existing key wins. An edit to its fallback has no effect.
-- Stop uses `stop_hook_active` against a correction loop. Stop returns one combined `block` value. A gate error must not discard the validator drain.
-- A project root can disappear before a queued validation runs. Handle the missing directory.
-- A spawn contract needs `OUTPUT:` and `DONE:`. A named agent also needs `REPORT:`. The gate checks presence, not quality. Roster writes go through `$.store` updates.
-- Test a new hook regex with long adverse input. A nested quantifier can stall the hook. A tool matcher matches the full name, not a substring.
-- `git commit -F` is outside the `-m` command-string checks. Malformed hook input and several error paths return without a denial. Inspect the handler before you claim enforcement.
+### RTK and worktrees
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
@@ -226,15 +200,11 @@ First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed 
 
 `settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi-claude-doctor.sh` check 4, which compares the `mcpServers` key alone. Do not use `chezmoi diff ~/.claude.json`: Claude Code writes other keys at run time, and a whole-file diff reports a false drift. Probe connectivity with `claude mcp list`. A duplicate server name at two scopes can split OAuth state.
 
-Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`. cavemem 0.2.1 pins `better-sqlite3@^11`. Every 11.x aborts in the Node 24 garbage collector with `Assertion failed: (env) != nullptr` ([WiseLibs/better-sqlite3#1515](https://github.com/WiseLibs/better-sqlite3/issues/1515), closed without a fix). On Node 26 the 11.x install script fails, because no prebuild exists and the source does not compile. The bootstrap installs cavemem with `--ignore-scripts`, then installs `better-sqlite3@12.11.1` under cavemem with `--no-save`. `cavemem-health.sh` prints one line for each problem: the binary, the hook, a better-sqlite3 major below 12, an embedder that does not import, or a running worker without an embedder. When `embedding.provider` is `none`, it skips the embedder and worker checks. The doctor reports each line as a warning. The bootstrap uses the same lines to select the repair, and restarts a running worker after it. A manual `npm i -g cavemem` reinstalls 11.x. Run `--only cavemem` after it. The `cavemem-repair` workflow runs `cavemem-health.sh`, and runs the bootstrap when it finds a problem. The bootstrap uses three script policies. `cavemem` installs with `--ignore-scripts`. `@xenova/transformers` installs with `--allow-scripts=sharp,protobufjs`. `cavemem_pin_bsql` writes a temporary `.npmrc` with `allow-scripts=better-sqlite3`, and that file is the only permission for the better-sqlite3 build. npm 11.19 runs an unlisted install script and warns. `--strict-allow-scripts` blocks it with exit 1. If search raises `Maximum call stack size exceeded`, use the timeline and observation tools. Keep native `autoMemoryEnabled` off. A native write creates target drift.
-
-### Statusline
-
-The rig mod renders the main statusline from `src/statusline.ts`. It shows the effort from the Stop event and an alert for the last API error. The subagent statusline is a separate jq renderer. Keep `switchModelsOnFlag: false`. A source setting alone does not prove server behavior.
+Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`. cavemem 0.2.1 pins `better-sqlite3@^11`. Every 11.x aborts in the Node 24 garbage collector with `Assertion failed: (env) != nullptr` ([WiseLibs/better-sqlite3#1515](https://github.com/WiseLibs/better-sqlite3/issues/1515), closed without a fix). On Node 26 the 11.x install script fails, because no prebuild exists and the source does not compile. The bootstrap installs cavemem with `--ignore-scripts`, then installs `better-sqlite3@12.11.1` under cavemem. A manual `npm i -g cavemem` reinstalls 11.x. Run `--only cavemem` after it. Keep the temporary `.npmrc` of `cavemem_pin_bsql` as the only install-script permission for better-sqlite3. npm 11.19 runs an unlisted install script and only warns. If search raises `Maximum call stack size exceeded`, use the timeline and observation tools. Keep native `autoMemoryEnabled` off. A native write creates target drift.
 
 ## Codex
 
-`dot_codex/` owns the global instructions, code-style guide, rig reference, native command rules, hook registration, and Python hook source and tests. Read [RIG.md](../dot_codex/RIG.md) for behavior and limits. The hook uses Homebrew Python 3.11 or later. It does not load Claude files or require Claude plugins.
+`dot_codex/` owns the global instructions, code-style guide, rig reference, native command rules, hook registration, and Python hook source and tests. Read [RIG.md](../dot_codex/RIG.md) for behavior and limits.
 
 Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. A new managed file needs an explicit entry in both lists. The exceptions are `docs/` and `archive/`: both lists allow each of these directories whole. `.chezmoiignore` allows `skills/` and keeps Codex's own `.system/` tree out.
 
