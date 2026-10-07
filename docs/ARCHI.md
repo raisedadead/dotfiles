@@ -146,7 +146,7 @@ This document is the overview. Each rig's `RIG.md` is the system design of that 
 
 The rigs are similar but not mirrors. A rig takes a feature from another rig as its own copy, and the copies change independently.
 
-A rig's change loop follows one outline: change the source, show `chezmoi diff`, ask the operator, then apply. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
+A rig's change loop follows one outline: change the source, show `chezmoi diff` (with `--recursive` for a directory), ask the operator, then apply. The rig's `RIG.md` states which steps the model runs and which steps the operator runs. The Codex model runs none of them without an explicit request.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 
