@@ -15,7 +15,7 @@ This guide explains ownership, load order, and constraints that matter when you 
 
 ## Deployment and capture
 
-Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target>`. Inspect the Git diff. Commit. Nothing captures a target on its own. Settings: [.chezmoi.toml.tmpl](../.chezmoi.toml.tmpl).
+Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target>`. Inspect the Git diff. Commit. Nothing captures a target on its own. A rig file follows the change loop in its rig's `RIG.md` instead. Settings: [.chezmoi.toml.tmpl](../.chezmoi.toml.tmpl).
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including an installer or runtime write. Capture one target at a time when the list holds a change you did not make. Revert the rest with `chezmoi apply <target>`.
 

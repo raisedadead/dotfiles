@@ -60,7 +60,7 @@ git -C ~/.dotfiles add dot_config/exact_zsh/dot_zshrc
 git -C ~/.dotfiles commit -m "feat(zsh): ..."
 ```
 
-`chezmoi status` prints two columns. Column one is the change since the last apply. Column two is the change that `chezmoi apply` makes. `MM` after a target edit is normal. No output means no drift.
+`chezmoi status` prints two columns. Column one is the change since the last apply. Column two is the change that `chezmoi apply` makes. `MM` after a target edit is normal until you `re-add` or apply that target. No output means no drift.
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target. This includes a change from an installer or a runtime.
 
