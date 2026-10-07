@@ -31,6 +31,7 @@ CLAUDE_DIR="${CLAUDE_DIR:-$HOME/.claude}"
 PUB_SOURCE="${PUB_SOURCE:-$HOME/.dotfiles}"
 PRIV_SOURCE="${PRIV_SOURCE:-$HOME/.dotfiles}"
 SHAPE_EXTS="${SHAPE_EXTS:-md|toml|yaml|yml|kdl|ini}"
+CAVEMEM_HEALTH="${CAVEMEM_HEALTH:-$HOME/.bin/cavemem-health.sh}"
 # ARCHI_CC_VERSION_PIN removed 2026-05-15 — operator policy: no version pins.
 
 SELF=$(command -v -- "$0" 2>/dev/null) || SELF="$0"
@@ -374,37 +375,23 @@ check_plugin_src_drift() {
 }
 
 check_cavemem_abi() {
-	local bin="$HOME/.local/share/fnm/aliases/default/bin/cavemem"
-	if [[ ! -x "$bin" ]]; then
+	local out msg
+	if [[ ! -x "$CAVEMEM_HEALTH" ]]; then
+		log "  WARN: $CAVEMEM_HEALTH missing - run chezmoi apply ~/.bin"
+		return 1
+	fi
+	if out=$("$CAVEMEM_HEALTH"); then
+		log '  clean'
+		return 0
+	fi
+	if [[ "$out" == missing\ * ]]; then
 		log '  skip (cavemem binary missing)'
 		return 0
 	fi
-	local xenova="$HOME/.local/share/fnm/aliases/default/lib/node_modules/@xenova/transformers"
-	if [[ ! -d "$xenova" ]]; then
-		log '  WARN: @xenova/transformers missing (undeclared cavemem dep) - semantic embeddings will not build; run chezmoi-claude-bootstrap.sh --only cavemem'
-		return 1
-	fi
-	local node_bin="$HOME/.local/share/fnm/aliases/default/bin/node"
-	local out rc=0
-	out=$(printf '%s' '{"session_id":"doctor","tool_name":"Read","cwd":"/tmp"}' |
-		timeout 5 "$node_bin" "$bin" hook run post-tool-use --ide claude-code 2>&1) || rc=$?
-	if [[ "$rc" -ne 0 || "$out" != *'"ok":true'* ]]; then
-		log '  WARN: cavemem hook failing - run chezmoi-claude-bootstrap.sh --only cavemem or the cavemem-repair workflow'
-		return 1
-	fi
-	local bsql="$HOME/.local/share/fnm/aliases/default/lib/node_modules/cavemem/node_modules/better-sqlite3/package.json"
-	if [[ ! -f "$bsql" ]]; then
-		log '  WARN: better-sqlite3 not found under cavemem - run chezmoi-claude-bootstrap.sh --only cavemem'
-		return 1
-	fi
-	local major
-	major=$("$node_bin" -e 'console.log(require(process.argv[1]).version.split(".")[0])' "$bsql" 2>/dev/null || echo 0)
-	if ((major < 12)); then
-		log "  WARN: cavemem better-sqlite3 ${major}.x aborts in GC on Node 24 (WiseLibs/better-sqlite3#1515) - run chezmoi-claude-bootstrap.sh --only cavemem"
-		return 1
-	fi
-	log '  clean'
-	return 0
+	while read -r _ msg; do
+		log "  WARN: $msg - run chezmoi-claude-bootstrap.sh --only cavemem"
+	done <<<"$out"
+	return 1
 }
 
 check_safeguard_toggle() {
@@ -547,7 +534,7 @@ run_checks() {
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 2/4] cavemem ABI probe + embedder (@xenova) presence'
+	log '[warn 2/4] cavemem health (hook, better-sqlite3, embedder, worker)'
 	check_cavemem_abi
 	log ''
 

@@ -5,7 +5,7 @@
 # chezmoi cannot: the cavemem package, the MCP merge, and the plugins.
 #
 # Steps (each idempotent — re-runs are safe):
-#   1. cavemem  — npm i -g cavemem on fnm-default node
+#   1. cavemem  — cavemem-health.sh, then install or repair on fnm-default node
 #   2. MCP reconcile — chezmoi apply ~/.claude.json
 #   3. plugins  — claude plugin install for each enabledPlugins entry
 #   4. verify   — ~/.bin/chezmoi-claude-doctor.sh (5 phases)
@@ -71,13 +71,9 @@ skipped() {
 
 FNM_DEFAULT_BIN="$HOME/.local/share/fnm/aliases/default/bin"
 CAVEMEM_DIR="$HOME/.local/share/fnm/aliases/default/lib/node_modules/cavemem"
+XENOVA_DIR="$HOME/.local/share/fnm/aliases/default/lib/node_modules/@xenova/transformers"
+CAVEMEM_HEALTH="${CAVEMEM_HEALTH:-$HOME/.bin/cavemem-health.sh}"
 BSQL_PIN="better-sqlite3@12.11.1" # workaround: WiseLibs/better-sqlite3#1515
-BSQL_MIN_MAJOR=12
-
-cavemem_bsql_major() {
-	"$FNM_DEFAULT_BIN/node" -e 'console.log(require(process.argv[1]).version.split(".")[0])' \
-		"$CAVEMEM_DIR/node_modules/better-sqlite3/package.json" 2>/dev/null || echo 0
-}
 
 cavemem_pin_bsql() {
 	(
@@ -87,56 +83,118 @@ cavemem_pin_bsql() {
 			exit 1
 		}
 		trap 'rm -f .npmrc' EXIT INT TERM
-		export PATH="$FNM_DEFAULT_BIN:$PATH"
 		printf 'allow-scripts=better-sqlite3\n' >.npmrc
 		npm i --no-save "$BSQL_PIN"
 	)
 }
 
-step_cavemem() {
-	local bin xenova="$HOME/.local/share/fnm/aliases/default/lib/node_modules/@xenova/transformers"
-	bin=$(command -v cavemem 2>/dev/null)
-	if [[ -n "$bin" ]] && cavemem --version >/dev/null 2>&1 && [[ -d "$xenova" ]]; then
-		if (($(cavemem_bsql_major) >= BSQL_MIN_MAJOR)); then
-			ok "cavemem present ($($bin --version 2>/dev/null | head -1)) + @xenova embedder + $BSQL_PIN"
-			return 0
-		fi
-		if ((CHECK_ONLY)); then
-			warn "cavemem better-sqlite3 $(cavemem_bsql_major).x aborts in GC on Node 24 (WiseLibs/better-sqlite3#1515) — run '--only cavemem'"
-			return 1
-		fi
-		p "pinning $BSQL_PIN under cavemem…"
-		cavemem_pin_bsql || {
-			err "npm i --no-save $BSQL_PIN failed"
-			return 1
-		}
-		ok "cavemem better-sqlite3 pinned to $(cavemem_bsql_major).x"
-		return 0
-	fi
-	if ((CHECK_ONLY)); then
-		[[ -z "$bin" ]] && warn "cavemem missing — run '--only cavemem'"
-		[[ -n "$bin" && ! -d "$xenova" ]] && warn "@xenova/transformers missing (undeclared cavemem dep) — run '--only cavemem'"
-		[[ -n "$bin" && -d "$xenova" ]] && warn "cavemem present but 'cavemem --version' fails — run '--only cavemem'"
+json_field() {
+	"$FNM_DEFAULT_BIN/node" -e 'try { console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[process.argv[2]] ?? "") } catch { console.log("") }' "$1" "$2" 2>/dev/null
+}
+
+cavemem_has() {
+	grep -q "^$1 " <<<"$2"
+}
+
+cavemem_worker_pid() {
+	local pid
+	pid=$(cat "$HOME/.cavemem/worker.pid" 2>/dev/null) && kill -0 "$pid" 2>/dev/null && printf '%s' "$pid"
+}
+
+cavemem_wait_worker() {
+	local dim
+	for _ in 1 2 3 4 5 6 7 8 9 10; do
+		[[ -n "$(cavemem_worker_pid)" ]] || return 0
+		dim=$(json_field "$HOME/.cavemem/worker.state.json" dim)
+		[[ "$dim" =~ ^[1-9][0-9]*$ ]] && return 0
+		sleep 2
+	done
+}
+
+cavemem_install_xenova() {
+	local version
+	version=$(json_field "$XENOVA_DIR/package.json" version)
+	npm i -g "@xenova/transformers${version:+@$version}" --allow-scripts=sharp,protobufjs || {
+		err "npm i -g @xenova/transformers failed"
 		return 1
-	fi
+	}
+}
+
+cavemem_reinstall() {
+	local version
+	version=$(json_field "$CAVEMEM_DIR/package.json" version)
+	npm i -g --ignore-scripts "cavemem${version:+@$version}" || {
+		err "npm i -g cavemem failed"
+		return 1
+	}
+}
+
+cavemem_install() {
 	if ! command -v npm >/dev/null 2>&1; then
 		err "npm not in PATH — set up fnm default node first ('fnm install --lts && fnm default <ver>')"
 		return 1
 	fi
 	p "installing cavemem + @xenova/transformers via npm…"
-	npm i -g --ignore-scripts cavemem || {
-		err "npm i -g cavemem failed"
-		return 1
-	}
-	npm i -g @xenova/transformers --allow-scripts=sharp,protobufjs || {
-		err "npm i -g @xenova/transformers failed"
-		return 1
-	}
+	cavemem_reinstall && cavemem_install_xenova || return 1
 	cavemem_pin_bsql || {
 		err "npm i --no-save $BSQL_PIN failed"
 		return 1
 	}
-	ok "cavemem + @xenova embedder installed, better-sqlite3 pinned to $(cavemem_bsql_major).x"
+}
+
+step_cavemem() {
+	local -x PATH="$FNM_DEFAULT_BIN:$PATH"
+	local problems msg pid
+	if [[ ! -x "$CAVEMEM_HEALTH" ]]; then
+		err "$CAVEMEM_HEALTH missing — run 'chezmoi apply ~/.bin'"
+		return 1
+	fi
+	if problems=$("$CAVEMEM_HEALTH"); then
+		ok "cavemem $(cavemem --version 2>/dev/null) healthy: hook, better-sqlite3, embedder, worker"
+		return 0
+	fi
+	if ((CHECK_ONLY)); then
+		while read -r _ msg; do
+			warn "$msg — run '--only cavemem'"
+		done <<<"$problems"
+		return 1
+	fi
+	pid=$(cavemem_worker_pid)
+	if cavemem_has missing "$problems" || cavemem_has start "$problems"; then
+		cavemem_install || return 1
+	else
+		if cavemem_has bsql "$problems"; then
+			p "pinning $BSQL_PIN under cavemem…"
+			cavemem_pin_bsql || {
+				err "npm i --no-save $BSQL_PIN failed"
+				return 1
+			}
+		fi
+		if cavemem_has hook "$("$CAVEMEM_HEALTH")"; then
+			p "reinstalling cavemem…"
+			cavemem_reinstall || return 1
+			cavemem_pin_bsql || {
+				err "npm i --no-save $BSQL_PIN failed"
+				return 1
+			}
+		fi
+		if cavemem_has embedder "$problems"; then
+			p "reinstalling @xenova/transformers with the sharp build…"
+			cavemem_install_xenova || return 1
+		fi
+	fi
+	if [[ -n "$pid" ]]; then
+		p "restarting the cavemem worker…"
+		cavemem restart >/dev/null || warn "cavemem restart failed"
+	fi
+	cavemem_wait_worker
+	if ! problems=$("$CAVEMEM_HEALTH"); then
+		while read -r _ msg; do
+			err "$msg"
+		done <<<"$problems"
+		return 1
+	fi
+	ok "cavemem repaired: hook, better-sqlite3, embedder, worker"
 }
 
 step_mcp() {
