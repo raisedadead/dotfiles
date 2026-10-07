@@ -3,6 +3,16 @@
 # This won't be added again if you remove it.
 Include ~/.orbstack/ssh/config
 
+Match host github.com exec "test -f ~/.ssh/id_ed25519_signing"
+  IdentityAgent none
+  IdentityFile ~/.ssh/id_ed25519_signing
+  IdentitiesOnly yes
+
+Host github.com
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%C
+  ControlPersist 60s
+
 Host *
   ServerAliveInterval 60
   SetEnv TERM=xterm-256color
