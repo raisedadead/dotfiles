@@ -276,7 +276,9 @@ step_verify() {
 }
 
 main() {
-	printf '\n%sChezmoi Claude bootstrap%s%s — %s\n\n' "$BLD" "$RST" "$DIM" "${CHECK_ONLY:+check-only}"
+	local mode=install
+	((CHECK_ONLY)) && mode=check-only
+	printf '\n%sChezmoi Claude bootstrap%s%s — %s\n\n' "$BLD" "$RST" "$DIM" "$mode"
 	printf "%s\n\n" "${RST}"
 
 	local rc=0
