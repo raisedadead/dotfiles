@@ -13,13 +13,6 @@ local front_app = sbar.add("item", "front_app", {
 		font = { family = colors.font, style = "Bold", size = 14.0 },
 		color = colors.text,
 	},
-	background = {
-		color = colors.island,
-		corner_radius = 14,
-		height = 28,
-		border_width = 1,
-		border_color = colors.island_border,
-	},
 })
 
 front_app:subscribe("front_app_switched", function(env)
@@ -28,3 +21,16 @@ front_app:subscribe("front_app_switched", function(env)
 		label = { string = env.INFO },
 	})
 end)
+
+local center_items = require("items.now_playing")
+table.insert(center_items, 1, "front_app")
+
+sbar.add("bracket", "center_island", center_items, {
+	background = {
+		color = colors.island,
+		corner_radius = 14,
+		height = 28,
+		border_width = 1,
+		border_color = colors.island_border,
+	},
+})
