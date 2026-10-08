@@ -10,7 +10,7 @@
 #                         (catches hand-edited orphan docs like the original RTK.md case).
 #   4. mcp drift        — settings.json.mcpServers (canonical) vs ~/.claude.json (runtime),
 #                         compared with jq on .mcpServers, plus a 0600 mode check.
-#   5. lint             — schema-shape checks against ARCHI "Drift detection" gaps:
+#   5. lint             — schema-shape checks:
 #                           5a. enabledPlugins values must be boolean (array form silently disables in CC 2.1.x).
 #                           5b. mcpServers entries must declare `type` (stdio/http/sse).
 #                           5c. log `claude --version` informationally (no pin — operator policy 2026-05-15).
@@ -246,7 +246,7 @@ check_mcp() {
 	return $((found + 1))
 }
 
-# Lint stage: schema-shape checks against ARCHI "Drift detection" gaps. Each sub-check
+# Lint stage: schema-shape checks. Each sub-check
 check_lint() {
 	local settings="$PRIV_SOURCE/dot_claude/settings.json"
 	local found=0
@@ -441,7 +441,7 @@ window, now = 30 * 86400, time.time()
 issues = []
 
 if len(names) > cap:
-    issues.append("%d user agents exceed the cap of %d - see ARCHI 'Instructions & agents'" % (len(names), cap))
+    issues.append("%d user agents exceed the cap of %d" % (len(names), cap))
 
 spawns = {}
 for log_path in glob.glob(os.path.join(log_dir, "*.jsonl")):

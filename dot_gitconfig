@@ -41,6 +41,8 @@ update = merge
 update = merge
 [submodule "dot_agents"]
 update = merge
+[submodule "dot_pi"]
+update = merge
 
 [merge]
 conflictstyle = diff3

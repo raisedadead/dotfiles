@@ -11,6 +11,7 @@ This guide explains ownership, load order, and constraints that matter when you 
 - [Agent rigs](#agent-rigs)
 - [Claude Code](#claude-code)
 - [Codex](#codex)
+- [Pi](#pi)
 - [Operator tools](#operator-tools)
 
 ## Deployment and capture
@@ -43,7 +44,7 @@ Stage a shell startup change with an isolated destination and state file before 
 
 Both repos run `gitleaks` in `.githooks/pre-commit` and exit 1 on a finding. The parent `.githooks/pre-push` resolves the gitlink of each commit in each pushed range. It exits 1 when that submodule commit is on no remote, or when it cannot check it. A clone of the parent cannot check out such a commit.
 
-Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.<name>.update = merge` for each of the three, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
+Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.<name>.update = merge` for each of the four, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
 
 Each private directory is one orphan branch with the directory name, mounted with `git submodule add -b <dir>`. Private branch repository metadata uses `.git*`-prefixed files, which chezmoi skips. Deployable configuration also lives at the branch root. Codex owner documents under `docs/` are excluded explicitly. `dotfiles-privatize.sh` seeds `pre-commit` and `post-commit` from the parent `.githooks/` into a new private branch.
 
@@ -217,6 +218,12 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. A new managed file needs an explicit entry in both lists. The exceptions are `docs/` and `archive/`: both lists allow each of these directories whole. `.chezmoiignore` allows `skills/` and keeps Codex's own `.system/` tree out.
 
 The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start at the [rig index](../dot_codex/docs/README.md). `docs/AGENT-CASES.md` is the only source-only document. A passing hook suite does not prove live interception. Review new hook definitions with `/hooks`, restart the client, and use disposable fixtures for live checks.
+
+## Pi
+
+`dot_pi/` owns the Pi kernel (`agent/AGENTS.md` and `agent/APPEND_SYSTEM.md`), the extensions, the agents, the rules, the themes, and the skill list. Read [RIG.md](../dot_pi/RIG.md) for behavior and limits.
+
+[.chezmoiignore](../.chezmoiignore) uses an allow list for `.pi`. A new managed path needs an entry in that list. Keep authentication, sessions, `models-store.json`, `mcp-auth.json`, and package installs unmanaged. The modify script `agent/modify_settings.json` writes `settings.json`, and the template `agent/mcp.json.tmpl` writes `mcp.json`. `re-add` skips both.
 
 ## Operator tools
 
