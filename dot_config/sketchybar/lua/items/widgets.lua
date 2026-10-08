@@ -28,7 +28,17 @@ end)
 
 separator("status.usage_separator", "right")
 local status_items = require("items.usage")
-for _, name in ipairs({ "status.usage_separator", "utc_clock", "status.date_separator", "clock" }) do
+separator("status.sketchyusage_separator", "right")
+for _, name in ipairs(require("items.sketchyusage")) do
+	table.insert(status_items, 1, name)
+end
+for _, name in ipairs({
+	"status.sketchyusage_separator",
+	"status.usage_separator",
+	"utc_clock",
+	"status.date_separator",
+	"clock",
+}) do
 	table.insert(status_items, name)
 end
 
