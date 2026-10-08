@@ -36,16 +36,19 @@ for index, provider in ipairs(providers) do
 	local leftmost = index == #providers
 	items[provider.id] = sbar.add("item", name, {
 		position = "right",
+		-- workaround: FelixKratz/SketchyBar#863
+		padding_left = leftmost and 4 or 0,
+		padding_right = rightmost and 4 or 0,
 		icon = {
 			string = icons.app(provider.label),
 			color = provider.color,
 			font = { family = colors.app_font, size = 17 },
-			padding_left = leftmost and 10 or 5,
+			padding_left = leftmost and 10 or 9,
 		},
 		label = {
 			string = "—",
 			font = { size = 13, features = "tnum" },
-			padding_right = rightmost and 10 or 5,
+			padding_right = rightmost and 10 or 9,
 		},
 	})
 	table.insert(names, name)
