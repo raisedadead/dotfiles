@@ -119,7 +119,7 @@ if = 'test %{app-bundle-id} ~= "dato|screencontinuity|bartender"'
 run = 'layout floating'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} ~= "sparkdesktop|spotify|whatsapp"'
+if = 'test %{app-bundle-id} ~= "sparkdesktop|spotify|apple\.music|whatsapp"'
 run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
