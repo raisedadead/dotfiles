@@ -131,7 +131,7 @@ if = 'test %{app-bundle-id} ~= "helium|safari|chrome|brave|firefox"'
 run = 'move-node-to-workspace 3'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} ~= "claudefordesktop|openai.codex|open-design"'
+if = 'test %{app-bundle-id} ~= "claudefordesktop|openai.codex|open-design|anysphere.sand"'
 run = 'move-node-to-workspace 4'
 
 # Everything else: float, centered, on whichever workspace is already focused.
