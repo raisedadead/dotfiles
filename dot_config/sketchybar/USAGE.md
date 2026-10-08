@@ -1,34 +1,18 @@
 # Subscription quota
 
-Click Claude or Codex to open the text panel. Click either item again to
-close it. An app focus change or a pointer exit from the bar and popup also
-closes it. There is no close timer or outside-click listener.
+[SketchyUsage](https://github.com/raisedadead/SketchyUsage) shows the Claude and Codex quota. Install it and start its service:
 
-The bar shows the remaining weekly quota: `96%`. `—` means that the weekly
-limit is missing or its reset has passed. `!` marks a fetch error or data
-older than 30 minutes. Open the panel for the error or stale-data status.
+```sh
+brew install raisedadead/tap/sketchyusage
+brew services start sketchyusage
+```
 
-Each panel row shows a limit, its remaining percentage, and its local reset
-time: `Weekly  96% · Tue 15 Sep 08:16`. Saved values have a `!` marker.
-Expired limits show `— · reset passed`. Missing reset times are omitted.
-Codex Spark rows are hidden. Other model limits appear only when the
-provider returns them.
+The bar shows the remaining weekly quota: `96%`. The label is yellow at 25% or less, and red at 10% or less. `—` means that the weekly limit is missing or its reset has passed. `!` marks a fetch error or data older than 30 minutes.
 
-Background checks run every 15 minutes. A successful request sets a minimum
-14-minute interval from its start. Wake events and restarts respect the saved
-deadline. A check before that deadline uses the cache. A click forces a check,
-with a 30-second minimum between forced checks. A click does not override a
-rate-limit delay. Failures delay requests for 1 to 6 hours. A longer server
-retry delay takes precedence.
+`— !` on both items means that the service is not running. The bar checks the service heartbeat every minute.
 
-Claude uses the CLI credential file or its current user's Keychain entry,
-with a service-only fallback for older entries. The Claude CLI owns token
-renewal. Open Claude CLI if the panel reports an expired login. Codex uses
-its CLI account service. The quota cache contains usage data, not credentials.
+Click Claude or Codex to open the panel. The panel shows each limit, its reset countdown, the burn-rate projection, and the Codex reset credits. Press Escape or click outside the panel to close it.
 
 ## Validation
 
-Run `luac -p lua/items/usage.lua`. Parse `usage.py` with Python's `ast.parse`.
-Use isolated fixtures for fresh, stale, expired, missing, and model limits.
-Check that repeated calls and HTTP 429 responses preserve request deadlines.
-Use a separate SketchyBar instance to check native text layout and dismissal.
+Run `luac -p lua/items/sketchyusage.lua`. Run `sketchybar --query sketchyusage.claude` and compare the label with the panel.
