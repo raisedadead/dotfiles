@@ -1,5 +1,6 @@
 local colors = require("colors")
 local icons = require("icons")
+local separator = require("separator")
 
 local media_control = "/opt/homebrew/bin/media-control"
 local players = {
@@ -11,13 +12,7 @@ local bundle
 sbar.add("event", "spotify_change", "com.spotify.client.PlaybackStateChanged")
 sbar.add("event", "music_change", "com.apple.Music.playerInfo")
 
-local separator = sbar.add("item", "now_playing.separator", {
-	position = "center",
-	drawing = "off",
-	width = 14,
-	icon = { string = "│", font = { family = colors.font, size = 13 }, color = colors.surface2, padding_left = 3, padding_right = 3 },
-	label = { drawing = false },
-})
+local divider = separator("now_playing.separator", "center", { drawing = "off" })
 
 local now_playing = sbar.add("item", "now_playing", {
 	position = "center",
@@ -25,7 +20,6 @@ local now_playing = sbar.add("item", "now_playing", {
 	updates = "on",
 	icon = {
 		font = { family = colors.app_font, style = "Regular", size = 17.0 },
-		padding_left = 5,
 	},
 	label = { max_chars = 48, font = { size = 13.0 } },
 })
@@ -33,7 +27,7 @@ local now_playing = sbar.add("item", "now_playing", {
 local function render(bundle_id, playing, artist, title)
 	local player = playing and type(title) == "string" and title ~= "" and players[bundle_id]
 	bundle = player and bundle_id
-	separator:set({ drawing = player and "on" or "off" })
+	divider:set({ drawing = player and "on" or "off" })
 	if not player then
 		now_playing:set({ drawing = "off" })
 		return

@@ -1,11 +1,13 @@
 local colors = require("colors")
 local icons = require("icons")
+local separator = require("separator")
 
 local aerospace = "/opt/homebrew/bin/aerospace"
 local workspaces = { "1", "2", "3", "4", "5" }
 local focused = ""
 local spaces = {}
 local separators = {}
+local generation = 0
 
 local function style(space, sid, strip)
 	if sid == focused then
@@ -26,12 +28,17 @@ local function style(space, sid, strip)
 end
 
 local function refresh_all()
+	generation = generation + 1
+	local current = generation
 	sbar.exec(aerospace .. " list-windows --all --format '%{workspace}|%{app-name}'", function(out)
+		if current ~= generation then
+			return
+		end
 		local strips = {}
 		for line in tostring(out or ""):gmatch("[^\r\n]+") do
 			local ws, app = line:match("^([^|]+)|(.*)$")
 			if ws and spaces[ws] then
-				strips[ws] = (strips[ws] or "") .. icons.app(app) .. " "
+				strips[ws] = (strips[ws] and strips[ws] .. " " or "") .. icons.app(app)
 			end
 		end
 		local previous_visible = false
@@ -49,19 +56,7 @@ end
 
 for index, sid in ipairs(workspaces) do
 	if index > 1 then
-		separators[sid] = sbar.add("item", "space.separator." .. sid, {
-			position = "left",
-			drawing = "off",
-			width = 14,
-			icon = {
-				string = "│",
-				font = { family = colors.font, size = 13 },
-				color = colors.surface2,
-				padding_left = 3,
-				padding_right = 3,
-			},
-			label = { drawing = false },
-		})
+		separators[sid] = separator("space.separator." .. sid, "left", { drawing = "off" })
 	end
 	local space = sbar.add("item", "space." .. sid, {
 		position = "left",
@@ -99,14 +94,16 @@ end)
 
 updater:subscribe("front_app_switched", refresh_all)
 
-updater:subscribe({ "routine", "forced", "system_woke" }, function()
+local function sync_focused()
+	local current = generation
 	sbar.exec(aerospace .. " list-workspaces --focused", function(out)
+		if current ~= generation then
+			return
+		end
 		focused = tostring(out or ""):match("%S+") or focused
 		refresh_all()
 	end)
-end)
+end
 
-sbar.exec(aerospace .. " list-workspaces --focused", function(out)
-	focused = tostring(out or ""):match("%S+") or ""
-	refresh_all()
-end)
+updater:subscribe({ "routine", "forced", "system_woke" }, sync_focused)
+sync_focused()

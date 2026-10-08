@@ -7,8 +7,10 @@ local providers = {
 	{ id = "codex", label = "Codex", color = colors.teal },
 }
 local items, names, rows = {}, {}, {}
-local snapshot, pending, opened = {}, false, false
-local read_error
+local exec_timeout = 65
+local snapshot, opened, shown = {}, false, 0
+local read_error, pending_since, force_queued
+local fetch = 0
 
 local function remaining(row)
 	if not row or (row.resets_at and row.resets_at <= os.time()) then
@@ -31,20 +33,19 @@ end
 for index, provider in ipairs(providers) do
 	local name = "usage." .. provider.id
 	local rightmost = index == 1
+	local leftmost = index == #providers
 	items[provider.id] = sbar.add("item", name, {
 		position = "right",
-		padding_left = rightmost and 0 or 4,
-		padding_right = rightmost and 4 or 0,
 		icon = {
 			string = icons.app(provider.label),
 			color = provider.color,
 			font = { family = colors.app_font, size = 17 },
-			padding_left = rightmost and 4 or 10,
+			padding_left = leftmost and 10 or 5,
 		},
 		label = {
 			string = "—",
 			font = { size = 13, features = "tnum" },
-			padding_right = rightmost and 10 or 4,
+			padding_right = rightmost and 10 or 5,
 		},
 	})
 	table.insert(names, name)
@@ -61,25 +62,26 @@ owner:set({
 })
 
 local function row(left, right, color, size)
-	local name = "usage.popup." .. (#rows + 1)
-	sbar.add("item", name, {
-		position = "popup.usage.claude",
+	shown = shown + 1
+	local props = {
+		drawing = true,
 		width = 480,
 		padding_left = 0,
 		padding_right = 0,
 		icon = { string = left:gsub("%c", " "), color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = right and 200 or 444, max_chars = right and 24 or 52, padding_left = 18, padding_right = 0 },
 		label = { drawing = right ~= nil, string = right or "", color = color or colors.text, font = { family = colors.font, size = size or 13 }, width = 244, align = "right", padding_left = 0, padding_right = 18 },
 		background = { drawing = false },
-	})
-	table.insert(rows, name)
+	}
+	if rows[shown] then
+		rows[shown]:set(props)
+		return
+	end
+	props.position = "popup.usage.claude"
+	rows[shown] = sbar.add("item", "usage.popup." .. shown, props)
 end
 
 local function render()
-	owner:set({ popup = { drawing = false } })
-	for _, name in ipairs(rows) do
-		sbar.remove(name)
-	end
-	rows = {}
+	shown = 0
 	for _, provider in ipairs(providers) do
 		local data = snapshot[provider.id] or {}
 		local value = remaining(data.weekly)
@@ -109,16 +111,24 @@ local function render()
 			row("Stale · " .. os.date("%a %d %b %H:%M", math.floor(data.updated_at)), nil, colors.yellow, 11)
 		end
 	end
-	owner:set({ popup = { drawing = opened } })
+	for index = shown + 1, #rows do
+		rows[index]:set({ drawing = false })
+	end
 end
 
 local function update(cached, force)
-	if pending then
+	if pending_since and os.time() - pending_since < exec_timeout then
+		force_queued = force_queued or force
 		return
 	end
-	pending = true
+	pending_since = os.time()
+	fetch = fetch + 1
+	local current = fetch
 	sbar.exec(command .. (cached and " --cached" or "") .. (force and " --force" or ""), function(data, exit_code)
-		pending = false
+		if current ~= fetch then
+			return
+		end
+		pending_since = nil
 		if exit_code == 0 and type(data) == "table" then
 			snapshot = data
 			read_error = nil
@@ -126,8 +136,10 @@ local function update(cached, force)
 			read_error = "Quota check failed"
 		end
 		render()
-		if cached then
-			update(false)
+		if cached or force_queued then
+			local force_next = force_queued
+			force_queued = nil
+			update(false, force_next)
 		end
 	end)
 end
