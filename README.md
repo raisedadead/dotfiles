@@ -29,3 +29,5 @@ This public repository holds the shared configuration. The three agent rigs and 
 ## License
 
 ISC © 2017 Mrugesh Mohapatra
+
+Some rig text is adapted from MIT-licensed sources. Read [Credits](docs/CREDITS.md).
