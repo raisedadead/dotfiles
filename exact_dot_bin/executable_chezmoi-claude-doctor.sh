@@ -23,7 +23,7 @@
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
 #   chezmoi-claude-doctor.sh --quiet   # exit code only
 #   chezmoi-claude-doctor.sh --test    # synthetic round-trip (creates+detects+cleans)
-#   chezmoi-claude-doctor.sh --rewake  # hook mode: issue lines on stderr, exit 2 when any
+#   chezmoi-claude-doctor.sh --rewake  # hook mode: issues on stderr with exit 2; WARN lines to ~/.claude/markers/doctor-warnings.txt
 
 set -uo pipefail
 
@@ -357,17 +357,19 @@ check_plugin_src_drift() {
 		log '  clean'
 		return 0
 	fi
-	local key installed_sha own_src src_head
+	local key name installed_sha own_src tag tag_sha
 	own_src="${OWN_PLUGIN_SRC:-$HOME/DEV/rd/claude-code-plugins}"
 	while IFS= read -r key; do
-		[[ -z "$key" ]] && continue
+		[[ "$key" == *@raisedadead-plugins && -d "$own_src/.git" ]] || continue
 		installed_sha=$(jq -r --arg k "$key" '.plugins[$k][0].gitCommitSha // empty' "$installed" 2>/dev/null)
-		if [[ "$key" == *@raisedadead-plugins && -d "$own_src/.git" ]]; then
-			src_head=$(git -C "$own_src" rev-parse HEAD 2>/dev/null)
-			if [[ -n "$src_head" && -n "$installed_sha" && "$src_head" != "$installed_sha" ]]; then
-				log "  WARN: $key installed sha != source HEAD (installed=${installed_sha:0:12} source=${src_head:0:12}) — push + /cmd-refresh-plugins to reconcile"
-				found=$((found + 1))
-			fi
+		[[ -n "$installed_sha" ]] || continue
+		name="${key%@*}"
+		tag=$(git -C "$own_src" tag --list "$name-v*" --sort=-v:refname 2>/dev/null | head -n 1)
+		[[ -n "$tag" ]] || continue
+		tag_sha=$(git -C "$own_src" rev-parse "$tag^{commit}" 2>/dev/null) || continue
+		if ! git -C "$own_src" merge-base --is-ancestor "$tag_sha" "$installed_sha" 2>/dev/null; then
+			log "  WARN: $key installed ${installed_sha:0:12} predates release $tag (${tag_sha:0:12}) — run /cmd-refresh-plugins"
+			found=$((found + 1))
 		fi
 	done <<<"$keys"
 	[[ "$found" -eq 0 ]] && log '  clean'
@@ -530,7 +532,7 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/4] first-party plugin drift (installed sha vs claude-code-plugins source HEAD)'
+	log '[warn 1/4] first-party plugin drift (installed sha vs latest claude-code-plugins release tag)'
 	check_plugin_src_drift
 	log ''
 
@@ -547,6 +549,23 @@ run_checks() {
 	log ''
 
 	[[ "$total" -eq 0 ]]
+}
+
+rewake_finish() {
+	local rc=$1 report=$2 warnings tmp
+	local file="$CLAUDE_DIR/markers/doctor-warnings.txt"
+	warnings=$(sed -nE 's/^[[:space:]]*WARN: //p' <<<"$report")
+	if [[ -n "$warnings" ]]; then
+		mkdir -p "${file%/*}" && tmp=$(mktemp "$file.XXXXXX") && printf '%s\n' "$warnings" >"$tmp" && mv "$tmp" "$file"
+	else
+		rm -f "$file"
+	fi
+	[[ "$rc" -eq 0 ]] && return 0
+	{
+		printf 'chezmoi-claude-doctor: issues found. Run ~/.bin/chezmoi-claude-doctor.sh for the full report.\n'
+		printf '%s\n' "$report"
+	} >&2
+	return 2
 }
 
 self_test() {
@@ -630,6 +649,44 @@ self_test() {
 		return 1
 	fi
 
+	log '[test] phase 6: rewake sends WARN lines to the operator file, not to the model'
+	if ! (
+		CLAUDE_DIR=$(mktemp -d -t chezmoi-claude-doctor-rewake.XXXXXX)
+		trap 'rm -rf "$CLAUDE_DIR"' EXIT
+		out=$(rewake_finish 0 $'[warn 1/4] x\n  WARN: drift one\nTotal issues: 0' 2>&1) || exit 1
+		[[ -z "$out" && "$(cat "$CLAUDE_DIR/markers/doctor-warnings.txt")" == "drift one" ]] || exit 1
+		rewake_finish 0 'Total issues: 0' 2>/dev/null || exit 1
+		[[ ! -e "$CLAUDE_DIR/markers/doctor-warnings.txt" ]] || exit 1
+		out=$(rewake_finish 1 '  LINT: bad key' 2>&1)
+		[[ $? -eq 2 && "$out" == *'LINT: bad key'* ]]
+	); then
+		err '[test] FAIL: rewake must wake the model on issues only and keep WARN lines in the operator file'
+		return 1
+	fi
+
+	log '[test] phase 7: plugin drift reads the release tag'
+	if ! (
+		CLAUDE_DIR=$(mktemp -d -t chezmoi-claude-doctor-drift.XXXXXX)
+		OWN_PLUGIN_SRC="$CLAUDE_DIR/src"
+		trap 'rm -rf "$CLAUDE_DIR"' EXIT
+		QUIET=0
+		git init -q "$OWN_PLUGIN_SRC"
+		g() { git -C "$OWN_PLUGIN_SRC" -c user.email=t@t -c user.name=t "$@"; }
+		g commit -q --allow-empty -m one && c1=$(g rev-parse HEAD)
+		g commit -q --allow-empty -m two && c2=$(g rev-parse HEAD)
+		mkdir -p "$CLAUDE_DIR/plugins"
+		installed() { printf '{"plugins":{"whetstone@raisedadead-plugins":[{"gitCommitSha":"%s"}]}}' "$1" >"$CLAUDE_DIR/plugins/installed_plugins.json"; }
+		g tag whetstone-v1.0.0 "$c1"
+		installed "$c2"
+		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
+		g tag whetstone-v1.1.0 "$c2"
+		installed "$c1"
+		[[ "$(check_plugin_src_drift)" == *'WARN: whetstone@raisedadead-plugins'*'whetstone-v1.1.0'* ]]
+	); then
+		err '[test] FAIL: plugin drift must warn only when the install predates the latest release tag'
+		return 1
+	fi
+
 	log '[test] PASS'
 	return 0
 }
@@ -658,17 +715,8 @@ fi
 
 if [[ "$MODE" == "rewake" ]]; then
 	report=$(run_checks 2>&1)
-	rc=$?
-	issues=$(grep -E 'WARN:|ORPHAN:|LINT:' <<<"$report")
-	[[ "$rc" -eq 0 && -z "$issues" ]] && exit 0
-	body=$issues
-	[[ "$rc" -ne 0 ]] && body=$report
-	{
-		printf 'chezmoi-claude-doctor: issues found. Run ~/.bin/chezmoi-claude-doctor.sh for the full report.\n'
-		printf '%s\n' "$body"
-		[[ "$rc" -eq 0 ]] && grep -E '^Total issues' <<<"$report"
-	} >&2
-	exit 2
+	rewake_finish "$?" "$report"
+	exit $?
 fi
 
 run_checks
