@@ -367,6 +367,10 @@ check_plugin_src_drift() {
 		tag=$(git -C "$own_src" tag --list "$name-v*" --sort=-v:refname 2>/dev/null | head -n 1)
 		[[ -n "$tag" ]] || continue
 		tag_sha=$(git -C "$own_src" rev-parse "$tag^{commit}" 2>/dev/null) || continue
+		if ! git -C "$own_src" cat-file -e "$installed_sha^{commit}" 2>/dev/null; then
+			log "  note: $key installed ${installed_sha:0:12} is not in $own_src — fetch to compare it with $tag"
+			continue
+		fi
 		if ! git -C "$own_src" merge-base --is-ancestor "$tag_sha" "$installed_sha" 2>/dev/null; then
 			log "  WARN: $key installed ${installed_sha:0:12} predates release $tag (${tag_sha:0:12}) — run /cmd-refresh-plugins"
 			found=$((found + 1))
@@ -681,7 +685,9 @@ self_test() {
 		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
 		g tag whetstone-v1.1.0 "$c2"
 		installed "$c1"
-		[[ "$(check_plugin_src_drift)" == *'WARN: whetstone@raisedadead-plugins'*'whetstone-v1.1.0'* ]]
+		[[ "$(check_plugin_src_drift)" == *'WARN: whetstone@raisedadead-plugins'*'whetstone-v1.1.0'* ]] || exit 1
+		installed 0123456789abcdef0123456789abcdef01234567
+		[[ "$(check_plugin_src_drift)" != *WARN* ]]
 	); then
 		err '[test] FAIL: plugin drift must warn only when the install predates the latest release tag'
 		return 1
