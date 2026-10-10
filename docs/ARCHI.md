@@ -231,7 +231,7 @@ The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start
 
 | Tool                                   | Purpose                                                                                                           |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift. Writes warnings to `~/.claude/markers/doctor-warnings.txt`                     |
+| `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift. With `--rewake`, writes warnings to `~/.claude/markers/doctor-warnings.txt`    |
 | `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                     |
 | `cavemem-health.sh`                    | Prints the cavemem problems for the doctor, the bootstrap and `cavemem-repair`. Exit 1 when it finds one          |
 | `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                             |

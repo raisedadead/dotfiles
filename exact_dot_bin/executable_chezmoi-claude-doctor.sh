@@ -364,7 +364,7 @@ check_plugin_src_drift() {
 		installed_sha=$(jq -r --arg k "$key" '.plugins[$k][0].gitCommitSha // empty' "$installed" 2>/dev/null)
 		[[ -n "$installed_sha" ]] || continue
 		name="${key%@*}"
-		tag=$(git -C "$own_src" tag --list "$name-v*" --sort=-v:refname 2>/dev/null | head -n 1)
+		tag=$(git -C "$own_src" tag --list "$name-v[0-9]*" --sort=-v:refname 2>/dev/null | head -n 1)
 		[[ -n "$tag" ]] || continue
 		tag_sha=$(git -C "$own_src" rev-parse "$tag^{commit}" 2>/dev/null) || continue
 		if ! git -C "$own_src" cat-file -e "$installed_sha^{commit}" 2>/dev/null; then
@@ -556,11 +556,13 @@ run_checks() {
 }
 
 rewake_finish() {
-	local rc=$1 report=$2 warnings tmp
+	local rc=$1 report=$2 warnings tmp=''
 	local file="$CLAUDE_DIR/markers/doctor-warnings.txt"
 	warnings=$(sed -nE 's/^[[:space:]]*WARN: //p' <<<"$report")
 	if [[ -n "$warnings" ]]; then
-		mkdir -p "${file%/*}" && tmp=$(mktemp "$file.XXXXXX") && printf '%s\n' "$warnings" >"$tmp" && mv "$tmp" "$file"
+		if ! { mkdir -p "${file%/*}" && tmp=$(mktemp "$file.XXXXXX") && printf '%s\n' "$warnings" >"$tmp" && mv "$tmp" "$file"; }; then
+			rm -f "$file" ${tmp:+"$tmp"}
+		fi
 	else
 		rm -f "$file"
 	fi
@@ -653,7 +655,7 @@ self_test() {
 		return 1
 	fi
 
-	log '[test] phase 6: rewake sends WARN lines to the operator file, not to the model'
+	log '[test] phase 6: with no issues, rewake sends WARN lines to the operator file, not to the model'
 	if ! (
 		CLAUDE_DIR=$(mktemp -d -t chezmoi-claude-doctor-rewake.XXXXXX)
 		trap 'rm -rf "$CLAUDE_DIR"' EXIT
