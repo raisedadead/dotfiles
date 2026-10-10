@@ -357,7 +357,7 @@ check_plugin_src_drift() {
 		log '  clean'
 		return 0
 	fi
-	local key installed_sha own_src main_sha
+	local key name rc installed_sha own_src main_sha
 	own_src="${OWN_PLUGIN_SRC:-$HOME/DEV/rd/claude-code-plugins}"
 	if [[ -d "$own_src/.git" ]] && ! main_sha=$(git -C "$own_src" rev-parse --verify -q 'origin/main^{commit}' 2>/dev/null); then
 		log "  note: $own_src has no origin/main — fetch it to compare the installs"
@@ -371,10 +371,17 @@ check_plugin_src_drift() {
 			log "  note: $key installed ${installed_sha:0:12} is not in $own_src — fetch to compare it with origin/main"
 			continue
 		fi
-		if ! git -C "$own_src" merge-base --is-ancestor "$main_sha" "$installed_sha" 2>/dev/null; then
-			log "  WARN: $key installed ${installed_sha:0:12} predates origin/main (${main_sha:0:12}) — run /cmd-refresh-plugins"
-			found=$((found + 1))
+		git -C "$own_src" merge-base --is-ancestor "$main_sha" "$installed_sha" 2>/dev/null && continue
+		name="${key%@*}"
+		rc=0
+		git -C "$own_src" diff --quiet "$installed_sha" "$main_sha" -- "plugins/$name" ":(exclude)plugins/$name/CHANGELOG.md" || rc=$?
+		[[ "$rc" -eq 0 ]] && continue
+		if [[ "$rc" -ne 1 ]]; then
+			log "  note: $key git diff exited $rc in $own_src"
+			continue
 		fi
+		log "  WARN: $key installed ${installed_sha:0:12} differs from plugins/$name on origin/main (${main_sha:0:12}) — run /cmd-refresh-plugins"
+		found=$((found + 1))
 	done <<<"$keys"
 	[[ "$found" -eq 0 ]] && log '  clean'
 	return "$found"
@@ -678,8 +685,10 @@ self_test() {
 		QUIET=0
 		git init -q "$OWN_PLUGIN_SRC"
 		g() { git -C "$OWN_PLUGIN_SRC" -c user.email=t@t -c user.name=t "$@"; }
+		put() { mkdir -p "$OWN_PLUGIN_SRC/${1%/*}" && echo "$2" >"$OWN_PLUGIN_SRC/$1" && g add "$1"; }
 		g commit -q --allow-empty -m one && c1=$(g rev-parse HEAD)
-		g commit -q --allow-empty -m two && c2=$(g rev-parse HEAD)
+		put plugins/whetstone/SKILL.md two && g commit -q -m two && c2=$(g rev-parse HEAD)
+		put plugins/whetstone/CHANGELOG.md three && put tools/test.sh three && g commit -q -m three && c3=$(g rev-parse HEAD)
 		mkdir -p "$CLAUDE_DIR/plugins"
 		installed() { printf '{"plugins":{"whetstone@raisedadead-plugins":[{"gitCommitSha":"%s"}]}}' "$1" >"$CLAUDE_DIR/plugins/installed_plugins.json"; }
 		g update-ref refs/remotes/origin/main "$c1"
@@ -688,6 +697,9 @@ self_test() {
 		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
 		g update-ref refs/remotes/origin/main "$c2"
 		[[ "$(check_plugin_src_drift)" == *'WARN: whetstone@raisedadead-plugins'*'origin/main'* ]] || exit 1
+		installed "$c2"
+		g update-ref refs/remotes/origin/main "$c3"
+		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
 		installed 0123456789abcdef0123456789abcdef01234567
 		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
 		installed "$c1"
@@ -695,7 +707,7 @@ self_test() {
 		out=$(check_plugin_src_drift)
 		[[ "$out" != *WARN* && "$out" == *'has no origin/main'* ]]
 	); then
-		err '[test] FAIL: plugin drift must warn only when the install predates origin/main'
+		err '[test] FAIL: plugin drift must warn only when origin/main changes the plugin files after the install'
 		return 1
 	fi
 
