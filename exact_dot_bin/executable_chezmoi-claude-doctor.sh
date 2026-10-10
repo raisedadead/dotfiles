@@ -364,7 +364,7 @@ check_plugin_src_drift() {
 		installed_sha=$(jq -r --arg k "$key" '.plugins[$k][0].gitCommitSha // empty' "$installed" 2>/dev/null)
 		[[ -n "$installed_sha" ]] || continue
 		name="${key%@*}"
-		tag=$(git -C "$own_src" -c versionsort.suffix=- tag --list "$name-v[0-9]*" --sort=-v:refname 2>/dev/null | head -n 1)
+		tag=$(git -C "$own_src" tag --list "$name-v[0-9]*" --sort=-v:refname 2>/dev/null | grep -Ev -- '-v[0-9.]+-' | head -n 1)
 		[[ -n "$tag" ]] || continue
 		tag_sha=$(git -C "$own_src" rev-parse "$tag^{commit}" 2>/dev/null) || continue
 		if ! git -C "$own_src" cat-file -e "$installed_sha^{commit}" 2>/dev/null; then
