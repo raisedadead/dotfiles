@@ -357,22 +357,22 @@ check_plugin_src_drift() {
 		log '  clean'
 		return 0
 	fi
-	local key name installed_sha own_src tag tag_sha
+	local key installed_sha own_src main_sha
 	own_src="${OWN_PLUGIN_SRC:-$HOME/DEV/rd/claude-code-plugins}"
+	if [[ -d "$own_src/.git" ]] && ! main_sha=$(git -C "$own_src" rev-parse --verify -q 'origin/main^{commit}' 2>/dev/null); then
+		log "  note: $own_src has no origin/main — fetch it to compare the installs"
+		return 0
+	fi
 	while IFS= read -r key; do
 		[[ "$key" == *@raisedadead-plugins && -d "$own_src/.git" ]] || continue
 		installed_sha=$(jq -r --arg k "$key" '.plugins[$k][0].gitCommitSha // empty' "$installed" 2>/dev/null)
 		[[ -n "$installed_sha" ]] || continue
-		name="${key%@*}"
-		tag=$(git -C "$own_src" tag --list "$name-v[0-9]*" --sort=-v:refname 2>/dev/null | grep -Ex -- "$name-v[0-9]+(\.[0-9]+)*" | head -n 1)
-		[[ -n "$tag" ]] || continue
-		tag_sha=$(git -C "$own_src" rev-parse "$tag^{commit}" 2>/dev/null) || continue
 		if ! git -C "$own_src" cat-file -e "$installed_sha^{commit}" 2>/dev/null; then
-			log "  note: $key installed ${installed_sha:0:12} is not in $own_src — fetch to compare it with $tag"
+			log "  note: $key installed ${installed_sha:0:12} is not in $own_src — fetch to compare it with origin/main"
 			continue
 		fi
-		if ! git -C "$own_src" merge-base --is-ancestor "$tag_sha" "$installed_sha" 2>/dev/null; then
-			log "  WARN: $key installed ${installed_sha:0:12} predates release $tag (${tag_sha:0:12}) — run /cmd-refresh-plugins"
+		if ! git -C "$own_src" merge-base --is-ancestor "$main_sha" "$installed_sha" 2>/dev/null; then
+			log "  WARN: $key installed ${installed_sha:0:12} predates origin/main (${main_sha:0:12}) — run /cmd-refresh-plugins"
 			found=$((found + 1))
 		fi
 	done <<<"$keys"
@@ -536,7 +536,7 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/4] first-party plugin drift (installed sha vs latest claude-code-plugins release tag)'
+	log '[warn 1/4] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
 	check_plugin_src_drift
 	log ''
 
@@ -670,7 +670,7 @@ self_test() {
 		return 1
 	fi
 
-	log '[test] phase 7: plugin drift reads the release tag'
+	log '[test] phase 7: plugin drift reads origin/main'
 	if ! (
 		CLAUDE_DIR=$(mktemp -d -t chezmoi-claude-doctor-drift.XXXXXX)
 		OWN_PLUGIN_SRC="$CLAUDE_DIR/src"
@@ -682,16 +682,20 @@ self_test() {
 		g commit -q --allow-empty -m two && c2=$(g rev-parse HEAD)
 		mkdir -p "$CLAUDE_DIR/plugins"
 		installed() { printf '{"plugins":{"whetstone@raisedadead-plugins":[{"gitCommitSha":"%s"}]}}' "$1" >"$CLAUDE_DIR/plugins/installed_plugins.json"; }
-		g tag whetstone-v1.0.0 "$c1"
-		installed "$c2"
-		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
-		g tag whetstone-v1.1.0 "$c2"
+		g update-ref refs/remotes/origin/main "$c1"
+		g tag whetstone-v9.0.0 "$c2"
 		installed "$c1"
-		[[ "$(check_plugin_src_drift)" == *'WARN: whetstone@raisedadead-plugins'*'whetstone-v1.1.0'* ]] || exit 1
+		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
+		g update-ref refs/remotes/origin/main "$c2"
+		[[ "$(check_plugin_src_drift)" == *'WARN: whetstone@raisedadead-plugins'*'origin/main'* ]] || exit 1
 		installed 0123456789abcdef0123456789abcdef01234567
-		[[ "$(check_plugin_src_drift)" != *WARN* ]]
+		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
+		installed "$c1"
+		g update-ref -d refs/remotes/origin/main
+		out=$(check_plugin_src_drift)
+		[[ "$out" != *WARN* && "$out" == *'has no origin/main'* ]]
 	); then
-		err '[test] FAIL: plugin drift must warn only when the install predates the latest release tag'
+		err '[test] FAIL: plugin drift must warn only when the install predates origin/main'
 		return 1
 	fi
 
