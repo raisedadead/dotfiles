@@ -44,9 +44,9 @@ A bug report, a wrong result, or a performance regression.
 ## Build or polish a screen
 
 1. One focused skill for a named concern: `better-typography`, `better-colors`, `better-layout`, `better-accessibility`, `better-ui`, or `better-writing`.
-1. `interface-review` for a full sweep at the end.
+1. `better-interface` for a full sweep at the end.
 
-`better-interface` and `interface-review` are both full sweeps. Run one.
+The operator runs `/interface-review`; the model cannot invoke it.
 
 ## Harden a boundary
 

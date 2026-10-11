@@ -19,6 +19,10 @@
 #                               symlink_<name> source entries match a dot_agents/skills/<name>, and no
 #                               common skill is also a CLI-installed copy (skills lock).
 #
+# Four warning checks print WARN lines and do not count as issues:
+#   plugin drift against claude-code-plugins origin/main, cavemem health, the safeguard
+#   toggle, and the user-agent cap.
+#
 # Usage:
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
 #   chezmoi-claude-doctor.sh --quiet   # exit code only
@@ -44,7 +48,7 @@ case "${1:-}" in
 --test) MODE="test" ;;
 --rewake) MODE="rewake" ;;
 --help | -h)
-	sed -n '2,26p' "$SELF"
+	sed -n '2,30p' "$SELF"
 	exit 0
 	;;
 '') ;;
@@ -692,7 +696,6 @@ self_test() {
 		mkdir -p "$CLAUDE_DIR/plugins"
 		installed() { printf '{"plugins":{"whetstone@raisedadead-plugins":[{"gitCommitSha":"%s"}]}}' "$1" >"$CLAUDE_DIR/plugins/installed_plugins.json"; }
 		g update-ref refs/remotes/origin/main "$c1"
-		g tag whetstone-v9.0.0 "$c2"
 		installed "$c1"
 		[[ "$(check_plugin_src_drift)" != *WARN* ]] || exit 1
 		g update-ref refs/remotes/origin/main "$c2"

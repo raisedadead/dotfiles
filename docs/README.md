@@ -2,7 +2,7 @@
 
 The **source** is the configuration in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To **capture** a change is to copy it from the target back into the source. chezmoi captures a change only when you run a capture command.
 
-The private sources `dot_claude/`, `dot_codex/`, and `dot_pi/` deploy to `~/.claude`, `~/.codex`, and `~/.pi`. The Codex and Pi sources manage only named rig files. Their authentication, hook trust, MCP tokens, sessions, and other runtime state stay local to each machine.
+The private sources `dot_claude/`, `dot_codex/`, `dot_agents/`, and `dot_pi/` deploy to `~/.claude`, `~/.codex`, `~/.agents`, and `~/.pi`. The Codex and Pi sources manage only named rig files. Their authentication, hook trust, MCP tokens, sessions, and other runtime state stay local to each machine.
 
 ## Install or recover a machine
 
