@@ -229,15 +229,15 @@ The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start
 
 ## Operator tools
 
-| Tool                                   | Purpose                                                                                                           |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift. With `--rewake`, writes warnings to `~/.claude/markers/doctor-warnings.txt`    |
-| `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                     |
-| `cavemem-health.sh`                    | Prints the cavemem problems for the doctor, the bootstrap and `cavemem-repair`. Exit 1 when it finds one          |
-| `claude-flag-audit.sh [days] [-v]`     | Lists safeguard `model_refusal_fallback` events in the Claude transcripts. The doctor calls it                    |
-| `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                             |
-| `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands |
-| `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                 |
-| `rig-change-review`, `lens-review`     | Review a rig change, or any other source change                                                                   |
+| Tool                                   | Purpose                                                                                                                                                                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift. With `--rewake`, writes warnings to `~/.claude/markers/doctor-warnings.txt`. When the host types name a new Claude Code version, it re-tests the rig mod |
+| `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                                                                                               |
+| `cavemem-health.sh`                    | Prints the cavemem problems for the doctor, the bootstrap and `cavemem-repair`. Exit 1 when it finds one                                                                                    |
+| `claude-flag-audit.sh [days] [-v]`     | Lists safeguard `model_refusal_fallback` events in the Claude transcripts. The doctor calls it                                                                                              |
+| `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                                                                                                       |
+| `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands                                                                           |
+| `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                                                                                           |
+| `rig-change-review`, `lens-review`     | Review a rig change, or any other source change                                                                                                                                             |
 
 The workflow directory registers scripts through `meta.name`.
