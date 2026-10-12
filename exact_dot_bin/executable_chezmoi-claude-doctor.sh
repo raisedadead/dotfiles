@@ -19,9 +19,9 @@
 #                               symlink_<name> source entries match a dot_agents/skills/<name>, and no
 #                               common skill is also a CLI-installed copy (skills lock).
 #
-# Four warning checks print WARN lines and do not count as issues:
+# Five warning checks print WARN lines and do not count as issues:
 #   plugin drift against claude-code-plugins origin/main, cavemem health, the safeguard
-#   toggle, and the user-agent cap.
+#   toggle, the user-agent cap, and the rig version gate.
 #
 # Usage:
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
@@ -437,6 +437,36 @@ check_safeguard_toggle() {
 	return "$rc"
 }
 
+rig_gate_run() {
+	(cd "$PRIV_SOURCE/dot_claude/mods/rig" && ./build.sh && claude plugin validate dist && claude plugin test dist) >/dev/null 2>&1
+}
+
+check_rig_gate() {
+	local types="$CLAUDE_DIR/mods/rig/.claude-plugin/types/claude-code/index.d.ts"
+	local marker="$CLAUDE_DIR/markers/rig-verified-version"
+	local version passed
+	if [[ ! -f "$types" ]]; then
+		log '  skip (no host types; Claude Code writes them when it loads the rig)'
+		return 0
+	fi
+	version=$(sed -nE '1s#^// Written by Claude Code ([^ ]+)\.$#\1#p' "$types")
+	if [[ -z "$version" ]]; then
+		log "  WARN: line 1 of ${types/#$HOME/~} names no Claude Code version"
+		return 1
+	fi
+	passed=$(cat "$marker" 2>/dev/null)
+	if [[ "$version" == "$passed" ]]; then
+		log "  clean ($version verified)"
+		return 0
+	fi
+	if ! rig_gate_run; then
+		log "  WARN: the rig fails on Claude Code $version; run ./build.sh, claude plugin validate dist and claude plugin test dist in ~/.dotfiles/dot_claude/mods/rig"
+		return 1
+	fi
+	mkdir -p "${marker%/*}" && printf '%s\n' "$version" >"$marker"
+	log "  clean ($version verified now)"
+}
+
 check_user_agents() {
 	local agents_dir="$PRIV_SOURCE/dot_claude/agents"
 	if [[ ! -d "$agents_dir" ]]; then
@@ -547,20 +577,24 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/4] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
+	log '[warn 1/5] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 2/4] cavemem health (hook, better-sqlite3, embedder, worker)'
+	log '[warn 2/5] cavemem health (hook, better-sqlite3, embedder, worker)'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 3/4] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 3/5] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 4/4] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
+	log '[warn 4/5] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
 	check_user_agents
+	log ''
+
+	log '[warn 5/5] rig version gate (validate, type check and tests after a Claude Code update)'
+	check_rig_gate
 	log ''
 
 	[[ "$total" -eq 0 ]]
@@ -711,6 +745,33 @@ self_test() {
 		[[ "$out" != *WARN* && "$out" == *'has no origin/main'* ]]
 	); then
 		err '[test] FAIL: plugin drift must warn only when origin/main changes the plugin files after the install'
+		return 1
+	fi
+
+	log '[test] phase 8: version gate re-tests the rig when the host types name a new Claude Code version'
+	if ! (
+		CLAUDE_DIR=$(mktemp -d) || exit 1
+		trap 'rm -rf "$CLAUDE_DIR"' EXIT
+		types="$CLAUDE_DIR/mods/rig/.claude-plugin/types/claude-code"
+		marker="$CLAUDE_DIR/markers/rig-verified-version"
+		mkdir -p "$types" "${marker%/*}"
+		rig_gate_run() {
+			: >"$CLAUDE_DIR/ran"
+			return "$gate_rc"
+		}
+		printf '// Written by Claude Code 9.9.1.\n' >"$types/index.d.ts"
+		printf '9.9.1\n' >"$marker"
+		gate_rc=1
+		out=$(check_rig_gate)
+		[[ "$out" != *WARN* && ! -e "$CLAUDE_DIR/ran" ]] || exit 1
+		printf '// Written by Claude Code 9.9.2.\n' >"$types/index.d.ts"
+		out=$(check_rig_gate)
+		[[ "$out" == *'WARN: '*'9.9.2'* && "$(cat "$marker")" == 9.9.1 && -e "$CLAUDE_DIR/ran" ]] || exit 1
+		gate_rc=0
+		out=$(check_rig_gate)
+		[[ "$out" != *WARN* && "$(cat "$marker")" == 9.9.2 ]]
+	); then
+		err '[test] FAIL: version gate must re-test only on a new version and record the version only after a pass'
 		return 1
 	fi
 
