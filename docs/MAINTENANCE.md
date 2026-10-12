@@ -203,7 +203,7 @@ Expected: Configured servers connect. No scope conflict
 
 `cd ~/.dotfiles/dot_claude/mods/rig && ./build.sh && claude plugin test dist`
 
-Expected: All tests pass. Report the count
+Expected: `build.sh` exits 0, so the source type-checks against the host types. All tests pass. Report the count
 
 ### M5
 
