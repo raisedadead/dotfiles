@@ -438,13 +438,22 @@ check_safeguard_toggle() {
 }
 
 rig_gate_run() {
-	(cd "$PRIV_SOURCE/dot_claude/mods/rig" && ./build.sh && claude plugin validate dist && claude plugin test dist) >/dev/null 2>&1
+	local out=$1 work rc
+	work=$(mktemp -d) || return 1
+	{
+		git -C "$PRIV_SOURCE/dot_claude" archive HEAD mods/rig | tar -x -C "$work" &&
+			(cd "$work/mods/rig" && ./build.sh && claude plugin validate dist && claude plugin test dist)
+	} >"$out" 2>&1
+	rc=$?
+	rm -rf "$work"
+	return "$rc"
 }
 
 check_rig_gate() {
 	local types="$CLAUDE_DIR/mods/rig/.claude-plugin/types/claude-code/index.d.ts"
 	local marker="$CLAUDE_DIR/markers/rig-verified-version"
-	local version passed
+	local out="$CLAUDE_DIR/markers/rig-gate.log"
+	local version passed bin
 	if [[ ! -f "$types" ]]; then
 		log '  skip (no host types; Claude Code writes them when it loads the rig)'
 		return 0
@@ -459,11 +468,22 @@ check_rig_gate() {
 		log "  clean ($version verified)"
 		return 0
 	fi
-	if ! rig_gate_run; then
-		log "  WARN: the rig fails on Claude Code $version; run ./build.sh, claude plugin validate dist and claude plugin test dist in ~/.dotfiles/dot_claude/mods/rig"
+	for bin in claude bun bunx git; do
+		if ! command -v "$bin" >/dev/null 2>&1; then
+			log "  skip ($bin missing)"
+			return 0
+		fi
+	done
+	if [[ ! -d "$PRIV_SOURCE/dot_claude/mods/rig" ]]; then
+		log "  skip (${PRIV_SOURCE/#$HOME/~}/dot_claude/mods/rig missing)"
+		return 0
+	fi
+	mkdir -p "${marker%/*}"
+	if ! rig_gate_run "$out"; then
+		log "  WARN: the committed rig fails build, validate or tests on Claude Code $version; read ${out/#$HOME/~}"
 		return 1
 	fi
-	mkdir -p "${marker%/*}" && printf '%s\n' "$version" >"$marker"
+	printf '%s\n' "$version" >"$marker"
 	log "  clean ($version verified now)"
 }
 
