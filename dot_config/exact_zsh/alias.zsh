@@ -77,11 +77,6 @@ if can_haz tmux; then
 fi
 
 #-----------------------------
-# Universe CLI, dev mode
-#-----------------------------
-alias unidev='node /Users/mrugesh/DEV/fCC-U/universe-cli/dist/index.cjs'
-
-#-----------------------------
 # Format markdown
 #-----------------------------
 alias md-fmt='git ls-files -z "*.md" "*.markdown" | xargs -0 mdformat --wrap no'

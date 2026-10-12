@@ -20,13 +20,13 @@ Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including an installer or runtime write. Capture one target at a time when the list holds a change you did not make. Revert the rest with `chezmoi apply <target>`.
 
-| Kind                                       | Source                                                                                                     | Maintenance                                         |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                                                                   | Edit the target and `re-add`. `re-add` re-encrypts  |
-| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_aws/encrypted_private_config.tmpl.age`, `dot_pi/agent/mcp.json.tmpl` | Edit the source. `re-add` skips templates           |
-| Modify script                              | `modify_private_dot_claude.json`, `dot_pi/agent/modify_settings.json`                                      | Edit the source. It merges into the existing target |
-| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                                                          | Change the pinned revision or checksum              |
-| Repository document, `docs/`, `install.sh` | Root files                                                                                                 | Edit the source. Not deployed                       |
+| Kind                                       | Source                                                                | Maintenance                                         |
+| ------------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------- |
+| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                              | Edit the target and `re-add`. `re-add` re-encrypts  |
+| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_pi/agent/mcp.json.tmpl`         | Edit the source. `re-add` skips templates           |
+| Modify script                              | `modify_private_dot_claude.json`, `dot_pi/agent/modify_settings.json` | Edit the source. It merges into the existing target |
+| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                     | Change the pinned revision or checksum              |
+| Repository document, `docs/`, `install.sh` | Root files                                                            | Edit the source. Not deployed                       |
 
 `re-add` does not capture templates, modify targets, externals, or symlink entries. Before an apply, read `chezmoi status` and `chezmoi diff`. Column one `M` is a target edit. Column one `D` is a deleted target. Do not delete the chezmoi state to resolve drift.
 
@@ -234,9 +234,10 @@ The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start
 | `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift. With `--rewake`, writes warnings to `~/.claude/markers/doctor-warnings.txt`    |
 | `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                     |
 | `cavemem-health.sh`                    | Prints the cavemem problems for the doctor, the bootstrap and `cavemem-repair`. Exit 1 when it finds one          |
+| `claude-flag-audit.sh [days] [-v]`     | Lists safeguard `model_refusal_fallback` events in the Claude transcripts. The doctor calls it                    |
 | `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                             |
 | `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands |
 | `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                 |
 | `rig-change-review`, `lens-review`     | Review a rig change, or any other source change                                                                   |
 
-The workflow directory registers scripts through `meta.name`. Operator-only utilities without an automated consumer: `cavemem-seed.ts`, `claude-flag-audit.sh`, `tailscale-mgmt.sh`. `tailscale-mgmt.sh` reads `TAILSCALE_OP_ITEM` from `~/.config/tailscale-mgmt.env`, an encrypted entry.
+The workflow directory registers scripts through `meta.name`.

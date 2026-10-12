@@ -28,26 +28,6 @@ export INFOPATH="$HOMEBREW_PREFIX/share/info:${INFOPATH:-}"
 
 export GOPATH="$HOME/go"
 
-# Ruby (via Homebrew)
-if [[ -n "$HOMEBREW_PREFIX" ]] && [[ -d "$HOMEBREW_PREFIX/opt/ruby" ]]; then
-  export PATH="$HOMEBREW_PREFIX/opt/ruby/bin:$PATH"
-  export GEM_HOME="$HOME/.gem"
-  export PATH="$GEM_HOME/bin:$PATH"
-fi
-
-# Ruby (via rbenv) - lazy loaded
-if [[ -d "$HOME/.rbenv" ]]; then
-  export RBENV_ROOT="$HOME/.rbenv"
-  export PATH="$RBENV_ROOT/bin:$PATH"
-
-  # Lazy-load rbenv init only when rbenv is called
-  rbenv() {
-    unfunction rbenv
-    eval "$(command rbenv init - --no-rehash zsh)"
-    rbenv "$@"
-  }
-fi
-
 source "${ZDOTDIR:-$HOME/.config/zsh}/path.zsh"
 _mrgsh_compose_path
 

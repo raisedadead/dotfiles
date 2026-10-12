@@ -19,7 +19,6 @@
   },
   "privacy": {
     "excludePatterns": [
-      "**/.dotfiles/dot_aws/**",
       "**/secrets/**",
       "**/.env*",
       "**/private_*",

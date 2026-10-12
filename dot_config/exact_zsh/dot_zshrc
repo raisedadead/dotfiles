@@ -119,7 +119,6 @@ can_haz wt     && eval "$(wt config shell init zsh)"
 
 # File sourcing
 source "$ZDOTDIR/alias.zsh"
-[[ -r "$ZDOTDIR/private.zsh" ]] && source "$ZDOTDIR/private.zsh"
 [[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh
 
 # fnm must load after Homebrew (set in .zshenv) so fnm-managed Node.js wins.
