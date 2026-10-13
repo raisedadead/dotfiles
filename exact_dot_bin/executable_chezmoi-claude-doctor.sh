@@ -421,12 +421,12 @@ check_safeguard_toggle() {
 	local rc=0 f v
 	for f in "$PRIV_SOURCE/dot_claude/settings.json" "$CLAUDE_DIR/settings.json"; do
 		if [[ ! -f "$f" ]]; then
-			log "  skip (${f/#$HOME/~} missing)"
+			log "  skip (${f/#$HOME/\~} missing)"
 			continue
 		fi
 		v=$(jq -r '.switchModelsOnFlag' "$f" 2>/dev/null)
 		if [[ "$v" != "false" ]]; then
-			log "  WARN: switchModelsOnFlag != false in ${f/#$HOME/~} (got: $v) — safeguard flag will silently switch model; re-flip via /config"
+			log "  WARN: switchModelsOnFlag != false in ${f/#$HOME/\~} (got: $v) — safeguard flag will silently switch model; re-flip via /config"
 			rc=1
 		fi
 	done
@@ -462,7 +462,7 @@ check_rig_gate() {
 	fi
 	version=$(sed -nE '1s#^// Written by Claude Code ([^ ]+)\.$#\1#p' "$types")
 	if [[ -z "$version" ]]; then
-		log "  WARN: line 1 of ${types/#$HOME/~} names no Claude Code version"
+		log "  WARN: line 1 of ${types/#$HOME/\~} names no Claude Code version"
 		return 1
 	fi
 	passed=$(cat "$marker" 2>/dev/null)
@@ -477,12 +477,12 @@ check_rig_gate() {
 		fi
 	done
 	if [[ ! -d "$PRIV_SOURCE/dot_claude/mods/rig" ]]; then
-		log "  skip (${PRIV_SOURCE/#$HOME/~}/dot_claude/mods/rig missing)"
+		log "  skip (${PRIV_SOURCE/#$HOME/\~}/dot_claude/mods/rig missing)"
 		return 0
 	fi
 	mkdir -p "${marker%/*}"
 	if ! rig_gate_run "$out"; then
-		log "  WARN: the committed rig fails build, validate or tests on Claude Code $version; read ${out/#$HOME/~}"
+		log "  WARN: the committed rig fails build, validate or tests on Claude Code $version; read ${out/#$HOME/\~}"
 		return 1
 	fi
 	printf '%s\n' "$version" >"$marker"
