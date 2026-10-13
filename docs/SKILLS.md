@@ -36,7 +36,7 @@ Do not start here for a defect. A defect goes to "Find a defect".
 
 A bug report, a wrong result, or a performance regression.
 
-1. `mattpocock-skills:diagnosing-bugs` drives.
+1. `whetstone:diagnose` drives.
 1. `performance-optimization` holds the rubric for a slow path.
 1. `cloudflare:web-perf` covers Core Web Vitals in a browser alone.
 1. `dossier:backprop` after the fix, when a new invariant prevents the recurrence.
