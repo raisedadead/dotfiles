@@ -127,14 +127,14 @@ cavemem_reinstall() {
 		err "npm i -g cavemem failed"
 		return 1
 	}
-	cavemem_patch_rank
+	cavemem_patch_rank || true
 }
 
 # workaround: JuliusBrussee/cavemem#62
 cavemem_patch_rank() {
 	local file
 	for file in "$CAVEMEM_DIR"/dist/*.js; do
-		grep -qF 'Math.min(...bm25s)' "$file" || continue
+		grep -qsF 'Math.min(...bm25s)' "$file" || continue
 		"$FNM_DEFAULT_BIN/node" -e '
 			const fs = require("fs")
 			const file = process.argv[1]
@@ -144,7 +144,8 @@ cavemem_patch_rank() {
 				if (text.split(from).length !== 2) process.exit(1)
 				text = text.replace(from, "[" + name + ".reduce((a, b) => Math.min(a, b), Infinity), " + name + ".reduce((a, b) => Math.max(a, b), -Infinity)]")
 			}
-			fs.writeFileSync(file, text)
+			fs.writeFileSync(file + ".tmp", text)
+			fs.renameSync(file + ".tmp", file)
 		' "$file" || {
 			err "cavemem ranker patch failed in $file"
 			return 1
