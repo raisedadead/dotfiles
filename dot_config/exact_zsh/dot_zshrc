@@ -39,20 +39,26 @@ stty -ixon -ixoff 2>/dev/null
 can_haz() { whence -p "$1" >/dev/null 2>&1 }
 timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
 cached_init() {
+  local dep=
+  [[ $1 == -d ]] && { dep=$2; shift 2 }
   local name=$1; shift
   local bin=${commands[$1]:A}
   [[ -n $bin ]] || return 0
   local file="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/init.$name.zsh" stamp="# $bin $*" head=
   [[ -r $file ]] && read -r head <"$file"
-  if [[ $head != "$stamp" ]]; then
-    mkdir -p "${file:h}"
-    if ! { print -r -- "$stamp"; "$@" } >|"$file.$$" 2>/dev/null; then
-      rm -f "$file.$$"
-      return 1
-    fi
-    mv -f "$file.$$" "$file"
+  if [[ $head != "$stamp" || ( -n $dep && $dep -nt $file ) ]]; then
+    rm -f -- "$file".<->(N) 2>/dev/null
+    {
+      mkdir -p "${file:h}" &&
+        { print -r -- "$stamp"; "$@" } >|"$file.$$" &&
+        mv -f "$file.$$" "$file"
+    } 2>/dev/null || rm -f -- "$file.$$" 2>/dev/null
   fi
-  source "$file"
+  if [[ -r $file ]] && read -r head <"$file" && [[ $head == "$stamp" ]]; then
+    source "$file"
+  else
+    eval "$("$@" 2>/dev/null)"
+  fi
 }
 
 # Keybindings
@@ -125,7 +131,7 @@ source "$ZPLUGDIR/wakatime-zsh-plugin/wakatime.plugin.zsh"
 #-----------------------------------------------------------
 # Tool Integrations
 #-----------------------------------------------------------
-cached_init atuin atuin init zsh --disable-up-arrow
+cached_init -d "$XDG_CONFIG_HOME/atuin/config.toml" atuin atuin init zsh --disable-up-arrow
 cached_init zoxide zoxide init --cmd cd --hook pwd zsh
 export DIRENV_LOG_FORMAT=""
 cached_init direnv direnv hook zsh
