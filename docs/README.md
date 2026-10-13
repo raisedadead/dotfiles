@@ -13,7 +13,7 @@ The private sources `dot_claude/`, `dot_codex/`, `dot_agents/`, and `dot_pi/` de
 1. Initialize and install the dotfiles:
 
    ```sh
-   brew install chezmoi git
+   brew install chezmoi git fnm
    chezmoi init --source ~/.dotfiles git@github.com:raisedadead/dotfiles.git
    ~/.dotfiles/install.sh
    ```
