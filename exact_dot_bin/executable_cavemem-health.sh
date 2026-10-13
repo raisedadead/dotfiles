@@ -46,6 +46,10 @@ fi
 
 [[ "$(json_field "$CAVEMEM_HOME/settings.json" embedding.provider)" == "none" ]] && exit "$rc"
 
+if grep -qF 'Math.min(...bm25s)' "$modules"/cavemem/dist/*.js 2>/dev/null; then
+	problem rank "cavemem search overflows the stack on a large store (JuliusBrussee/cavemem#62)"
+fi
+
 if [[ ! -d "$xenova" ]]; then
 	problem embedder "@xenova/transformers is missing (undeclared cavemem dependency)"
 elif ! timeout 30 "$node" --input-type=module -e 'await import(process.argv[1])' "$xenova/src/transformers.js" >/dev/null 2>&1; then

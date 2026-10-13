@@ -127,6 +127,29 @@ cavemem_reinstall() {
 		err "npm i -g cavemem failed"
 		return 1
 	}
+	cavemem_patch_rank
+}
+
+# workaround: JuliusBrussee/cavemem#62
+cavemem_patch_rank() {
+	local file
+	for file in "$CAVEMEM_DIR"/dist/*.js; do
+		grep -qF 'Math.min(...bm25s)' "$file" || continue
+		"$FNM_DEFAULT_BIN/node" -e '
+			const fs = require("fs")
+			const file = process.argv[1]
+			let text = fs.readFileSync(file, "utf8")
+			for (const name of ["bm25s", "cosines"]) {
+				const from = "[Math.min(..." + name + "), Math.max(..." + name + ")]"
+				if (text.split(from).length !== 2) process.exit(1)
+				text = text.replace(from, "[" + name + ".reduce((a, b) => Math.min(a, b), Infinity), " + name + ".reduce((a, b) => Math.max(a, b), -Infinity)]")
+			}
+			fs.writeFileSync(file, text)
+		' "$file" || {
+			err "cavemem ranker patch failed in $file"
+			return 1
+		}
+	done
 }
 
 cavemem_install() {
@@ -177,6 +200,10 @@ step_cavemem() {
 				err "npm i --no-save $BSQL_PIN failed"
 				return 1
 			}
+		fi
+		if cavemem_has rank "$problems"; then
+			p "patching the cavemem search ranker…"
+			cavemem_patch_rank || return 1
 		fi
 		if cavemem_has embedder "$problems"; then
 			p "reinstalling @xenova/transformers with the sharp build…"
