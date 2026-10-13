@@ -13,12 +13,12 @@ _mrgsh_compose_path() {
 	_mrgsh_path_prepend \
 		"$HOMEBREW_PREFIX/sbin" \
 		"$HOMEBREW_PREFIX/bin" \
+		"$PNPM_HOME/bin" \
 		"${XDG_DATA_HOME:-$HOME/.local/share}/fnm/aliases/default/bin" \
 		"$GOPATH/bin" \
 		"$HOME/.cargo/bin" \
 		"$HOME/.local/bin" \
-		"$HOME/.bin" \
-		"$PNPM_HOME/bin"
+		"$HOME/.bin"
 	typeset -gU PATH path
 	export PATH
 }
