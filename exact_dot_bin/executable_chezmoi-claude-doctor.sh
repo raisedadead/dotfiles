@@ -19,9 +19,9 @@
 #                               symlink_<name> source entries match a dot_agents/skills/<name>, and no
 #                               common skill is also a CLI-installed copy (skills lock).
 #
-# Five warning checks print WARN lines and do not count as issues:
+# Six warning checks print WARN lines and do not count as issues:
 #   plugin drift against claude-code-plugins origin/main, cavemem health, the safeguard
-#   toggle, the user-agent cap, and the rig version gate.
+#   toggle, the user-agent cap, the rig version gate, and the AI release stores.
 #
 # Usage:
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
@@ -36,6 +36,8 @@ PUB_SOURCE="${PUB_SOURCE:-$HOME/.dotfiles}"
 PRIV_SOURCE="${PRIV_SOURCE:-$HOME/.dotfiles}"
 SHAPE_EXTS="${SHAPE_EXTS:-md|toml|yaml|yml|kdl|ini}"
 CAVEMEM_HEALTH="${CAVEMEM_HEALTH:-$HOME/.bin/cavemem-health.sh}"
+CODEX_RELEASES="${CODEX_RELEASES:-$HOME/.codex/packages/app-server-daemon/releases}"
+PI_RELEASES="${PI_RELEASES:-$HOME/.pi/agent/install/releases}"
 # ARCHI_CC_VERSION_PIN removed 2026-05-15 — operator policy: no version pins.
 
 SELF=$(command -v -- "$0" 2>/dev/null) || SELF="$0"
@@ -487,6 +489,24 @@ check_rig_gate() {
 	log "  clean ($version verified now)"
 }
 
+check_ai_releases() {
+	local rc=0 dir n size
+	for dir in "$CODEX_RELEASES" "$PI_RELEASES"; do
+		if [[ ! -d "$dir" ]]; then
+			log "  skip (${dir/#$HOME/\~} missing)"
+			continue
+		fi
+		n=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+		if ((n > 2)); then
+			size=$(du -sh "$dir" | awk '{print $1}')
+			log "  WARN: ${dir/#$HOME/\~} holds $n releases ($size); keep only the newest two"
+			rc=1
+		fi
+	done
+	[[ "$rc" -eq 0 ]] && log '  clean'
+	return "$rc"
+}
+
 check_user_agents() {
 	local agents_dir="$PRIV_SOURCE/dot_claude/agents"
 	if [[ ! -d "$agents_dir" ]]; then
@@ -597,24 +617,28 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/5] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
+	log '[warn 1/6] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 2/5] cavemem health (hook, better-sqlite3, embedder, worker)'
+	log '[warn 2/6] cavemem health (hook, better-sqlite3, embedder, worker)'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 3/5] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 3/6] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 4/5] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
+	log '[warn 4/6] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
 	check_user_agents
 	log ''
 
-	log '[warn 5/5] rig version gate (validate, type check and tests after a Claude Code update)'
+	log '[warn 5/6] rig version gate (validate, type check and tests after a Claude Code update)'
 	check_rig_gate
+	log ''
+
+	log '[warn 6/6] AI release stores (Codex daemon and Pi keep at most two releases)'
+	check_ai_releases
 	log ''
 
 	[[ "$total" -eq 0 ]]
@@ -792,6 +816,26 @@ self_test() {
 		[[ "$out" != *WARN* && "$(cat "$marker")" == 9.9.2 ]]
 	); then
 		err '[test] FAIL: version gate must re-test only on a new version and record the version only after a pass'
+		return 1
+	fi
+
+	log '[test] phase 9: release stores warn above two releases'
+	if ! (
+		root=$(mktemp -d) || exit 1
+		trap 'rm -rf "$root"' EXIT
+		CODEX_RELEASES="$root/c" PI_RELEASES="$root/p"
+		mkdir -p "$CODEX_RELEASES"/{r1,r2} "$PI_RELEASES"/{r1,r2}
+		out=$(check_ai_releases) || exit 1
+		[[ "$out" != *WARN* ]] || exit 1
+		mkdir "$PI_RELEASES/r3"
+		out=$(check_ai_releases) && exit 1
+		[[ "$out" == *"WARN: $PI_RELEASES holds 3 releases"* ]] || exit 1
+		[[ "$out" != *"WARN: $CODEX_RELEASES"* ]] || exit 1
+		rm -rf "$CODEX_RELEASES" "$PI_RELEASES/r3"
+		out=$(check_ai_releases) || exit 1
+		[[ "$out" != *WARN* && "$out" == *skip* ]]
+	); then
+		err '[test] FAIL: release stores must warn only above two releases and skip a missing store'
 		return 1
 	fi
 

@@ -189,7 +189,7 @@ Expected: Exit 0. No `WARN:`, `ORPHAN:`, or `LINT:` line
 
 ### M2
 
-`claude plugin list`; read doctor check `[warn 1/4]`, which compares each first-party `gitCommitSha` with `origin/main` of `~/DEV/rd/claude-code-plugins`
+`claude plugin list`; read doctor check `[warn 1/6]`, which compares each first-party `gitCommitSha` with `origin/main` of `~/DEV/rd/claude-code-plugins`
 
 Expected: The expected plugins are enabled. First-party revisions agree, or you report the gap
 
