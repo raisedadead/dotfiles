@@ -40,6 +40,22 @@ stty -ixon -ixoff 2>/dev/null
 # Helpers
 can_haz() { whence -p "$1" >/dev/null 2>&1 }
 timezsh() { for i in {1..10}; do time zsh -i -c exit; done }
+cached_init() {
+  local name=$1; shift
+  local bin=${commands[$1]:A}
+  [[ -n $bin ]] || return 0
+  local file="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/init.$name.zsh" stamp="# $bin $*" head=
+  [[ -r $file ]] && read -r head <"$file"
+  if [[ $head != "$stamp" ]]; then
+    mkdir -p "${file:h}"
+    if ! { print -r -- "$stamp"; "$@" } >|"$file.$$" 2>/dev/null; then
+      rm -f "$file.$$"
+      return 1
+    fi
+    mv -f "$file.$$" "$file"
+  fi
+  source "$file"
+}
 
 # Keybindings
 bindkey -e  # Emacs mode
@@ -84,7 +100,7 @@ ZPLUGDIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 source "$ZDOTDIR/plugins.zsh"
 
 # FZF
-can_haz fzf && eval "$(fzf --zsh)"
+cached_init fzf fzf --zsh
 source "$ZDOTDIR/fzf.zsh"
 
 #-----------------------------------------------------------
@@ -111,11 +127,11 @@ source "$ZPLUGDIR/wakatime-zsh-plugin/wakatime.plugin.zsh"
 #-----------------------------------------------------------
 # Tool Integrations
 #-----------------------------------------------------------
-can_haz atuin  && eval "$(atuin init zsh --disable-up-arrow)"
-can_haz zoxide && eval "$(zoxide init --cmd cd --hook pwd zsh)"
+cached_init atuin atuin init zsh --disable-up-arrow
+cached_init zoxide zoxide init --cmd cd --hook pwd zsh
 export DIRENV_LOG_FORMAT=""
-can_haz direnv && eval "$(direnv hook zsh)"
-can_haz wt     && eval "$(wt config shell init zsh)"
+cached_init direnv direnv hook zsh
+cached_init wt wt config shell init zsh
 
 # File sourcing
 source "$ZDOTDIR/alias.zsh"
