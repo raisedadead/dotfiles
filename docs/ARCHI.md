@@ -187,7 +187,7 @@ Pi loads every skill under `~/.agents/skills/`. When two skills have the same na
 | Source                                                                                                  | Owns                                                          |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | [dot_claude/settings.json](../dot_claude/settings.json)                                                 | Hook wiring, plugins, MCP declarations, statuslines, settings |
-| [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                                     | Rig mod: hooks, gates, guard, approval dialog, checks, open items, statusline |
+| [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                                     | Rig mod: hooks, gates, guard, approval queue and dialog, checks, open items, statusline |
 | [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                          | Kernel and path-scoped instructions                           |
 | [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/) | Delegation contracts and reusable work                        |
 | [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                               | Memory configuration. The database stays unmanaged            |
