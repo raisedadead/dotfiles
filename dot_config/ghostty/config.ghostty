@@ -37,6 +37,7 @@ window-height = 54
 
 # Appearance & Transparency
 background-opacity = 0.9
+background-opacity-cells = true
 background-blur = macos-glass-clear
 theme = Catppuccin Mocha
 background = 11111b
