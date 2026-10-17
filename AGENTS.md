@@ -6,7 +6,6 @@ Three coding agents run here: Claude Code, Codex, and Pi. [Agent rigs](docs/ARCH
 
 ## Documents
 
-- This file: the entry point, and the rules for a change here.
 - [docs/ARCHI.md](docs/ARCHI.md): ownership, load order, the agent rigs, and the constraints. It is the main context for this project.
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md): the checks. Its first table selects the checks for your change.
 - [docs/SKILLS.md](docs/SKILLS.md): the order in which skills compose. The Claude kernel holds the precedence.
@@ -20,7 +19,7 @@ The files under `docs/` are shared. Every coding agent reads them.
 - Run the checks in [docs/MAINTENANCE.md](docs/MAINTENANCE.md) after a change.
 - Keep README.md and the files under docs/ current and concise. Keep audit history in private owner documentation.
 - Private directories, such as `dot_claude/`, are submodules of the private repository, one branch per directory. Do not change `dot_claude/` without an explicit request for that submodule.
-- Before you change an installed target, show its proposed diff and ask the operator.
+- Before you change an installed target, show its proposed diff and ask the operator. When your rig queues the change with its diff, that queue entry is the ask.
 - Each agent owns its own global kernel. Do not edit another agent's kernel. Report the change you want instead.
 
 The operator requests a completed reviewer before completion for each non-trivial source change. The operator owns pushes, pull requests, releases, and infrastructure changes.

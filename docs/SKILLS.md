@@ -60,7 +60,6 @@ The operator runs `/interface-review`; the model cannot invoke it.
 
 Authentication, input from a user, a webhook, or a new dependency.
 
-1. `rules/07-owasp.md` loads when the session reads a file that its `paths:` match. Do not run it as a step.
 1. `security-review` reads the change on the branch.
 1. `ghsa-draft` drafts a freeCodeCamp advisory alone.
 
