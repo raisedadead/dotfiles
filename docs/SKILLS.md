@@ -12,15 +12,23 @@ A feature, a bug fix, or any change to what the code does.
 
 1. `whetstone:tdd-cycle` drives. In a live dossier, `dossier:build` drives instead.
 1. Read `test-driven-development` when you must decide what to test.
-1. `reviewer` before done.
+1. `reviewer` or the `lens-review` workflow before done. `args.spec` adds the spec lens. `/code-review` runs only when the operator asks for it.
 
 ## Change a public interface
 
 A REST or GraphQL endpoint, an exported type, a module boundary, or a config schema.
 
 1. `api-and-interface-design` first, before a test exists.
+1. `whetstone:codebase-design` when the change moves a module boundary or its depth.
 1. `whetstone:doubt-pass` when the decision is costly to reverse.
 1. Then "Change behaviour" above.
+
+## Answer a design question
+
+A state model, a UI flow, or a project term that is not clear yet.
+
+1. `whetstone:prototype` builds a throwaway version before the real one.
+1. `whetstone:domain-modeling` owns the project terms, `GLOSSARY.md` and the ADRs.
 
 ## Reduce complexity
 
@@ -55,6 +63,12 @@ Authentication, input from a user, a webhook, or a new dependency.
 1. `rules/07-owasp.md` loads when the session reads a file that its `paths:` match. Do not run it as a step.
 1. `security-review` reads the change on the branch.
 1. `ghsa-draft` drafts a freeCodeCamp advisory alone.
+
+## Guide the operator
+
+Several manual steps: credentials, a third-party dashboard, or a cutover.
+
+1. `whetstone:wizard` drives.
 
 ## Signals that the pick is wrong
 
