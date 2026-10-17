@@ -70,7 +70,7 @@ Then render and apply the selected rig files to an isolated destination and stat
 - `cd /tmp && pi -p --no-session "Reply with ok." < /dev/null`: expect `ok`.
 - Start `pi` once: expect no error or warning above the editor.
 - `cd ~/.dotfiles/dot_pi && npm test`: expect exit 0.
-- `pi mcp list`: expect 6 connected servers.
+- `pi mcp list`: expect 5 connected servers.
 - `ls ~/.pi/agent/skills`: expect the names in `dot_pi/skills.tsv`.
 
 ## Terminal stack
