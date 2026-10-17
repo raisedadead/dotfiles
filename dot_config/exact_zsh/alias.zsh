@@ -26,6 +26,11 @@ alias gti="git"
 alias got="git"
 alias gut="git"
 
+#-----------------------------
+# Other aliases
+#----------------------------
+alias celar="clear"
+
 #----------------------------
 # LazyGit
 #----------------------------
