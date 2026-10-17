@@ -52,7 +52,7 @@ A bug report, a wrong result, or a performance regression.
 ## Build or polish a screen
 
 1. One focused skill for a named concern: `better-typography`, `better-colors`, `better-layout`, `better-accessibility`, `better-ui`, or `better-writing`.
-1. `better-interface` for a full sweep at the end.
+1. `better-interface` for a full sweep at the end. Run it at most once.
 
 The operator runs `/interface-review`; the model cannot invoke it.
 
