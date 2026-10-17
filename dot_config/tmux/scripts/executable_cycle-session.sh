@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Cycle to next/previous non-parked session (wraps around)
-# Usage: cycle-session.sh -n | -p
+# Cycle to next/previous non-parked session (wraps around), in status-right order
+# Usage: cycle-session.sh -n | -p <session_id>
 
 direction="${1:--n}"
-current=$(tmux display-message -p '#{session_id}' 2>/dev/null) || exit 0
+current="${2:-}"
+[[ -n "$current" ]] || exit 0
 
-mapfile -t sessions < <(tmux list-sessions -f '#{!=:#{@parked},1}' -F '#{session_id}')
+read -ra sessions < <(tmux display-message -p '#{S:#{?#{==:#{@parked},1},,#{session_id} }}') || exit 0
 count=${#sessions[@]}
 
 [[ "$count" -le 1 ]] && exit 0
