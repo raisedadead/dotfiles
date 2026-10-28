@@ -184,14 +184,14 @@ Pi loads every skill under `~/.agents/skills/`. When two skills have the same na
 
 ## Claude Code
 
-| Source                                                                                                  | Owns                                                          |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [dot_claude/settings.json](../dot_claude/settings.json)                                                 | Hook wiring, plugins, MCP declarations, statuslines, settings |
+| Source                                                                                                  | Owns                                                                                    |
+| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [dot_claude/settings.json](../dot_claude/settings.json)                                                 | Hook wiring, plugins, MCP declarations, statuslines, settings                           |
 | [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                                     | Rig mod: hooks, gates, guard, approval queue and dialog, checks, open items, statusline |
-| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                          | Kernel and path-scoped instructions                           |
-| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/) | Delegation contracts and reusable work                        |
-| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                               | Memory configuration. The database stays unmanaged            |
-| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                     | RTK filters and hook exclusions; `git` is excluded            |
+| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                          | Kernel and path-scoped instructions                                                     |
+| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/) | Delegation contracts and reusable work                                                  |
+| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                               | Memory configuration. The database stays unmanaged                                      |
+| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                     | RTK filters and hook exclusions; `git` is excluded                                      |
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
@@ -201,7 +201,7 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
-After `EnterWorktree`, the same check also applies to a `!` command that you type. It refuses `git -C ~/<path>`, because it treats `~` as a runtime value. It accepts an absolute path and `"$HOME/<path>"`. Tested with `git status` on 2.1.289 and 2.1.291; `push` is not tested. Rig hooks do not receive `!` commands, so the rig does not cause this refusal and cannot prevent it. When Remote Control is connected, the terminal shows only `detail withheld on this connection`. Start the session with `--debug-file <path>` to read the reason (anthropics/claude-code#88550).
+After `EnterWorktree`, the same check also applies to a `!` command that you type. It refuses `git -C ~/<path>`, because it treats `~` as a runtime value (anthropics/claude-code#88550). It accepts an absolute path and `"$HOME/<path>"`. Tested with `git status` on 2.1.289 and 2.1.291; `push` is not tested. Rig hooks do not receive `!` commands, so the rig does not cause this refusal and cannot prevent it. When Remote Control is connected, the terminal shows only `detail withheld on this connection`. Start the session with `--debug-file <path>` to read the reason (anthropics/claude-code#99855).
 
 ### Plugins, MCP, and memory
 
