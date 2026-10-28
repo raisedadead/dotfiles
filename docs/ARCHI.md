@@ -50,13 +50,14 @@ Each private directory is one orphan branch with the directory name, mounted wit
 
 ## Terminal stack
 
-| Layer       | Source                                                                                | Owns                                                            |
-| ----------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Desktop     | `dot_config/aerospace/`                                                               | Desktop shortcuts, read before the terminal                     |
-| Terminal    | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites           |
-| Multiplexer | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration |
-| Shell       | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                             |
-| Editor      | [Neovim](../dot_config/nvim/)                                                         | LazyVim defaults plus local overrides                           |
+| Layer                    | Source                                                                                | Owns                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Desktop                  | `dot_config/aerospace/`                                                               | Desktop shortcuts, read before the terminal                                                  |
+| Terminal                 | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites                                        |
+| Multiplexer              | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration                              |
+| Multiplexer, alternative | [tuios](../dot_config/private_tuios/private_config.toml)                              | A trial beside tmux: `M-` layer, look, scratch keys for the switcher, the reader and lazygit |
+| Shell                    | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                                                          |
+| Editor                   | [Neovim](../dot_config/nvim/)                                                         | LazyVim defaults plus local overrides                                                        |
 
 A root tmux binding takes its key before zsh or Neovim. Before you assign a key, check `ghostty +list-keybinds`, `tmux list-keys -T root`, and `bindkey`. Ghostty Alt+Left/Right send `M-b`/`M-f`.
 
@@ -111,6 +112,14 @@ A tmux reload adds or overwrites bindings and options. A removed source line doe
 `run-shell` puts the pane in view mode when the child writes to stdout, or when the child exits non-zero. Stderr alone is safe. That pane then ignores keys until `q`, which reads as a frozen session. Each script binding therefore calls [run.sh](../dot_config/tmux/scripts/executable_run.sh), which sends the child output to `$XDG_STATE_HOME/tmux/<name>.log`, shows a message on a non-zero exit, and always exits 0 with empty stdout. Do not use `|| true`: it corrects the exit code and not the stdout.
 
 Add `-b` only when the child opens a menu or a popup, because a blocking `run-shell` holds the client command queue until the child stops. Do not add `-b` elsewhere. It also removes the serialization, and repeated presses of a cycling key then race: three fast presses of `M-Tab` moved one session, not three. Quote each format that becomes a shell word with `#{q:...}`. A plain `'#{pane_current_path}'` runs arbitrary commands from a directory name that contains an apostrophe.
+
+### tuios
+
+tuios reads `config.toml` and `config.d/look.toml`, and applies a saved change at once. `config.toml` wins over the look. `tuios set-config` and the settings browser rewrite `config.toml`, so read `chezmoi status` before a `re-add`. Before you assign a key, run `tuios keybinds explain <key>`. After a key change, run `tuios keybinds doctor`.
+
+[switcher.sh](../dot_config/private_tuios/scripts/executable_switcher.sh) and [reader.sh](../dot_config/private_tuios/scripts/executable_reader.sh) are ports of the tmux scripts. Update each port with its tmux script. The ports run in a scratch pane, because a tuios popup loses the keyboard focus to the terminal focus keys. They set `--height=100%`, `--border=none` and `bg:-1`, so fzf fills the pane and keeps the terminal transparency.
+
+`nvim_navigation` and `tuios-nvim-navigator` hand `M-H/J/K/L` between Neovim splits and tuios panes. The plugin loads only when `TUIOS_SESSION` is set and `TMUX` is not. smart-splits loads in every other case.
 
 ### Neovim
 

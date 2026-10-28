@@ -1,0 +1,95 @@
+[startup]
+tiled = true
+daemon = true
+start_in_terminal_mode = true
+open_default_window = true
+
+[appearance]
+background = "off"
+desktop_background = "off"
+dock_background = "off"
+pane_background = "off"
+window_chrome_background = "off"
+nvim_navigation = true
+auto_enter_terminal_on_focus = "targeted"
+animation_speed = 400
+
+[appearance.selection]
+flash_ms = 80
+
+[appearance.sidebar]
+enabled = false
+background = "off"
+
+[keybindings]
+leader_key = "ctrl+space"
+
+[keybindings.global]
+command_palette = []
+split_vertical = ["alt+d"]
+split_horizontal = ["alt+shift+d"]
+toggle_zoom = ["alt+shift+enter"]
+next_workspace = ["alt+`"]
+prev_workspace = ["alt+shift+`", "alt+~"]
+next_session = ["alt+tab"]
+prev_session = ["alt+shift+tab"]
+new_session = ["alt+n"]
+new_workspace = ["alt+m"]
+rename_session = ["alt+r"]
+rename_workspace = ["alt+shift+r"]
+toggle_scratch = ["alt+t"]
+prefix_session_switcher = ["alt+s"]
+hints = ["alt+e"]
+prefix_keybinds = ["alt+?", "alt+shift+/"]
+choose_tree = ["alt+w"]
+prefix_selection = ["alt+v"]
+"open_menu:commands" = ["alt+;"]
+
+[keybindings.terminal_mode]
+terminal_next_window = []
+terminal_prev_window = []
+terminal_focus_left = ["alt+shift+h"]
+terminal_focus_down = ["alt+shift+j"]
+terminal_focus_up = ["alt+shift+k"]
+terminal_focus_right = ["alt+shift+l"]
+
+[keybindings.menus.commands]
+title = "Commands"
+
+[keybindings.menus.commands.keys]
+toggle_multifocus_all = ["1"]
+break_pane = ["2"]
+equalize_splits = ["4"]
+toggle_scratch = ["6"]
+hints = ["u"]
+new_workspace = ["w"]
+last_session = ["l"]
+pick_path = ["p"]
+command_palette = [":"]
+
+[[keybindings.command]]
+key = "alt+g"
+type = "scratch"
+name = "lazygit"
+command = "lazygit"
+description = "Lazygit"
+width = "70%"
+height = "80%"
+
+[[keybindings.command]]
+key = "alt+o"
+type = "scratch"
+name = "switcher"
+command = "~/.config/tuios/scripts/switcher.sh"
+description = "Switcher"
+width = "60%"
+height = "60%"
+
+[[keybindings.command]]
+key = "alt+i"
+type = "scratch"
+name = "reader"
+command = "~/.config/tuios/scripts/reader.sh"
+description = "Reader"
+width = "80%"
+height = "80%"
