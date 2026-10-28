@@ -50,14 +50,14 @@ Each private directory is one orphan branch with the directory name, mounted wit
 
 ## Terminal stack
 
-| Layer                    | Source                                                                                | Owns                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Desktop                  | `dot_config/aerospace/`                                                               | Desktop shortcuts, read before the terminal                     |
-| Terminal                 | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites           |
-| Multiplexer              | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration |
-| Multiplexer, alternative | [tuios](../dot_config/private_tuios/private_config.toml)                              | Trial beside tmux: `M-` layer, look, scratch panes              |
-| Shell                    | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                             |
-| Editor                   | [Neovim](../dot_config/nvim/)                                                         | LazyVim defaults plus local overrides                           |
+| Layer                    | Source                                                                                | Owns                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Desktop                  | `dot_config/aerospace/`                                                               | Desktop shortcuts, read before the terminal                                                |
+| Terminal                 | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites                                      |
+| Multiplexer              | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration                            |
+| Multiplexer, alternative | [tuios](../dot_config/private_tuios/private_config.toml)                              | Trial beside tmux: `M-` layer, look, scratch keys for the switcher, the reader and lazygit |
+| Shell                    | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                                                        |
+| Editor                   | [Neovim](../dot_config/nvim/)                                                         | LazyVim defaults plus local overrides                                                      |
 
 A root tmux binding takes its key before zsh or Neovim. Before you assign a key, check `ghostty +list-keybinds`, `tmux list-keys -T root`, and `bindkey`. Ghostty Alt+Left/Right send `M-b`/`M-f`.
 
@@ -111,7 +111,7 @@ A tmux reload adds or overwrites bindings and options. A removed source line doe
 
 `run-shell` puts the pane in view mode when the child writes to stdout, or when the child exits non-zero. Stderr alone is safe. That pane then ignores keys until `q`, which reads as a frozen session. Each script binding therefore calls [run.sh](../dot_config/tmux/scripts/executable_run.sh), which sends the child output to `$XDG_STATE_HOME/tmux/<name>.log`, shows a message on a non-zero exit, and always exits 0 with empty stdout. Do not use `|| true`: it corrects the exit code and not the stdout.
 
-Add `-b` only when the child opens a menu or a popup, because a blocking `run-shell` holds the client command queue until the child stops. `-b` also removes the serialization, and repeated presses of a cycling key then race: three fast presses of `M-Tab` moved one session, not three. Quote each format that becomes a shell word with `#{q:...}`. A plain `'#{pane_current_path}'` runs arbitrary commands from a directory name that contains an apostrophe.
+Add `-b` only when the child opens a menu or a popup, because a blocking `run-shell` holds the client command queue until the child stops. `-b` also removes the serialization, and repeated presses of a key that cycles then race: three fast presses of `M-Tab` moved one session, not three. Quote each format that becomes a shell word with `#{q:...}`. A plain `'#{pane_current_path}'` runs arbitrary commands from a directory name that contains an apostrophe.
 
 ### tuios
 
@@ -119,7 +119,7 @@ tuios reads `config.toml` and `config.d/look.toml`. `config.toml` wins over the 
 
 tuios writes to the managed files. `tuios set-config` and the settings browser rewrite `config.toml` while a client is attached. `tuios look apply` and `tuios look remove` replace or delete `config.d/look.toml`. Read `chezmoi status` before a `re-add`. Before you assign a key, run `tuios keybinds explain <key>`. After a key change, run `tuios keybinds doctor`.
 
-[switcher.sh](../dot_config/private_tuios/scripts/executable_switcher.sh), [reader.sh](../dot_config/private_tuios/scripts/executable_reader.sh) and [colors.sh](../dot_config/private_tuios/scripts/executable_colors.sh) port the tmux scripts. Update each port with its tmux script. The ports run in a scratch pane, because a popup lost the keyboard focus to `terminal_focus_left` in a test. Each sets `--height=100%`, `--border=none` and `bg:-1`, so fzf fills the pane and keeps the terminal transparency.
+[switcher.sh](../dot_config/private_tuios/scripts/executable_switcher.sh), [reader.sh](../dot_config/private_tuios/scripts/executable_reader.sh) and [colors.sh](../dot_config/private_tuios/scripts/executable_colors.sh) port the tmux scripts. Update each port with its tmux script. The ports run in a scratch pane. In a tuios popup, `terminal_focus_left` moved the keyboard focus to the pane behind the popup, and typed text went there. Each sets `--height=100%`, `--border=none` and `bg:-1`, so fzf fills the pane and keeps the terminal transparency.
 
 `nvim_navigation` and `tuios-nvim-navigator` hand `M-H/J/K/L` between Neovim splits and tuios panes. The plugin loads only when `TUIOS_SESSION` is set and `TMUX` is not. smart-splits loads in every other case.
 
@@ -224,10 +224,10 @@ Three components add hidden context to a prompt: the rig (gate and validator rem
 
 Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. Keep native `autoMemoryEnabled` off, because a native write creates target drift.
 
-- **Install.** After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`. A manual `npm i -g cavemem` reinstalls 11.x, so run `--only cavemem` after it too.
-- **better-sqlite3 pin.** cavemem 0.2.1 pins `better-sqlite3@^11`. Every 11.x aborts in the Node 24 garbage collector with `Assertion failed: (env) != nullptr` ([WiseLibs/better-sqlite3#1515](https://github.com/WiseLibs/better-sqlite3/issues/1515), closed without a fix). On Node 26 the 11.x install fails: no prebuild exists, and the source does not compile. The bootstrap installs cavemem with `--ignore-scripts`, then `better-sqlite3@12.11.1` under cavemem.
+- **Install.** After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`.
+- **better-sqlite3 pin.** cavemem 0.2.1 pins `better-sqlite3@^11`. Every 11.x aborts in the Node 24 garbage collector with `Assertion failed: (env) != nullptr` ([WiseLibs/better-sqlite3#1515](https://github.com/WiseLibs/better-sqlite3/issues/1515), closed without a fix). On Node 26 the 11.x install script fails: no prebuild exists, and the source does not compile. The bootstrap installs cavemem with `--ignore-scripts`, then installs `better-sqlite3@12.11.1` under cavemem. A manual `npm i -g cavemem` reinstalls 11.x, so run `--only cavemem` after it.
 - **Install scripts.** Keep the temporary `.npmrc` of `cavemem_pin_bsql` as the only install-script permission for better-sqlite3. npm 11.19 runs an unlisted install script and only warns.
-- **Ranker patch.** cavemem 0.2.1 search passes every embedding to `Math.min`, so a large store raises `Maximum call stack size exceeded`. `cavemem-health.sh` reports it as `rank`, and the bootstrap patches the ranker ([JuliusBrussee/cavemem#62](https://github.com/JuliusBrussee/cavemem/pull/62)). Remove the patch when a release has the fix. A running MCP server keeps the old code until it restarts.
+- **Ranker patch.** cavemem 0.2.1 search passes every embedding to `Math.min`, so a large store raises `Maximum call stack size exceeded`. `cavemem-health.sh` reports it as `rank`, and the bootstrap patches the ranker ([JuliusBrussee/cavemem#62](https://github.com/JuliusBrussee/cavemem/pull/62)). Remove the patch when a release has the fix. An MCP server keeps the old code until it restarts.
 
 ## Codex
 

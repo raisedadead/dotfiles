@@ -181,7 +181,7 @@ Expected: CPU and GPU or energy recorded separately
 
 ### T17
 
-`tuios keybinds doctor`; `shellcheck` on changed tuios scripts; open each changed key in a `tuios --server <name>` fixture
+In a `tuios --server <name>` fixture: `tuios keybinds doctor --server <name>`, then open each changed key; `shellcheck` on changed tuios scripts
 
 Expected: No conflict. No new diagnostic. Each key opens its pane and keeps the keyboard focus
 
