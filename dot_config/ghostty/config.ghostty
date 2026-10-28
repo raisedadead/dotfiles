@@ -6,7 +6,7 @@ notify-on-command-finish = unfocused
 notify-on-command-finish-action = no-bell,notify
 
 # Shell Integration
-shell-integration-features = cursor,sudo
+shell-integration-features = sudo
 
 # Quick Terminal
 keybind = global:ctrl+grave_accent=toggle_quick_terminal
@@ -31,23 +31,23 @@ window-padding-balance = true
 window-padding-x = 8
 window-padding-y = 8
 window-padding-color = extend
-window-width = 166
-window-height = 54
 
 # Appearance & Transparency
 background-opacity = 0.75
 background-blur = macos-glass-regular
-theme = Catppuccin Mocha
+# Official catppuccin/ghostty theme; the bundled "Catppuccin Mocha" differs.
+theme = catppuccin-mocha.conf
 background = 11111b
 bold-color = bright
-
-# Splits
-split-preserve-zoom = navigation
+# Dim text over glass: zsh suggestions use palette 8, faint text is SGR 2.
+palette = 8=#6c7086
+faint-opacity = 1
+# Derive colours 16-255 from the theme instead of the xterm defaults.
+palette-generate = true
 
 # Mouse & Selection
-focus-follows-mouse = true
 mouse-hide-while-typing = true
-mouse-scroll-multiplier = precision:0.5,discrete:3
+mouse-scroll-multiplier = precision:0.5
 
 # Typography
 font-family = "Berkeley Mono"
@@ -63,13 +63,8 @@ font-codepoint-map = U+F0000-U+FFFFF=Symbols Nerd Font
 custom-shader = shaders/cursor_warp.glsl
 custom-shader = shaders/text_glow.glsl
 
-# Cursor
-cursor-color = f5e0dc
-cursor-text = 11111b
-
 # macOS Specific
 macos-titlebar-style = hidden
-macos-titlebar-proxy-icon = hidden
 macos-option-as-alt = left
 
 # Keybindings
