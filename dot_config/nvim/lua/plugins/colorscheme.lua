@@ -16,6 +16,10 @@ return {
     opts = {
       flavour = "mocha",
       transparent_background = true, -- pairs with Ghostty's background opacity
+      -- One step up from surface1: the Ghostty glass lifts the background.
+      custom_highlights = function(c)
+        return { LineNr = { fg = c.overlay0 } }
+      end,
     },
   },
 }

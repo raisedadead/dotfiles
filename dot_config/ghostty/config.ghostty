@@ -40,7 +40,7 @@ theme = catppuccin-mocha.conf
 background = 11111b
 bold-color = bright
 # Dim text over glass: zsh suggestions use palette 8, faint text is SGR 2.
-palette = 8=#6c7086
+palette = 8=#7f849c
 faint-opacity = 1
 # Derive colours 16-255 from the theme instead of the xterm defaults.
 palette-generate = true
