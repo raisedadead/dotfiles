@@ -83,8 +83,8 @@ keybind = ctrl+enter=text:\r
 # distinguish Ctrl+Shift+X from Ctrl+X — both are one control byte — so rewrite
 # each as ESC + that byte (`^[^X`, i.e. tmux M-C-x). keybinds.conf then routes
 # it: vim panes get the plain Ctrl+X back, everything else gets M-C-x.
-# CSI u is not the alternative here — this rig deliberately stays in legacy
-# mode (tmux.conf omits `extkeys` from terminal-features, see CLAUDE.md).
+# Outside tmux, keys use legacy encoding. Inside tmux, Ghostty uses
+# modifyOtherKeys mode 2; the rewrite runs first, so it applies in both.
 # The rewrite is terminal-wide: outside tmux these reach whatever app is
 # running as ESC+Ctrl+X, with no vim arbitration.
 keybind = ctrl+shift+w=text:\x1b\x17
