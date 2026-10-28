@@ -81,10 +81,10 @@ keybind = ctrl+enter=text:\r
 
 # Ctrl+Shift word/line editing (see zsh/.zshrc). Legacy encoding cannot
 # distinguish Ctrl+Shift+X from Ctrl+X — both are one control byte — so rewrite
-# each as ESC + that byte (`^[^X`, i.e. tmux M-C-x). keybinds.conf then routes
-# it: vim panes get the plain Ctrl+X back, everything else gets M-C-x.
-# Outside tmux, keys use legacy encoding. Inside tmux, Ghostty uses
-# modifyOtherKeys mode 2; the rewrite runs first, so it applies in both.
+# each as ESC + that byte (`^[^X`, i.e. tmux M-C-x). This gives keybinds.conf
+# one sequence to route in every key mode: vim panes get the plain Ctrl+X
+# back, everything else gets M-C-x. The rewrite runs before key encoding, so
+# it applies whether the app requests legacy, modifyOtherKeys or kitty keys.
 # The rewrite is terminal-wide: outside tmux these reach whatever app is
 # running as ESC+Ctrl+X, with no vim arbitration.
 keybind = ctrl+shift+w=text:\x1b\x17

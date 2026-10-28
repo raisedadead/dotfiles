@@ -62,7 +62,7 @@ A root tmux binding takes its key before zsh or Neovim. Before you assign a key,
 
 `smart-splits.nvim` sets `@pane-is-vim`. tmux uses it to forward `M-H/J/K/L` to Neovim or to select a pane. The same flag routes Ghostty's Ctrl+Shift+W/E/A/S rewrites: Neovim receives plain Ctrl+W/E/A/S, other panes receive `M-C-w/e/a/s`. Ctrl+Shift+W deletes to line start in zsh.
 
-tmux adds client `extkeys` when Ghostty answers XTVERSION, and then requests modifyOtherKeys mode 2. tmux.conf does not list `extkeys`. keybinds.conf keeps legacy uppercase plus `M-S-` bindings, so each Alt+Shift key works in both modes. `terminal-features` resets before it appends, so a reload does not duplicate entries. Check the client features, not only `extended-keys`.
+tmux adds client `extkeys` when Ghostty answers XTVERSION, and then requests modifyOtherKeys mode 2. tmux.conf does not list `extkeys`. Without that answer, for example over SSH or in nested tmux, the client stays in legacy mode. keybinds.conf keeps legacy uppercase plus `M-S-` bindings, so each left-Option+Shift key works in both modes. `terminal-features` resets before it appends, so a reload does not duplicate entries. Check the client features, not only `extended-keys`.
 
 Ghostty shell-integration features add to the defaults. Keep `path` enabled. Ctrl+Shift+H/J/K/L scroll Ghostty history, not tmux copy mode. Mouse drag selects in tmux. Shift+drag selects in the terminal.
 
