@@ -35,15 +35,11 @@ window-width = 166
 window-height = 54
 
 # Appearance & Transparency
-background-opacity = 0.9
-background-opacity-cells = true
-background-blur = macos-glass-clear
+background-opacity = 0.75
+background-blur = macos-glass-regular
 theme = Catppuccin Mocha
 background = 11111b
 bold-color = bright
-minimum-contrast = 1.5
-palette = 8=#6c7086
-faint-opacity=1
 
 # Splits
 split-preserve-zoom = navigation
