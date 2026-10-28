@@ -45,6 +45,9 @@ AGENTS.md
 
 .playwright-mcp/
 
+# vitest writes a JSON report here under an agent environment
+.vitest/
+
 .serena/
 docs/plans
 .worktrees
