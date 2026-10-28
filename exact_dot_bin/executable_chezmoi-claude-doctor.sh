@@ -209,7 +209,7 @@ check_shape() {
 }
 
 check_mcp() {
-	local settings="$PRIV_SOURCE/dot_claude/settings.json"
+	local settings="$PRIV_SOURCE/dot_claude/.settings.managed.json"
 	local runtime="$HOME/.claude.json"
 	local canonical live mode out found=0
 	if ! command -v jq >/dev/null 2>&1; then
@@ -217,7 +217,7 @@ check_mcp() {
 		return 0
 	fi
 	if [[ ! -r "$settings" ]]; then
-		log '  skip (dot_claude/settings.json unreadable)'
+		log '  skip (dot_claude/.settings.managed.json unreadable)'
 		return 0
 	fi
 	if [[ ! -r "$runtime" ]]; then
@@ -225,7 +225,7 @@ check_mcp() {
 		return 1
 	fi
 	if ! jq empty "$settings" 2>/dev/null; then
-		log '  LINT: dot_claude/settings.json is not valid JSON'
+		log '  LINT: dot_claude/.settings.managed.json is not valid JSON'
 		return 1
 	fi
 	mode=$(stat -f '%Lp' "$runtime" 2>/dev/null)
@@ -245,7 +245,7 @@ check_mcp() {
 		[[ "$found" -eq 0 ]] && log '  clean'
 		return "$found"
 	fi
-	log '  DRIFT in mcpServers (dot_claude/settings.json is canonical)'
+	log '  DRIFT in mcpServers (dot_claude/.settings.managed.json is canonical)'
 	out=$(diff -u --label '.claude.json' --label 'settings.json' \
 		<(printf '%s\n' "$live") <(printf '%s\n' "$canonical"))
 	printf '%s\n' "$out" | sed 's/^/  /' | while IFS= read -r line; do log "$line"; done
@@ -254,7 +254,7 @@ check_mcp() {
 
 # Lint stage: schema-shape checks. Each sub-check
 check_lint() {
-	local settings="$PRIV_SOURCE/dot_claude/settings.json"
+	local settings="$PRIV_SOURCE/dot_claude/.settings.managed.json"
 	local found=0
 
 	# 5a + 5b: settings.json shape (need jq + source present)
@@ -419,7 +419,7 @@ check_safeguard_toggle() {
 		return 0
 	fi
 	local rc=0 f v
-	for f in "$PRIV_SOURCE/dot_claude/settings.json" "$CLAUDE_DIR/settings.json"; do
+	for f in "$PRIV_SOURCE/dot_claude/.settings.managed.json" "$CLAUDE_DIR/settings.json"; do
 		if [[ ! -f "$f" ]]; then
 			log "  skip (${f/#$HOME/\~} missing)"
 			continue
@@ -578,8 +578,8 @@ check_submodule() {
 		;;
 	"+"*) log "WARN: dot_claude checkout differs from the recorded gitlink; commit the bump in $PRIV_SOURCE" ;;
 	esac
-	[[ -f "$PRIV_SOURCE/dot_claude/settings.json" ]] || {
-		err "missing $PRIV_SOURCE/dot_claude/settings.json"
+	[[ -f "$PRIV_SOURCE/dot_claude/.settings.managed.json" ]] || {
+		err "missing $PRIV_SOURCE/dot_claude/.settings.managed.json"
 		exit 2
 	}
 }

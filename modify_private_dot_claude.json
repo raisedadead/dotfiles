@@ -2,7 +2,7 @@
 set -euo pipefail
 
 input=$(cat)
-settings="${CHEZMOI_SOURCE_DIR:-}/dot_claude/settings.json"
+settings="${CHEZMOI_SOURCE_DIR:-}/dot_claude/.settings.managed.json"
 [[ -r "$settings" ]] || settings="${HOME}/.claude/settings.json"
 
 passthrough() {

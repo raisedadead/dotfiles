@@ -23,7 +23,7 @@
 set -uo pipefail
 
 PRIV_SOURCE="${PRIV_SOURCE:-$HOME/.dotfiles}"
-SETTINGS="${SETTINGS:-$PRIV_SOURCE/dot_claude/settings.json}"
+SETTINGS="${SETTINGS:-$PRIV_SOURCE/dot_claude/.settings.managed.json}"
 
 DIM=$'\e[0;90m'
 GRN=$'\e[0;32m'
