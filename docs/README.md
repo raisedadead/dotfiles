@@ -20,7 +20,7 @@ The private sources `dot_claude/`, `dot_codex/`, `dot_agents/`, and `dot_pi/` de
 
 - Keep `--source ~/.dotfiles` on `chezmoi init`. The default source path is different.
 - The age identity is not in Git. Without the 1Password copy, you cannot recover the encrypted files.
-- The submodules clone over SSH. Make sure that the 1Password SSH agent works first: `ssh -T git@github.com`.
+- The submodules clone over SSH. Test the 1Password SSH agent first: `ssh -T git@github.com`.
 - A clone without submodules needs `git -C ~/.dotfiles submodule update --init`. The doctor fails until you run it.
 - `install.sh` takes no arguments.
 

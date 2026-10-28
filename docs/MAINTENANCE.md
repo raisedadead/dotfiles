@@ -179,6 +179,12 @@ Shader on and off with equal window size, display, text, focus, and scroll workl
 
 Expected: CPU and GPU or energy recorded separately
 
+### T17
+
+`tuios keybinds doctor`; `shellcheck` on changed tuios scripts; open each changed key in a `tuios --server <name>` fixture
+
+Expected: No conflict. No new diagnostic. Each key opens its pane and keeps the keyboard focus
+
 ## Claude Code
 
 ### M1
