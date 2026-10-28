@@ -10,3 +10,8 @@ map("i", "jk", "<Esc>", { desc = "Exit insert mode" })
 -- Keep the cursor centred while half-page scrolling (LazyVim maps neither)
 map("n", "<C-d>", "<C-d>zz", { desc = "Scroll down (centered)" })
 map("n", "<C-u>", "<C-u>zz", { desc = "Scroll up (centered)" })
+
+-- Ghostty sends Ctrl+Shift+W/E/A/S as ESC + Ctrl byte; give Neovim the plain key
+for _, key in ipairs({ "w", "e", "a", "s" }) do
+  map({ "n", "i", "c", "x", "s", "o" }, "<M-C-" .. key .. ">", "<C-" .. key .. ">", { remap = true, desc = "Ctrl+" .. key:upper() })
+end

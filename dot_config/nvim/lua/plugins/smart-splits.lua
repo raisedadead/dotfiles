@@ -1,6 +1,7 @@
 return {
   "mrjones2014/smart-splits.nvim",
   lazy = false,
+  cond = (vim.env.TUIOS_SESSION or "") == "" or vim.env.TMUX ~= nil,
   config = function()
     local ss = require("smart-splits")
     ss.setup()
