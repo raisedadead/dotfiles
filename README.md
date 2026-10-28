@@ -11,7 +11,7 @@
 | Deployment | [chezmoi](https://www.chezmoi.io), [age](https://age-encryption.org) encryption, [1Password](https://1password.com) for keys and SSH    |
 | Packages   | [Homebrew](https://brew.sh), from a separate [Brewfile repository](https://github.com/raisedadead/Brewfile)                             |
 | Terminal   | [Ghostty](https://ghostty.org), [tmux](https://github.com/tmux/tmux), [zsh](https://www.zsh.org)                                        |
-| Editor     | [Neovim](https://neovim.io) with [LazyVim](https://www.lazyvim.org)                                                                     |
+| Editor     | [Neovim](https://neovim.io) with [LazyVim](https://www.lazyvim.org), [Zed](https://zed.dev)                                             |
 | Desktop    | [AeroSpace](https://github.com/nikitabobko/AeroSpace), [SketchyBar](https://felixkratz.github.io/SketchyBar)                            |
 | Agents     | [Claude Code](https://claude.com/claude-code), [Codex](https://developers.openai.com/codex), [Pi](https://github.com/earendil-works/pi) |
 
