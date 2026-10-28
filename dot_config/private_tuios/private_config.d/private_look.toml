@@ -2,7 +2,6 @@
 # "tuios look remove" deletes it. The next apply replaces it.
 # config.toml wins over this file. Change settings there.
 # look: Default Tight
-# source: /Users/mrugesh/.dotfiles/.scratchpad/dossier/2026-10-29-tuios-rice/looks/d-tight.look.toml
 
 [appearance]
 dock_compact = true
