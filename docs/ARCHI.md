@@ -178,7 +178,7 @@ Install a third-party skill with the command above, never by hand. Run `npx skil
 
 Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` is advisory and does not (anthropics/claude-code#37683). A `cmd-*` skill sets `disable-model-invocation: false`. Keep the trigger phrases disjoint across skills. Write a path with forward slashes, never with a backslash. The `whetstone` plugin's `skill-smith` lints the rest.
 
-UNVERIFIED: that Codex loads a skill from `~/.agents/skills` at run time. The Codex binary names that path. `~/.codex/skills/` holds no link to it.
+Codex 0.164.0 reads `~/.agents/skills` as a user skill root ([host_roots.rs](https://github.com/openai/codex/blob/rust-v0.164.0/codex-rs/ext/skills/src/host_roots.rs)). The app-server `skills/list` method returns those skills. `~/.codex/skills/` holds no link to them.
 
 Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/` with `npx skills add <repo> --skill <name> -g -a pi --copy -y`. `dot_pi/skills.tsv` lists those skills for replay.
 
