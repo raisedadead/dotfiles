@@ -180,7 +180,7 @@ Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` 
 
 Codex 0.164.0 reads `~/.agents/skills` as a user skill root ([host_roots.rs](https://github.com/openai/codex/blob/rust-v0.164.0/codex-rs/ext/skills/src/host_roots.rs)). The app-server `skills/list` method returns those skills. `~/.codex/skills/` holds no link to them.
 
-Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/` with `npx skills add <repo> --skill <name> -g -a pi --copy -y`. `dot_pi/skills.tsv` lists those skills for replay.
+Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/` through a scratch project install, because a global `-g -a pi` install writes to `~/.agents/skills/` (skills CLI 1.7.4). [dot_pi/RIG.md](../dot_pi/RIG.md) holds the update loop. `dot_pi/skills.tsv` lists those skills.
 
 ## Claude Code
 

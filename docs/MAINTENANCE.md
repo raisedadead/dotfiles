@@ -237,7 +237,7 @@ Expected: `lastError` is null. MCP connects. The `better-sqlite3` major is 12 or
 
 ### M10
 
-Run `npx skills check -g`. Review the reported changes, then run `npx skills update -g -y`. Compare `npx skills list -g` with `docs/skills.tsv`. The manifest has one `source<TAB>name` line for each third-party skill. Add the line by hand at each install. Replay a missing skill with the loop below. Run `find ~/.claude/skills -maxdepth 1 -type l ! -lname '../../.agents/skills/*'`. Run `/skill-doctor` in a session
+Run `npx skills check -g`. Review the reported changes, then update the shared skills by name: `npx skills update -g -y $(cut -f2 ~/.dotfiles/docs/skills.tsv)`. The Pi-only skills update through the loop in `dot_pi/RIG.md`. Compare `npx skills list -g` with `docs/skills.tsv`. The manifest has one `source<TAB>name` line for each third-party skill. Add the line by hand at each install. Replay a missing skill with the loop below. Run `find ~/.claude/skills -maxdepth 1 -type l ! -lname '../../.agents/skills/*'`. Run `/skill-doctor` in a session
 
 ```bash
 while IFS=$'\t' read -r src name; do npx skills add "$src" --skill "$name" -g -a claude-code -a codex -y; done < ~/.dotfiles/docs/skills.tsv
