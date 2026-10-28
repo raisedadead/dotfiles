@@ -17,7 +17,6 @@ quick-terminal-animation-duration = 0.1
 
 # Clipboard
 clipboard-read = allow
-copy-on-select = false
 
 # Scrollbar
 scrollbar = never
