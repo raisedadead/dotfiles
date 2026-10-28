@@ -67,12 +67,14 @@ Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures e
 ## A file under `~/.claude`
 
 ```sh
-chezmoi re-add ~/.claude/settings.json
-git -C ~/.dotfiles/dot_claude add settings.json
+chezmoi re-add ~/.claude/CLAUDE.md
+git -C ~/.dotfiles/dot_claude add CLAUDE.md
 git -C ~/.dotfiles/dot_claude commit -m "feat(claude): ..."
 ```
 
-The submodule `post-commit` hook commits the gitlink bump in `~/.dotfiles`. Claude Code rewrites `settings.json` at runtime, so `chezmoi status` lists it again after a session change. Capture it, or restore the source with `chezmoi apply ~/.claude/settings.json`.
+The submodule `post-commit` hook commits the gitlink bump in `~/.dotfiles`.
+
+`settings.json` is a modify script. Edit the managed keys in `dot_claude/.settings.managed.json`. To remove a key from the target, add its path to the removed list in `dot_claude/modify_settings.json`. Then run `chezmoi apply ~/.claude/settings.json`. The script keeps the keys that Claude Code writes at run time, so those keys do not show as drift. `re-add` skips the file.
 
 ## A managed Codex file
 

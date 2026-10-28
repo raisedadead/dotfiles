@@ -20,13 +20,13 @@ Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including an installer or runtime write. Capture one target at a time when the list holds a change you did not make. Revert the rest with `chezmoi apply <target>`.
 
-| Kind                                       | Source                                                                | Maintenance                                         |
-| ------------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------- |
-| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                              | Edit the target and `re-add`. `re-add` re-encrypts  |
-| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_pi/agent/mcp.json.tmpl`         | Edit the source. `re-add` skips templates           |
-| Modify script                              | `modify_private_dot_claude.json`, `dot_pi/agent/modify_settings.json` | Edit the source. It merges into the existing target |
-| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                     | Change the pinned revision or checksum              |
-| Repository document, `docs/`, `install.sh` | Root files                                                            | Edit the source. Not deployed                       |
+| Kind                                       | Source                                                                                                   | Maintenance                                         |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                                                                 | Edit the target and `re-add`. `re-add` re-encrypts  |
+| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_pi/agent/mcp.json.tmpl`                                            | Edit the source. `re-add` skips templates           |
+| Modify script                              | `modify_private_dot_claude.json`, `dot_claude/modify_settings.json`, `dot_pi/agent/modify_settings.json` | Edit the source. It merges into the existing target |
+| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                                                        | Change the pinned revision or checksum              |
+| Repository document, `docs/`, `install.sh` | Root files                                                                                               | Edit the source. Not deployed                       |
 
 `re-add` does not capture templates, modify targets, externals, or symlink entries. Before an apply, read `chezmoi status` and `chezmoi diff`. Column one `M` is a target edit. Column one `D` is a deleted target. Do not delete the chezmoi state to resolve drift.
 
@@ -186,7 +186,7 @@ Pi loads every skill under `~/.agents/skills/`. When two skills have the same na
 
 | Source                                                                                                  | Owns                                                                                    |
 | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [dot_claude/settings.json](../dot_claude/settings.json)                                                 | Hook wiring, plugins, MCP declarations, statuslines, settings                           |
+| [dot_claude/.settings.managed.json](../dot_claude/.settings.managed.json)                               | Hook wiring, plugins, MCP declarations, statuslines, settings                           |
 | [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                                     | Rig mod: hooks, gates, guard, approval queue and dialog, checks, open items, statusline |
 | [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                          | Kernel and path-scoped instructions                                                     |
 | [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/) | Delegation contracts and reusable work                                                  |
