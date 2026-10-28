@@ -1,0 +1,11 @@
+[
+  {
+    "context": "vim_mode == insert",
+    "bindings": {
+      "j j": "vim::NormalBefore",
+      "j k": "vim::NormalBefore",
+      "k j": "vim::NormalBefore",
+      "k k": "vim::NormalBefore"
+    }
+  }
+]
