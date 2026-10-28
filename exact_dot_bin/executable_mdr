@@ -271,7 +271,7 @@ case "$view" in
   files) prompt="$_ico_file  Files ❯ " ;;
 esac
 
-FOOTER="${DIM}  Preview <C-/> ◆ Copy <C-y> ◆ Path <C-p> ◆ Code <C-v> ◆ Edit <C-e> ◆ Read <CR>${RST}"
+FOOTER="${DIM}  Preview <C-/> ◆ Copy <C-y> ◆ Path <C-p> ◆ Zed <C-v> ◆ Edit <C-e> ◆ Read <CR>${RST}"
 FOOTER_COPIED="${ACCENT}  Contents copied${RST}"
 FOOTER_PATH="${ACCENT}  Path copied${RST}"
 
