@@ -30,7 +30,6 @@
   "buffer_font_family": "Berkeley Mono",
   "buffer_font_fallbacks": ["Symbols Nerd Font"],
   "buffer_font_features": {
-    "calt": true,
     "ss01": true,
     "zero": true,
   },
@@ -39,9 +38,6 @@
   "vim_mode": true,
   "preview_tabs": {
     "enabled": false,
-  },
-  "project_panel": {
-    "dock": "right",
   },
   "edit_predictions": {
     "provider": "copilot",
