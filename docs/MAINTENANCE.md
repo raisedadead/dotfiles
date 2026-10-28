@@ -21,7 +21,7 @@ Use disposable fixtures for checks that write files or send keys. Do not run the
 
 ### S1: Source and target drift
 
-Run `chezmoi status`. Read each named diff. Do not apply. Report the drifted paths. Do not print secret values. Pass: an empty status.
+Run `chezmoi status`. Run `chezmoi diff <target>` for each named path that is not private. A private path can hold a secret, so report its status line only. The rig blocks a bare `chezmoi diff` and a diff of a private target. Do not apply. Report the drifted paths. Pass: an empty status.
 
 ### S2: Private submodules
 
@@ -207,9 +207,9 @@ Expected: `build.sh` exits 0, so the source type-checks against the host types. 
 
 ### M5
 
-`chezmoi diff`
+Shared check S1
 
-Expected: Empty. Otherwise, list the drifted paths. Do not apply
+Expected: Empty status. Otherwise, list the drifted paths. Do not apply
 
 ### M6
 
