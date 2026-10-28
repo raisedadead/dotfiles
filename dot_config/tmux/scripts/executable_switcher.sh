@@ -498,7 +498,7 @@ do_action() {
 			fi
 			;;
 		ctrl-e) open_in_editor "$path" ;;
-		ctrl-v) "${VISUAL:-code}" "$path" ;;
+		ctrl-v) "${VISUAL:-zed}" "$path" ;;
 		*)
 			[[ "$cat" == "parked" ]] && tmux set -t "=$session" -u @parked
 			tmux switch-client -t "=$session"
@@ -509,7 +509,7 @@ do_action() {
 	proj | conf | zox)
 		case "$key" in
 		ctrl-e) open_in_editor "$path" ;;
-		ctrl-v) "${VISUAL:-code}" "$path" ;;
+		ctrl-v) "${VISUAL:-zed}" "$path" ;;
 		*) tmux_connect "$path" ;;
 		esac
 		;;
@@ -517,18 +517,18 @@ do_action() {
 		if [[ -n "$target" ]]; then
 			# Text mode: target = line number, path = file
 			case "$key" in
-			ctrl-v) "${VISUAL:-code}" --goto "$path:$target" ;;
+			ctrl-v) "${VISUAL:-zed}" "$path:$target" ;;
 			*) open_in_editor "$path" "$target" ;;
 			esac
 		elif [[ -d "$path" ]]; then
 			case "$key" in
 			ctrl-e) open_in_editor "$path" ;;
-			ctrl-v) "${VISUAL:-code}" "$path" ;;
+			ctrl-v) "${VISUAL:-zed}" "$path" ;;
 			*) tmux_connect "$path" ;;
 			esac
 		elif [[ -f "$path" ]]; then
 			case "$key" in
-			ctrl-v) "${VISUAL:-code}" "$path" ;;
+			ctrl-v) "${VISUAL:-zed}" "$path" ;;
 			*) open_in_editor "$path" ;;
 			esac
 		fi
@@ -591,10 +591,10 @@ TAB_FILE="$SWITCHER_TAB_FILE"
 trap 'rm -f "$SWITCHER_TAB_FILE"' EXIT
 printf 'all \n' >"$TAB_FILE"
 
-FOOTER_NAV="${DIM}  Connect <CR> ◆ Bookmark <C-s> ◆ Editor <C-e> ◆ Code <C-v> ◆ Kill <C-d> ◆ Preview <C-/>${RST}"
+FOOTER_NAV="${DIM}  Connect <CR> ◆ Bookmark <C-s> ◆ Editor <C-e> ◆ Zed <C-v> ◆ Kill <C-d> ◆ Preview <C-/>${RST}"
 FOOTER_TMUX="${DIM}  Switch <CR> ◆ Bookmark <C-s> ◆ Kill <C-d> ◆ Preview <C-/>${RST}"
-FOOTER_FSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Code <C-v> ◆ Preview <C-/> ◆ Text grep <C-g>${RST}"
-FOOTER_GSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Code <C-v> ◆ Files <C-f> ◆ Regex query${RST}"
+FOOTER_FSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Zed <C-v> ◆ Preview <C-/> ◆ Text grep <C-g>${RST}"
+FOOTER_GSRCH="${DIM}  Open <CR> ◆ Editor <C-e> ◆ Zed <C-v> ◆ Files <C-f> ◆ Regex query${RST}"
 
 HDR_ALL=$(make_header "All")
 HDR_TMUX=$(make_header "Sessions")

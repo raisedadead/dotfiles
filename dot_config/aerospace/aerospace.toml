@@ -123,7 +123,7 @@ if = 'test %{app-bundle-id} ~= "sparkdesktop|spotify|apple\.music|whatsapp"'
 run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
-if = 'test %{app-bundle-id} ~= "ghostty|vscode"'
+if = 'test %{app-bundle-id} ~= "ghostty|dev\.zed"'
 run = 'move-node-to-workspace 2'
 
 [[on-window-detected]]

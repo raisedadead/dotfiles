@@ -2,22 +2,22 @@
 
 # detect OS and return installation type
 function _mrgsh_get_system() {
-    DOT_TARGET="undefined"
-    case "$OSTYPE" in
-    darwin*)
-        DOT_TARGET="macos"
-        ;;
-    solaris* | bsd* | linux*)
-        DOT_TARGET="linux"
-        ;;
-    msys* | cygwin*)
-        DOT_TARGET="windows"
-        ;;
-    *)
-        DOT_TARGET="unknown"
-        ;;
-    esac
-    echo "$DOT_TARGET"
+	DOT_TARGET="undefined"
+	case "$OSTYPE" in
+	darwin*)
+		DOT_TARGET="macos"
+		;;
+	solaris* | bsd* | linux*)
+		DOT_TARGET="linux"
+		;;
+	msys* | cygwin*)
+		DOT_TARGET="windows"
+		;;
+	*)
+		DOT_TARGET="unknown"
+		;;
+	esac
+	echo "$DOT_TARGET"
 }
 
 # check tool availability
@@ -44,9 +44,12 @@ _mrgsh_duti_types=(
 
 function _mrgsh_set_default_app() {
 	_mrgsh_check_tools duti || return 1
-	[[ "$(_mrgsh_get_system)" != "macos" ]] && { echo "Error: duti is macOS only." >&2; return 1; }
+	[[ "$(_mrgsh_get_system)" != "macos" ]] && {
+		echo "Error: duti is macOS only." >&2
+		return 1
+	}
 
-	local app="${1:-com.microsoft.VSCode}"
+	local app="${1:-dev.zed.Zed}"
 	local total=${#_mrgsh_duti_types[@]}
 	local ok=0 fail=0 i=0
 
