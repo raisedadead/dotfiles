@@ -47,9 +47,13 @@ can_haz brew && alias bu="cd ~/.config/brewfile && just update && just dump --al
 alias c="claude"
 
 ca() {
-  local root="$HOME/DEV" dir="$PWD"
-  if [[ -n "$1" && "$1" != -* ]]; then dir="$root/$1"; shift
-  elif [[ "$PWD" == "$root"/*/* ]]; then dir="$root/${${PWD#$root/}%%/*}"; fi
+  local dir
+  if [[ -n "$1" && "$1" != -* ]]; then dir="$HOME/DEV/$1"; shift
+  else
+    dir=$(git worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')
+    [[ -e "$dir/.git" ]] || dir=$(git -C "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" rev-parse --show-toplevel 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null)
+    dir=${dir:-$PWD}
+  fi
   [[ -d "$dir" ]] || { print -u2 "ca: no directory $dir"; return 1 }
   (builtin cd "$dir" && claude agents "$@")
 }
