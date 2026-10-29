@@ -44,7 +44,7 @@ can_haz brew && alias bu="cd ~/.config/brewfile && just update && just dump --al
 #----------------------------
 # Claude
 #----------------------------
-alias c="claude --dangerously-skip-permissions"
+alias c="claude"
 
 ca() {
   local root="$HOME/DEV" dir="$PWD"
