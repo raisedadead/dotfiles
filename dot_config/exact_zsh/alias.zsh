@@ -46,6 +46,15 @@ can_haz brew && alias bu="cd ~/.config/brewfile && just update && just dump --al
 #----------------------------
 alias c="claude --dangerously-skip-permissions"
 
+ca() {
+  local root="$HOME/DEV" dir="$PWD"
+  if [[ -n "$1" && "$1" != -* ]]; then dir="$root/$1"; shift
+  elif [[ "$PWD" == "$root"/*/* ]]; then dir="$root/${${PWD#$root/}%%/*}"; fi
+  [[ -d "$dir" ]] || { print -u2 "ca: no directory $dir"; return 1 }
+  (builtin cd "$dir" && claude agents "$@")
+}
+compdef '_files -W ~/DEV -/' ca
+
 #-----------------------------
 # VM lists from Azure and DO
 #-----------------------------
