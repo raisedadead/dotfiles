@@ -142,17 +142,6 @@ _mrgsh_fzf_file_widget() {
 
 (( $+functions[__fzfcmd] )) && zle -N fzf-file-widget _mrgsh_fzf_file_widget
 
-
-# Command history (Ctrl+R) - Commented out since using Atuin
-# export FZF_CTRL_R_OPTS="
-#   --preview 'echo {}'
-#   --preview-window 'down:3:hidden:wrap'
-#   --bind 'ctrl-/:toggle-preview'
-#   --bind 'ctrl-y:execute-silent(echo -n {} | pbcopy)'
-#   --color header:italic
-#   --header 'Press CTRL-Y to copy command into clipboard'
-# "
-
 # Directory navigation (Alt+C)
 export FZF_ALT_C_OPTS="$FZF_BASE_OPTS $FZF_THEME
   --height=70%

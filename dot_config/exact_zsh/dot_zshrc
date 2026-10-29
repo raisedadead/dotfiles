@@ -81,9 +81,7 @@ function zle-keymap-select {
 zle -N zle-keymap-select
 
 bindkey '^[^W' backward-kill-line  # Ctrl+Shift+W
-bindkey '^E'   end-of-line         # Ctrl+E              (accept wrapped)
 bindkey '^[^E' emacs-forward-word  # Ctrl+Shift+E        (partial-accept wrapped)
-bindkey '^A'   beginning-of-line   # Ctrl+A
 bindkey '^[^A' backward-word       # Ctrl+Shift+A
 bindkey '^S'   .end-of-line        # Ctrl+S
 bindkey '^[^S' .forward-word       # Ctrl+Shift+S
