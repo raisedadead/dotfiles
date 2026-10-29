@@ -120,7 +120,7 @@ tuios reads `config.toml` and `config.d/look.toml`. `config.toml` wins over the 
 
 tuios writes to the managed files. `tuios set-config` and the settings browser rewrite `config.toml` while a client is attached. `tuios look apply` and `tuios look remove` replace or delete `config.d/look.toml`. Read `chezmoi status` before a `re-add`. Before you assign a key, run `tuios keybinds explain <key>`. After a key change, run `tuios keybinds doctor`.
 
-[switcher.sh](../dot_config/private_tuios/scripts/executable_switcher.sh), [reader.sh](../dot_config/private_tuios/scripts/executable_reader.sh) and [colors.sh](../dot_config/private_tuios/scripts/executable_colors.sh) port the tmux scripts. Update each port with its tmux script. The ports run in a scratch pane, because a tuios popup lets typed text reach the pane behind it. switcher.sh and reader.sh set `--height=100%`, `--border=none` and `bg:-1`, so fzf fills the pane and keeps the terminal transparency.
+[switcher.sh](../dot_config/private_tuios/scripts/executable_switcher.sh), [reader.sh](../dot_config/private_tuios/scripts/executable_reader.sh) and [colors.sh](../dot_config/private_tuios/scripts/executable_colors.sh) port the tmux scripts. Update each port with its tmux script. The ports run in a scratch pane, because `terminal_focus_left` in a tuios popup moves the keyboard focus to the pane behind it. switcher.sh and reader.sh set `--height=100%`, `--border=none` and `bg:-1`, so fzf fills the pane and keeps the terminal transparency.
 
 `nvim_navigation` and `tuios-nvim-navigator` hand `M-H/J/K/L` between Neovim splits and tuios panes. The plugin loads only when `TUIOS_SESSION` is set and `TMUX` is not. smart-splits loads in every other case.
 

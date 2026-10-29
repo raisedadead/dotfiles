@@ -135,8 +135,8 @@ def from_ghostty() -> list[tuple[str, str, str, str]]:
             continue
         # `keybind = ctrl+shift+j=scroll_page_lines:5` — the first `=` is the
         # separator, except where the trigger itself ends in one: `super+=`
-        # prints as `super+==increase_font_size:1`. In the dump,
-        # two triggers contain `=` and no action does, ghostty using `:` for
+        # prints as `super+==increase_font_size:1`. A trigger
+        # can contain `=` and no action does, ghostty using `:` for
         # action arguments. rpartition would be wrong in the other direction,
         # since ghostty does accept an action like `text:a=b`.
         spec = line[len("keybind = ") :]
