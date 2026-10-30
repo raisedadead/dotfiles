@@ -507,6 +507,17 @@ check_ai_releases() {
 	return "$rc"
 }
 
+check_links() {
+	local rc=0 link
+	while IFS= read -r link; do
+		[[ -e "$link" ]] && continue
+		log "  WARN: ${link/#$HOME/\~} points to a missing $(readlink "$link")"
+		rc=1
+	done < <(find "$HOME/.bin" "$CLAUDE_DIR/skills" -mindepth 1 -maxdepth 1 -type l 2>/dev/null)
+	[[ "$rc" -eq 0 ]] && log '  clean'
+	return "$rc"
+}
+
 check_user_agents() {
 	local agents_dir="$PRIV_SOURCE/dot_claude/agents"
 	if [[ ! -d "$agents_dir" ]]; then
@@ -617,28 +628,32 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/6] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
+	log '[warn 1/7]first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 2/6] cavemem health (hook, better-sqlite3, embedder, worker)'
+	log '[warn 2/7]cavemem health (hook, better-sqlite3, embedder, worker)'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 3/6] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 3/7]safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 4/6] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
+	log '[warn 4/7]user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
 	check_user_agents
 	log ''
 
-	log '[warn 5/6] rig version gate (validate, type check and tests after a Claude Code update)'
+	log '[warn 5/7]rig version gate (validate, type check and tests after a Claude Code update)'
 	check_rig_gate
 	log ''
 
-	log '[warn 6/6] AI release stores (Codex daemon and Pi keep at most two releases)'
+	log '[warn 6/7]AI release stores (Codex daemon and Pi keep at most two releases)'
 	check_ai_releases
+	log ''
+
+	log '[warn 7/7] dangling links (~/.bin and ~/.claude/skills)'
+	check_links
 	log ''
 
 	[[ "$total" -eq 0 ]]
