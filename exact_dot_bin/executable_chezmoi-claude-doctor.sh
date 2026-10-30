@@ -865,8 +865,10 @@ self_test() {
 		out=$(check_links) || exit 1
 		[[ "$out" != *WARN* ]] || exit 1
 		ln -s "$HOME/missing" "$HOME/.bin/gone"
+		ln -s ../../.agents/skills/gone "$CLAUDE_DIR/skills/gone"
 		out=$(check_links) && exit 1
-		[[ "$out" == *'WARN: ~/.bin/gone points to a missing'* ]]
+		[[ "$out" == *'WARN: ~/.bin/gone points to a missing'* ]] || exit 1
+		[[ "$out" == *'WARN: ~/.claude/skills/gone points to a missing'* ]]
 	); then
 		err '[test] FAIL: links must warn only when the target is missing'
 		return 1
