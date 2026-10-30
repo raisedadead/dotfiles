@@ -1,1 +1,3 @@
 .claude/skills/cmd-git-rules
+.config/tuios
+.config/nvim/lua/plugins/tuios-nvim-navigator.lua
