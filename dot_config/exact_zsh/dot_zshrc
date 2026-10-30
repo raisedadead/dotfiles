@@ -82,6 +82,7 @@ zle -N zle-keymap-select
 
 function omp-clear-screen {
   zle .clear-screen
+  export POSH_CURSOR_LINE=1
   if (( $+functions[_omp_get_prompt] )); then
     eval "$(_omp_get_prompt primary --cleared --eval)"
   fi
@@ -89,6 +90,7 @@ function omp-clear-screen {
 }
 zle -N omp-clear-screen
 bindkey '^L' omp-clear-screen      # Ctrl+L: redraw the prompt without its leading newline
+bindkey -M vicmd '^L' omp-clear-screen
 
 bindkey '^[^W' backward-kill-line  # Ctrl+Shift+W
 bindkey '^[^E' emacs-forward-word  # Ctrl+Shift+E        (partial-accept wrapped)
