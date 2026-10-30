@@ -511,7 +511,7 @@ check_links() {
 	local rc=0 link
 	while IFS= read -r link; do
 		[[ -e "$link" ]] && continue
-		log "  WARN: ${link/#$HOME/\~} points to a missing $(readlink "$link")"
+		log "  WARN: ${link/#$HOME/\~} points to a missing $(readlink "$link"); reinstall the target or run its setup command"
 		rc=1
 	done < <(find "$HOME/.bin" "$CLAUDE_DIR/skills" -mindepth 1 -maxdepth 1 -type l 2>/dev/null)
 	[[ "$rc" -eq 0 ]] && log '  clean'
@@ -628,27 +628,27 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/7]first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
+	log '[warn 1/7] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 2/7]cavemem health (hook, better-sqlite3, embedder, worker)'
+	log '[warn 2/7] cavemem health (hook, better-sqlite3, embedder, worker)'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 3/7]safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 3/7] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 4/7]user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
+	log '[warn 4/7] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
 	check_user_agents
 	log ''
 
-	log '[warn 5/7]rig version gate (validate, type check and tests after a Claude Code update)'
+	log '[warn 5/7] rig version gate (validate, type check and tests after a Claude Code update)'
 	check_rig_gate
 	log ''
 
-	log '[warn 6/7]AI release stores (Codex daemon and Pi keep at most two releases)'
+	log '[warn 6/7] AI release stores (Codex daemon and Pi keep at most two releases)'
 	check_ai_releases
 	log ''
 
@@ -851,6 +851,24 @@ self_test() {
 		[[ "$out" != *WARN* && "$out" == *skip* ]]
 	); then
 		err '[test] FAIL: release stores must warn only above two releases and skip a missing store'
+		return 1
+	fi
+
+	log '[test] phase 10: a link to a missing file warns'
+	if ! (
+		HOME=$(mktemp -d) || exit 1
+		trap 'rm -rf "$HOME"' EXIT
+		CLAUDE_DIR="$HOME/.claude"
+		mkdir -p "$HOME/.bin" "$CLAUDE_DIR/skills" "$HOME/.agents/skills/ok"
+		ln -s /bin/sh "$HOME/.bin/ok"
+		ln -s ../../.agents/skills/ok "$CLAUDE_DIR/skills/ok"
+		out=$(check_links) || exit 1
+		[[ "$out" != *WARN* ]] || exit 1
+		ln -s "$HOME/missing" "$HOME/.bin/gone"
+		out=$(check_links) && exit 1
+		[[ "$out" == *'WARN: ~/.bin/gone points to a missing'* ]]
+	); then
+		err '[test] FAIL: links must warn only when the target is missing'
 		return 1
 	fi
 
