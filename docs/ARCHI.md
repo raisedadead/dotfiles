@@ -91,6 +91,8 @@ Keep `DIRENV_LOG_FORMAT` exported above the direnv hook.
 
 OMP cache cleanup matches UUID session caches only. Do not include `init.*.zsh` or bare `omp.cache`. Keep the array slice `"${(@)_c[51,-1]}"`. Without `(@)` the slice joins the paths and removes nothing.
 
+The first OMP block starts with a newline. OMP drops it on the first prompt, on row 1, or with `--cleared`. `enable_cursor_positioning` reads the row before each prompt, so `clear` gets no blank line. A slow reply to that query can show as `^[[NN;1R` on the command line. Ctrl+L redraws through the internal `_omp_get_prompt primary --cleared`. Test it after an OMP update.
+
 ### tmux and pickers
 
 A tmux test server needs a unique `-L` or `-S` on every command, including subprocesses. `-f` and `TMUX_TMPDIR` do not isolate the live server. Read the parse output as well as the exit status.

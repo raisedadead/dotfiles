@@ -80,6 +80,16 @@ function zle-keymap-select {
 }
 zle -N zle-keymap-select
 
+function omp-clear-screen {
+  zle .clear-screen
+  if (( $+functions[_omp_get_prompt] )); then
+    eval "$(_omp_get_prompt primary --cleared --eval)"
+  fi
+  zle .reset-prompt
+}
+zle -N omp-clear-screen
+bindkey '^L' omp-clear-screen      # Ctrl+L: redraw the prompt without its leading newline
+
 bindkey '^[^W' backward-kill-line  # Ctrl+Shift+W
 bindkey '^[^E' emacs-forward-word  # Ctrl+Shift+E        (partial-accept wrapped)
 bindkey '^[^A' backward-word       # Ctrl+Shift+A
