@@ -177,13 +177,13 @@ Codex and Pi read `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and do
 
 ### Skills
 
-| Kind        | Home                                                                 | Reaches                                                                                                                                                                        |
-| ----------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Personal    | `dot_claude/skills/<name>/` or `dot_codex/skills/<name>/`            | That agent alone                                                                                                                                                               |
-| Common      | `dot_agents/skills/<name>/`                                          | Pi reads `~/.agents/skills/` directly. Claude needs a `symlink_<name>` entry. Codex: read the note below                                                                       |
-| Third-party | `npx skills add <repo> --skill <name> -g -a claude-code -a codex -y` | An unmanaged copy under `~/.agents/skills/` and an unmanaged link under `~/.claude/skills/`. One line in `docs/skills.tsv`, which lists them for replay                        |
-| App         | The app's setup command, such as `rex skill setup`                   | The app writes an unmanaged copy under `~/.agents/skills/`. Replace its copy under `~/.claude/skills/` with a link. To replay, run the setup command, then make the link again |
-| Plugin      | Its plugin                                                           | Never linked                                                                                                                                                                   |
+| Kind        | Home                                                                 | Reaches                                                                                                                                                                |
+| ----------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Personal    | `dot_claude/skills/<name>/` or `dot_codex/skills/<name>/`            | That agent alone                                                                                                                                                       |
+| Common      | `dot_agents/skills/<name>/`                                          | Pi reads `~/.agents/skills/` directly. Claude needs a `symlink_<name>` entry. Codex: read the note below                                                               |
+| Third-party | `npx skills add <repo> --skill <name> -g -a claude-code -a codex -y` | An unmanaged copy under `~/.agents/skills/` and an unmanaged link under `~/.claude/skills/`. One line in `docs/skills.tsv`, which lists them for replay                |
+| App         | The app's setup command, such as `rex skill setup`                   | The app writes an unmanaged copy under `~/.agents/skills/`. Claude needs a `symlink_<name>` entry, which replaces the app's own copy. To replay, run the setup command |
+| Plugin      | Its plugin                                                           | Never linked                                                                                                                                                           |
 
 A third-party description is written as if that skill were the only one installed, so the descriptions collide. [SKILLS.md](SKILLS.md) holds the order in which skills compose. The Claude kernel holds the precedence that breaks a tie.
 
