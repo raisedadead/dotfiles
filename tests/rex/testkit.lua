@@ -1,6 +1,11 @@
 local lib = require("lib")
 
 rex.action{
+  name = "t_bin", title = "Test: helper directory", category = "Test",
+  run = function() return { bin = lib.BIN } end,
+}
+
+rex.action{
   name = "t_write", title = "Test: safe_write", category = "Test",
   args = { block = "string", text = "string" },
   run = function(ctx, args)

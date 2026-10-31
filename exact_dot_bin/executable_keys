@@ -231,6 +231,27 @@ def from_nvim() -> list[tuple[str, str, str, str]]:
     return rows
 
 
+def in_rex() -> bool:
+    env = os.environ
+    return (env.get("TERM_PROGRAM") == "rex" and bool(env.get("REX_SESSION"))
+            and not env.get("TMUX"))
+
+
+def from_rex() -> list[tuple[str, str, str, str]]:
+    if not in_rex():
+        return []
+    try:
+        data = json.loads(run("rex", "--autostart=false", "keymap", "--json") or "{}")
+    except json.JSONDecodeError:
+        return []
+    rows = []
+    for b in data.get("bindings", []):
+        args = b.get("args")
+        desc = b["action"] + (f" {json.dumps(args)}" if args else "")
+        rows.append(("rex", b.get("mode") or "root", " > ".join(b["keys"]), desc))
+    return rows
+
+
 def render(rows: list[tuple[str, str, str, str]], color: bool) -> list[str]:
     tw = max((len(r[0]) for r in rows), default=4)
     cw = max((len(r[1]) for r in rows), default=0)
@@ -247,7 +268,7 @@ def render(rows: list[tuple[str, str, str, str]], color: bool) -> list[str]:
     return lines
 
 
-SOURCES = (from_aerospace, from_ghostty, from_tmux, from_zsh, from_nvim)
+SOURCES = (from_aerospace, from_ghostty, from_tmux, from_zsh, from_nvim, from_rex)
 
 
 def main() -> int:

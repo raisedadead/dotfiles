@@ -4,6 +4,10 @@ M.TERMINAL = "com.superlogical.terminal"
 M.SHELL = M.TERMINAL .. ".shell"
 M.AGENTS = { claude = true, codex = true, pi = true, opencode = true }
 
+local here = debug and debug.getinfo and debug.getinfo(1, "S").source or ""
+M.DIR = here:match("^@?(/.*)/[^/]*$") or (os.getenv("HOME") .. "/.config/rex")
+M.BIN = M.DIR .. "/bin/"
+
 function M.bcall(sid, bid, method, args)
   return rex.call("block.method", {
     session_id = sid, block_id = bid, method = method, args = args or {},
@@ -15,10 +19,26 @@ function M.where(sid)
   if not v then return nil, err end
   for _, w in ipairs(v.windows) do
     if w.window_id == v.active_window_id then
-      return { window_id = w.window_id, focused = w.focused_block_id }
+      local anchor
+      for _, l in ipairs(w.layers) do
+        if not anchor and l.kind == "tiled" and l.blocks[1] then
+          anchor = l.blocks[1].block_id
+        end
+      end
+      return {
+        window_id = w.window_id, focused = w.focused_block_id, anchor = anchor,
+      }
     end
   end
   return nil, "no active window in " .. tostring(sid)
+end
+
+function M.find_label(sid, label)
+  local r, err = rex.session.list_blocks{ session_id = sid }
+  if not r then return nil, err end
+  for _, b in ipairs(r.blocks) do
+    if b.label == label then return b end
+  end
 end
 
 local function base(s)

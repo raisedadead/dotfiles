@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+list=0
+if [[ "${1:-}" == "--list" ]]; then
+	list=1
+	shift
+fi
+if [[ $# -ne 2 || -z "$2" ]]; then
+	echo "usage: rex-urls [--list] SESSION BLOCK" >&2
+	exit 64
+fi
+
+text=$(rex --autostart=false capture -s "$1" -b "$2")
+urls=$(grep -oE "https?://[^][[:space:]<>\"'()]+" <<<"$text" | sed 's/[.,;:!?]*$//' |
+	tail -r | awk '!seen[$0]++' || true)
+
+if ((list)); then
+	printf '%s\n' "$urls" | sed '/^$/d'
+	exit 0
+fi
+if [[ -z "$urls" ]]; then
+	echo "No links in this pane."
+	sleep 1.5
+	exit 0
+fi
+
+pick=$(fzf --layout=reverse --border=rounded --border-label=' Links ' \
+	--prompt='open ❯ ' <<<"$urls") || exit 0
+open "$pick"

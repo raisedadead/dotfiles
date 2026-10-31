@@ -1,3 +1,5 @@
 require("lib")
+require("popups")
+require("drawer")
 require("keys")
 require("probe")

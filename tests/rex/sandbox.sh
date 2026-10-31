@@ -26,6 +26,10 @@ trap cleanup EXIT
 mkdir -p "$SB/cfg" "$SB/state" "$SB/t"
 cp "$SRC"/*.lua "$REPO/tests/rex/testkit.lua" "$SB/cfg/"
 printf '\nrequire("testkit")\n' >>"$SB/cfg/init.lua"
+mkdir -p "$SB/cfg/bin"
+for f in "$SRC"/bin/executable_*; do
+	install -m 755 "$f" "$SB/cfg/bin/$(basename "${f#*/executable_}")"
+done
 
 rex server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
@@ -118,6 +122,41 @@ doomed=$(split sh -c 'exec sleep 300')
 R "do" -s "$S" close_pane "block=$doomed" >/dev/null 2>&1 || true
 gone() { ! grep -q "$1" <<<"$(blocks "$S")"; }
 check "close_pane closes the block" until5 gone "$doomed"
+
+bin_is_local() { [[ "$(R "do" -s "$S" --json t_bin | jq -r .bin)" == "$SB/cfg/bin/" ]]; }
+check "helpers run from the config's own bin" bin_is_local
+
+opened() {
+	R "do" -s "$S" "$1" >/dev/null 2>&1 || return 1
+	local id
+	id=$(blocks "$S" | awk -v l="$2" '$1 == l { print $3 }')
+	[[ -n "$id" ]] && R block close -s "$S" "$id" >/dev/null 2>&1
+}
+for p in lazygit reader keys urls; do
+	check "popup_$p opens popup:$p" opened "popup_$p" "popup:$p"
+done
+
+text='see https://example.com/a, (http://x.test/b) and https://example.com/a'
+linky=$(split sh -c "echo '$text'; exec sleep 300")
+sleep 0.5
+links() { REX_SERVER="$SOCK" "$SB/cfg/bin/rex-urls" --list "$S" "$linky" | sort | tr '\n' ' '; }
+check "rex-urls lists each link once" test "$(links)" = "http://x.test/b https://example.com/a "
+
+drawer() { R "do" -s "$S" --json drawer_scratch | jq -r .state; }
+d1=$(drawer)
+did=$(blocks "$S" | awk '$1 == "drawer:scratch" { print $3 }')
+d2=$(drawer)
+placement() { blocks "$S" | awk -v i="$did" '$3 == i { print $2 }'; }
+p2=$(placement)
+d3=$(drawer)
+steps="$d1 $d2 $p2 $d3 $(placement)"
+check "drawer opens, hides, shows" test "$steps" = "created hidden detached shown placed"
+
+rex_rows() {
+	env REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= \
+		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null | grep -c '^rex '
+}
+check "keys lists the Rex bindings inside Rex" test "$(rex_rows)" -gt 40
 
 if ((fails)); then
 	printf '%d failed\n' "$fails"
