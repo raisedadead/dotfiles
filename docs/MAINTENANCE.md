@@ -13,6 +13,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Claude validator or formatter registry | Spec smoke test                                                         |
 | Claude plugin                          | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop    | Applicable terminal probes below and the component's own checks         |
+| Rex config or helpers                  | R1 below                                                                |
 
 Use disposable fixtures for checks that write files or send keys. Do not run them against the operator's live windows or sessions.
 
@@ -151,6 +152,14 @@ Expected: Medians match the same-machine baseline
 Shader on and off with equal window size, display, text, focus, and scroll workload
 
 Expected: CPU and GPU or energy recorded separately
+
+## Rex
+
+### R1
+
+`rex config check ~/.dotfiles/dot_config/rex/init.lua --json`; `tests/rex/sandbox.sh`; `tests/rex/gate.sh`; `shellcheck dot_config/rex/bin/executable_*`
+
+Expected: No diagnostics; both test scripts end with `all passed`; shellcheck exits 0
 
 ## Claude Code
 

@@ -122,6 +122,16 @@ Add `-b` only when the child opens a menu or a popup, because a blocking `run-sh
 
 Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config/nvim/lazy-lock.json`. `:Lazy sync` also removes plugins absent from the spec.
 
+### Rex
+
+[dot_config/rex](../dot_config/rex/) holds the Rex terminal config. [init.lua](../dot_config/rex/init.lua) loads one Lua module for each feature: popups, the drawer, workspaces, the hand-off float, the agent actions, and the keys. [bin](../dot_config/rex/bin/) holds the helper scripts that the actions start.
+
+Rex runs beside Ghostty and tmux. It does not replace them. Each Rex path in a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]]`. Outside the gate, zsh, `keys`, `mdr` and the Claude Code hooks behave as before. tmux inside a Rex pane fails the gate, so the tmux paths stay in use there.
+
+The rig guard controls how an agent uses the `rex` CLI. An agent can type only into another pane, named by its `block:<uuid>`. It cannot stop the live server. Probes run on a sandbox server under `/tmp`. The `rex-handoff` skill opens a float where the operator approves a command.
+
+Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server. It does not touch the live Rex session.
+
 ## Desktop and utilities
 
 AeroSpace and Sketchybar share workspace names across `aerospace.toml`, `sketchybar/lua/items/spaces.lua`, and the bracket in `sketchybarrc`. Update the three together. Read layout keys and triggers from the AeroSpace source. An unmatched window follows the floating catch-all rule. A GUI-launched rule script needs absolute executable paths. `ctrl-alt-w` runs `aeroplace layout`, which serializes layout changes with `lockf`. Keep `outer.bottom` scalar in the TOML, because `aeroplace` reads it with a line match.
