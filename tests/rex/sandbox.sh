@@ -224,6 +224,35 @@ type_in 'bat'
 check "rex.zsh skips a full-screen program" \
 	test "$(status_of)" = "done true true: exit 0 after 0s"
 
+WATCH="$REPO/dot_claude/skills/cmd-monitor-pane/scripts/executable_watch-pane.sh"
+in_sb() {
+	env REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= TMPDIR="$SB/t" \
+		bash "$WATCH" "$@"
+}
+mon=$(split bash -c 'echo ready; read -r _; echo "build: FAIL 2 tests"; read -r _; exit 3')
+sleep 0.5
+check "the monitor resolves a Rex block by its ID suffix" \
+	test "$(in_sb --resolve "${mon: -12}")" = "$mon"
+in_sb "$mon" 'FAIL' >"$SB/t/mon1" 2>&1 &
+mon_pid=$!
+sleep 1
+R send -s "$S" -b "$mon" $'\n' >/dev/null
+waited() { ! kill -0 "$1" 2>/dev/null; }
+for _ in $(seq 40); do
+	waited "$mon_pid" && break
+	sleep 0.5
+done
+check "the monitor reports the settled lines that match" grep -q "build: FAIL 2 tests" "$SB/t/mon1"
+in_sb "$mon" 'never-matches' >"$SB/t/mon2" 2>&1 &
+mon_pid=$!
+sleep 1
+R send -s "$S" -b "$mon" $'\n' >/dev/null
+for _ in $(seq 40); do
+	waited "$mon_pid" && break
+	sleep 0.5
+done
+check "the monitor reports the exit code" test "$(tail -1 "$SB/t/mon2")" = "pane exited 3"
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1
