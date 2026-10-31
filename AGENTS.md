@@ -19,7 +19,7 @@ The files under `docs/` are shared. Every coding agent reads them.
 - Run the checks in [docs/MAINTENANCE.md](docs/MAINTENANCE.md) after a change.
 - Keep README.md and the files under docs/ current and concise. Keep audit history in private owner documentation.
 - Private directories, such as `dot_claude/`, are submodules of the private repository, one branch per directory. Do not change `dot_claude/` without an explicit request for that submodule.
-- Before you change an installed target, show its proposed diff and ask the operator. When your rig queues the change with its diff, that queue entry is the ask.
+- Before you change an installed target, show its proposed diff and ask the operator. When your rig shows the change with its diff in a dialog, that dialog is the ask; under an approval, the transcript line records it.
 - Each agent owns its own global kernel. Do not edit another agent's kernel. Report the change you want instead.
 
 The operator requests a completed reviewer before completion for each non-trivial source change. The operator owns pushes, pull requests, releases, and infrastructure changes.

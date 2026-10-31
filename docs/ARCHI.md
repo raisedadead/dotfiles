@@ -150,7 +150,7 @@ This document is the overview. Each rig's `RIG.md` is the system design of that 
 
 The rigs are similar but not mirrors. A rig takes a feature from another rig as its own copy, and the copies change independently.
 
-A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In the Claude rig, `chezmoi apply <target>` run alone goes to the approval queue with that preview, and the operator's approval in the Rig pane is the ask. The rig's `RIG.md` states which steps the model runs and which steps the operator runs. The Codex model runs none of them without an explicit request.
+A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In the Claude rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the transcript line records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs. The Codex model runs none of them without an explicit request.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 
@@ -188,14 +188,14 @@ Pi loads every skill under `~/.agents/skills/`. When two skills have the same na
 
 ## Claude Code
 
-| Source                                                                                                  | Owns                                                                                    |
-| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [dot_claude/.settings.managed.json](../dot_claude/.settings.managed.json)                               | Hook wiring, plugins, MCP declarations, statuslines, settings                           |
-| [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                                     | Rig mod: hooks, gates, guard, approval queue and dialog, checks, open items, statusline |
-| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                          | Kernel and path-scoped instructions                                                     |
-| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/) | Delegation contracts and reusable work                                                  |
-| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                               | Memory configuration. The database stays unmanaged                                      |
-| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                     | RTK filters and hook exclusions; `git` is excluded                                      |
+| Source                                                                                                  | Owns                                                                         |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [dot_claude/.settings.managed.json](../dot_claude/.settings.managed.json)                               | Hook wiring, plugins, MCP declarations, statuslines, settings                |
+| [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                                     | Rig mod: hooks, gates, guard, write approval, checks, open items, statusline |
+| [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)                          | Kernel and path-scoped instructions                                          |
+| [agents](../dot_claude/agents/), [skills](../dot_claude/skills/), [workflows](../dot_claude/workflows/) | Delegation contracts and reusable work                                       |
+| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                                               | Memory configuration. The database stays unmanaged                           |
+| [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml)                     | RTK filters and hook exclusions; `git` is excluded                           |
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories, and rule thresholds. A configured key shows intent. The handler and its probe show behavior.
 
