@@ -67,6 +67,14 @@ handoff_out() {
 quiet_handoff() { [[ -z "$(handoff_out "$@")" && ! -e "$SB/handed" ]]; }
 check "rex-handoff does nothing in Ghostty" quiet_handoff "${GHOSTTY[@]}"
 check "rex-handoff does nothing in tmux in Rex" quiet_handoff "${TMUX_IN_REX[@]}"
+inner_out() {
+	env "$@" REX_BLOCK= bash "$REPO/dot_config/rex/bin/executable_rex-handoff" --inner -- \
+		sh -c "touch '$SB/handed'"
+}
+quiet_inner() { [[ -z "$(inner_out "$@" </dev/null)" && ! -e "$SB/handed" ]]; }
+check "rex-handoff --inner does nothing outside a Rex pane" quiet_inner "${GHOSTTY[@]}"
+check "rex-handoff gives no usage error outside Rex" \
+	test -z "$(env "${GHOSTTY[@]}" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" 2>&1)"
 
 if ((fails)); then
 	printf '%d failed\n' "$fails"

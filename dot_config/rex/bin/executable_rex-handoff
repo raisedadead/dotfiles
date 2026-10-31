@@ -35,21 +35,22 @@ inner() {
 }
 
 if [[ "${1:-}" == "--inner" ]]; then
+	[[ -n "${REX_BLOCK:-}" ]] || exit 0
 	shift
 	[[ "${1:-}" == "--" ]] && shift
 	(($#)) || usage
 	inner "$@"
 fi
 
+[[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
 [[ "${1:-}" == "--" ]] || usage
 shift
 (($#)) || usage
-[[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
 
 R() { rex --autostart=false "$@"; }
 args=$(jq -cn '{argv: $ARGS.positional}' --args -- "$@")
-float=$(R "do" --json -s "$REX_SESSION" -b "$REX_BLOCK" handoff_float --args "$args" |
-	jq -r .block_id)
+float=$(R "do" --json -s "$REX_SESSION" ${REX_BLOCK:+-b "$REX_BLOCK"} handoff_float \
+	--args "$args" | jq -r .block_id)
 code=0
 R wait "$float" >/dev/null 2>&1 || code=$?
 echo "$code"
