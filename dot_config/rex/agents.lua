@@ -55,14 +55,13 @@ end
 
 rex.action{
   name = "agent_here", title = "Agent Here", category = "Agents",
-  args = { agent = "string?" },
-  run = function(ctx, args)
+  run = function(ctx)
     local src, cwd = cwd_of(ctx)
     if not src then error("no pane to split", 0) end
     local r, err = rex.call("session.new_split", {
       session_id = ctx.session_id, anchor_id = src, direction = "horizontal",
       side = "after", focus = true,
-      layout = lib.then_shell(args.agent or "claude", cwd, "agent"),
+      layout = lib.then_shell(lib.AGENT, cwd, "agent"),
     })
     if not r then error(err, 0) end
     return { block_id = r.block_ids[1] }
@@ -71,13 +70,12 @@ rex.action{
 
 rex.action{
   name = "ask_pane", title = "Ask About This Pane", category = "Agents",
-  args = { agent = "string?" },
-  run = function(ctx, args)
+  run = function(ctx)
     local src, cwd = cwd_of(ctx)
     if not src then error("no pane to ask about", 0) end
     local b, err = lib.popup(ctx, {
       label = "popup:ask", cwd = cwd,
-      cmd = { lib.BIN .. "rex-ask", src, args.agent or "claude" },
+      cmd = { lib.BIN .. "rex-ask", src, lib.AGENT },
     })
     if not b then error(err, 0) end
     return { block_id = b }

@@ -18,7 +18,8 @@ inner() {
 	printf '\n  The agent hands this command to you:\n\n    %s\n\n' "$shown"
 	printf '  Enter: run it · Esc: decline\n\n'
 	status blocked "Run: $shown"
-	while IFS= read -rsn1 key; do
+	while :; do
+		IFS= read -rsn1 key || key=q
 		case $key in
 		'') break ;;
 		$'\e' | q)
@@ -34,15 +35,16 @@ inner() {
 	exit "$code"
 }
 
+[[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
+
 if [[ "${1:-}" == "--inner" ]]; then
-	[[ -n "${REX_BLOCK:-}" ]] || exit 0
+	[[ -t 0 ]] || exit 130
 	shift
 	[[ "${1:-}" == "--" ]] && shift
 	(($#)) || usage
 	inner "$@"
 fi
 
-[[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
 [[ "${1:-}" == "--" ]] || usage
 shift
 (($#)) || usage

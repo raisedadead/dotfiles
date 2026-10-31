@@ -7,7 +7,8 @@ if [[ $# -ne 2 ]]; then
 fi
 block=$1 agent=$2
 dir=$(mktemp -d "${TMPDIR:-/tmp}/rex-ask.XXXXXX")
+trap 'rm -rf "$dir"' EXIT
 file=$dir/pane.txt
 rex --autostart=false capture -b "$block" --trim | tail -n 400 >"$file"
 prompt="The file $file holds the last 400 lines of a terminal pane."
-exec "$agent" "$prompt Read it, then wait for my question about it."
+"$agent" "$prompt Read it, then wait for my question about it."

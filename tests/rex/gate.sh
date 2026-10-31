@@ -73,6 +73,8 @@ inner_out() {
 }
 quiet_inner() { [[ -z "$(inner_out "$@" </dev/null)" && ! -e "$SB/handed" ]]; }
 check "rex-handoff --inner does nothing outside a Rex pane" quiet_inner "${GHOSTTY[@]}"
+check "rex-handoff --inner does nothing in tmux in Rex" quiet_inner "${TMUX_IN_REX[@]}"
+check "rex-handoff --inner runs nothing without a terminal" quiet_inner "${REX[@]}"
 check "rex-handoff gives no usage error outside Rex" \
 	test -z "$(env "${GHOSTTY[@]}" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" 2>&1)"
 

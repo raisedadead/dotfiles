@@ -14,6 +14,7 @@ bad() {
 	fails=$((fails + 1))
 }
 check() { if "${@:2}"; then ok "$1"; else bad "$1"; fi; }
+not() { ! "$@"; }
 
 server_pid=
 cleanup() {
@@ -31,7 +32,16 @@ for f in "$SRC"/bin/executable_*; do
 	install -m 755 "$f" "$SB/cfg/bin/$(basename "${f#*/executable_}")"
 done
 
-REX_SERVER="$SOCK" rex server run --listen "$SOCK" --state-dir "$SB/state" \
+cat >"$SB/fake-agent" <<EOF
+#!/bin/sh
+pwd >> $SB/t/agent.cwds
+printf '%s\n' "\$1" >> $SB/t/agent.args
+sleep 5
+EOF
+chmod +x "$SB/fake-agent"
+
+REX_SERVER="$SOCK" REX_TEST_AGENT="$SB/fake-agent" \
+	rex server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
 server_pid=$!
 for _ in $(seq 50); do
@@ -174,13 +184,13 @@ open_in ghostty
 check "rex-open outside Rex runs the editor in place" file_has "$SB/t/editor.args" "+12"
 check "rex-open outside Rex opens no tab" test "$(blocks "$S" | wc -l)" -le "$before"
 
-printf '#!/bin/sh\npwd > %s/t/agent.cwd\n' "$SB" >"$SB/fake-agent"
-chmod +x "$SB/fake-agent"
 mkdir -p "$SB/proj"
-R "do" -s "$S" layout_agent "cwd=$SB/proj" "agent=$SB/fake-agent" >/dev/null
-check "layout_agent starts the agent in the cwd" until5 file_has "$SB/t/agent.cwd" "$SB/proj"
+R "do" -s "$S" layout_agent "cwd=$SB/proj" >/dev/null
+check "layout_agent starts the agent in the cwd" until5 file_has "$SB/t/agent.cwds" "$SB/proj"
 check "layout_agent labels the agent pane" has_label "$S" agent
-ws() { R "do" -s "$S" --json workspace_open "path=$SB/proj" name=ws1 "agent=$SB/fake-agent"; }
+check "layout_agent takes no agent command" \
+	fails_with "$S" "no argument named" layout_agent agent=sh
+ws() { R "do" -s "$S" --json workspace_open "path=$SB/proj" name=ws1; }
 w1=$(ws)
 w2=$(ws)
 same_ws() {
@@ -252,6 +262,10 @@ for _ in $(seq 40); do
 	sleep 0.5
 done
 check "the monitor reports the exit code" test "$(tail -1 "$SB/t/mon2")" = "pane exited 3"
+mon_state() { compgen -G "$SB/t/watch-pane-$(id -u)/rex.*-${mon#block:}" >/dev/null; }
+check "the monitor keeps state for a watched pane" mon_state
+in_sb --resolve "$plain" >/dev/null
+check "a resolve prunes the state of a closed pane" not mon_state
 
 window_of() {
 	R api call -s "$S" session.view | jq -r --arg b "$1" \
@@ -309,25 +323,26 @@ next_json=$(R "do" -s "$S" -b "$plain" --json next_waiting)
 check "next_waiting jumps to the blocked pane first" \
 	test "$(jq -r '"\(.state) \(.block_id)"' <<<"$next_json")" = "blocked $blocker"
 
-printf '#!/bin/sh\npwd > %s/t/here.cwd\n' "$SB" >"$SB/agent-here"
-chmod +x "$SB/agent-here"
-R "do" -s "$S" -b "$plain" agent_here "agent=$SB/agent-here" >/dev/null
-check "agent_here starts the agent in a new pane" until5 test -s "$SB/t/here.cwd"
+runs_before=$(wc -l <"$SB/t/agent.cwds")
+more_runs() { (($(wc -l <"$SB/t/agent.cwds") > runs_before)); }
+R "do" -s "$S" -b "$plain" agent_here >/dev/null
+check "agent_here starts the agent in a new pane" until5 more_runs
 
-cat >"$SB/ask-agent" <<EOF
-#!/bin/sh
-printf '%s\n' "\$1" > $SB/t/ask.prompt
-sleep 5
-EOF
-chmod +x "$SB/ask-agent"
-R "do" -s "$S" -b "$linky" ask_pane "agent=$SB/ask-agent" >/dev/null
+R "do" -s "$S" -b "$linky" ask_pane >/dev/null
 check "ask_pane opens popup:ask" has_label "$S" popup:ask
 asked_file() {
 	local f
-	f=$(grep -o '/[^ ]*/pane.txt' "$SB/t/ask.prompt" 2>/dev/null) || return 1
-	grep -q 'example.com' "$f"
+	f=$(grep -o '/[^ ]*/pane.txt' "$SB/t/agent.args" 2>/dev/null | tail -1) || return 1
+	grep -q 'example.com' "$f" 2>/dev/null
 }
 check "ask_pane gives the agent the pane text" until5 asked_file
+ask_dir=$(grep -o '/[^ ]*/pane.txt' "$SB/t/agent.args" | tail -1)
+ask_dir=${ask_dir%/pane.txt}
+for _ in $(seq 20); do
+	no_label "$S" popup:ask && break
+	sleep 0.5
+done
+check "rex-ask removes the pane text when the agent exits" test ! -e "$ask_dir"
 
 if ((fails)); then
 	printf '%d failed\n' "$fails"

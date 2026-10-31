@@ -7,12 +7,12 @@ local function shell(cwd)
 end
 
 local LAYOUTS = {
-  agent = function(cwd, agent)
-    return rex.layout.horizontal(0.6, then_shell(agent, cwd, "agent"), shell(cwd))
+  agent = function(cwd)
+    return rex.layout.horizontal(0.6, then_shell(lib.AGENT, cwd, "agent"), shell(cwd))
   end,
-  dev = function(cwd, agent)
+  dev = function(cwd)
     return rex.layout.horizontal(0.6, then_shell("nvim", cwd, "editor"),
-      then_shell(agent, cwd, "agent"))
+      then_shell(lib.AGENT, cwd, "agent"))
   end,
 }
 
@@ -27,11 +27,11 @@ end
 for name, make in pairs(LAYOUTS) do
   rex.action{
     name = "layout_" .. name, title = "Layout: " .. name, category = "Layouts",
-    args = { cwd = "string?", agent = "string?" },
+    args = { cwd = "string?" },
     run = function(ctx, args)
       local w, err = rex.session.new_window{
         window_label = name,
-        layout = make(args.cwd or focused_cwd(ctx), args.agent or "claude"),
+        layout = make(args.cwd or focused_cwd(ctx)),
       }
       if not w then error(err, 0) end
       return { window_id = w.window_id }
@@ -41,7 +41,7 @@ end
 
 rex.action{
   name = "workspace_open", title = "Open Workspace", category = "Layouts",
-  args = { path = "string", name = "string", agent = "string?" },
+  args = { path = "string", name = "string" },
   run = function(_, args)
     local l, err = rex.call("session.list", {})
     if not l then error(err, 0) end
@@ -50,7 +50,7 @@ rex.action{
         return { session_id = s.session_id, created = false }
       end
     end
-    local layout = LAYOUTS.agent(args.path, args.agent or "claude")
+    local layout = LAYOUTS.agent(args.path)
     local s, cerr = rex.call("session.create", {
       label = args.name,
       initial_windows = { { window_label = "agent", layout = layout } },
