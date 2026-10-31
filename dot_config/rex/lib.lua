@@ -35,11 +35,15 @@ function M.fg(sid, bid)
   return f, f.cwd
 end
 
-function M.agent_in(f)
+function M.runs(f, names)
   for _, k in ipairs({ "script", "argv0", "name", "path", "invoked_path" }) do
     local n = base(f[k])
-    if n and M.AGENTS[n] then return n end
+    if n and names[n] then return n end
   end
+end
+
+function M.agent_in(f)
+  return M.runs(f, M.AGENTS)
 end
 
 function M.safe_write(sid, bid, text)
