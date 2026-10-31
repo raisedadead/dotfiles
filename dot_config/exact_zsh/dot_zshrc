@@ -150,6 +150,7 @@ cached_init wt wt config shell init zsh
 # File sourcing
 source "$ZDOTDIR/alias.zsh"
 [[ -f ~/.bin/functions.sh ]] && source ~/.bin/functions.sh
+[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]] && source "$ZDOTDIR/rex.zsh"
 
 # fnm must load after Homebrew (set in .zshenv) so fnm-managed Node.js wins.
 can_haz fnm && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --resolve-engines --log-level=quiet)"

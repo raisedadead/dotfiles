@@ -196,6 +196,31 @@ proj=$(cd "$SB/proj" && pwd -P)
 check "the picker lists the worktrees" grep -q $'^worktree\t.*\t'"$proj"'$' <<<"$rows"
 check "popup_workspace opens popup:workspace" opened popup_workspace popup:workspace
 
+zp=$(split zsh -f -i)
+sleep 0.5
+type_in() {
+	R send -s "$S" -b "$zp" "$1"$'\n'
+	sleep 0.5
+}
+status_of() {
+	local q
+	q=$(jq -cn --arg s "$S" --arg b "$zp" \
+		'{session_id: $s, block_id: $b, method: "program_status", args: {}}')
+	R api call -s "$S" block.method "$q" |
+		jq -r '.records[0] | "\(.state // "-") \(.app // "-")"'
+}
+type_in 'autoload -Uz add-zsh-hook; noisy() { false; }; add-zsh-hook precmd noisy'
+type_in "source '$REPO/dot_config/exact_zsh/rex.zsh'"
+type_in 'sleep 0.2'
+check "rex.zsh skips a short command" test "$(status_of)" = "- -"
+type_in 'REX_STATUS_MIN=0'
+type_in 'FOO=1 sh -c "exit 3"'
+check "rex.zsh reports an error with the program name" test "$(status_of)" = "error sh"
+type_in 'true'
+check "rex.zsh reports done" test "$(status_of)" = "done true"
+type_in 'less -f /dev/null'
+check "rex.zsh skips a full-screen program" test "$(status_of)" = "done true"
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1
