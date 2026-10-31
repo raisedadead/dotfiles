@@ -174,6 +174,28 @@ open_in ghostty
 check "rex-open outside Rex runs the editor in place" file_has "$SB/t/editor.args" "+12"
 check "rex-open outside Rex opens no tab" test "$(blocks "$S" | wc -l)" -le "$before"
 
+printf '#!/bin/sh\npwd > %s/t/agent.cwd\n' "$SB" >"$SB/fake-agent"
+chmod +x "$SB/fake-agent"
+mkdir -p "$SB/proj"
+R "do" -s "$S" layout_agent "cwd=$SB/proj" "agent=$SB/fake-agent" >/dev/null
+check "layout_agent starts the agent in the cwd" until5 file_has "$SB/t/agent.cwd" "$SB/proj"
+check "layout_agent labels the agent pane" has_label "$S" agent
+ws() { R "do" -s "$S" --json workspace_open "path=$SB/proj" name=ws1 "agent=$SB/fake-agent"; }
+w1=$(ws)
+w2=$(ws)
+same_ws() {
+	[[ "$(jq -r .created <<<"$w1") $(jq -r .created <<<"$w2")" == "true false" ]] &&
+		[[ "$(jq -r .session_id <<<"$w1")" == "$(jq -r .session_id <<<"$w2")" ]]
+}
+check "workspace_open creates once, then finds the session" same_ws
+git -C "$SB/proj" init -q
+pick_rows() { REX_SERVER="$SOCK" "$SB/cfg/bin/rex-pick-workspace" --list "" "$SB/proj"; }
+rows=$(pick_rows)
+check "the picker lists the sessions" grep -q $'^session\tws1\t' <<<"$rows"
+proj=$(cd "$SB/proj" && pwd -P)
+check "the picker lists the worktrees" grep -q $'^worktree\t.*\t'"$proj"'$' <<<"$rows"
+check "popup_workspace opens popup:workspace" opened popup_workspace popup:workspace
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1

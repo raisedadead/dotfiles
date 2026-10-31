@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+list=0
+if [[ "${1:-}" == "--list" ]]; then
+	list=1
+	shift
+fi
+if [[ $# -ne 2 ]]; then
+	echo "usage: rex-pick-workspace [--list] CLIENT CWD" >&2
+	exit 64
+fi
+client=$1 cwd=$2
+R() { rex --autostart=false "$@"; }
+
+root=
+if [[ -n "$cwd" ]]; then
+	root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)
+fi
+
+rows() {
+	R ls --json | jq -r '.sessions[] | "session\t\(.label)\t\(.session_id)"'
+	[[ -n "$root" ]] || return 0
+	wt -C "$root" list --format json 2>/dev/null |
+		jq -r '.items[] | select(.worktree.path)
+			| "worktree\t\(.branch)\t\(.worktree.path)"'
+}
+
+if ((list)); then
+	rows
+	exit 0
+fi
+
+select_session() {
+	if [[ -n "$client" ]] &&
+		R -C "$client" "do" session.select "session_id=$1" >/dev/null 2>&1; then
+		return 0
+	fi
+	echo "Remote Control is off, so Rex cannot switch for you. Press Alt+O and pick $2."
+	sleep 2.5
+}
+
+open_worktree() {
+	local path=$1 branch=$2 name sid
+	name="$(basename "$root")-${branch//\//-}"
+	sid=$(R "do" --json workspace_open "path=$path" "name=$name" | jq -r .session_id)
+	select_session "$sid" "$name"
+}
+
+out=$(rows | fzf --delimiter=$'\t' --with-nth=1,2 --print-query \
+	--layout=reverse --border=rounded --border-label=' Workspaces ' \
+	--header='Enter: go · type a new branch name to create a worktree' \
+	--prompt='workspace ❯ ') || true
+query=$(sed -n 1p <<<"$out")
+pick=$(sed -n 2p <<<"$out")
+
+if [[ -n "$pick" ]]; then
+	IFS=$'\t' read -r kind label target <<<"$pick"
+	case $kind in
+	session) select_session "$target" "$label" ;;
+	worktree) open_worktree "$target" "$label" ;;
+	esac
+	exit 0
+fi
+[[ -n "$query" && -n "$root" ]] || exit 0
+wt -C "$root" switch --create "$query" --no-cd --yes >/dev/null
+path=$(wt -C "$root" list --format json |
+	jq -r --arg b "$query" '.items[] | select(.branch == $b) | .worktree.path')
+[[ -n "$path" && "$path" != null ]] || exit 1
+open_worktree "$path" "$query"

@@ -62,6 +62,7 @@ bind("alt+t", "drawer_scratch")
 bind("alt+g", "popup_lazygit")
 bind("alt+i", "popup_reader")
 bind("alt+e", "popup_urls")
+bind("alt+w", "popup_workspace")
 bind("alt+shift+/", "popup_keys")
 bind("ctrl+space>shift+/", "popup_keys")
 

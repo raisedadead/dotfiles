@@ -1,5 +1,6 @@
 require("lib")
 require("popups")
 require("drawer")
+require("workspace")
 require("keys")
 require("probe")
