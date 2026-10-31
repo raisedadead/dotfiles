@@ -40,7 +40,7 @@ sleep 5
 EOF
 chmod +x "$SB/fake-agent"
 
-REX_SERVER="$SOCK" REX_TEST_AGENT="$SB/fake-agent" \
+REX_SERVER="$SOCK" REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
 	rex server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
 server_pid=$!
@@ -343,6 +343,24 @@ for _ in $(seq 20); do
 	sleep 0.5
 done
 check "rex-ask removes the pane text when the agent exits" test ! -e "$ask_dir"
+
+record_for() {
+	env TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$1" TMUX= \
+		XDG_STATE_HOME="$SB/state-home" bash "$SRC/bin/executable_rex-agent-record" claude \
+		<<<"{\"session_id\":\"$2\",\"cwd\":\"/x\"}"
+}
+idle=$(split sh -c "IFS= read -r line; echo \"\$line\" > '$SB/t/resumed'; exec sleep 300")
+record_for "$idle" abc-123
+record_for "$agent" def-456
+recorded() {
+	jq -e '.session_id == "abc-123"' "$SB/state-home/rex/agents/${idle#block:}.json" >/dev/null
+}
+check "the SessionStart hook records the pane's Claude session" recorded
+sleep 0.3
+resumed=$(R "do" -s "$S" --json agents_resume | jq -c .resumed)
+check "agents_resume resumes only the pane that shows a shell" test "$resumed" = "[\"$idle\"]"
+check "agents_resume types claude --resume" \
+	until5 file_has "$SB/t/resumed" "claude --resume abc-123"
 
 if ((fails)); then
 	printf '%d failed\n' "$fails"

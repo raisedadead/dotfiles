@@ -78,6 +78,15 @@ check "rex-handoff --inner runs nothing without a terminal" quiet_inner "${REX[@
 check "rex-handoff gives no usage error outside Rex" \
 	test -z "$(env "${GHOSTTY[@]}" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" 2>&1)"
 
+recorder="$REPO/dot_config/rex/bin/executable_rex-agent-record"
+record_in() {
+	env "$@" REX_BLOCK=block:01a19320-f71b-74f5-9125-c689b71392da \
+		XDG_STATE_HOME="$SB/state" bash "$recorder" claude <<<'{"session_id":"x"}'
+}
+no_record() { [[ -z "$(record_in "$@")" && ! -e "$SB/state" ]]; }
+check "the session recorder writes nothing in Ghostty" no_record "${GHOSTTY[@]}"
+check "the session recorder writes nothing in tmux in Rex" no_record "${TMUX_IN_REX[@]}"
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1

@@ -68,6 +68,44 @@ rex.action{
   end,
 }
 
+local SHELLS = { zsh = true, bash = true, sh = true, fish = true }
+local STATE = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state"))
+  .. "/rex/agents/"
+
+local function record(bid)
+  local f = io.open(STATE .. bid:gsub("^block:", "") .. ".json")
+  if not f then return nil end
+  local text = f:read("*a")
+  f:close()
+  local ok, r = pcall(rex.json.decode, text)
+  if not ok or type(r) ~= "table" or r.block ~= bid then return nil end
+  if not lib.AGENTS[r.agent] or type(r.session_id) ~= "string" then return nil end
+  if not r.session_id:match("^[%w-]+$") then return nil end
+  return r
+end
+
+rex.action{
+  name = "agents_resume", title = "Resume Agents", category = "Agents",
+  run = function()
+    local l, err = rex.call("session.list", {})
+    if not l then error(err, 0) end
+    local resumed = {}
+    for _, s in ipairs(l.sessions or {}) do
+      local bl = rex.call("session.list_blocks", { session_id = s.session_id })
+      for _, b in ipairs(bl and bl.blocks or {}) do
+        local r = record(b.block_id)
+        local f = r and lib.fg(s.session_id, b.block_id)
+        if f and lib.runs(f, SHELLS) then
+          local _, werr = lib.safe_write(s.session_id, b.block_id,
+            r.agent .. " --resume " .. r.session_id .. "\n")
+          if not werr then resumed[#resumed + 1] = b.block_id end
+        end
+      end
+    end
+    return { resumed = resumed }
+  end,
+}
+
 rex.action{
   name = "ask_pane", title = "Ask About This Pane", category = "Agents",
   run = function(ctx)
