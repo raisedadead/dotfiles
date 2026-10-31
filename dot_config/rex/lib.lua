@@ -1,0 +1,82 @@
+local M = {}
+
+M.TERMINAL = "com.superlogical.terminal"
+M.SHELL = M.TERMINAL .. ".shell"
+M.AGENTS = { claude = true, codex = true, pi = true, opencode = true }
+
+function M.bcall(sid, bid, method, args)
+  return rex.call("block.method", {
+    session_id = sid, block_id = bid, method = method, args = args or {},
+  })
+end
+
+function M.where(sid)
+  local v, err = rex.session.view{ session_id = sid }
+  if not v then return nil, err end
+  for _, w in ipairs(v.windows) do
+    if w.window_id == v.active_window_id then
+      return { window_id = w.window_id, focused = w.focused_block_id }
+    end
+  end
+  return nil, "no active window in " .. tostring(sid)
+end
+
+local function base(s)
+  if not s then return nil end
+  local name = s:match("([^/]+)$") or s
+  return (name:gsub("%.[cm]?js$", ""))
+end
+
+function M.fg(sid, bid)
+  local p, err = M.bcall(sid, bid, "process")
+  if not p then return nil, nil, err end
+  local f = p.foreground
+  if not f then return nil, nil, "no foreground program in " .. bid end
+  return f, f.cwd
+end
+
+function M.agent_in(f)
+  for _, k in ipairs({ "script", "argv0", "name", "path", "invoked_path" }) do
+    local n = base(f[k])
+    if n and M.AGENTS[n] then return n end
+  end
+end
+
+function M.safe_write(sid, bid, text)
+  local f, _, err = M.fg(sid, bid)
+  if not f then return nil, "refused: " .. tostring(err) end
+  local agent = M.agent_in(f)
+  if agent then
+    return nil, "refused: " .. agent .. " runs in " .. bid
+  end
+  local m = M.bcall(sid, bid, "input_mode")
+  if not m then return nil, "refused: no input mode for " .. bid end
+  if m.echo == false and m.canonical == true then
+    return nil, "refused: " .. bid .. " reads a password"
+  end
+  return M.bcall(sid, bid, "write", { data = text })
+end
+
+function M.popup(ctx, o)
+  local sid = ctx.session_id
+  local here, err = M.where(sid)
+  if not here then return nil, err end
+  local src = ctx.block_id or here.focused
+  local cwd = o.cwd
+  if not cwd and src then
+    local _, c = M.fg(sid, src)
+    cwd = c
+  end
+  local r, e = rex.session.new_layer{
+    session_id = sid, window_id = here.window_id, focus = true,
+    bounds = o.bounds or { 0.1, 0.1, 0.8, 0.8 },
+    layout = rex.layout.block{
+      flavor = M.SHELL, label = o.label,
+      options = { command = o.cmd, cwd = cwd, shell = "none" },
+    },
+  }
+  if not r then return nil, e end
+  return r.block_ids[1]
+end
+
+return M

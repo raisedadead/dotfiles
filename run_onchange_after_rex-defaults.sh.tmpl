@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ "$(uname)" == "Darwin" ]] || exit 0
+
+: 'themes {{ include "dot_config/rex/themes/custom-themes.json" | sha256sum }}'
+THEMES="$HOME/.config/rex/themes/custom-themes.json"
+D=com.superlogical.rex
+
+w() { defaults write "$D" "$@"; }
+
+w Workspace.animationStyle -string snappy
+w Workspace.appIconVisibility -string dockAndMenuBar
+w Workspace.appearance -string dark
+w Workspace.darkThemeID -string custom-F9A91741-EC53-4CF6-BE7E-8273043CCAFA
+w Workspace.lightThemeID -string merino-light
+w Workspace.inactivePaneFadeMode -string both
+w Workspace.interfaceStyle -string blendTheme
+w Workspace.paneDensity -string compact
+w Workspace.shellIconTheme -string themed
+w Workspace.sidebarPosition -string left
+w Workspace.sidebarShowsActivity -bool false
+w Workspace.tabIconTintMode -string off
+w Workspace.tabStyle -string vertical
+w Workspace.terminalAllowsLigatures -bool true
+w Workspace.terminalCursorStyle -string block
+w Workspace.terminalFallbackFontNames -array "Symbols Nerd Font Mono"
+w Workspace.terminalFontName -string "Berkeley Mono"
+w Workspace.terminalFontPointSize -float 14
+w Workspace.terminalFontSmoothing -bool true
+w Workspace.terminalImproveTextContrast -bool true
+w Workspace.terminalUseThemePalette -bool false
+w Workspace.usesPaneGlass -bool true
+w Workspace.usesStandardInactiveWindowPaneStyles -bool true
+w rex.agents.names-sessions -bool true
+w rex.server.automatic-restart-enabled -bool true
+
+if [[ -f "$THEMES" ]]; then
+	hex=$(jq -cj . "$THEMES" | xxd -p | tr -d '\n')
+	[[ -n "$hex" ]] || exit 1
+	w Workspace.customThemes -data "$hex"
+fi

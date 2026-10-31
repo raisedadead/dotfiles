@@ -34,3 +34,4 @@ install.sh
 .claude/skills/synced
 .claude/output-styles/*.original.md
 docs
+tests
