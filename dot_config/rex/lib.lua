@@ -81,6 +81,17 @@ function M.safe_write(sid, bid, text)
   return M.bcall(sid, bid, "write", { data = text })
 end
 
+function M.window_of(sid, bid)
+  local v = rex.session.view{ session_id = sid }
+  for _, w in ipairs(v and v.windows or {}) do
+    for _, l in ipairs(w.layers) do
+      for _, b in ipairs(l.blocks) do
+        if b.block_id == bid then return w.window_id end
+      end
+    end
+  end
+end
+
 function M.popup(ctx, o)
   local sid = ctx.session_id
   local here, err = M.where(sid)
@@ -92,11 +103,11 @@ function M.popup(ctx, o)
     cwd = c
   end
   local r, e = rex.session.new_layer{
-    session_id = sid, window_id = here.window_id, focus = true,
+    session_id = sid, window_id = o.window_id or here.window_id, focus = true,
     bounds = o.bounds or { 0.1, 0.1, 0.8, 0.8 },
     layout = rex.layout.block{
       flavor = M.SHELL, label = o.label,
-      options = { command = o.cmd, cwd = cwd, shell = "none" },
+      options = { command = o.cmd, cwd = cwd, shell = not o.login and "none" or nil },
     },
   }
   if not r then return nil, e end

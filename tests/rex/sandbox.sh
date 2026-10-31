@@ -253,6 +253,56 @@ for _ in $(seq 40); do
 done
 check "the monitor reports the exit code" test "$(tail -1 "$SB/t/mon2")" = "pane exited 3"
 
+window_of() {
+	R api call -s "$S" session.view | jq -r --arg b "$1" \
+		'.windows[] | select([.layers[].blocks[].block_id] | index($b)) | .window_id'
+}
+handoff() {
+	env REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$plain" TMUX= \
+		"$SB/cfg/bin/rex-handoff" -- sh -c "echo ran > '$SB/t/handed'; exit 4"
+}
+float_id() { blocks "$S" | awk '$1 == "handoff" { print $3 }'; }
+has_float() { [[ -n "$(float_id)" ]]; }
+answer() {
+	local f
+	until5 has_float || return 0
+	f=$(float_id)
+	sleep 0.5
+	R send -s "$S" -b "$f" "$1" >/dev/null
+	sleep 0.5
+	R send -s "$S" -b "$f" $'\r' >/dev/null 2>&1 || true
+}
+handoff >"$SB/t/h1" 2>&1 &
+h_pid=$!
+until5 has_float || true
+check "the hand-off float opens in the agent's tab" \
+	test "$(window_of "$(float_id)")" = "$(window_of "$plain")"
+fstatus() {
+	local q
+	q=$(jq -cn --arg s "$S" --arg b "$(float_id)" \
+		'{session_id: $s, block_id: $b, method: "program_status", args: {}}')
+	R api call -s "$S" block.method "$q" | jq -r '.records[0].state // "-"'
+}
+blocked() { [[ "$(fstatus)" == blocked ]]; }
+check "the hand-off float reports blocked" until5 blocked
+answer $'\r'
+for _ in $(seq 20); do
+	waited "$h_pid" && break
+	sleep 0.5
+done
+check "rex-handoff runs the command on Enter" file_has "$SB/t/handed" ran
+check "rex-handoff prints only the exit code" test "$(cat "$SB/t/h1")" = 4
+rm -f "$SB/t/handed"
+handoff >"$SB/t/h2" 2>&1 &
+h_pid=$!
+answer $'\e'
+for _ in $(seq 20); do
+	waited "$h_pid" && break
+	sleep 0.5
+done
+check "rex-handoff declines on Esc" test "$(cat "$SB/t/h2")" = 130
+check "a declined hand-off runs nothing" test ! -e "$SB/t/handed"
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1

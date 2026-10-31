@@ -60,6 +60,14 @@ check "mdr edit opens rex-open in Rex" test "$(edit_hit "${REX[@]}")" = rex-open
 check "mdr edit runs the editor in Ghostty" test "$(edit_hit "${GHOSTTY[@]}")" = editor
 check "mdr edit opens a tmux window in tmux" test "$(edit_hit "${TMUX_IN_REX[@]}")" = tmux
 
+handoff_out() {
+	env "$@" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" -- \
+		sh -c "touch '$SB/handed'"
+}
+quiet_handoff() { [[ -z "$(handoff_out "$@")" && ! -e "$SB/handed" ]]; }
+check "rex-handoff does nothing in Ghostty" quiet_handoff "${GHOSTTY[@]}"
+check "rex-handoff does nothing in tmux in Rex" quiet_handoff "${TMUX_IN_REX[@]}"
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1
