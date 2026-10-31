@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+zed=0
+if [[ "${1:-}" == "--zed" ]]; then
+	zed=1
+	shift
+fi
+if [[ $# -ne 1 ]]; then
+	echo "usage: rex-open [--zed] FILE[:LINE]" >&2
+	exit 64
+fi
+
+file=$1 line=
+if [[ "$1" =~ ^(.+):([0-9]+)$ ]]; then
+	file=${BASH_REMATCH[1]}
+	line=${BASH_REMATCH[2]}
+fi
+
+if ((zed)); then
+	exec zed "$file${line:+:$line}"
+fi
+
+IFS=' ' read -r -a cmd <<<"${EDITOR:-nvim}"
+cmd+=(${line:+"+$line"} "$file")
+
+if [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]]; then
+	exec rex --autostart=false run -s "$REX_SESSION" -c "$PWD" \
+		--label "edit:${file##*/}" -- "${cmd[@]}" >/dev/null
+fi
+exec "${cmd[@]}"

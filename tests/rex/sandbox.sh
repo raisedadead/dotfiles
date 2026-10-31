@@ -158,6 +158,22 @@ rex_rows() {
 }
 check "keys lists the Rex bindings inside Rex" test "$(rex_rows)" -gt 40
 
+printf '#!/bin/sh\necho "$@" > %s/t/editor.args\nsleep 5\n' "$SB" >"$SB/editor"
+chmod +x "$SB/editor"
+open_in() {
+	env REX_SERVER="$SOCK" REX_SESSION="$S" TMUX= TERM_PROGRAM="$1" EDITOR="$SB/editor" \
+		"$SB/cfg/bin/rex-open" "$SB/t/notes.md:12"
+}
+open_in rex
+check "rex-open starts the editor at the line" \
+	until5 file_has "$SB/t/editor.args" "+12 $SB/t/notes.md"
+check "rex-open opens a tab labelled edit:notes.md" has_label "$S" edit:notes.md
+rm -f "$SB/t/editor.args"
+before=$(blocks "$S" | wc -l)
+open_in ghostty
+check "rex-open outside Rex runs the editor in place" file_has "$SB/t/editor.args" "+12"
+check "rex-open outside Rex opens no tab" test "$(blocks "$S" | wc -l)" -le "$before"
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1
