@@ -1,6 +1,6 @@
 # Skill composition
 
-The kernel holds the precedence rules. This document holds the order, with the Claude Code skill names. Codex keeps its own order in [SKILLS.md](../dot_codex/docs/SKILLS.md).
+The kernel holds the precedence rules. This document holds the order, with the Claude Code skill names.
 
 A task has one driver. Every other skill is a reference. A driver runs the loop. A reference gives a rubric that you read and apply. Do not use two drivers on one task. Two drivers give two reports and no decision.
 
@@ -60,7 +60,7 @@ The operator runs `/interface-review`; the model cannot invoke it.
 
 Authentication, input from a user, a webhook, or a new dependency.
 
-1. `security-review` reads the change on the branch.
+1. `security-review`, a Claude Code built-in, reads the change on the branch.
 1. `ghsa-draft` drafts a freeCodeCamp advisory alone.
 
 ## Guide the operator

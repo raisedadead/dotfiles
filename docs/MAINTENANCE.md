@@ -7,10 +7,9 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Change                                 | Checks                                                                  |
 | -------------------------------------- | ----------------------------------------------------------------------- |
 | Documentation                          | Local links, code blocks, preserved constraints, and `git diff --check` |
-| Shared deployment or Git hooks         | S1, S2, and C4 below; M15 and M16 fixture checks                        |
-| Codex rig                              | C1 to C4 below                                                          |
+| Shared deployment or Git hooks         | S1 to S3 below; M15 and M16 fixture checks                              |
 | Pi rig                                 | P1 below                                                                |
-| Claude rig mod or hook rules           | M1 and M4                                                               |
+| Claude rig mod or hook rules           | M1, M4, S1, and S2                                                      |
 | Claude validator or formatter registry | Spec smoke test                                                         |
 | Claude plugin                          | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop    | Applicable terminal probes below and the component's own checks         |
@@ -29,35 +28,9 @@ Run `git submodule status`. Read the `core.hooksPath` of each submodule and expe
 
 Expect `push.recurseSubmodules` `on-demand`, `submodule.recurse` `false`, and `status.submoduleSummary` `true`. Expect `merge` for the update setting of each managed submodule.
 
-## Codex
-
-### C1: Hook behavior and style
-
-```sh
-PYTHONDONTWRITEBYTECODE=1 /opt/homebrew/bin/python3 ~/.dotfiles/dot_codex/hooks/test_codex_hooks.py
-ruff check --no-cache ~/.dotfiles/dot_codex/hooks
-ruff format --check --no-cache ~/.dotfiles/dot_codex/hooks
-```
-
-Expect the suite and the style checks to pass. Report failures and skipped tools.
-
-### C2: Native command rules
-
-```sh
-codex execpolicy check --rules ~/.dotfiles/dot_codex/rules/safety.rules -- git push
-```
-
-Expect `forbidden`. The check reads a command vector. It does not run a push.
-
-### C3: Installation health
-
-Run `codex doctor --summary`. Report its failures separately from the hook results.
-
-### C4: Deployment boundary and live behavior
+### S3: Deployment boundary
 
 Run `~/.bin/chezmoi-fixture-check.sh`. It applies a synthetic source to an isolated destination and state file. It checks six boundaries: rendered paths and permissions, an unchanged second apply, survival outside an exact directory, removal inside one, an absent excluded document, and what a named capture takes from its siblings.
-
-Then render and apply the selected rig files to an isolated destination and state file. Verify that unmanaged state survives and that owner documents are absent. Compare the installed named files with the source. After approved activation, test an allowed patch, a blocked disposable private path, invalid JSON, and corrected JSON in a disposable directory. Record the client and the tool path that you tested.
 
 ## Pi
 
@@ -205,12 +178,6 @@ Expected: Configured servers connect. No scope conflict
 
 Expected: `build.sh` exits 0, so the source type-checks against the host types. All tests pass. Report the count
 
-### M5
-
-Shared check S1
-
-Expected: Empty status. Otherwise, list the drifted paths. Do not apply
-
 ### M6
 
 `rtk hook check 'ls -la'`; `rtk hook check 'git status'`; `rtk gain`
@@ -240,7 +207,7 @@ Expected: `lastError` is null. MCP connects. The `better-sqlite3` major is 12 or
 Run `npx skills check -g`. Review the reported changes, then update the shared skills by name: `npx skills update -g -y $(cut -f2 ~/.dotfiles/docs/skills.tsv)`. The Pi-only skills update through the loop in `dot_pi/RIG.md`. Compare `npx skills list -g` with `docs/skills.tsv`. The manifest has one `source<TAB>name` line for each third-party skill. Add the line by hand at each install. Replay a missing skill with the loop below. Run `find ~/.claude/skills -maxdepth 1 -type l ! -lname '../../.agents/skills/*'`. Run `/skill-doctor` in a session
 
 ```bash
-while IFS=$'\t' read -r src name; do npx skills add "$src" --skill "$name" -g -a claude-code -a codex -y; done < ~/.dotfiles/docs/skills.tsv
+while IFS=$'\t' read -r src name; do npx skills add "$src" --skill "$name" -g -a claude-code -a pi -y; done < ~/.dotfiles/docs/skills.tsv
 ```
 
 Expected: Each skill is personal, common, third-party, or plugin. The find prints nothing. `npx skills list -g` equals the manifest. No never-invoked skill that you want to keep. Unused plugins reviewed
@@ -256,18 +223,6 @@ Expected: Each has a consumer, or appears in [Operator tools](ARCHI.md#operator-
 The claim checker below
 
 Expected: Exit 0 and `CLAIMS: CLEAN`
-
-### M13
-
-Shared submodule check S2
-
-Expected: Report the Claude checkout and hook path
-
-### M14
-
-Shared Git configuration check S2
-
-Expected: Report the effective values
 
 ### M15
 

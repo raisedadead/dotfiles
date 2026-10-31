@@ -1,25 +1,19 @@
 # Dotfiles
 
-Public chezmoi source: `~/.dotfiles`. It is the source of truth for this machine's configuration and for the coding-agent rigs. `CLAUDE.md` is a symlink to this file, so every agent reads the same instructions.
+Public chezmoi source: `~/.dotfiles`. It is the source of truth for this machine's configuration and for the coding-agent rigs.
 
-Three coding agents run here: Claude Code, Codex, and Pi. [Agent rigs](docs/ARCHI.md#agent-rigs) holds the map, the rig contract, and the skill rules.
+Two coding agents run here: Claude Code and Pi.
 
 ## Documents
 
-- [docs/ARCHI.md](docs/ARCHI.md): ownership, load order, the agent rigs, and the constraints. It is the main context for this project.
+- [docs/ARCHI.md](docs/ARCHI.md): ownership, load order, the agent rigs, and the constraints. It is the main context for this project. Read it before a configuration change.
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md): the checks. Its first table selects the checks for your change.
-- [docs/SKILLS.md](docs/SKILLS.md): the order in which skills compose. The Claude kernel holds the precedence.
+- [docs/SKILLS.md](docs/SKILLS.md): the order in which skills compose.
 - [docs/README.md](docs/README.md): the install steps and the chezmoi commands for daily work.
-
-The files under `docs/` are shared. Every coding agent reads them.
 
 ## Rules
 
-- Read [docs/ARCHI.md](docs/ARCHI.md) before a configuration change.
 - Run the checks in [docs/MAINTENANCE.md](docs/MAINTENANCE.md) after a change.
-- Keep README.md and the files under docs/ current and concise. Keep audit history in private owner documentation.
+- Keep README.md and docs/ current and concise. Keep audit history in private owner documents.
 - Private directories, such as `dot_claude/`, are submodules of the private repository, one branch per directory. Do not change `dot_claude/` without an explicit request for that submodule.
-- Before you change an installed target, show its proposed diff and ask the operator. When your rig shows the change with its diff in a dialog, that dialog is the ask; under an approval, the transcript line records it.
-- Each agent owns its own global kernel. Do not edit another agent's kernel. Report the change you want instead.
-
-The operator requests a completed reviewer before completion for each non-trivial source change. The operator owns pushes, pull requests, releases, and infrastructure changes.
+- Do not edit another agent's kernel. The operator owns releases and infrastructure changes.

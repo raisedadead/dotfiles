@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# chezmoi-fixture-check — MAINTENANCE C4: apply a synthetic source to an
+# chezmoi-fixture-check — MAINTENANCE S3: apply a synthetic source to an
 # isolated destination and check the deployment boundary. Exits 1 on a failed
 # check and 2 on a usage error or a missing chezmoi.
 set -euo pipefail

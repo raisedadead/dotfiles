@@ -10,7 +10,6 @@ This guide holds the ownership, the load order, and the constraints for a change
 - [Desktop and utilities](#desktop-and-utilities)
 - [Agent rigs](#agent-rigs)
 - [Claude Code](#claude-code)
-- [Codex](#codex)
 - [Pi](#pi)
 - [Operator tools](#operator-tools)
 
@@ -40,13 +39,13 @@ Stage a shell startup change with an isolated destination and state file before 
 
 ### Private submodules
 
-`dot_claude/`, `dot_codex/`, `dot_agents/`, and `dot_pi/` are git submodules of `raisedadead/dotfiles-private`, on branches with the same names. Each has an independent history. Codex uses the same flow as this Claude example. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
+`dot_claude/`, `dot_agents/`, and `dot_pi/` are git submodules of `raisedadead/dotfiles-private`, on branches with the same names. Each has an independent history. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
 
 Both repos run `gitleaks` in `.githooks/pre-commit` and exit 1 on a finding. The parent `.githooks/pre-push` resolves the gitlink of each commit in each pushed range. It exits 1 when that submodule commit is on no remote, or when it cannot check it. A clone of the parent cannot check out such a commit.
 
-Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.<name>.update = merge` for each of the four, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
+Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.<name>.update = merge` for each of the three, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
 
-Each private directory is one orphan branch with the directory name, mounted with `git submodule add -b <dir>`. Private branch repository metadata uses `.git*`-prefixed files, which chezmoi skips. Deployable configuration also lives at the branch root. Codex owner documents under `docs/` are excluded explicitly. `dotfiles-privatize.sh` seeds `pre-commit` and `post-commit` from the parent `.githooks/` into a new private branch.
+Each private directory is one orphan branch with the directory name, mounted with `git submodule add -b <dir>`. Private branch repository metadata uses `.git*`-prefixed files, which chezmoi skips. Deployable configuration also lives at the branch root. `dotfiles-privatize.sh` seeds `pre-commit` and `post-commit` from the parent `.githooks/` into a new private branch.
 
 ## Terminal stack
 
@@ -135,14 +134,13 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 ## Agent rigs
 
-Three coding agents run on this machine. Each owns its own global kernel and its own runtime. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
+Two coding agents run on this machine. Each owns its own global kernel and its own runtime. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
 
-| Rig           | Source        | Target       | Kernel      | System design                  | Checks    |
-| ------------- | ------------- | ------------ | ----------- | ------------------------------ | --------- |
-| Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [RIG.md](../dot_claude/RIG.md) | M1 to M16 |
-| Codex         | `dot_codex/`  | `~/.codex/`  | `AGENTS.md` | [RIG.md](../dot_codex/RIG.md)  | C1 to C4  |
-| Pi            | `dot_pi/`     | `~/.pi/`     | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)     | P1        |
-| Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)              | S1, S2    |
+| Rig           | Source        | Target       | Kernel      | System design                  | Checks                              |
+| ------------- | ------------- | ------------ | ----------- | ------------------------------ | ----------------------------------- |
+| Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [RIG.md](../dot_claude/RIG.md) | M1 to M16 (no M5, M13, M14), S1, S2 |
+| Pi            | `dot_pi/`     | `~/.pi/`     | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)     | P1                                  |
+| Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)              | S1, S2                              |
 
 ### The rig contract
 
@@ -150,39 +148,37 @@ This document is the overview. Each rig's `RIG.md` is the system design of that 
 
 The rigs are similar but not mirrors. A rig takes a feature from another rig as its own copy, and the copies change independently.
 
-A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In the Claude rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the transcript line records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs. The Codex model runs none of them without an explicit request.
+A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In the Claude rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the transcript line records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 
 A managed rig is a `dot_<agent>/` submodule that deploys to `~/.<agent>/`. [Private submodules](#private-submodules) holds the branch layout and the hooks. [Deployment and capture](#deployment-and-capture) holds the capture loop and the state that stays unmanaged. Three conditions belong to a rig alone:
 
-- Do not make the target an exact directory. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out, but an untracked source file still deploys. A rig that needs a strict boundary uses an allow list. Codex and Pi do.
+- Do not make the target an exact directory. [.chezmoiignore](../.chezmoiignore) keeps unmanaged paths out, but an untracked source file still deploys. A rig that needs a strict boundary uses an allow list. Pi does.
 - [MAINTENANCE.md](MAINTENANCE.md) holds a check row for the rig.
-- The rig's own kernel names this document, which links [AGENTS.md](../AGENTS.md) and the rest. One pointer is enough.
+- The rig's own kernel or its chezmoi rule names this document, which links [AGENTS.md](../AGENTS.md) and the rest. One pointer is enough.
 
 To add a rig: run `dotfiles-privatize.sh <dir>`, add the rig's entries to [.chezmoiignore](../.chezmoiignore), add a row to the table above, and add the check row.
 
 ### Project instructions
 
-Codex and Pi read `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and does not read `AGENTS.md`, so `CLAUDE.md` is a symlink that holds `AGENTS.md`. This repository uses that layout. The `cmd-agents-md` skill converts another repository. A global kernel is not a project file.
+Pi reads `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and does not read `AGENTS.md`, so `CLAUDE.md` is a symlink that holds `AGENTS.md`. This repository uses that layout. The `cmd-agents-md` skill converts another repository. A global kernel is not a project file.
 
 ### Skills
 
-| Kind        | Home                                                                 | Reaches                                                                                                                                                                                                |
-| ----------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Personal    | `dot_claude/skills/<name>/` or `dot_codex/skills/<name>/`            | That agent alone                                                                                                                                                                                       |
-| Common      | `dot_agents/skills/<name>/`                                          | Pi reads `~/.agents/skills/` directly. Claude needs a `symlink_<name>` entry. Codex: read the note below                                                                                               |
-| Third-party | `npx skills add <repo> --skill <name> -g -a claude-code -a codex -y` | An unmanaged copy under `~/.agents/skills/` and an unmanaged link under `~/.claude/skills/`. One line in `docs/skills.tsv`, which lists them for replay                                                |
-| App         | The app's setup command, such as `rex skill setup`                   | The app writes an unmanaged copy under `~/.agents/skills/`. Replace its copy under `~/.claude/skills/` with an unmanaged link to that copy. To replay, run the setup command, then make the link again |
-| Plugin      | Its plugin                                                           | Never linked                                                                                                                                                                                           |
+| Kind        | Home                                                              | Reaches                                                                                                                                                                                                |
+| ----------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Personal    | `dot_claude/skills/<name>/`                                       | Claude alone                                                                                                                                                                                           |
+| Common      | `dot_agents/skills/<name>/`                                       | Pi reads `~/.agents/skills/` directly. Claude needs a `symlink_<name>` entry                                                                                                                           |
+| Third-party | `npx skills add <repo> --skill <name> -g -a claude-code -a pi -y` | An unmanaged copy under `~/.agents/skills/` and an unmanaged link under `~/.claude/skills/`. One line in `docs/skills.tsv`, which lists them for replay                                                |
+| App         | The app's setup command, such as `rex skill setup`                | The app writes an unmanaged copy under `~/.agents/skills/`. Replace its copy under `~/.claude/skills/` with an unmanaged link to that copy. To replay, run the setup command, then make the link again |
+| Plugin      | Its plugin                                                        | Never linked                                                                                                                                                                                           |
 
 A third-party description is written as if that skill were the only one installed, so the descriptions collide. [SKILLS.md](SKILLS.md) holds the order in which skills compose. The Claude kernel holds the precedence that breaks a tie.
 
 Install a third-party skill with the command above, never by hand. Run `npx skills add <repo> -l` first to read the skill names. Capture one skill directory at a time: a whole-directory add takes the links and the copies with it.
 
 Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` is advisory and does not (anthropics/claude-code#37683). A `cmd-*` skill sets `disable-model-invocation: false`. Keep the trigger phrases disjoint across skills. Write a path with forward slashes, never with a backslash. The `whetstone` plugin's `skill-smith` lints the rest.
-
-Codex 0.164.0 reads `~/.agents/skills` as a user skill root ([host_roots.rs](https://github.com/openai/codex/blob/rust-v0.164.0/codex-rs/ext/skills/src/host_roots.rs)). The app-server `skills/list` method returns those skills. `~/.codex/skills/` holds no link to them.
 
 Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/` through a scratch project install, because a global `-g -a pi` install writes to `~/.agents/skills/` (skills CLI 1.7.4). [dot_pi/RIG.md](../dot_pi/RIG.md) holds the update loop. `dot_pi/skills.tsv` lists those skills.
 
@@ -222,14 +218,6 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 - **Install scripts.** Keep the temporary `.npmrc` of `cavemem_pin_bsql` as the only install-script permission for better-sqlite3. npm 11.19 runs an unlisted install script and only warns.
 - **Ranker patch.** cavemem 0.2.1 search passes every embedding to `Math.min`, so a large store raises `Maximum call stack size exceeded`. `cavemem-health.sh` reports it as `rank`, and the bootstrap patches the ranker ([JuliusBrussee/cavemem#62](https://github.com/JuliusBrussee/cavemem/pull/62)). Remove the patch when a release has the fix. An MCP server keeps the old code until it restarts.
 
-## Codex
-
-`dot_codex/` owns the global instructions, code-style guide, rig reference, native command rules, hook registration, and Python hook source and tests. Read [RIG.md](../dot_codex/RIG.md) for behavior and limits.
-
-Git and chezmoi use explicit file lists for this directory. Keep `config.toml`, authentication, trust records, sessions, databases, logs, generated memories, and plugin caches unmanaged. Do not make `.codex` an exact directory. A new managed file needs an explicit entry in both lists. The exceptions are `docs/` and `archive/`: both lists allow each of these directories whole. `.chezmoiignore` allows `skills/` and keeps Codex's own `.system/` tree out.
-
-The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start at the [rig index](../dot_codex/docs/README.md). `docs/AGENT-CASES.md` is the only source-only document. A passing hook suite does not prove live interception. Review new hook definitions with `/hooks`, restart the client, and use disposable fixtures for live checks.
-
 ## Pi
 
 `dot_pi/` owns the Pi kernel (`agent/AGENTS.md` and `agent/APPEND_SYSTEM.md`), the extensions, the agents, the rules, the themes, and the skill list. Read [RIG.md](../dot_pi/RIG.md) for behavior and limits.
@@ -244,9 +232,9 @@ The rig documents are managed targets: `PLAN.md`, `docs/`, and `archive/`. Start
 | `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                                                                                                                                                                                                                                                                                                     |
 | `cavemem-health.sh`                    | Prints the cavemem problems for the doctor, the bootstrap and `cavemem-repair`. Exit 1 when it finds one                                                                                                                                                                                                                                                                                          |
 | `claude-flag-audit.sh [days] [-v]`     | Lists safeguard `model_refusal_fallback` events in the Claude transcripts. The doctor calls it                                                                                                                                                                                                                                                                                                    |
-| `chezmoi-fixture-check.sh`             | Runs the C4 deployment fixture checks                                                                                                                                                                                                                                                                                                                                                             |
+| `chezmoi-fixture-check.sh`             | Runs the S3 deployment fixture checks                                                                                                                                                                                                                                                                                                                                                             |
 | `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands                                                                                                                                                                                                                                                                                 |
 | `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                                                                                                                                                                                                                                                                                                 |
-| `rig-change-review`, `lens-review`     | Review a rig change, or any other source change                                                                                                                                                                                                                                                                                                                                                   |
+| `lens-review`                          | Review a source change                                                                                                                                                                                                                                                                                                                                                                            |
 
 The workflow directory registers scripts through `meta.name`.

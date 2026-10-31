@@ -2,7 +2,7 @@
 
 The **source** is the configuration in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To **capture** a change is to copy it from the target back into the source. chezmoi captures a change only when you run a capture command.
 
-The private sources `dot_claude/`, `dot_codex/`, `dot_agents/`, and `dot_pi/` deploy to `~/.claude`, `~/.codex`, `~/.agents`, and `~/.pi`. The Codex and Pi sources manage only named rig files. Their authentication, hook trust, MCP tokens, sessions, and other runtime state stay local to each machine.
+The private sources `dot_claude/`, `dot_agents/`, and `dot_pi/` deploy to `~/.claude`, `~/.agents`, and `~/.pi`. The Pi source manages only named rig files. Its authentication, hook trust, MCP tokens, sessions, and other runtime state stay local to each machine.
 
 ## Install or recover a machine
 
@@ -27,14 +27,6 @@ The private sources `dot_claude/`, `dot_codex/`, `dot_agents/`, and `dot_pi/` de
 ### Claude Code
 
 Run `~/.bin/chezmoi-claude-bootstrap.sh` to install the runtime prerequisites. See the [Claude checks](MAINTENANCE.md#claude-code).
-
-### Codex
-
-The rig needs Homebrew Python 3.11 or later at `/opt/homebrew/bin/python3`.
-
-1. Run the [Codex checks](MAINTENANCE.md#codex).
-1. In a new Codex CLI session, open `/hooks`. Review the new or changed hook definitions.
-1. Restart the client after activation.
 
 ### Pi
 
@@ -62,8 +54,6 @@ git -C ~/.dotfiles commit -m "feat(zsh): ..."
 
 `chezmoi status` prints two columns. Column one is the change since the last apply. Column two is the change that `chezmoi apply` makes. `MM` after a target edit is normal until you `re-add` or apply that target. No output means no drift.
 
-Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target. This includes a change from an installer or a runtime.
-
 ## A file under `~/.claude`
 
 ```sh
@@ -75,16 +65,6 @@ git -C ~/.dotfiles/dot_claude commit -m "feat(claude): ..."
 The submodule `post-commit` hook commits the gitlink bump in `~/.dotfiles`.
 
 `settings.json` is a modify script. Edit the managed keys in `dot_claude/.settings.managed.json`. To remove a key from the target, add its path to the removed list in `dot_claude/modify_settings.json`. Then run `chezmoi apply ~/.claude/settings.json`. The script keeps the keys that Claude Code writes at run time, so those keys do not show as drift. `re-add` skips the file.
-
-## A managed Codex file
-
-```sh
-chezmoi re-add ~/.codex/CODE_STYLE.md
-git -C ~/.dotfiles/dot_codex add CODE_STYLE.md
-git -C ~/.dotfiles/dot_codex commit -m "docs(codex): update code style"
-```
-
-Capture named files. Do not add or re-add the whole `~/.codex` directory. Its Git and deployment rules allow only the selected rig files.
 
 ## A managed Pi file
 
@@ -136,7 +116,7 @@ home push                    # pushes submodules, then the parent
 
 The operator runs `home push`. A failed submodule push stops the command.
 
-`pre-commit` in both repos runs gitleaks on the staged diff. The parent `pre-push` exits 1 while a recorded submodule commit is on no remote. [ARCHI.md](ARCHI.md#private-submodules) holds the hook details.
+[ARCHI.md](ARCHI.md#private-submodules) holds the Git hook details.
 
 Move an existing, tracked directory to the private repo: `~/.bin/dotfiles-privatize.sh <dir> --push`.
 
