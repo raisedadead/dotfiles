@@ -345,22 +345,36 @@ done
 check "rex-ask removes the pane text when the agent exits" test ! -e "$ask_dir"
 
 record_for() {
-	env TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$1" TMUX= \
+	env TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$1" TMUX= CLAUDE_CODE_ENTRYPOINT=cli \
 		XDG_STATE_HOME="$SB/state-home" bash "$SRC/bin/executable_rex-agent-record" claude \
 		<<<"{\"session_id\":\"$2\",\"cwd\":\"/x\"}"
 }
-idle=$(split sh -c "IFS= read -r line; echo \"\$line\" > '$SB/t/resumed'; exec sleep 300")
-record_for "$idle" abc-123
-record_for "$agent" def-456
+mkdir -p "$SB/fakebin"
+printf '#!/bin/sh\necho "claude $*" >> %s/t/resumed\n' "$SB" >"$SB/fakebin/claude"
+chmod +x "$SB/fakebin/claude"
+prompt_pane() { split env PATH="$SB/fakebin:$PATH" zsh -f -i; }
+U1=0a1b2c3d-0000-4000-8000-000000000001
+idle=$(prompt_pane)
+flagged=$(prompt_pane)
+reader=$(split sh -c "IFS= read -r line; echo \"\$line\" > '$SB/t/read'; exec sleep 300")
+record_for "$idle" "$U1"
+record_for "$flagged" --dangerously-skip-permissions
+record_for "$reader" 0a1b2c3d-0000-4000-8000-000000000002
+record_for "$agent" 0a1b2c3d-0000-4000-8000-000000000003
+rec() { echo "$SB/state-home/rex/agents/${1#block:}.json"; }
 recorded() {
-	jq -e '.session_id == "abc-123"' "$SB/state-home/rex/agents/${idle#block:}.json" >/dev/null
+	jq -e --arg u "$U1" '.session_id == $u and (has("cwd") | not)' "$(rec "$idle")" >/dev/null
 }
 check "the SessionStart hook records the pane's Claude session" recorded
-sleep 0.3
+sleep 1
 resumed=$(R "do" -s "$S" --json agents_resume | jq -c .resumed)
-check "agents_resume resumes only the pane that shows a shell" test "$resumed" = "[\"$idle\"]"
-check "agents_resume types claude --resume" \
-	until5 file_has "$SB/t/resumed" "claude --resume abc-123"
+check "agents_resume resumes only a shell at its prompt with a valid session" \
+	test "$resumed" = "[\"$idle\"]"
+check "agents_resume types claude --resume" until5 file_has "$SB/t/resumed" "claude --resume $U1"
+check "agents_resume types nothing into a script that reads a line" test ! -e "$SB/t/read"
+check "agents_resume removes the record it used" test ! -e "$(rec "$idle")"
+check "agents_resume resumes a session once" \
+	test "$(R "do" -s "$S" --json agents_resume | jq '.resumed | length')" = 0
 
 if ((fails)); then
 	printf '%d failed\n' "$fails"

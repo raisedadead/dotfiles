@@ -124,11 +124,11 @@ Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config
 
 ### Rex
 
-[dot_config/rex](../dot_config/rex/) holds the Rex terminal config. [init.lua](../dot_config/rex/init.lua) loads one Lua module for each feature: popups, the drawer, workspaces, the hand-off float, the agent actions, and the keys. [bin](../dot_config/rex/bin/) holds the helper scripts that the actions start.
+[dot_config/rex](../dot_config/rex/) holds the Rex terminal config. [init.lua](../dot_config/rex/init.lua) loads the shared helpers in `lib.lua`, then one Lua module for each feature: popups, the drawer, workspaces, the hand-off float, the agent actions, and the keys. `probe.lua` holds two test actions for the manual app checks. Remove it after those checks. [bin](../dot_config/rex/bin/) holds the helper scripts that the actions start.
 
-Rex runs beside Ghostty and tmux. It does not replace them. Each Rex path in a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]]`. Outside the gate, zsh, `keys`, `mdr` and the Claude Code hooks behave as before. tmux inside a Rex pane fails the gate, so the tmux paths stay in use there.
+Rex runs beside Ghostty and tmux. It does not replace them. Each Rex path that this setup adds to a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]]`. Outside the gate, zsh, `keys`, `mdr` and the session recorder hook behave as before. The older `rex __internal session-start` hook is not part of this setup. It runs in each Claude session, with no gate. tmux inside a Rex pane fails the gate, so the tmux paths stay in use there.
 
-The rig guard controls how an agent uses the `rex` CLI. An agent can type only into another pane, named by its `block:<uuid>`. It cannot stop the live server. Probes run on a sandbox server under `/tmp`. The `rex-handoff` skill opens a float where the operator approves a command.
+The rig guard controls how an agent uses the `rex` CLI. An agent can type only into another pane, named by its `block:<uuid>`. It cannot stop the live server or run `agents_resume` on it. An agent runs its probes on a sandbox server under `/tmp`. The `rex-handoff` skill opens a float where the operator approves a command.
 
 Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server. It does not touch the live Rex session.
 

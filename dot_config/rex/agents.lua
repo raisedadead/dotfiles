@@ -72,16 +72,27 @@ local SHELLS = { zsh = true, bash = true, sh = true, fish = true }
 local STATE = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state"))
   .. "/rex/agents/"
 
+local H = "%x%x%x%x"
+local UUID = "^" .. H .. H .. "%-" .. H .. "%-" .. H .. "%-" .. H .. "%-" .. H .. H .. H .. "$"
+
 local function record(bid)
-  local f = io.open(STATE .. bid:gsub("^block:", "") .. ".json")
+  local path = STATE .. bid:gsub("^block:", "") .. ".json"
+  local f = io.open(path)
   if not f then return nil end
   local text = f:read("*a")
   f:close()
   local ok, r = pcall(rex.json.decode, text)
-  if not ok or type(r) ~= "table" or r.block ~= bid then return nil end
-  if not lib.AGENTS[r.agent] or type(r.session_id) ~= "string" then return nil end
-  if not r.session_id:match("^[%w-]+$") then return nil end
-  return r
+  if not ok or type(r) ~= "table" or r.block ~= bid or r.agent ~= "claude" then return nil end
+  if type(r.session_id) ~= "string" or not r.session_id:match(UUID) then return nil end
+  return r, path
+end
+
+-- A shell line editor turns canonical mode off; a script that reads a line keeps it on.
+local function at_prompt(sid, bid)
+  local f = lib.fg(sid, bid)
+  if not (f and lib.runs(f, SHELLS)) then return false end
+  local m = lib.bcall(sid, bid, "input_mode")
+  return m ~= nil and m.canonical == false
 end
 
 rex.action{
@@ -93,12 +104,14 @@ rex.action{
     for _, s in ipairs(l.sessions or {}) do
       local bl = rex.call("session.list_blocks", { session_id = s.session_id })
       for _, b in ipairs(bl and bl.blocks or {}) do
-        local r = record(b.block_id)
-        local f = r and lib.fg(s.session_id, b.block_id)
-        if f and lib.runs(f, SHELLS) then
+        local r, path = record(b.block_id)
+        if r and at_prompt(s.session_id, b.block_id) then
           local _, werr = lib.safe_write(s.session_id, b.block_id,
             r.agent .. " --resume " .. r.session_id .. "\n")
-          if not werr then resumed[#resumed + 1] = b.block_id end
+          if not werr then
+            os.remove(path)
+            resumed[#resumed + 1] = b.block_id
+          end
         end
       end
     end

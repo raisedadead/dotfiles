@@ -2,13 +2,15 @@
 set -uo pipefail
 
 [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
+# A print-mode claude (sdk-cli) in the pane must not replace the interactive session.
+[[ "${CLAUDE_CODE_ENTRYPOINT:-}" == cli ]] || exit 0
 [[ "${REX_BLOCK:-}" =~ ^block:([0-9a-f-]{36})$ ]] || exit 0
 uuid=${BASH_REMATCH[1]}
 dir="${XDG_STATE_HOME:-$HOME/.local/state}/rex/agents"
 mkdir -p "$dir" 2>/dev/null || exit 0
 tmp="$dir/.$uuid.$$"
 jq -c --arg b "$REX_BLOCK" --arg agent "${1:-claude}" \
-	'select(.session_id) | {block: $b, agent: $agent, session_id, cwd}' >"$tmp" 2>/dev/null &&
+	'select(.session_id) | {block: $b, agent: $agent, session_id}' >"$tmp" 2>/dev/null &&
 	[[ -s "$tmp" ]] && mv -f "$tmp" "$dir/$uuid.json"
 rm -f "$tmp"
 exit 0
