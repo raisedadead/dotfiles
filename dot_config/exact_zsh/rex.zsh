@@ -29,7 +29,7 @@ _rex_precmd() {
   local state=done
   (( code )) && state=error
   local app=${prog//[^A-Za-z0-9_.,+\/=-]/}
-  local msg="${cmd[1,120]}: exit $code after ${secs}s"
+  local msg="$app: exit $code after ${secs}s"
   printf '\e]7501;state=%s:app=%s:msg=%s\e\\' \
     $state ${app[1,32]} "$(print -rn -- $msg | base64 | tr -d '\n')"
 }

@@ -207,19 +207,22 @@ status_of() {
 	q=$(jq -cn --arg s "$S" --arg b "$zp" \
 		'{session_id: $s, block_id: $b, method: "program_status", args: {}}')
 	R api call -s "$S" block.method "$q" |
-		jq -r '.records[0] | "\(.state // "-") \(.app // "-")"'
+		jq -r '.records[0] | "\(.state // "-") \(.app // "-") \(.msg // "-")"'
 }
 type_in 'autoload -Uz add-zsh-hook; noisy() { false; }; add-zsh-hook precmd noisy'
 type_in "source '$REPO/dot_config/exact_zsh/rex.zsh'"
+type_in 'bat() { false; }'
 type_in 'sleep 0.2'
-check "rex.zsh skips a short command" test "$(status_of)" = "- -"
+check "rex.zsh skips a short command" test "$(status_of)" = "- - -"
 type_in 'REX_STATUS_MIN=0'
-type_in 'FOO=1 sh -c "exit 3"'
-check "rex.zsh reports an error with the program name" test "$(status_of)" = "error sh"
+type_in 'FOO=1 sh -c "exit 3" --token=s3cret'
+check "rex.zsh reports an error without the arguments" \
+	test "$(status_of)" = "error sh sh: exit 3 after 0s"
 type_in 'true'
-check "rex.zsh reports done" test "$(status_of)" = "done true"
-type_in 'less -f /dev/null'
-check "rex.zsh skips a full-screen program" test "$(status_of)" = "done true"
+check "rex.zsh reports done" test "$(status_of)" = "done true true: exit 0 after 0s"
+type_in 'bat'
+check "rex.zsh skips a full-screen program" \
+	test "$(status_of)" = "done true true: exit 0 after 0s"
 
 if ((fails)); then
 	printf '%d failed\n' "$fails"

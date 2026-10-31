@@ -33,7 +33,7 @@ rex.action{
   end,
 }
 
-local function bind(key, action, args) rex.bind(key, action, args) end
+local bind = rex.bind
 
 for _, d in ipairs({ { "h", "left" }, { "j", "down" }, { "k", "up" }, { "l", "right" } }) do
   bind("alt+shift+" .. d[1], "nav", { dir = d[2] })

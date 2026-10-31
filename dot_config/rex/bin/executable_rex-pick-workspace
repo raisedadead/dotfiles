@@ -32,11 +32,13 @@ if ((list)); then
 fi
 
 select_session() {
-	if [[ -n "$client" ]] &&
-		R -C "$client" "do" session.select "session_id=$1" >/dev/null 2>&1; then
-		return 0
+	local err=
+	if [[ -n "$client" ]]; then
+		err=$(R -C "$client" "do" session.select "session_id=$1" 2>&1 >/dev/null) &&
+			return 0
 	fi
-	echo "Remote Control is off, so Rex cannot switch for you. Press Alt+O and pick $2."
+	[[ -z "$err" ]] || echo "$err"
+	echo "Rex did not switch. Press Alt+O and pick $2."
 	sleep 2.5
 }
 

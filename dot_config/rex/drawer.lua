@@ -41,14 +41,19 @@ rex.action{
   run = function(ctx)
     local here, err = lib.where(ctx.session_id)
     if not here then error(err, 0) end
-    local b = lib.find_label(ctx.session_id, LABEL)
+    local b, ferr = lib.find_label(ctx.session_id, LABEL)
+    if ferr then error(ferr, 0) end
     if not b then return create(ctx, here) end
     if b.placement ~= "detached" then
-      rex.session.detach_block{ session_id = ctx.session_id, block_id = b.block_id }
+      local _, derr = rex.session.detach_block{
+        session_id = ctx.session_id, block_id = b.block_id,
+      }
+      if derr then error(derr, 0) end
       if here.focused == b.block_id then
         return { state = "hidden", block_id = b.block_id }
       end
-      here = lib.where(ctx.session_id)
+      here, err = lib.where(ctx.session_id)
+      if not here then error(err, 0) end
     end
     return show(ctx, here, b)
   end,
