@@ -16,4 +16,4 @@ Two coding agents run here: Claude Code and Pi.
 - Run the checks in [docs/MAINTENANCE.md](docs/MAINTENANCE.md) after a change.
 - Keep README.md and docs/ current and concise. Keep audit history in private owner documents.
 - Private directories, such as `dot_claude/`, are submodules of the private repository, one branch per directory. Do not change `dot_claude/` without an explicit request for that submodule.
-- Do not edit another agent's kernel. The operator owns releases and infrastructure changes.
+- Edit another agent's kernel only when the operator asks. The operator owns releases and infrastructure changes.

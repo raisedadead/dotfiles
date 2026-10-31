@@ -134,7 +134,7 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 ## Agent rigs
 
-Two coding agents run on this machine. Each owns its own global kernel and its own runtime. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
+Two coding agents run on this machine. Each owns its own global kernel and its own runtime. One agent edits the other's kernel only when the operator asks. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
 
 | Rig           | Source        | Target       | Kernel      | System design                  | Checks                              |
 | ------------- | ------------- | ------------ | ----------- | ------------------------------ | ----------------------------------- |
