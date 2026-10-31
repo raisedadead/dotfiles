@@ -81,6 +81,15 @@ function M.safe_write(sid, bid, text)
   return M.bcall(sid, bid, "write", { data = text })
 end
 
+local SH = os.getenv("SHELL") or "/bin/zsh"
+
+function M.then_shell(cmd, cwd, label)
+  return rex.layout.block{
+    flavor = M.SHELL, label = label,
+    options = { command = { SH, "-ic", cmd .. "; exec " .. SH .. " -i" }, cwd = cwd },
+  }
+end
+
 function M.window_of(sid, bid)
   local v = rex.session.view{ session_id = sid }
   for _, w in ipairs(v and v.windows or {}) do

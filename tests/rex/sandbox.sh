@@ -31,7 +31,7 @@ for f in "$SRC"/bin/executable_*; do
 	install -m 755 "$f" "$SB/cfg/bin/$(basename "${f#*/executable_}")"
 done
 
-rex server run --listen "$SOCK" --state-dir "$SB/state" \
+REX_SERVER="$SOCK" rex server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
 server_pid=$!
 for _ in $(seq 50); do
@@ -302,6 +302,32 @@ for _ in $(seq 20); do
 done
 check "rex-handoff declines on Esc" test "$(cat "$SB/t/h2")" = 130
 check "a declined hand-off runs nothing" test ! -e "$SB/t/handed"
+
+blocker=$(split sh -c "printf '\033]7501;state=blocked:kind=question\a'; exec sleep 300")
+sleep 0.5
+next_json=$(R "do" -s "$S" -b "$plain" --json next_waiting)
+check "next_waiting jumps to the blocked pane first" \
+	test "$(jq -r '"\(.state) \(.block_id)"' <<<"$next_json")" = "blocked $blocker"
+
+printf '#!/bin/sh\npwd > %s/t/here.cwd\n' "$SB" >"$SB/agent-here"
+chmod +x "$SB/agent-here"
+R "do" -s "$S" -b "$plain" agent_here "agent=$SB/agent-here" >/dev/null
+check "agent_here starts the agent in a new pane" until5 test -s "$SB/t/here.cwd"
+
+cat >"$SB/ask-agent" <<EOF
+#!/bin/sh
+printf '%s\n' "\$1" > $SB/t/ask.prompt
+sleep 5
+EOF
+chmod +x "$SB/ask-agent"
+R "do" -s "$S" -b "$linky" ask_pane "agent=$SB/ask-agent" >/dev/null
+check "ask_pane opens popup:ask" has_label "$S" popup:ask
+asked_file() {
+	local f
+	f=$(grep -o '/[^ ]*/pane.txt' "$SB/t/ask.prompt" 2>/dev/null) || return 1
+	grep -q 'example.com' "$f"
+}
+check "ask_pane gives the agent the pane text" until5 asked_file
 
 if ((fails)); then
 	printf '%d failed\n' "$fails"

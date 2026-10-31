@@ -1,13 +1,6 @@
 local lib = require("lib")
 
-local SH = os.getenv("SHELL") or "/bin/zsh"
-
-local function then_shell(cmd, cwd, label)
-  return rex.layout.block{
-    flavor = lib.SHELL, label = label,
-    options = { command = { SH, "-ic", cmd .. "; exec " .. SH .. " -i" }, cwd = cwd },
-  }
-end
+local then_shell = lib.then_shell
 
 local function shell(cwd)
   return rex.layout.block{ flavor = lib.SHELL, options = { cwd = cwd } }
