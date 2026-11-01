@@ -220,7 +220,7 @@ local function forward(name, title, key, bytes, tries)
         rex.client.queue("pane.send_key", { key = key })
         return { state = b and "elsewhere" or "gone" }
       end
-      local _, err = lib.bcall(ctx.session_id, b.block_id, "write", { data = bytes })
+      local _, err = lib.key_write(ctx.session_id, b.block_id, bytes)
       if err then error(err, 0) end
       local state, id = wait_pick(ctx.session_id, b.block_id, tries, key == "enter")
       if state ~= "busy" then rex.client.queue("client.mode.exit") end

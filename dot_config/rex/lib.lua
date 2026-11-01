@@ -87,6 +87,11 @@ function M.safe_write(sid, bid, text)
   return M.bcall(sid, bid, "write", { data = text })
 end
 
+-- A key action writes to the pane the operator chose; it skips the safe_write checks.
+function M.key_write(sid, bid, data)
+  return M.bcall(sid, bid, "write", { data = data })
+end
+
 local SH = os.getenv("SHELL") or "/bin/zsh"
 
 function M.then_shell(cmd, cwd, label)
