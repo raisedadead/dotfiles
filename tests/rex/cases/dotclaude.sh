@@ -15,6 +15,9 @@ far=$(R split -s "$S2" --json -- bash -c 'echo ready; read -r _; echo "far: FAIL
 sleep 0.5
 check "the monitor resolves a pane in another session" \
 	test "$(in_sb --resolve "${far: -12}")" = "$far"
+strict_resolve() { REX_GUARD_STRICT=1 REX_GUARD_LOG='' in_sb --resolve "$1" 2>/dev/null; }
+check "the monitor passes REX_SERVER to rex as -S" \
+	test "$(strict_resolve "${far: -12}")" = "$far"
 in_sb "$far" 'FAIL' >"$SB/t/far1" 2>&1 &
 far_pid=$!
 sleep 1
@@ -110,3 +113,39 @@ if command -v tmux >/dev/null; then
 		test "$(tail -1 "$SB/t/tm2")" = "pane gone"
 	tmux -L "$TL" kill-server 2>/dev/null || true
 fi
+
+SETTINGS="$REPO/dot_claude/.settings.managed.json"
+BARE=/usr/bin:/bin:/usr/sbin:/sbin
+rex_hooks() {
+	jq -r --arg e "$1" '.hooks[$e][]?.hooks[].command | select(test("rex"))' "$SETTINGS"
+}
+mkdir -p "$SB/hook-home/.config/rex/bin" "$SB/bare-home"
+install -m 755 "$SRC/bin/executable_rex-agent-record" \
+	"$SB/hook-home/.config/rex/bin/rex-agent-record"
+U9=0a1b2c3d-0000-4000-8000-000000000009
+hook_in() {
+	env -i HOME="$1" PATH="$2" "${@:4}" /bin/sh -c "$3" 2>&1 \
+		<<<"{\"session_id\":\"$U9\",\"reason\":\"prompt_input_exit\"}"
+}
+quiet_hooks() {
+	local line out home n=0
+	! env PATH="$BARE" sh -c 'command -v rex' >/dev/null || return 1
+	while IFS= read -r line; do
+		n=$((n + 1))
+		for home in "$SB/hook-home" "$SB/bare-home"; do
+			out=$(hook_in "$home" "$BARE" "$line") || return 1
+			[[ -z "$out" ]] || return 1
+		done
+	done < <(rex_hooks SessionStart && rex_hooks SessionEnd)
+	((n == 3))
+}
+check "with no rex on PATH and outside Rex, the Rex hook lines exit 0 silently" quiet_hooks
+ended=$(split sh -c 'exec sleep 300')
+record_for "$ended" "$U9"
+end_hook() {
+	hook_in "$SB/hook-home" "/opt/homebrew/bin:$BARE" "$(rex_hooks SessionEnd)" \
+		TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$ended" CLAUDE_CODE_ENTRYPOINT=cli \
+		XDG_STATE_HOME="$SB/state-home" >/dev/null
+	test ! -e "$(rec "$ended")"
+}
+check "the SessionEnd hook removes the record of a session the operator exits" end_hook
