@@ -10,6 +10,11 @@ D=com.superlogical.rex
 
 w() { defaults write "$D" "$@"; }
 
+if [[ -x "$HOME/.bin/rex" ]]; then
+	"$HOME/.bin/rex" --autostart=false terminfo setup --entry-only >/dev/null ||
+		echo "rex-defaults: rex terminfo setup --entry-only failed" >&2
+fi
+
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 defaults export "$D" "$tmp/app.plist"
@@ -46,6 +51,7 @@ w Workspace.terminalFontName -string "Berkeley Mono"
 w Workspace.terminalFontPointSize -float 14
 w Workspace.terminalFontSmoothing -bool true
 w Workspace.terminalImproveTextContrast -bool true
+w Workspace.terminalOptionKeyBehavior -string left
 w Workspace.terminalUseThemePalette -bool false
 w Workspace.usesPaneGlass -bool true
 w Workspace.usesStandardInactiveWindowPaneStyles -bool true

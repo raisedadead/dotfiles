@@ -81,6 +81,19 @@ as_bad_app() {
 }
 check "app settings stop with a message on bad app themes" as_bad_app
 
+as_term_setup() {
+	local stub="$AS/term/home/.bin/rex"
+	as_source term && as_render term && mkdir -p "$AS/term/home/.bin" &&
+		printf '#!/bin/sh\necho "$@" >> %s\n' "$AS/term/rex.args" >"$stub" &&
+		chmod +x "$stub" && as_run term &&
+		test "$(cat "$AS/term/rex.args")" = "--autostart=false terminfo setup --entry-only"
+}
+check "app settings install only the xterm-rex entry" as_term_setup
+check "app settings make left Option send Alt" \
+	test "$(as_get term Workspace.terminalOptionKeyBehavior)" = left
+as_no_rex() { as_source norex && as_render norex && as_run norex; }
+check "app settings run without the rex CLI" as_no_rex
+
 as_hex() {
 	jq -r ".[0].palette.$1"' | "#" + ([.red, .green, .blue] |
 		map(. * 255 | round | [(. / 16 | floor), . % 16] |
