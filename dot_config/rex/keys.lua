@@ -33,7 +33,7 @@ rex.action{
   name = "enter_key", title = "Send Enter", category = "Panes",
   run = function(ctx)
     if not ctx.block_id then error("no pane to send Enter to", 0) end
-    local r, err = lib.key_write(ctx.session_id, ctx.block_id, "\r")
+    local r, err = lib.unchecked_write(ctx.session_id, ctx.block_id, "\r")
     if not r then error(err, 0) end
     return r
   end,

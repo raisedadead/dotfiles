@@ -88,7 +88,7 @@ function M.safe_write(sid, bid, text)
 end
 
 -- A key action writes to the pane the operator chose; it skips the safe_write checks.
-function M.key_write(sid, bid, data)
+function M.unchecked_write(sid, bid, data)
   return M.bcall(sid, bid, "write", { data = data })
 end
 
