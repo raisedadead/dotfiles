@@ -171,10 +171,6 @@ rex.action{
       rex.exec({ "mkdir", "-p", STATE })
       os.remove(out)
     end
-    local old = lib.find_label(ctx.session_id, POPUP)
-    if old then
-      rex.call("block.close", { session_id = ctx.session_id, block_id = old.block_id })
-    end
     local b, err = lib.popup(ctx, {
       label = POPUP, bounds = { 0.2, 0.15, 0.6, 0.7 }, cwd = cwd,
       cmd = {

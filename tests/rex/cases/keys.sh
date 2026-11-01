@@ -4,7 +4,7 @@ keys_json=$(R keymap --json)
 mkdir -p "$SB/zdot" "$SB/xdg" "$SB/xdg-state" "$SB/xdg-cache"
 for f in "$REPO"/dot_config/exact_zsh/*; do
 	b=$(basename "$f")
-	ln -sf "$f" "$SB/zdot/${b/#dot_/.}"
+	cp "$f" "$SB/zdot/${b/#dot_/.}"
 done
 cp -R "$REPO/dot_config/nvim" "$SB/xdg/nvim"
 cat >"$SB/nvim-keys.lua" <<'EOF'

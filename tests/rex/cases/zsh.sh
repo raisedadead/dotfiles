@@ -106,7 +106,7 @@ pickers() {
 }
 check "rex.zsh skips the pickers and REPLs" pickers
 
-mkdir -p "$SB/zdot" "$SB/zstub"
+mkdir -p "$SB/zdot-status" "$SB/zstub"
 for stub in claude lazygit; do
 	printf '#!/bin/sh\necho %s >> %s/t/zstub.ran\n' "$stub" "$SB" >"$SB/zstub/$stub"
 	chmod +x "$SB/zstub/$stub"
@@ -119,8 +119,8 @@ done
 	echo "ZDOTDIR='$REPO/dot_config/exact_zsh'"
 	grep -F 'rex.zsh' "$REPO/dot_config/exact_zsh/dot_zshrc"
 	echo 'REX_STATUS_MIN=0'
-} >"$SB/zdot/.zshrc"
-zr=$(split env PATH="$SB/zstub:$PATH" ZDOTDIR="$SB/zdot" zsh -i)
+} >"$SB/zdot-status/.zshrc"
+zr=$(split env PATH="$SB/zstub:$PATH" ZDOTDIR="$SB/zdot-status" zsh -i)
 sleep 1
 zin() {
 	R send -s "$S" -b "$zr" "$1"$'\n' >/dev/null
