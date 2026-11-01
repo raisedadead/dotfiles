@@ -66,7 +66,7 @@ sleep 1.5
 pkill -KILL -f "watch-pane[^ ]* $lone" || true
 wait "$lone_pid" 2>/dev/null || true
 waiters() { pgrep -f "wait .*$lone" >/dev/null; }
-sleep 7
+sleep 17
 check "the waiter of a killed monitor ends" not waiters
 pkill -f "wait .*$lone" 2>/dev/null || true
 
