@@ -15,20 +15,23 @@ function M.bcall(sid, bid, method, args)
   })
 end
 
-function M.where(sid)
+function M.where(sid, window_id)
   local v, err = rex.session.view{ session_id = sid }
   if not v then return nil, err end
-  for _, w in ipairs(v.windows) do
-    if w.window_id == v.active_window_id then
-      local anchor
-      for _, l in ipairs(w.layers) do
-        if not anchor and l.kind == "tiled" and l.blocks[1] then
-          anchor = l.blocks[1].block_id
+  local wid = window_id or v.active_window_id
+  for _, w in ipairs(v.windows or {}) do
+    if w.window_id == wid then
+      local here = {
+        window_id = w.window_id, focused = w.focused_block_id,
+        zoomed = w.zoomed_block_id, labels = {}, floating = {},
+      }
+      for _, l in ipairs(w.layers or {}) do
+        for _, b in ipairs(l.blocks or {}) do
+          here.labels[b.block_id] = b.label
+          if l.kind ~= "tiled" then here.floating[b.block_id] = l end
         end
       end
-      return {
-        window_id = w.window_id, focused = w.focused_block_id, anchor = anchor,
-      }
+      return here
     end
   end
   return nil, "no active window in " .. tostring(sid)
@@ -102,22 +105,100 @@ function M.window_of(sid, bid)
   end
 end
 
+local function runs_agent(argv)
+  for _, a in ipairs(argv) do
+    local n = base(a)
+    if M.AGENTS[n] or n == base(M.AGENT) then return true end
+  end
+  return false
+end
+
+-- The popup state lives in the rex-popup argv, so it survives a config reload.
+local function popup_of(sid, bid)
+  local p = M.bcall(sid, bid, "process")
+  local c = p and p.child
+  if not (c and c.pid and c.name == "bash") then return nil end
+  local r = rex.exec({ "/bin/ps", "-ww", "-o", "args=", "-p", tostring(c.pid) })
+  if not (r and r.ok) then return nil end
+  local w = {}
+  for t in r.stdout:gmatch("%S+") do w[#w + 1] = t end
+  local i = 1
+  while w[i] and base(w[i]) ~= "rex-popup" do i = i + 1 end
+  if w[i + 4] ~= "--" then return nil end
+  local function id(s) if s ~= "-" then return s end end
+  return {
+    src = id(w[i + 1]), ret = id(w[i + 2]), zoomed = id(w[i + 3]),
+    agent = runs_agent({ unpack(w, i + 5) }),
+  }
+end
+
+function M.source(ctx, here)
+  local bid = ctx.block_id
+  if not bid then
+    here = here or M.where(ctx.session_id)
+    bid = here and here.focused
+  end
+  local p = bid and popup_of(ctx.session_id, bid)
+  return p and p.src or bid
+end
+
+local function close(sid, bid, p, inside)
+  local _, err = rex.call("block.close", { session_id = sid, block_id = bid })
+  if err then return nil, err end
+  if not inside then return true end
+  if p.ret then rex.session.focus_block{ session_id = sid, block_id = p.ret } end
+  if p.zoomed then
+    rex.session.zoom_block{ session_id = sid, block_id = p.zoomed, zoom = true }
+  end
+  return true
+end
+
+function M.close_popup(ctx, bid)
+  local sid = ctx.session_id
+  local p = popup_of(sid, bid)
+  if not p then return false end
+  local here = M.where(sid, M.window_of(sid, bid))
+  return close(sid, bid, p, (ctx.block_id or here and here.focused) == bid)
+end
+
+-- An agent popup is never closed by its key: that would end the agent's session.
+local function reuse(ctx, here, bid)
+  local sid = ctx.session_id
+  local p = (ctx.block_id or here.focused) == bid and popup_of(sid, bid)
+  if not p or p.agent then
+    rex.session.focus_block{ session_id = sid, block_id = bid }
+    return bid
+  end
+  local ok, err = close(sid, bid, p, true)
+  if not ok then return nil, err end
+  return bid
+end
+
 function M.popup(ctx, o)
   local sid = ctx.session_id
-  local here, err = M.where(sid)
+  local here, err = M.where(sid, o.window_id)
   if not here then return nil, err end
-  local src = ctx.block_id or here.focused
+  if o.label and o.label:match("^popup:") then
+    for bid, label in pairs(here.labels) do
+      if label == o.label then return reuse(ctx, here, bid) end
+    end
+  end
+  local src = M.source(ctx, here)
   local cwd = o.cwd
   if not cwd and src then
     local _, c = M.fg(sid, src)
     cwd = c
   end
+  local cmd = {
+    M.BIN .. "rex-popup", src or "-", here.focused or "-", here.zoomed or "-", "--",
+  }
+  for _, a in ipairs(o.cmd) do cmd[#cmd + 1] = a end
   local r, e = rex.session.new_layer{
-    session_id = sid, window_id = o.window_id or here.window_id, focus = true,
+    session_id = sid, window_id = here.window_id, focus = true,
     bounds = o.bounds or { 0.1, 0.1, 0.8, 0.8 },
     layout = rex.layout.block{
       flavor = M.SHELL, label = o.label,
-      options = { command = o.cmd, cwd = cwd },
+      options = { command = cmd, cwd = cwd },
     },
   }
   if not r then return nil, e end

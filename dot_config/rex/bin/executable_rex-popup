@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+if [[ $# -lt 5 || "$4" != "--" ]]; then
+	echo "usage: rex-popup SOURCE-BLOCK RETURN-BLOCK ZOOMED-BLOCK -- COMMAND..." >&2
+	echo "A block is - when there is none." >&2
+	exit 64
+fi
+ret=${2#-} zoomed=${3#-}
+shift 4
+
+trap : INT
+"$@"
+code=$?
+[[ -n "${REX_SESSION:-}" ]] || exit "$code"
+
+# Workaround: Rex does not give focus or zoom back when a layer closes.
+# https://discord.com/channels/1546797889009881158/1562789840007987210
+R() { rex --autostart=false "$@"; }
+focused=$(R api call -s "$REX_SESSION" session.view 2>/dev/null | jq -r '.active_window_id as $a
+	| .windows[] | select(.window_id == $a) | .focused_block_id' 2>/dev/null)
+if [[ -n "$ret" && "$focused" == "${REX_BLOCK:-}" ]]; then
+	R focus -s "$REX_SESSION" "$ret" >/dev/null 2>&1
+	[[ -z "$zoomed" ]] || R zoom -s "$REX_SESSION" "$zoomed" --on >/dev/null 2>&1
+fi
+exit "$code"

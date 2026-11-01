@@ -28,6 +28,5 @@ popup_action("keys", "Key Bindings", WIDE, function()
 end)
 
 popup_action("urls", "Open a Link", { 0.25, 0.2, 0.5, 0.6 }, function(ctx)
-  local src = ctx.block_id or (lib.where(ctx.session_id) or {}).focused
-  return { lib.BIN .. "rex-urls", ctx.session_id, src or "" }
+  return { lib.BIN .. "rex-urls", ctx.session_id, lib.source(ctx) or "" }
 end)

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+colors="bg+:#313244,bg:#11111B,spinner:#F5E0DC,hl:#F38BA8"
+colors+=",fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC"
+colors+=",marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8"
+colors+=",selected-bg:#45475A,border:#6C7086,label:#CDD6F4"
+
+unset FZF_DEFAULT_OPTS FZF_DEFAULT_OPTS_FILE
+exec fzf --layout=reverse --border=rounded --padding=1,2 --info=right \
+	--pointer='▶' --marker='●' --separator='─' --scrollbar='│' --color "$colors" "$@"

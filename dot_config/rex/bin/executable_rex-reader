@@ -6,10 +6,6 @@ DIM=$'\033[38;2;147;153;178m'
 ACCENT=$'\033[38;2;249;226;175m'
 SUB=$'\033[38;2;166;173;200m'
 RST=$'\033[0m'
-COLORS="bg+:#313244,bg:#11111B,spinner:#F5E0DC,hl:#F38BA8"
-COLORS+=",fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC"
-COLORS+=",marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8"
-COLORS+=",selected-bg:#45475A,border:#6C7086,label:#CDD6F4"
 
 ico_all=$'\U000F0E9B'
 ico_doc=$'\U000F0284'
@@ -17,8 +13,8 @@ ico_scratch=$'\U000F0493'
 ico_file=$'\U000F0219'
 
 header() {
-	local active=$1 out="  " first=1 i
-	local -a items=(All Docs Scratch Files) keys=("<C-a>" "<C-d>" "<C-s>" "<C-f>")
+	local active=$1 out="" first=1 i
+	local -a items=(All Docs Scratch Files) keys=(C-a C-d C-s C-f)
 	for i in "${!items[@]}"; do
 		((first)) && first=0 || out+=" ${DIM}·${RST} "
 		if [[ "${items[$i]}" == "$active" ]]; then
@@ -35,20 +31,17 @@ source_bind() {
 		"$MDR" "$1" "$2" "$3" "$(header "$3")"
 }
 
-COPIED="${ACCENT}  Contents copied${RST}"
-PATHED="${ACCENT}  Path copied${RST}"
-FOOTER="${DIM}  Preview <C-/> ◆ Copy <C-y> ◆ Path <C-p> ◆ Zed <C-v> ◆ Edit <C-e> ◆ Read <CR>${RST}"
+COPIED="${ACCENT}Contents copied${RST}"
+PATHED="${ACCENT}Path copied${RST}"
+FOOTER="${DIM}Preview C-/ · Copy C-y · Path C-p · Zed C-v · Edit C-e · Read CR${RST}"
 
-sel=$("$MDR" --source all | fzf \
-	--read0 --print0 --ansi --keep-right --info=right --cycle --layout=reverse \
-	--delimiter=$'\t' --with-nth 1 \
-	--border rounded --border-label ' Reader ' --padding=1,2 \
-	--pointer='▶' --marker='●' --separator='─' --scrollbar='│' \
-	--color "$COLORS" \
+sel=$("$MDR" --source all | "$(dirname "$0")/rex-fzf" \
+	--read0 --print0 --ansi --keep-right --cycle \
+	--delimiter=$'\t' --with-nth 1 --border-label ' Reader ' \
 	--header "$(header All)" --header-first --header-border=line \
 	--prompt "$ico_all  All ❯ " \
 	--footer "$FOOTER" --footer-border=line \
-	--preview "$MDR --preview {}" --preview-window 'right:60%' \
+	--preview "$MDR --preview {}" --preview-window 'right,60%,<200(down,50%)' \
 	--bind "ctrl-a:$(source_bind all "$ico_all" All)" \
 	--bind "ctrl-d:$(source_bind docs "$ico_doc" Docs)" \
 	--bind "ctrl-s:$(source_bind scratch "$ico_scratch" Scratch)" \

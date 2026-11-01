@@ -11,9 +11,26 @@ if [[ $# -ne 2 || -z "$2" ]]; then
 	exit 64
 fi
 
-text=$(rex --autostart=false capture -s "$1" -b "$2")
-urls=$(grep -oE "https?://[^][[:space:]<>\"'()]+" <<<"$text" | sed 's/[.,;:!?]*$//' |
-	tail -r | awk '!seen[$0]++' || true)
+# shellcheck disable=SC2016
+extract='
+s/\e\]8;[^;\e\a]*;([^\e\a]*)(?:\e\\|\a)/ $1 /g;
+s/\e\[[0-9;]*[CGHf]/ /g;
+s/\e\[[0-?]*[ -\/]*[@-~]//g;
+s/\e\][^\e\a]*(?:\e\\|\a)//g;
+s/\e.//g;
+while (m{https?://[^\]\[\s<>"\x27`]+}g) {
+	my $u = $&;
+	while (1) {
+		$u =~ s/[.,;:!?]+$//;
+		my $open = () = $u =~ /\(/g;
+		my $close = () = $u =~ /\)/g;
+		last unless $close > $open && $u =~ s/\)$//;
+	}
+	print "$u\n";
+}'
+cap() { rex --autostart=false capture -s "$1" -b "$2" --format=vt "${@:3}"; }
+text=$(cap "$1" "$2" --unwrap 2>/dev/null) || text=$(cap "$1" "$2")
+urls=$(perl -ne "$extract" <<<"$text" | tail -r | awk '!seen[$0]++' || true)
 
 if ((list)); then
 	printf '%s\n' "$urls" | sed '/^$/d'
@@ -25,6 +42,6 @@ if [[ -z "$urls" ]]; then
 	exit 0
 fi
 
-pick=$(fzf --layout=reverse --border=rounded --border-label=' Links ' \
-	--prompt='open ❯ ' <<<"$urls") || exit 0
+pick=$("$(dirname "$0")/rex-fzf" --border-label=' Links ' --prompt='open ❯ ' <<<"$urls") ||
+	exit 0
 open "$pick"

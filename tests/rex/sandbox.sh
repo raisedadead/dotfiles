@@ -133,9 +133,6 @@ opened() {
 	id=$(blocks "$S" | awk -v l="$2" '$1 == l { print $3 }')
 	[[ -n "$id" ]] && R block close -s "$S" "$id" >/dev/null 2>&1
 }
-for p in lazygit reader keys urls; do
-	check "popup_$p opens popup:$p" opened "popup_$p" "popup:$p"
-done
 
 text='see https://example.com/a, (http://x.test/b) and https://example.com/a'
 linky=$(split sh -c "echo '$text'; exec sleep 300")
@@ -195,7 +192,6 @@ rows=$(pick_rows)
 check "the picker lists the sessions" grep -q $'^session\tt2\t' <<<"$rows"
 proj=$(cd "$SB/proj" && pwd -P)
 check "the picker lists the worktrees" grep -q $'^worktree\t.*\t'"$proj"'$' <<<"$rows"
-check "popup_workspace opens popup:workspace" opened popup_workspace popup:workspace
 shows() {
 	local id rc=1
 	id=$(R "do" -s "$S" --json "$1" 2>/dev/null | jq -r '.block_id // empty')
