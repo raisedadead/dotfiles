@@ -7,25 +7,38 @@ if [[ "${1:-}" == "--zed" ]]; then
 	shift
 fi
 if [[ $# -ne 1 ]]; then
-	echo "usage: rex-open [--zed] FILE[:LINE]" >&2
+	echo "usage: rex-open [--zed] FILE[:LINE[:COL]]" >&2
 	exit 64
 fi
 
-file=$1 line=
-if [[ ! -e "$1" && "$1" =~ ^(.+):([0-9]+)$ ]]; then
-	file=${BASH_REMATCH[1]}
-	line=${BASH_REMATCH[2]}
+arg=$1
+[[ -e "$arg" || "$arg" != *: ]] || arg=${arg%:}
+file=$arg line='' col=''
+if [[ ! -e "$arg" ]]; then
+	if [[ "$arg" =~ ^(.+):([0-9]+):([0-9]+)$ && ! -e "${arg%:*}" ]]; then
+		file=${BASH_REMATCH[1]} line=${BASH_REMATCH[2]} col=${BASH_REMATCH[3]}
+	elif [[ "$arg" =~ ^(.+):([0-9]+)$ ]]; then
+		file=${BASH_REMATCH[1]} line=${BASH_REMATCH[2]}
+	fi
 fi
+[[ -z "$line" ]] || line=$((10#$line))
+[[ -z "$col" ]] || col=$((10#$col))
+[[ "$file" != [-+]* ]] || file=./$file
 
 if ((zed)); then
-	exec zed "$file${line:+:$line}"
+	exec zed "$file${line:+:$line}${col:+:$col}"
 fi
 
 IFS=' ' read -r -a cmd <<<"${EDITOR:-nvim}"
-cmd+=(${line:+"+$line"} "$file")
+if [[ -n "$col" ]]; then
+	cmd+=("+call cursor($line,$col)")
+elif [[ -n "$line" ]]; then
+	cmd+=("+$line")
+fi
+cmd+=("$file")
 
 if [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]]; then
 	exec rex --autostart=false run -s "$REX_SESSION" -c "$PWD" \
-		--label "edit:${file##*/}" -- "${cmd[@]}" >/dev/null
+		--label "edit:$(basename -- "$file")" -- "${cmd[@]}" >/dev/null
 fi
 exec "${cmd[@]}"
