@@ -6,24 +6,47 @@ if [[ "${1:-}" == "--list" ]]; then
 	list=1
 	shift
 fi
-if [[ $# -ne 2 ]]; then
-	echo "usage: rex-pick-workspace [--list] CLIENT CWD" >&2
+if (($# < 2 || $# > 4)); then
+	echo "usage: rex-pick-workspace [--list] CLIENT CWD [SESSION [OUT]]" >&2
 	exit 64
 fi
-client=$1 cwd=$2
+client=$1 cwd=$2 here=${3:-} out=${4:-}
 R() { rex --autostart=false "$@"; }
 
-root=
-if [[ -n "$cwd" ]]; then
-	root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)
+hold() {
+	printf '%s\nPress a key to close.' "$1"
+	read -rsn1 || true
+}
+finish() {
+	local rc=$?
+	trap - EXIT
+	[[ -z "$out" ]] || rm -f "$out" "$out.tmp"
+	((rc == 0)) || hold "Failed (exit $rc)."
+}
+trap finish EXIT
+
+root='' repo='' wtj='{"items":[]}'
+if [[ -n "$cwd" ]] && root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null); then
+	wtj=$(wt -C "$root" list --format json 2>/dev/null) || wtj='{"items":[]}'
+	repo=$(jq -r '[.items[] | select(.worktree.main) | .worktree.path][0] // empty' <<<"$wtj")
+	repo=$(basename "${repo:-$root}")
 fi
 
+all=$(R ls --json)
+sess=${here:-$(jq -r '.sessions[0].session_id // empty' <<<"$all")}
+D() { R "do" -s "$sess" --json "$@"; }
+
 rows() {
-	R ls --json | jq -r '.sessions[] | "session\t\(.label)\t\(.session_id)"'
-	[[ -n "$root" ]] || return 0
-	wt -C "$root" list --format json 2>/dev/null |
-		jq -r '.items[] | select(.worktree.path)
-			| "worktree\t\(.branch)\t\(.worktree.path)"'
+	local known
+	known=$(D workspace_known | jq -c '.paths // {}')
+	jq -nr --argjson w "$wtj" --argjson k "$known" --argjson s "$all" --arg here "$here" '
+		[$w.items[] | select(.worktree.path and (.worktree.prunable | not))] as $wts
+		| [$wts[] | $k[.worktree.path] // empty] as $taken
+		| ($wts[] | .worktree.path as $p | select($here == "" or ($k[$p] // "") != $here)
+			| "worktree\t\(.branch // ($p | split("/") | last))\t\($p)"),
+		($s.sessions[] | .session_id as $id
+			| select($id != $here and ($taken | index($id) | not))
+			| "session\t\(.label)\t\($id)")'
 }
 
 if ((list)); then
@@ -33,40 +56,94 @@ fi
 
 select_session() {
 	local err=
-	if [[ -n "$client" ]]; then
-		err=$(R -C "$client" "do" session.select "session_id=$1" 2>&1 >/dev/null) &&
-			return 0
+	if [[ -n "$client" ]] &&
+		err=$(R -C "$client" "do" session.select "session_id=$1" 2>&1 >/dev/null); then
+		return 0
 	fi
 	[[ -z "$err" ]] || echo "$err"
-	echo "Rex did not switch. Press Alt+O and pick $2."
-	sleep 2.5
+	hold "Rex did not switch. Press Alt+O and pick $2."
+}
+
+hand_off() {
+	local sid=$1 label=$2 round
+	if [[ -n "$out" ]]; then
+		for round in 1 2; do
+			printf '%s\n' "$sid" >"$out.tmp"
+			mv "$out.tmp" "$out"
+			for _ in {1..10}; do
+				[[ -e "$out" ]] || exit 0
+				sleep 0.1
+			done
+			((round == 1)) || break
+			rm -f "$out"
+			printf '\nPress Enter to open %s, or Esc to stay.' "$label"
+			read -rsn1 || exit 0
+			[[ -z "$REPLY" ]] || exit 0
+		done
+		rm -f "$out"
+		echo
+	fi
+	select_session "$sid" "$label"
 }
 
 open_worktree() {
-	local path=$1 branch=$2 name sid
-	name="$(basename "$root")-${branch//\//-}"
-	sid=$(R "do" --json workspace_open "path=$path" "name=$name" | jq -r .session_id)
-	select_session "$sid" "$name"
+	local res
+	res=$(D workspace_open "path=$1" "name=$repo-${2//\//-}")
+	hand_off "$(jq -r .session_id <<<"$res")" "$(jq -r .label <<<"$res")"
 }
 
-out=$(rows | fzf --delimiter=$'\t' --with-nth=1,2 --print-query \
-	--layout=reverse --border=rounded --border-label=' Workspaces ' \
-	--header='Enter: go · type a new branch name to create a worktree' \
-	--prompt='workspace ❯ ') || true
-query=$(sed -n 1p <<<"$out")
-pick=$(sed -n 2p <<<"$out")
+has_branch() {
+	git -C "$root" show-ref --verify --quiet "refs/heads/$1" ||
+		[[ -n "$(git -C "$root" for-each-ref "refs/remotes/*/$1")" ]]
+}
 
-if [[ -n "$pick" ]]; then
+create() {
+	local path
+	if has_branch "$1"; then
+		wt -C "$root" switch "$1" --no-cd >/dev/null
+	else
+		wt -C "$root" switch --create "$1" --no-cd >/dev/null
+	fi
+	path=$(wt -C "$root" list --format json | jq -r --arg b "$1" \
+		'[.items[] | select(.branch == $b) | .worktree.path][0] // empty')
+	if [[ -z "$path" ]]; then
+		echo "wt made no worktree for $1."
+		exit 1
+	fi
+	open_worktree "$path" "$1"
+}
+
+COLORS="bg+:#313244,bg:#11111B,spinner:#F5E0DC,hl:#F38BA8"
+COLORS+=",fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC"
+COLORS+=",marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8"
+COLORS+=",selected-bg:#45475A,border:#6C7086,label:#CDD6F4"
+header='Enter: go'
+[[ -z "$root" ]] || header+=' · Ctrl+O: create a worktree from the typed name'
+
+choices=$(rows)
+rc=0
+res=$({ [[ -z "$choices" ]] || printf '%s\n' "$choices"; } |
+	fzf --delimiter=$'\t' --with-nth=1,2 --nth=2 --tabstop=9 \
+		--print-query --expect=ctrl-o --layout=reverse \
+		--border=rounded --border-label=' Workspaces ' --color "$COLORS" \
+		--header="$header" --prompt='workspace ❯ ') || rc=$?
+((rc != 130)) || exit 0
+((rc <= 1)) || exit "$rc"
+query=$(sed -n 1p <<<"$res")
+key=$(sed -n 2p <<<"$res")
+pick=$(sed -n 3p <<<"$res")
+
+if [[ "$key" != ctrl-o && -n "$pick" ]]; then
 	IFS=$'\t' read -r kind label target <<<"$pick"
 	case $kind in
-	session) select_session "$target" "$label" ;;
+	session) hand_off "$target" "$label" ;;
 	worktree) open_worktree "$target" "$label" ;;
 	esac
 	exit 0
 fi
-[[ -n "$query" && -n "$root" ]] || exit 0
-wt -C "$root" switch --create "$query" --no-cd --yes >/dev/null
-path=$(wt -C "$root" list --format json |
-	jq -r --arg b "$query" '.items[] | select(.branch == $b) | .worktree.path')
-[[ -n "$path" && "$path" != null ]] || exit 1
-open_worktree "$path" "$query"
+[[ -n "$query" ]] || exit 0
+if [[ -z "$root" ]]; then
+	hold "Not in a git repository, so there is no worktree to create for $query."
+	exit 0
+fi
+create "$query"

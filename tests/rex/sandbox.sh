@@ -191,7 +191,7 @@ check "workspace_open creates once, then finds the session" same_ws
 git -C "$SB/proj" init -q
 pick_rows() { REX_SERVER="$SOCK" "$SB/cfg/bin/rex-pick-workspace" --list "" "$SB/proj"; }
 rows=$(pick_rows)
-check "the picker lists the sessions" grep -q $'^session\tws1\t' <<<"$rows"
+check "the picker lists the sessions" grep -q $'^session\tt2\t' <<<"$rows"
 proj=$(cd "$SB/proj" && pwd -P)
 check "the picker lists the worktrees" grep -q $'^worktree\t.*\t'"$proj"'$' <<<"$rows"
 check "popup_workspace opens popup:workspace" opened popup_workspace popup:workspace
