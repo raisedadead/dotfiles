@@ -110,6 +110,51 @@ check "the session recorder writes nothing in tmux in Rex" no_record "${TMUX_IN_
 check "the session recorder writes nothing for a print-mode Claude" \
 	no_record "${REX[@]}" CLAUDE_CODE_ENTRYPOINT=sdk-cli
 
+OUTSIDE=(TERM_PROGRAM=ghostty REX_SESSION=session:stale REX_BLOCK=block:stale TMUX=)
+no_rex_path=''
+IFS=: read -ra dirs <<<"$PATH"
+for d in "${dirs[@]}"; do
+	[[ -x "$d/rex" ]] || no_rex_path+="${no_rex_path:+:}$d"
+done
+mkdir -p "$SB/with-rex"
+printf '#!/bin/sh\necho "$@" >> %s/rex.hits\n' "$SB" >"$SB/with-rex/rex"
+chmod +x "$SB/with-rex/rex"
+WITH_REX="$SB/with-rex:$no_rex_path"
+check "the outside-Rex checks run with no rex on PATH" \
+	test -z "$(PATH="$no_rex_path" command -v rex)"
+
+zsh_state() {
+	# shellcheck disable=SC2016
+	local show='print -l -- ${(ok)functions} ${(ok)parameters}'
+	# shellcheck disable=SC2016
+	show+=' $precmd_functions $preexec_functions'
+	env "${OUTSIDE[@]}" PATH="$1" ZDOTDIR="$REPO/dot_config/exact_zsh" zsh -f -c "$2; $show"
+}
+zsh_same() {
+	local base
+	base=$(zsh_state "$no_rex_path" :)
+	[[ "$(zsh_state "$no_rex_path" "$gate_line")" == "$base" &&
+	"$(zsh_state "$WITH_REX" "$gate_line")" == "$(zsh_state "$WITH_REX" :)" ]]
+}
+check "outside Rex the zshrc gate changes no zsh state" zsh_same
+keys_out() {
+	env "${OUTSIDE[@]}" PATH="$1" python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>&1 |
+		grep -v '^nvim '
+}
+check "outside Rex keys prints the same sheet with or without rex" \
+	test "$(keys_out "$WITH_REX")" = "$(keys_out "$no_rex_path")"
+mdr_edit() {
+	rm -f "$SB/hit"
+	(cd "$SB" && env "${OUTSIDE[@]}" HOME="$SB/home" PATH="$1" EDITOR="$SB/editor" \
+		bash "$REPO/exact_dot_bin/executable_mdr" --edit notes.md) >/dev/null 2>&1 || true
+	cat "$SB/hit" 2>/dev/null
+}
+check "outside Rex mdr --edit runs the editor with or without rex" \
+	test "$(mdr_edit "$WITH_REX")" = "$(mdr_edit "$no_rex_path")"
+check "outside Rex mdr --edit runs the editor itself" \
+	test "$(mdr_edit "$WITH_REX" | cut -d' ' -f1)" = editor
+check "outside Rex no shared file runs rex" test ! -e "$SB/rex.hits"
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1
