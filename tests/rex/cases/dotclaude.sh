@@ -58,17 +58,29 @@ label_as "$S" "$twin" dup
 sleep 0.3
 check "an ambiguous label says so" grep -q ambiguous <<<"$(in_sb --resolve dup 2>&1)"
 
+late=$(split sh -c 'sleep 20; exit 5')
+sig=$(split sh -c 'sleep 2; kill -9 $$')
 lone=$(split sh -c 'exec sleep 300')
 sleep 0.5
+in_sb "$late" 'never-matches' >"$SB/t/late" 2>&1 &
+late_pid=$!
+in_sb "$sig" 'never-matches' >"$SB/t/sig" 2>&1 &
+sig_pid=$!
 in_sb "$lone" >/dev/null 2>&1 &
 lone_pid=$!
 sleep 1.5
-pkill -KILL -f "watch-pane[^ ]* $lone" || true
+kill -KILL "$(pgrep -o -f "watch-pane[^ ]* $lone")"
 wait "$lone_pid" 2>/dev/null || true
 waiters() { pgrep -f "wait .*$lone" >/dev/null; }
 sleep 17
 check "the waiter of a killed monitor ends" not waiters
 pkill -f "wait .*$lone" 2>/dev/null || true
+watch_until "$sig_pid" 4
+check "the monitor names the signal that killed a pane" \
+	test "$(tail -1 "$SB/t/sig")" = "pane exited -1 (signal: killed)"
+watch_until "$late_pid" 30
+check "the monitor reports an exit after a re-armed wait" \
+	test "$(tail -1 "$SB/t/late")" = "pane exited 5"
 
 if command -v tmux >/dev/null; then
 	TL=dcmon-$$
