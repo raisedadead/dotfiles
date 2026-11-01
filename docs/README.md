@@ -41,6 +41,23 @@ Do not install Pi or a Pi package with `npm install -g`. Install npm-global tool
 
 The `pi` command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`. chezmoi manages that link, because `~/.bin` is an exact directory. `pi update` updates Pi. After an update, set the Pi versions in `dot_pi/package.json` to the `pi --version` value. Run `npm install` in `~/.dotfiles/dot_pi`. Then run the [Pi checks](MAINTENANCE.md#pi).
 
+### Rex
+
+1. Install the Rex beta app, `Rex Beta.app`, in `/Applications`. Rex has no Homebrew cask. The `rex` command is the link `~/.bin/rex` into this app.
+1. Run `chezmoi apply`. The `run_onchange_after_rex-defaults` script writes the app settings.
+1. Run the [Rex checks](MAINTENANCE.md#rex).
+
+Rex does not read its config again when a file changes. After you apply a Rex config file, load it:
+
+```sh
+chezmoi apply ~/.config/rex
+rex config check && rex config reload
+```
+
+If a reload fails on a Lua syntax error, the server keeps the keys and the actions of the last load that worked. Correct the source, then apply and load it again.
+
+After a Rex restart, run **Resume Agents** from the command palette. It types `claude --resume` into each pane that ran Claude Code and now shows a shell prompt.
+
 ## Daily loop
 
 ```sh

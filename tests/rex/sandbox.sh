@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 SRC="$REPO/dot_config/rex"
 SB=$(mktemp -d /tmp/rexsb.test.XXXXXX)
 SOCK="unix://$SB/server.sock"
-fails=0
+fails=0 finished='' abort_at=''
 
 R() { rex -S "$SOCK" --autostart=false "$@"; }
 ok() { printf 'ok   %s\n' "$1"; }
@@ -15,14 +15,57 @@ bad() {
 }
 check() { if "${@:2}"; then ok "$1"; else bad "$1"; fi; }
 not() { ! "$@"; }
+finish() {
+	finished=1
+	if ((fails)); then
+		printf '%d failed\n' "$fails"
+		exit 1
+	fi
+	echo "all passed"
+}
 
 server_pid=
 cleanup() {
+	local rc=$?
+	if ((rc)) && [[ -z "$finished" ]]; then
+		bad "the run stopped at ${abort_at:-an unknown step} (exit $rc)"
+		printf '%d failed\n' "$fails"
+	fi
 	R server stop >/dev/null 2>&1 || true
 	[[ -z "$server_pid" ]] || kill "$server_pid" 2>/dev/null || true
 	rm -rf "$SB"
 }
+on_err() {
+	local i
+	for ((i = 1; i < ${#FUNCNAME[@]}; i++)); do
+		[[ ${FUNCNAME[i]} != main && ${FUNCNAME[i]} != source ]] || break
+	done
+	abort_at="${BASH_SOURCE[i]##*/}:${BASH_LINENO[i - 1]}"
+	if ((i == 1)); then abort_at+=": $BASH_COMMAND"; else abort_at+=" in ${FUNCNAME[1]}"; fi
+}
+trap on_err ERR
 trap cleanup EXIT
+
+REXCLI=$(command -v rex) || REXCLI=''
+[[ -x "$REXCLI" ]] || {
+	bad "the rex CLI is on PATH"
+	finish
+}
+while IFS= read -r v; do
+	[[ "$v" != REX_* ]] || unset "$v"
+done < <(compgen -e)
+mkdir -p "$SB/guard"
+install -m 755 "$REPO/tests/rex/rex-guard.sh" "$SB/guard/rex"
+export PATH="$SB/guard:$PATH" REX_SERVER="$SOCK" REX_GUARD_SOCK="$SOCK" \
+	REX_GUARD_REAL="$REXCLI" REX_GUARD_LOG="$SB/refused"
+guarded() {
+	[[ "$(command -v rex)" == "$SB/guard/rex" ]] &&
+		grep -qF "no Rex server is running at $SB/server.sock" <<<"$(rex ls 2>&1)"
+}
+guarded || {
+	bad "every rex call goes to the sandbox server"
+	finish
+}
 
 mkdir -p "$SB/cfg" "$SB/state" "$SB/t"
 cp "$SRC"/*.lua "$REPO/tests/rex/testkit.lua" "$SB/cfg/"
@@ -40,18 +83,27 @@ sleep 5
 EOF
 chmod +x "$SB/fake-agent"
 
-REX_SERVER="$SOCK" REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
+APP="$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions"
+REXBIN="$APP/Current/Rex Server.app/Contents/MacOS/rex"
+[[ -x "$REXBIN" ]] || REXBIN=$REXCLI
+printf 'server %s\nclient %s\n' "$("$REXBIN" version | head -1)" "$("$REXCLI" version | head -1)"
+export SANDBOX_CALLER_ONLY=1
+env -i USER="$USER" LOGNAME="$USER" HOME="$HOME" SHELL=/opt/homebrew/bin/zsh \
+	PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin TMPDIR="${TMPDIR:-/tmp/}" \
+	${SSH_AUTH_SOCK:+SSH_AUTH_SOCK="$SSH_AUTH_SOCK"} REX_SERVER="$SOCK" \
+	REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
 	REX_AGENT_DIR="$SB/state-home/rex/agents" \
-	PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin "$(command -v rex)" server run --listen "$SOCK" --state-dir "$SB/state" \
+	"$REXBIN" server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
 server_pid=$!
 for _ in $(seq 50); do
 	R server status >/dev/null 2>&1 && break
 	sleep 0.1
 done
-R server status >/dev/null || {
+R server status >/dev/null 2>&1 || {
 	tail -5 "$SB/server.log"
-	exit 1
+	bad "the sandbox server starts"
+	finish
 }
 
 blocks() {
@@ -91,11 +143,14 @@ check "config check on the source" clean_check "$SRC/init.lua"
 check "test kit loads beside the config copy" loaded t_write
 check "no key binds a Lua function" no_fn_keys
 
-R "do" -s "$S" probe_popup >/dev/null
-check "probe popup opens" has_label "$S" probe
-check "probe popup closes on exit" until5 no_label "$S" probe
+screen_has() { grep -qF "$2" <<<"$(R capture -s "$S" -b "$1" 2>/dev/null)"; }
+pop=$(R "do" -s "$S" --json t_popup 2>&1 | jq -r '.block_id // empty' 2>/dev/null || true)
+popped() { [[ -n "$pop" ]] && until5 screen_has "$pop" 'Rex test popup'; }
+check "lib.popup shows the popup's output" popped
+closed() { [[ -n "$pop" ]] && ! grep -qF "$pop" <<<"$(blocks "$S")"; }
+check "lib.popup closes the popup on exit" until5 closed
 R new --json t2 -- sh -c 'exec sleep 300' >/dev/null
-check "probe switch queues to the app" fails_with "$S" "no client is targeted" probe_switch
+check "rex.client.queue needs the app" fails_with "$S" "no client is targeted" t_switch
 
 split() { R split -s "$S" --json -- "$@" | jq -r '.block_ids[0]'; }
 plain=$(split sh -c "cat > '$SB/t/plain'")
@@ -383,8 +438,12 @@ for case_file in "$REPO"/tests/rex/cases/*.sh; do
 	source "$case_file"
 done
 
-if ((fails)); then
-	printf '%d failed\n' "$fails"
-	exit 1
-fi
-echo "all passed"
+check "the rex guard refused no call" test ! -e "$SB/refused"
+R server stop >/dev/null 2>&1 || true
+offline() {
+	local out
+	out=$("$SB/cfg/bin/rex-urls" --list "$S" "$plain" 2>&1) && return 1
+	grep -qF "no Rex server is running at $SB/server.sock" <<<"$out"
+}
+check "a bare rex call in a helper reaches only the sandbox server" offline
+finish

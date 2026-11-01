@@ -157,7 +157,7 @@ Expected: CPU and GPU or energy recorded separately
 
 ### R1
 
-`rex config check ~/.dotfiles/dot_config/rex/init.lua --json`; `tests/rex/sandbox.sh`; `tests/rex/gate.sh`; `shellcheck dot_config/rex/bin/executable_*`
+`rex config check ~/.dotfiles/dot_config/rex/init.lua --json`; `tests/rex/sandbox.sh`; `tests/rex/gate.sh`; `shellcheck dot_config/rex/bin/executable_* tests/rex/*.sh tests/rex/cases/*.sh`
 
 Expected: No diagnostics; both test scripts end with `all passed`; shellcheck exits 0
 
