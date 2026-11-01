@@ -2,12 +2,24 @@
 set -uo pipefail
 
 [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
+[[ "${REX_AGENT_RECORD:-}" != 0 ]] || exit 0
 # A print-mode claude (sdk-cli) in the pane must not replace the interactive session.
 [[ "${CLAUDE_CODE_ENTRYPOINT:-}" == cli ]] || exit 0
 [[ "${REX_BLOCK:-}" =~ ^block:([0-9a-f-]{36})$ ]] || exit 0
 uuid=${BASH_REMATCH[1]}
-dir="${XDG_STATE_HOME:-$HOME/.local/state}/rex/agents"
+dir="${REX_AGENT_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/rex/agents}"
+
+if [[ "${1:-}" == --end ]]; then
+	ended=$(jq -r 'select(.reason == "prompt_input_exit" or .reason == "logout")
+		| .session_id // empty' 2>/dev/null) || exit 0
+	[[ -n "$ended" ]] || exit 0
+	stored=$(jq -r '.session_id // empty' "$dir/$uuid.json" 2>/dev/null) || exit 0
+	[[ "$stored" == "$ended" ]] && rm -f "$dir/$uuid.json"
+	exit 0
+fi
+
 mkdir -p "$dir" 2>/dev/null || exit 0
+find "$dir" -name '*.json' -mtime +30 -delete 2>/dev/null
 tmp="$dir/.$uuid.$$"
 jq -c --arg b "$REX_BLOCK" --arg agent "${1:-claude}" \
 	'select(.session_id) | {block: $b, agent: $agent, session_id}' >"$tmp" 2>/dev/null &&

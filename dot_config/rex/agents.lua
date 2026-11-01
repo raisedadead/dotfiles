@@ -2,37 +2,61 @@ local lib = require("lib")
 
 local RANK = { blocked = 1, error = 2, done = 3 }
 
-local function waiting(skip)
-  local l, err = rex.call("session.list", {})
-  if not l then return nil, err end
-  local best
-  for _, s in ipairs(l.sessions or {}) do
-    local bl = rex.call("session.list_blocks", { session_id = s.session_id })
-    for _, b in ipairs(bl and bl.blocks or {}) do
-      if b.block_id ~= skip then
-        local ps = lib.bcall(s.session_id, b.block_id, "program_status")
-        for _, r in ipairs(ps and ps.records or {}) do
-          local rank = RANK[r.state]
-          if rank and (not best or rank < best.rank
-              or (rank == best.rank and (r.updated_at or "") < best.at)) then
-            best = {
-              rank = rank, at = r.updated_at or "", state = r.state,
-              session_id = s.session_id, block_id = b.block_id,
-            }
-          end
-        end
-      end
+local function best_record(sid, b)
+  local ps = lib.bcall(sid, b.block_id, "program_status")
+  local best, agent
+  for _, r in ipairs(ps and ps.records or {}) do
+    local rank = RANK[r.state]
+    if rank and r.app ~= "handoff" then
+      if agent == nil then agent = lib.agent_in(lib.fg(sid, b.block_id) or {}) ~= nil end
+      if not agent then rank = nil end
+    end
+    local at = r.updated_at or ""
+    if rank and (not best or rank < best.rank or (rank == best.rank and at < best.at)) then
+      best = { rank = rank, at = at, state = r.state, session_id = sid, block_id = b.block_id }
     end
   end
   return best
 end
 
+local function before(a, b)
+  if a.rank ~= b.rank then return a.rank < b.rank end
+  if a.at ~= b.at then return a.at < b.at end
+  return a.block_id < b.block_id
+end
+
+local function sessions()
+  local a, err = rex.call("session.attach_all", { event_scope = "session" })
+  if not a then return nil, err end
+  return a.sessions or {}
+end
+
+local function waiting()
+  local all, err = sessions()
+  if not all then return nil, err end
+  local list = {}
+  for _, s in ipairs(all) do
+    local bl = rex.call("session.list_blocks", { session_id = s.session_id })
+    for _, b in ipairs(bl and bl.blocks or {}) do
+      local w = b.placement ~= "detached" and best_record(s.session_id, b)
+      if w then list[#list + 1] = w end
+    end
+  end
+  table.sort(list, before)
+  return list
+end
+
 rex.action{
   name = "next_waiting", title = "Next Waiting Agent", category = "Agents",
   run = function(ctx)
-    local w, err = waiting(ctx.block_id)
-    if err then error(err, 0) end
-    if not w then return { state = "none" } end
+    local list, err = waiting()
+    if not list then error(err, 0) end
+    local i = 0
+    for k, w in ipairs(list) do
+      if w.block_id == ctx.block_id then i = k end
+    end
+    local w = #list > 0 and list[i % #list + 1]
+    if not w or w.block_id == ctx.block_id then error("no other agent is waiting", 0) end
     local _, ferr = rex.session.focus_block{ session_id = w.session_id, block_id = w.block_id }
     if ferr then error(ferr, 0) end
     if w.session_id ~= ctx.session_id then
@@ -69,8 +93,9 @@ rex.action{
 }
 
 local SHELLS = { zsh = true, bash = true, sh = true, fish = true }
-local STATE = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state"))
-  .. "/rex/agents/"
+local STATE = (os.getenv("REX_AGENT_DIR")
+  or (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/rex/agents")
+  .. "/"
 
 local H = "%x%x%x%x"
 local UUID = "^" .. H .. H .. "%-" .. H .. "%-" .. H .. "%-" .. H .. "%-" .. H .. H .. H .. "$"
@@ -98,14 +123,15 @@ end
 rex.action{
   name = "agents_resume", title = "Resume Agents", category = "Agents",
   run = function()
-    local l, err = rex.call("session.list", {})
-    if not l then error(err, 0) end
+    local all, err = sessions()
+    if not all then error(err, 0) end
     local resumed = {}
-    for _, s in ipairs(l.sessions or {}) do
+    for _, s in ipairs(all) do
       local bl = rex.call("session.list_blocks", { session_id = s.session_id })
       for _, b in ipairs(bl and bl.blocks or {}) do
         local r, path = record(b.block_id)
-        if r and at_prompt(s.session_id, b.block_id) then
+        local popup = (b.label or ""):match("^popup:")
+        if r and not popup and at_prompt(s.session_id, b.block_id) then
           local _, werr = lib.safe_write(s.session_id, b.block_id,
             r.agent .. " --resume " .. r.session_id .. "\n")
           if not werr then
@@ -115,7 +141,7 @@ rex.action{
         end
       end
     end
-    return { resumed = resumed }
+    return { resumed = resumed, count = #resumed }
   end,
 }
 

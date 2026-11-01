@@ -41,6 +41,7 @@ EOF
 chmod +x "$SB/fake-agent"
 
 REX_SERVER="$SOCK" REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
+	REX_AGENT_DIR="$SB/state-home/rex/agents" \
 	PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin "$(command -v rex)" server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
 server_pid=$!
@@ -320,7 +321,8 @@ done
 check "rex-handoff declines on Esc" test "$(cat "$SB/t/h2")" = 130
 check "a declined hand-off runs nothing" test ! -e "$SB/t/handed"
 
-blocker=$(split sh -c "printf '\033]7501;state=blocked:kind=question\a'; exec sleep 300")
+blocker=$(split bash -c \
+	"printf '\033]7501;state=blocked:kind=question\a'; exec -a claude sleep 300")
 sleep 0.5
 next_json=$(R "do" -s "$S" -b "$plain" --json next_waiting)
 check "next_waiting jumps to the blocked pane first" \

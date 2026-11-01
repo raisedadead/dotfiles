@@ -6,9 +6,16 @@ if [[ $# -ne 2 ]]; then
 	exit 64
 fi
 block=$1 agent=$2
-dir=$(mktemp -d "${TMPDIR:-/tmp}/rex-ask.XXXXXX")
+tmp=${TMPDIR:-/tmp}
+dir=$(mktemp -d "${tmp%/}/rex-ask.XXXXXX")
 trap 'rm -rf "$dir"' EXIT
 file=$dir/pane.txt
 rex --autostart=false capture -b "$block" --trim | tail -n 400 >"$file"
-prompt="The file $file holds the last 400 lines of a terminal pane."
-"$agent" "$prompt Read it, then wait for my question about it."
+n=$(grep -c . "$file" || true)
+if ((n == 0)); then
+	printf '\n  The pane is empty; nothing to ask about. Press a key to close.\n'
+	read -rsn1 _ || true
+	exit 0
+fi
+prompt="The file $file holds the last $n non-blank lines (at most 400) of a terminal pane."
+REX_AGENT_RECORD=0 "$agent" "$prompt Read it, then wait for my question about it."
