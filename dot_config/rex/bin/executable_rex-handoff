@@ -7,31 +7,104 @@ usage() {
 }
 
 status() {
-	local msg
-	msg=$(printf '%s' "$2" | tr -d '[:cntrl:]' | cut -c1-1500 | base64 | tr -d '\n')
-	printf '\e]7501;state=%s:app=handoff:msg=%s\a' "$1" "$msg"
+	local LC_ALL=en_US.UTF-8 msg
+	msg=${2//[[:cntrl:]]/}
+	msg=$(printf '%s' "${msg:0:500}" | base64 | tr -d '\n')
+	printf '\e]7501;state=%s:app=handoff:msg=%s\a' "$1" "$msg" 2>/dev/null || true
+}
+
+drain() { while IFS= read -rsn1 -t 0.3 _; do typed=1; done; }
+
+cols() {
+	local c=80
+	read -r _ c < <(stty size 2>/dev/null) || true
+	echo "$c"
+}
+
+hint() {
+	local LC_ALL=en_US.UTF-8 w
+	w=$(($(cols) - 3))
+	((w > 20)) || w=20
+	printf '\r\e[K  %s' "${1:0:w}"
+}
+
+show() {
+	local LC_ALL=en_US.UTF-8 cols w i
+	cols=$(cols)
+	w=$((cols > 26 ? cols - 6 : 20))
+	for ((i = 0; i < ${#1}; i += w)); do
+		printf '    %s\n' "${1:i:w}"
+	done
+}
+
+report() { [[ ! -e "$res" ]] || printf '%s\n' "$1" >"$res" 2>/dev/null || true; }
+
+decline() {
+	report 130
+	status "done" "Declined: $shown"
+	exit 130
+}
+
+cancel() {
+	rm -f "$res"
+	status "done" "Cancelled: $shown"
+	exit 130
 }
 
 inner() {
-	local shown key code=0
+	local key tty prog run typed=0 stray=0 code=0
 	printf -v shown '%q ' "$@"
-	printf '\n  The agent hands this command to you:\n\n    %s\n\n' "$shown"
-	printf '  Enter: run it · Esc: decline\n\n'
+	shown=${shown% }
+	printf -v prog '%q' "${1##*/}"
+	run="Enter: run $prog · Esc: decline"
+	tty=$(stty -g)
+	stty -echo -icanon
+	printf '\n  The agent hands you this command:\n\n'
+	show "$shown"
+	printf '\n  in %s\n\n' "${PWD//[[:cntrl:]]/?}"
+	hint "$run"
+	drain
 	status blocked "Run: $shown"
 	while :; do
-		IFS= read -rsn1 key || key=q
-		case $key in
-		'') break ;;
-		$'\e' | q)
-			status "done" "Declined: $shown"
-			exit 130
-			;;
-		esac
+		if ((typed)); then
+			typed=0 stray=1
+			hint "Ignored typed keys. Enter twice: run $prog · Esc: decline"
+		fi
+		kill -0 "$caller" 2>/dev/null || cancel
+		IFS= read -rsn1 -t 1 key || {
+			(($? > 128)) && continue
+			decline
+		}
+		if [[ -z "$key" ]]; then
+			((stray)) || break
+			drain
+			((typed)) && continue
+			stray=0
+			hint "Ignored typed keys. Enter again: run $prog · Esc: decline"
+			continue
+		fi
+		[[ "$key" != q ]] || decline
+		if [[ "$key" == $'\e' ]] && ! IFS= read -rsn1 -t 0.05 _; then decline; fi
+		typed=1
+		drain
 	done
+	kill -0 "$caller" 2>/dev/null || cancel
+	stty "$tty"
+	trap : INT
 	status working "$shown"
+	printf '\n\n'
 	"$@" || code=$?
-	printf '\n  exit %d · press Enter to close\n' "$code"
-	IFS= read -rs _ || true
+	if kill -0 "$caller" 2>/dev/null; then report "$code"; else rm -f "$res"; fi
+	trap 'exit "$code"' INT
+	stty -echo -icanon
+	if ((code)); then
+		status error "exit $code: $shown"
+	else
+		status "done" "exit 0: $shown"
+	fi
+	printf '\n  exit %d · press any key to close' "$code"
+	drain
+	IFS= read -rsn1 _ || true
 	exit "$code"
 }
 
@@ -39,9 +112,9 @@ inner() {
 
 if [[ "${1:-}" == "--inner" ]]; then
 	[[ -t 0 ]] || exit 130
-	shift
-	[[ "${1:-}" == "--" ]] && shift
-	(($#)) || usage
+	if (($# < 5)) || [[ "$4" != "--" ]]; then usage; fi
+	res=$2 caller=$3
+	shift 4
 	inner "$@"
 fi
 
@@ -49,11 +122,55 @@ fi
 shift
 (($#)) || usage
 
+WAITER=$(
+	cat <<'EOF'
+local a = rex.args
+local function done()
+  local f = io.open(a.result)
+  local s = f and f:read("*a") or ""
+  if f then f:close() end
+  if s ~= "" then rex.stop(0) end
+end
+local function arrive(w)
+  if not a.focused and w == a.window then
+    a.focused = true
+    rex.session.focus_block{ block_id = a.float }
+  end
+end
+rex.on("block_closed", function(_, ev)
+  if ev.block_id == a.float then rex.stop(0) end
+end)
+rex.on("active_window_changed", function(_, ev) arrive(ev.window_id) end)
+local v = rex.session.view{}
+arrive(v and v.active_window_id)
+local open = false
+for _, b in ipairs((rex.session.list_blocks{} or {}).blocks or {}) do
+  open = open or b.block_id == a.float
+end
+if not open then rex.stop(0) end
+rex.every(0.2, done)
+done()
+EOF
+)
+
 R() { rex --autostart=false "$@"; }
-args=$(jq -cn '{argv: $ARGS.positional}' --args -- "$@")
-float=$(R "do" --json -s "$REX_SESSION" ${REX_BLOCK:+-b "$REX_BLOCK"} handoff_float \
-	--args "$args" | jq -r .block_id)
-code=0
-R wait "$float" >/dev/null 2>&1 || code=$?
+res=$(mktemp "${TMPDIR:-/tmp}/rex-handoff.XXXXXX")
+trap 'rm -f "$res"' EXIT
+args=$(jq -cn --arg cwd "$PWD" --arg result "$res" --argjson caller $$ \
+	'{argv: $ARGS.positional, cwd: $cwd, result: $result, caller: $caller}' --args -- "$@")
+open() { R "do" --json -s "$REX_SESSION" "$@" handoff_float --args "$args" 2>/dev/null; }
+opened=$(open ${REX_BLOCK:+-b "$REX_BLOCK"}) || opened=$(open) || exit 69
+float=$(jq -r .block_id <<<"$opened")
+watch=$(jq -c --arg r "$res" \
+	'{float: .block_id, window: .window_id, focused: .focused, result: $r}' <<<"$opened")
+
+wrc=0
+R "do" -s "$REX_SESSION" -e "$WAITER" --args "$watch" >/dev/null 2>&1 || wrc=$?
+code=$(cat "$res")
+if [[ ! "$code" =~ ^[0-9]+$ ]]; then
+	R block close -s "$REX_SESSION" "$float" >/dev/null 2>&1 || true
+	((wrc == 0 || wrc == 130)) || exit 69
+	code=130
+fi
 echo "$code"
 exit "$code"

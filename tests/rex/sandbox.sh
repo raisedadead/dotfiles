@@ -336,7 +336,7 @@ answer() {
 	local f
 	until5 has_float || return 0
 	f=$(float_id)
-	sleep 0.5
+	until5 blocked || return 0
 	R send -s "$S" -b "$f" "$1" >/dev/null
 	sleep 0.5
 	R send -s "$S" -b "$f" $'\r' >/dev/null 2>&1 || true
