@@ -16,6 +16,7 @@ code=$?
 
 # Workaround: Rex does not give focus or zoom back when a layer closes.
 # https://discord.com/channels/1546797889009881158/1562789840007987210
+# https://discord.com/channels/1546797889009881158/1559282984090206269
 R() { rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false "$@"; }
 focused=$(R api call -s "$REX_SESSION" session.view 2>/dev/null | jq -r '.active_window_id as $a
 	| .windows[] | select(.window_id == $a) | .focused_block_id' 2>/dev/null)

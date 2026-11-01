@@ -176,8 +176,16 @@ check "alt+t in a session with no windows says so" \
 R focus -s "$S" "$here" >/dev/null
 lg=$(pop popup_lazygit "$here")
 screen_has "$lg" 'Status' || true
-R config reload >/dev/null 2>&1
+bindings() { R keymap | grep -v '^config: '; }
+keys_before=$(bindings) actions_before=$(R actions)
+log_at=$(wc -l <"$SB/server.log")
+reloads() { R config reload >/dev/null; }
+check "the config reloads" reloads
 until5 loaded popup_urls || true
+check "a reload keeps every key and action" \
+	test "$(bindings)$(R actions)" = "$keys_before$actions_before"
+check "a reload logs no error" \
+	not grep -q ' ERROR ' <<<"$(tail -n +"$((log_at + 1))" "$SB/server.log")"
 u=$(pop popup_urls "$lg")
 check "after a reload popup_urls inside a popup lists the pane under it" \
 	screen_has "$u" 'example\.com/proj'
