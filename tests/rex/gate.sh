@@ -29,6 +29,13 @@ check "rex.zsh parses" zsh -n "$REPO/dot_config/exact_zsh/rex.zsh"
 check "rex.zsh loads in Rex" rex_zsh_loads "${REX[@]}"
 check "rex.zsh stays out of Ghostty" not rex_zsh_loads "${GHOSTTY[@]}"
 check "rex.zsh stays out of tmux in Rex" not rex_zsh_loads "${TMUX_IN_REX[@]}"
+rex_zsh_hooks() {
+	env "$@" zsh -f -c \
+		"source '$REPO/dot_config/exact_zsh/rex.zsh'; (( \$+functions[_rex_precmd] ))"
+}
+check "rex.zsh sourced in Ghostty adds no hook" not rex_zsh_hooks "${GHOSTTY[@]}"
+check "rex.zsh sourced in tmux in Rex adds no hook" not rex_zsh_hooks "${TMUX_IN_REX[@]}"
+check "rex.zsh sourced in Rex adds its hook" rex_zsh_hooks "${REX[@]}"
 
 mkdir -p "$SB/path" "$SB/home/.config/rex/bin"
 cat >"$SB/path/rex" <<'EOF'
