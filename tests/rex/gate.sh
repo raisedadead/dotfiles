@@ -91,6 +91,13 @@ unpinned() {
 		"$REPO"/dot_config/rex/*.lua | grep -vF '${REX_SERVER:+-S "$REX_SERVER"}'
 }
 check "each helper gives REX_SERVER to rex as -S" not unpinned
+bare_fzf() {
+	grep -nE '(^|[[:space:]|(;&])fzf[[:space:]]' "$REPO"/dot_config/rex/bin/executable_* |
+		grep -v executable_rex-fzf
+}
+check "each Rex picker runs fzf through rex-fzf" not bare_fzf
+check "rex-open is on PATH as ~/.bin/rex-open" \
+	test "$(cat "$REPO/exact_dot_bin/symlink_rex-open")" = ../.config/rex/bin/rex-open
 
 recorder="$REPO/dot_config/rex/bin/executable_rex-agent-record"
 record_in() {

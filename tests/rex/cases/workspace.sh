@@ -217,7 +217,7 @@ type_pop t2
 type_pop $'\r'
 see 'Press Enter to open' || true
 type_pop $'\r'
-check "an Enter that misses the key mode falls back to the hint" see 'Press Alt+O'
+check "an Enter that misses the key mode falls back to the hint" see 'Press Ctrl+Space O and'
 close_pop
 
 pop=$(R "do" -s "$W" -b "$stray" --json popup_workspace 2>/dev/null | jq -r '.block_id // empty' ||
@@ -225,7 +225,7 @@ pop=$(R "do" -s "$W" -b "$stray" --json popup_workspace 2>/dev/null | jq -r '.bl
 see 'workspace ❯' || true
 type_pop t2
 type_pop $'\r'
-check "without the key mode a failed switch says what to do" see 'Press Alt+O'
+check "without the key mode a failed switch says what to do" see 'Press Ctrl+Space O and'
 sleep 3
 check "without the key mode the message stays until a key" not pop_gone
 close_pop

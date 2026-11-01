@@ -61,7 +61,15 @@ select_session() {
 		return 0
 	fi
 	[[ -z "$err" ]] || echo "$err"
-	hold "Rex did not switch. Press Alt+O and pick $2."
+	local keys
+	keys=$(R keymap --json 2>/dev/null | jq -r 'def cap: (.[0:1] | ascii_upcase) + .[1:];
+		[.bindings[] | select(.action == "session.switch" and .mode == null)][0].keys // []
+		| map(split("+") | map(cap) | join("+")) | join(" ")' 2>/dev/null) || keys=
+	if [[ -n "$keys" ]]; then
+		hold "Rex did not switch. Press $keys and pick $2."
+	else
+		hold "Rex did not switch. Open the session picker and pick $2."
+	fi
 }
 
 hand_off() {
@@ -113,19 +121,14 @@ create() {
 	open_worktree "$path" "$1"
 }
 
-COLORS="bg+:#313244,bg:#11111B,spinner:#F5E0DC,hl:#F38BA8"
-COLORS+=",fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC"
-COLORS+=",marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8"
-COLORS+=",selected-bg:#45475A,border:#6C7086,label:#CDD6F4"
 header='Enter: go'
 [[ -z "$root" ]] || header+=' · Ctrl+O: create a worktree from the typed name'
 
 choices=$(rows)
 rc=0
 res=$({ [[ -z "$choices" ]] || printf '%s\n' "$choices"; } |
-	fzf --delimiter=$'\t' --with-nth=1,2 --nth=2 --tabstop=9 \
-		--print-query --expect=ctrl-o --layout=reverse \
-		--border=rounded --border-label=' Workspaces ' --color "$COLORS" \
+	"$(dirname "$0")/rex-fzf" --delimiter=$'\t' --with-nth=1,2 --nth=2 --tabstop=9 \
+		--print-query --expect=ctrl-o --border-label=' Workspaces ' \
 		--header="$header" --prompt='workspace ❯ ') || rc=$?
 ((rc != 130)) || exit 0
 ((rc <= 1)) || exit "$rc"
