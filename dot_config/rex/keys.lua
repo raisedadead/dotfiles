@@ -3,7 +3,9 @@ local lib = require("lib")
 local CONFIRM = [[
 printf '\n  Close %s?\n\n  Enter or y: close · any other key: keep\n' "$3"
 IFS= read -rsn1 key || exit 0
-case $key in '' | y | Y) exec rex --autostart=false block close -s "$1" "$2" ;; esac
+case $key in
+'' | y | Y) exec rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false block close -s "$1" "$2" ;;
+esac
 ]]
 
 rex.action{

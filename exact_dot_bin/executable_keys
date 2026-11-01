@@ -240,8 +240,10 @@ def in_rex() -> bool:
 
 
 def rex_json(*argv: str) -> dict:
+    server = os.environ.get("REX_SERVER")
+    pin = ("-S", server) if server else ()
     try:
-        data = json.loads(run("rex", "--autostart=false", *argv) or "{}")
+        data = json.loads(run("rex", *pin, "--autostart=false", *argv) or "{}")
     except json.JSONDecodeError:
         return {}
     return data if isinstance(data, dict) else {}

@@ -190,7 +190,7 @@ esac
 EOF
 chmod +x "$SB/stub/rex"
 sheet() {
-	env REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= PATH="$SB/stub:$PATH" \
+	strict TERM_PROGRAM=rex REX_SESSION="$S" TMUX= PATH="$SB/stub:$PATH" \
 		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null
 }
 rows=$(sheet)

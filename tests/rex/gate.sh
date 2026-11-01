@@ -85,6 +85,13 @@ check "rex-handoff --inner runs nothing without a terminal" quiet_inner "${REX[@
 check "rex-handoff gives no usage error outside Rex" \
 	test -z "$(env "${GHOSTTY[@]}" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" 2>&1)"
 
+unpinned() {
+	# shellcheck disable=SC2016
+	grep -n -e '--autostart=false' "$REPO"/dot_config/rex/bin/executable_* \
+		"$REPO"/dot_config/rex/*.lua | grep -vF '${REX_SERVER:+-S "$REX_SERVER"}'
+}
+check "each helper gives REX_SERVER to rex as -S" not unpinned
+
 recorder="$REPO/dot_config/rex/bin/executable_rex-agent-record"
 record_in() {
 	env CLAUDE_CODE_ENTRYPOINT=cli "$@" REX_BLOCK=block:01a19320-f71b-74f5-9125-c689b71392da \

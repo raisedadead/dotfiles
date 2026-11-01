@@ -11,7 +11,7 @@ if (($# < 2 || $# > 4)); then
 	exit 64
 fi
 client=$1 cwd=$2 here=${3:-} out=${4:-}
-R() { rex --autostart=false "$@"; }
+R() { rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false "$@"; }
 
 hold() {
 	printf '%s\nPress a key to close.' "$1"

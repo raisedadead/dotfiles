@@ -10,7 +10,8 @@ tmp=${TMPDIR:-/tmp}
 dir=$(mktemp -d "${tmp%/}/rex-ask.XXXXXX")
 trap 'rm -rf "$dir"' EXIT
 file=$dir/pane.txt
-rex --autostart=false capture -b "$block" --trim | tail -n 400 >"$file"
+rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false capture -b "$block" --trim |
+	tail -n 400 >"$file"
 n=$(grep -c . "$file" || true)
 if ((n == 0)); then
 	printf '\n  The pane is empty; nothing to ask about. Press a key to close.\n'

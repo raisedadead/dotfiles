@@ -3,7 +3,7 @@ mkdir -p "$SB/t/hcwd"
 h_run() {
 	local out=$1
 	shift
-	(cd "$SB/t/hcwd" && exec env REX_SERVER="$SOCK" TERM_PROGRAM=rex \
+	(cd "$SB/t/hcwd" && exec env REX_GUARD_STRICT=1 REX_SERVER="$SOCK" TERM_PROGRAM=rex \
 		REX_SESSION="${H_SESSION:-$S}" REX_BLOCK="${H_BLOCK:-$plain}" TMUX= \
 		TMPDIR="${H_TMP:-${TMPDIR:-/tmp}}" \
 		"${H_BIN:-$SB/cfg/bin/rex-handoff}" -- "$@") >"$SB/t/out.$out" 2>&1 &

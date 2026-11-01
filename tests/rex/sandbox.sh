@@ -58,6 +58,7 @@ mkdir -p "$SB/guard"
 install -m 755 "$REPO/tests/rex/rex-guard.sh" "$SB/guard/rex"
 export PATH="$SB/guard:$PATH" REX_SERVER="$SOCK" REX_GUARD_SOCK="$SOCK" \
 	REX_GUARD_REAL="$REXCLI" REX_GUARD_LOG="$SB/refused"
+strict() { env REX_GUARD_STRICT=1 REX_SERVER="$SOCK" "$@"; }
 guarded() {
 	[[ "$(command -v rex)" == "$SB/guard/rex" ]] &&
 		grep -qF "no Rex server is running at $SB/server.sock" <<<"$(rex ls 2>&1)"
@@ -192,7 +193,7 @@ opened() {
 text='see https://example.com/a, (http://x.test/b) and https://example.com/a'
 linky=$(split sh -c "echo '$text'; exec sleep 300")
 sleep 0.5
-links() { REX_SERVER="$SOCK" "$SB/cfg/bin/rex-urls" --list "$S" "$linky" | sort | tr '\n' ' '; }
+links() { strict "$SB/cfg/bin/rex-urls" --list "$S" "$linky" | sort | tr '\n' ' '; }
 check "rex-urls lists each link once" test "$(links)" = "http://x.test/b https://example.com/a "
 
 drawer() { R "do" -s "$S" --json drawer_scratch | jq -r .state; }
@@ -206,7 +207,7 @@ steps="$d1 $d2 $p2 $d3 $(placement)"
 check "drawer opens, hides, shows" test "$steps" = "created hidden detached shown placed"
 
 rex_rows() {
-	env REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= \
+	strict TERM_PROGRAM=rex REX_SESSION="$S" TMUX= \
 		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null | grep -c '^rex '
 }
 check "keys lists the Rex bindings inside Rex" test "$(rex_rows)" -gt 40
@@ -214,7 +215,7 @@ check "keys lists the Rex bindings inside Rex" test "$(rex_rows)" -gt 40
 printf '#!/bin/sh\necho "$@" > %s/t/editor.args\nsleep 5\n' "$SB" >"$SB/editor"
 chmod +x "$SB/editor"
 open_in() {
-	env REX_SERVER="$SOCK" REX_SESSION="$S" TMUX= TERM_PROGRAM="$1" EDITOR="$SB/editor" \
+	strict REX_SESSION="$S" TMUX= TERM_PROGRAM="$1" EDITOR="$SB/editor" \
 		"$SB/cfg/bin/rex-open" "$SB/t/notes.md:12"
 }
 open_in rex
@@ -242,7 +243,7 @@ same_ws() {
 }
 check "workspace_open creates once, then finds the session" same_ws
 git -C "$SB/proj" init -q
-pick_rows() { REX_SERVER="$SOCK" "$SB/cfg/bin/rex-pick-workspace" --list "" "$SB/proj"; }
+pick_rows() { strict "$SB/cfg/bin/rex-pick-workspace" --list "" "$SB/proj"; }
 rows=$(pick_rows)
 check "the picker lists the sessions" grep -q $'^session\tt2\t' <<<"$rows"
 proj=$(cd "$SB/proj" && pwd -P)
@@ -327,7 +328,7 @@ window_of() {
 		'.windows[] | select([.layers[].blocks[].block_id] | index($b)) | .window_id'
 }
 handoff() {
-	env REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$plain" TMUX= \
+	strict TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$plain" TMUX= \
 		"$SB/cfg/bin/rex-handoff" -- sh -c "echo ran > '$SB/t/handed'; exit 4"
 }
 float_id() { blocks "$S" | awk '$1 == "handoff" { print $3 }'; }
@@ -442,8 +443,8 @@ check "the rex guard refused no call" test ! -e "$SB/refused"
 R server stop >/dev/null 2>&1 || true
 offline() {
 	local out
-	out=$("$SB/cfg/bin/rex-urls" --list "$S" "$plain" 2>&1) && return 1
+	out=$(strict "$SB/cfg/bin/rex-urls" --list "$S" "$plain" 2>&1) && return 1
 	grep -qF "no Rex server is running at $SB/server.sock" <<<"$out"
 }
-check "a bare rex call in a helper reaches only the sandbox server" offline
+check "a helper fails on the stopped sandbox server" offline
 finish

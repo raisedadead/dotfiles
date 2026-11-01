@@ -25,9 +25,9 @@ refused() {
 }
 check "the rex guard refuses another server" refused
 
-strict() {
+strict_refuses() {
 	GUARD_SAYS='has no -S'
 	refuses env REX_GUARD_STRICT=1 rex ls &&
 		REX_GUARD_STRICT=1 rex -S "$SOCK" ls >/dev/null
 }
-check "the strict rex guard refuses a call with no -S" strict
+check "the strict rex guard refuses a call with no -S" strict_refuses

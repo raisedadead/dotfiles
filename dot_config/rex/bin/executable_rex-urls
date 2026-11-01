@@ -28,7 +28,10 @@ while (m{https?://[^\]\[\s<>"\x27`]+}g) {
 	}
 	print "$u\n";
 }'
-cap() { rex --autostart=false capture -s "$1" -b "$2" --format=vt "${@:3}"; }
+cap() {
+	rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false \
+		capture -s "$1" -b "$2" --format=vt "${@:3}"
+}
 text=$(cap "$1" "$2" --unwrap 2>/dev/null) || text=$(cap "$1" "$2")
 urls=$(perl -ne "$extract" <<<"$text" | tail -r | awk '!seen[$0]++' || true)
 

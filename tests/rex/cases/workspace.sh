@@ -54,7 +54,7 @@ long_sid=$(sid "$(wso "$WS/plain" "$long")")
 check "workspace_open clamps a long name to the label limit" \
 	test -n "$long_sid" -a "$(label_of "$long_sid" | wc -c)" -le 129
 
-pick() { REX_SERVER="$SOCK" "$SB/cfg/bin/rex-pick-workspace" "$@" 2>&1 || true; }
+pick() { strict "$SB/cfg/bin/rex-pick-workspace" "$@" 2>&1 || true; }
 rows=$(pick --list "" "$WS/a/proj.fix-x" "$S")
 check "the picker labels a detached worktree by its directory" \
 	grep -q $'^worktree\tproj-detached\t' <<<"$rows"

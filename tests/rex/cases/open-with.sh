@@ -6,7 +6,7 @@ seq -f 'colon %g' 9 >"$OW/x:3"
 printf 'dash file\n' >"$OW/-x.md"
 ow_nvim="$(command -v nvim) --clean -n"
 ow_open() {
-	(cd "$OW" && env REX_SERVER="$SOCK" REX_SESSION="$S" TMUX= TERM_PROGRAM=rex \
+	(cd "$OW" && strict REX_SESSION="$S" TMUX= TERM_PROGRAM=rex \
 		EDITOR="$ow_nvim" "$SB/cfg/bin/rex-open" "$1")
 }
 ow_id() { blocks "$S" | awk -v l="$1" '$1 == l { print $3 }' | tail -1; }

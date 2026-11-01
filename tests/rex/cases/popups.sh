@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2154
-urls_of() { REX_SERVER="$SOCK" "$SB/cfg/bin/rex-urls" --list "$S" "$1" | tr '\n' ' '; }
+urls_of() { strict "$SB/cfg/bin/rex-urls" --list "$S" "$1" | tr '\n' ' '; }
 
 long="https://example.com/oauth/authorize?client_id=$(printf 'a%.0s' $(seq 90))&state=xyz"
 wrapped=$(split sh -c "echo 'long $long'; exec sleep 300")
