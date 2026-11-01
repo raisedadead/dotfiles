@@ -33,7 +33,7 @@ window-padding-y = 8
 window-padding-color = extend
 
 # Appearance & Transparency
-background-opacity = 0.75
+background-opacity = 0.8
 background-blur = macos-glass-regular
 # Official catppuccin/ghostty theme; the bundled "Catppuccin Mocha" differs.
 theme = catppuccin-mocha.conf
