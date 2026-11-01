@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{ range glob (joinPath .chezmoi.sourceDir "dot_config/rex/*.lua") -}}
+: '{{ base . }} {{ include . | sha256sum }}'
+{{ end -}}
+rex="$HOME/.bin/rex"
+[[ -x "$rex" ]] || exit 0
+init="{{ .chezmoi.sourceDir }}/dot_config/rex/init.lua"
+out=$("$rex" --autostart=false config check "$init" 2>&1) || {
+	printf '%s\n' "$out" >&2
+	echo "rex-config-check: $init has errors; fix them, then apply again" >&2
+	exit 1
+}
