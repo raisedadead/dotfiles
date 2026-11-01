@@ -293,8 +293,8 @@ check "rex.zsh skips a full-screen program" test "$(status_of)" = "- - -"
 
 WATCH="$REPO/dot_claude/skills/cmd-monitor-pane/scripts/executable_watch-pane.sh"
 in_sb() {
-	env REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= TMPDIR="$SB/t" \
-		bash "$WATCH" "$@"
+	env REX_GUARD_STRICT=1 REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= \
+		TMPDIR="$SB/t" bash "$WATCH" "$@"
 }
 mon=$(split bash -c 'echo ready; read -r _; echo "build: FAIL 2 tests"; read -r _; exit 3')
 sleep 0.5

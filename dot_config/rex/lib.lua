@@ -158,7 +158,7 @@ end
 function M.close_popup(ctx, bid)
   local sid = ctx.session_id
   local p = popup_of(sid, bid)
-  if not p then return false end
+  if not p or p.agent then return false end
   local here = M.where(sid, M.window_of(sid, bid))
   return close(sid, bid, p, (ctx.block_id or here and here.focused) == bid)
 end

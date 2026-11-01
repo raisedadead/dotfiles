@@ -74,6 +74,11 @@ check "the closed popup gives focus back to its pane" test "$(view_state)" = "$h
 ask=$(pop ask_pane "$here")
 pop ask_pane "$ask" >/dev/null
 check "ask_pane inside its popup keeps the one agent" test "$(label_count popup:ask)" = 1
+R "do" -s "$S" -b "$ask" close_pane "block=$ask" >/dev/null 2>&1 || true
+check "close_pane on an agent popup asks first" until5 has_label "$S" popup:close
+check "close_pane on an agent popup keeps the agent" has_label "$S" popup:ask
+asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
+[[ -z "$asked" ]] || closed "$asked" popup:close
 closed "$ask" popup:ask
 
 calm=$(split sh -c 'exec sleep 300')
