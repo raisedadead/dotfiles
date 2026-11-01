@@ -16,7 +16,12 @@ local function popup_action(name, title, bounds, argv)
 end
 
 popup_action("lazygit", "Lazygit", { 0.15, 0.1, 0.7, 0.8 }, function()
-  return { "lazygit" }
+  return {
+    "/bin/sh", "-c",
+    '[ -f "$1" ] || exec lazygit; c=$(lazygit -cd)/config.yml; '
+      .. '[ -f "$c" ] && set -- "$c,$1"; exec lazygit -ucf "$1"',
+    "lazygit", lib.DIR .. "/lazygit.yml",
+  }
 end)
 
 popup_action("reader", "Reader", WIDE, function()

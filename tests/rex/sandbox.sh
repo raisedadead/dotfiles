@@ -69,7 +69,7 @@ guarded || {
 }
 
 mkdir -p "$SB/cfg" "$SB/state" "$SB/t"
-cp "$SRC"/*.lua "$REPO/tests/rex/testkit.lua" "$SB/cfg/"
+cp "$SRC"/*.lua "$SRC"/*.yml "$REPO/tests/rex/testkit.lua" "$SB/cfg/"
 printf '\nrequire("testkit")\n' >>"$SB/cfg/init.lua"
 mkdir -p "$SB/cfg/bin"
 for f in "$SRC"/bin/executable_*; do

@@ -48,5 +48,4 @@ git:
     - colorArg: always
       command: delta --paging=never
 disableStartupPopups: true
-notARepository: skip
 quitOnTopLevelReturn: true
