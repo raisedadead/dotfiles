@@ -289,8 +289,7 @@ check "rex.zsh reports an error without the arguments" \
 type_in 'true'
 check "rex.zsh reports done" test "$(status_of)" = "done true true: exit 0 after 0s"
 type_in 'bat'
-check "rex.zsh skips a full-screen program" \
-	test "$(status_of)" = "done true true: exit 0 after 0s"
+check "rex.zsh skips a full-screen program" test "$(status_of)" = "- - -"
 
 WATCH="$REPO/dot_claude/skills/cmd-monitor-pane/scripts/executable_watch-pane.sh"
 in_sb() {

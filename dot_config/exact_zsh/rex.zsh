@@ -31,8 +31,13 @@ typeset -ga _rex_argopts=(
   'sudo -u' 'sudo -g' 'sudo -C' 'sudo -D' 'sudo -p' 'sudo -U' 'git -c' 'git -C'
 )
 typeset -g _rex_cmd= _rex_t0=
+typeset -gi _rex_sent=0
 
 _rex_preexec() {
+  if (( _rex_sent )); then
+    printf '\e]7501;state=clear\e\\'
+    _rex_sent=0
+  fi
   _rex_cmd=$3
   _rex_t0=$EPOCHREALTIME
 }
@@ -183,6 +188,7 @@ _rex_precmd() {
   [[ -n $id ]] && report+=":app=$id"
   printf '\e]7501;%s:msg=%s\e\\' "$report" \
     "$(print -rn -- "$name: exit $code after $dur" | base64 | tr -d '\n')"
+  _rex_sent=1
 }
 
 add-zsh-hook preexec _rex_preexec

@@ -143,6 +143,9 @@ if stubbed; then
 	base='error sh sh: exit 4 after 0s'
 	check "rex.zsh reports in a pane with the real aliases" test "$(zstatus)" = "$base"
 	zin c
+	base='- - -'
+	check "rex.zsh clears its record when the next command starts" \
+		test "$(zstatus)" = "$base"
 	zin g
 	ran() { [[ "$(tr '\n' ' ' <"$SB/t/zstub.ran" 2>/dev/null)" == "claude lazygit " ]]; }
 	check "the c and g aliases ran the stubs" until5 ran
@@ -153,7 +156,8 @@ if stubbed; then
 	check "rex.zsh skips a command stopped with Ctrl+Z" test "$(zstatus)" = "$base"
 	zin "jobs > '$SB/t/zjobs'"
 	check "Ctrl+Z stopped the job" until5 file_has "$SB/t/zjobs" 'suspended.*sleep 3'
-	base='done jobs jobs: exit 0 after 0s'
+	check "rex.zsh reports the command after a cleared record" \
+		test "$(zstatus)" = 'done jobs jobs: exit 0 after 0s'
 	zin fg
 	check "fg ran the stopped job to its end" until5 test -e "$SB/t/zfg"
 	sleep 0.5
