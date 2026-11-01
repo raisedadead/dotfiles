@@ -79,7 +79,7 @@ untyped() { ! grep -q typed "$1" 2>/dev/null; }
 
 renders() {
 	local tmpl="$REPO/run_onchange_after_rex-defaults.sh.tmpl" out="$SB/defaults.sh"
-	chezmoi execute-template <"$tmpl" >"$out" &&
+	chezmoi execute-template --source "$REPO" <"$tmpl" >"$out" &&
 		bash -n "$out" && grep -q "Workspace.customThemes" "$out"
 }
 check "app settings script renders and parses" renders

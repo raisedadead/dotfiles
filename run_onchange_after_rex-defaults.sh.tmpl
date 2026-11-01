@@ -3,16 +3,33 @@ set -euo pipefail
 
 [[ "$(uname)" == "Darwin" ]] || exit 0
 
-: 'themes {{ include "dot_config/rex/themes/custom-themes.json" | sha256sum }}'
+{{ $themes := include "dot_config/rex/themes/custom-themes.json" -}}
+: 'themes {{ $themes | sha256sum }}'
 THEMES="$HOME/.config/rex/themes/custom-themes.json"
 D=com.superlogical.rex
 
 w() { defaults write "$D" "$@"; }
 
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+defaults export "$D" "$tmp/app.plist"
+/usr/libexec/PlistBuddy -c 'Print :Workspace.customThemes' "$tmp/app.plist" \
+	>"$tmp/app.json" 2>/dev/null || echo '[]' >"$tmp/app.json"
+hex=$(jq -cj --slurpfile app "$tmp/app.json" \
+	'map(.id) as $ids | . + [$app[0][] | select(.id | IN($ids[]) | not)]' "$THEMES" |
+	xxd -p | tr -d '\n') || {
+	echo "rex-defaults: cannot merge $THEMES with $D Workspace.customThemes" >&2
+	exit 1
+}
+[[ -n "$hex" ]] || {
+	echo "rex-defaults: $THEMES is empty" >&2
+	exit 1
+}
+
 w Workspace.animationStyle -string snappy
 w Workspace.appIconVisibility -string dockAndMenuBar
 w Workspace.appearance -string dark
-w Workspace.darkThemeID -string custom-F9A91741-EC53-4CF6-BE7E-8273043CCAFA
+w Workspace.darkThemeID -string "{{ (index ($themes | fromJson) 0).id }}"
 w Workspace.lightThemeID -string merino-light
 w Workspace.inactivePaneFadeMode -string both
 w Workspace.interfaceStyle -string blendTheme
@@ -34,9 +51,4 @@ w Workspace.usesPaneGlass -bool true
 w Workspace.usesStandardInactiveWindowPaneStyles -bool true
 w rex.agents.names-sessions -bool true
 w rex.server.automatic-restart-enabled -bool true
-
-if [[ -f "$THEMES" ]]; then
-	hex=$(jq -cj . "$THEMES" | xxd -p | tr -d '\n')
-	[[ -n "$hex" ]] || exit 1
-	w Workspace.customThemes -data "$hex"
-fi
+w Workspace.customThemes -data "$hex"
