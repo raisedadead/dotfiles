@@ -41,7 +41,7 @@ EOF
 chmod +x "$SB/fake-agent"
 
 REX_SERVER="$SOCK" REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
-	rex server run --listen "$SOCK" --state-dir "$SB/state" \
+	PATH=/usr/bin:/bin:/usr/sbin:/sbin "$(command -v rex)" server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
 server_pid=$!
 for _ in $(seq 50); do
@@ -205,6 +205,20 @@ check "the picker lists the sessions" grep -q $'^session\tws1\t' <<<"$rows"
 proj=$(cd "$SB/proj" && pwd -P)
 check "the picker lists the worktrees" grep -q $'^worktree\t.*\t'"$proj"'$' <<<"$rows"
 check "popup_workspace opens popup:workspace" opened popup_workspace popup:workspace
+shows() {
+	R "do" -s "$S" "$1" >/dev/null 2>&1 || return 1
+	local id rc=1
+	id=$(blocks "$S" | awk -v l="$2" '$1 == l { print $3 }')
+	[[ -n "$id" ]] || return 1
+	for _ in $(seq 30); do
+		grep -qF "$3" <<<"$(R capture -s "$S" -b "$id" 2>/dev/null)" && rc=0 && break
+		sleep 0.1
+	done
+	R block close -s "$S" "$id" >/dev/null 2>&1
+	return "$rc"
+}
+check "the workspace picker runs fzf with the server's PATH" \
+	shows popup_workspace popup:workspace 'workspace ❯'
 
 zp=$(split zsh -f -i)
 sleep 0.5

@@ -117,7 +117,7 @@ function M.popup(ctx, o)
     bounds = o.bounds or { 0.1, 0.1, 0.8, 0.8 },
     layout = rex.layout.block{
       flavor = M.SHELL, label = o.label,
-      options = { command = o.cmd, cwd = cwd, shell = not o.login and "none" or nil },
+      options = { command = o.cmd, cwd = cwd },
     },
   }
   if not r then return nil, e end
