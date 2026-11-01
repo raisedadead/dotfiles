@@ -39,6 +39,20 @@ rex.action{
   end,
 }
 
+-- A restored block: Rex drops the command and starts a login shell.
+rex.action{
+  name = "t_restored", title = "Test: restored block", category = "Test",
+  args = { label = "string" },
+  run = function(ctx, args)
+    local r, err = rex.session.new_layer{
+      session_id = ctx.session_id, focus = false, bounds = { 0.2, 0.2, 0.5, 0.5 },
+      layout = rex.layout.block{ flavor = lib.SHELL, label = args.label, options = {} },
+    }
+    if not r then error(err, 0) end
+    return { block_id = r.block_ids[1] }
+  end,
+}
+
 rex.action{
   name = "t_switch", title = "Test: switch session", category = "Test",
   run = function(ctx)

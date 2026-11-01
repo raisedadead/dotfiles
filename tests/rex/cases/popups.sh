@@ -86,6 +86,15 @@ for _ in $(seq 40); do
 	sleep 0.1
 done
 check "a popup that exits gives back focus and zoom" test "$(view_state)" = "$calm $calm"
+R focus -s "$S" "$calm" >/dev/null
+cp=$(pop popup_keys "$calm")
+screen_has "$cp" 'Keybindings' || true
+R "do" -s "$S" -b "$cp" close_pane "block=$cp" >/dev/null 2>&1 || true
+until5 no_label "$S" popup:keys || true
+check "close_pane on a popup gives back focus and zoom" test "$(view_state)" = "$calm $calm"
+check "close_pane on a popup asks nothing" no_label "$S" popup:close
+asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
+[[ -z "$asked" ]] || closed "$asked" popup:close
 R zoom -s "$S" "$calm" --off >/dev/null
 
 p=$(pop popup_reader "$here")

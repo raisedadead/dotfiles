@@ -136,3 +136,47 @@ sleep 1
 R "do" -s "$S" agents_resume >/dev/null
 check "agents_resume resumes a pane in another session" \
 	until5 file_has "$SB/t/resumed" "claude --resume $U8"
+
+kind_of() {
+	R api call -s "$S" session.view | jq -r --arg b "$1" \
+		'[.windows[].layers[] | select([.blocks[].block_id] | index($b)) | .kind][0] // "-"'
+}
+here_json() { R "do" -s "$S" -b "$1" --json agent_here | jq -r .block_id; }
+over=$(R "do" -s "$S" -b "$plain" --json popup_keys | jq -r .block_id)
+from_pop=$(here_json "$over")
+check "agent_here in a popup splits the pane under it" test "$(kind_of "$from_pop")" = tiled
+R block close -s "$S" "$over" >/dev/null 2>&1 || true
+[[ "$(placement)" == placed ]] || drawer >/dev/null
+from_drawer=$(here_json "$did")
+check "agent_here in the drawer splits a tiled pane" test "$(kind_of "$from_drawer")" = tiled
+check "agent_here in the drawer hides the drawer" test "$(placement)" = detached
+check "agent_here in the drawer focuses the agent" \
+	test "$(R api call -s "$S" session.view | jq -r --arg b "$from_drawer" \
+		'[.windows[] | select(.focused_block_id == $b)] | length')" = 1
+
+restored() { R "do" -s "$S" --json t_restored "label=$1" | jq -r .block_id; }
+at_prompt() {
+	local q
+	q=$(jq -cn --arg s "$S" --arg b "$1" \
+		'{session_id: $s, block_id: $b, method: "input_mode", args: {}}')
+	[[ "$(R api call -s "$S" block.method "$q" | jq -r .canonical)" == false ]]
+}
+orphan=$(restored popup:lazygit)
+lost=$(restored handoff)
+editor=$(restored editor)
+until5 at_prompt "$orphan" && until5 at_prompt "$lost" && until5 at_prompt "$editor" || true
+live=$(R "do" -s "$S" -b "$plain" --json popup_keys | jq -r .block_id)
+until5 screen_has "$live" 'Keybindings' || true
+after=$(R "do" -s "$S" --json agents_resume)
+reaped() { no_label "$S" popup:lazygit && no_label "$S" handoff; }
+check "agents_resume closes a restored popup and hand-off" until5 reaped
+check "agents_resume reports the closed floats" \
+	test "$(jq -c '.closed | sort' <<<"$after")" = "$(jq -cn --arg a "$orphan" --arg b "$lost" \
+		'[$a, $b] | sort')"
+check "agents_resume keeps a live popup" has_label "$S" popup:keys
+check "agents_resume starts the editor again in a restored editor pane" \
+	until5 file_has "$SB/t/editor.runs" .
+check "agents_resume reports the restarted editor" \
+	test "$(jq -c .relaunched <<<"$after")" = "[\"$editor\"]"
+R block close -s "$S" "$live" >/dev/null 2>&1 || true
+R block close -s "$S" "$editor" >/dev/null 2>&1 || true

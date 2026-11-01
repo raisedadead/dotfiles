@@ -4,6 +4,7 @@ M.TERMINAL = "com.superlogical.terminal"
 M.SHELL = M.TERMINAL .. ".shell"
 M.AGENTS = { claude = true, codex = true, pi = true, opencode = true }
 M.AGENT = os.getenv("REX_TEST_AGENT") or "claude"
+M.EDITOR = os.getenv("REX_TEST_EDITOR") or "nvim"
 
 local here = debug and debug.getinfo and debug.getinfo(1, "S").source or ""
 M.DIR = here:match("^@?(/.*)/[^/]*$") or (os.getenv("HOME") .. "/.config/rex")
@@ -29,6 +30,7 @@ function M.where(sid, window_id)
         for _, b in ipairs(l.blocks or {}) do
           here.labels[b.block_id] = b.label
           if l.kind ~= "tiled" then here.floating[b.block_id] = l end
+          if l.kind == "tiled" and not here.anchor then here.anchor = b.block_id end
         end
       end
       return here
@@ -99,7 +101,7 @@ function M.window_of(sid, bid)
   for _, w in ipairs(v and v.windows or {}) do
     for _, l in ipairs(w.layers) do
       for _, b in ipairs(l.blocks) do
-        if b.block_id == bid then return w.window_id end
+        if b.block_id == bid then return w.window_id, l.kind end
       end
     end
   end

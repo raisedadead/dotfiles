@@ -83,6 +83,8 @@ printf '%s\n' "\$1" >> $SB/t/agent.args
 sleep 5
 EOF
 chmod +x "$SB/fake-agent"
+printf '#!/bin/sh\npwd >> %s/t/editor.runs\nsleep 5\n' "$SB" >"$SB/fake-editor"
+chmod +x "$SB/fake-editor"
 
 APP="$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions"
 REXBIN="$APP/Current/Rex Server.app/Contents/MacOS/rex"
@@ -93,7 +95,7 @@ env -i USER="$USER" LOGNAME="$USER" HOME="$HOME" SHELL=/opt/homebrew/bin/zsh \
 	PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin TMPDIR="${TMPDIR:-/tmp/}" \
 	${SSH_AUTH_SOCK:+SSH_AUTH_SOCK="$SSH_AUTH_SOCK"} REX_SERVER="$SOCK" \
 	REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
-	REX_AGENT_DIR="$SB/state-home/rex/agents" \
+	REX_AGENT_DIR="$SB/state-home/rex/agents" REX_TEST_EDITOR="$SB/fake-editor" \
 	"$REXBIN" server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
 server_pid=$!

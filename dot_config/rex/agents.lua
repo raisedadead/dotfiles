@@ -67,11 +67,7 @@ rex.action{
 }
 
 local function cwd_of(ctx)
-  local src = ctx.block_id
-  if not src then
-    local here = lib.where(ctx.session_id)
-    src = here and here.focused
-  end
+  local src = lib.source(ctx)
   if not src then return nil, nil end
   local _, cwd = lib.fg(ctx.session_id, src)
   return src, cwd
@@ -80,15 +76,28 @@ end
 rex.action{
   name = "agent_here", title = "Agent Here", category = "Agents",
   run = function(ctx)
+    local sid = ctx.session_id
     local src, cwd = cwd_of(ctx)
     if not src then error("no pane to split", 0) end
+    local anchor, drawer, wid, kind = src, false, lib.window_of(sid, src)
+    if kind and kind ~= "tiled" then
+      local here = lib.where(sid, wid)
+      anchor = here and here.anchor
+      if not anchor then error("this tab has no tiled pane to split", 0) end
+      drawer = here.labels[src] == "drawer:scratch"
+    end
     local r, err = rex.call("session.new_split", {
-      session_id = ctx.session_id, anchor_id = src, direction = "horizontal",
+      session_id = sid, anchor_id = anchor, direction = "horizontal",
       side = "after", focus = true,
       layout = lib.then_shell(lib.AGENT, cwd, "agent"),
     })
     if not r then error(err, 0) end
-    return { block_id = r.block_ids[1] }
+    local bid = r.block_ids[1]
+    if drawer then
+      rex.session.detach_block{ session_id = sid, block_id = src }
+      rex.session.focus_block{ session_id = sid, block_id = bid }
+    end
+    return { block_id = bid }
   end,
 }
 
@@ -120,28 +129,49 @@ local function at_prompt(sid, bid)
   return m ~= nil and m.canonical == false
 end
 
+-- Rex restores a block without its command, so a restored block runs a login shell.
+local function restored(sid, bid)
+  local p = lib.bcall(sid, bid, "process")
+  return p ~= nil and p.child ~= nil and p.child.name == "login"
+end
+
+local RELAUNCH = { editor = lib.EDITOR }
+
 rex.action{
-  name = "agents_resume", title = "Resume Agents", category = "Agents",
+  name = "agents_resume", title = "Resume After Restart", category = "Agents",
   run = function()
     local all, err = sessions()
     if not all then error(err, 0) end
-    local resumed = {}
+    local resumed, closed, relaunched = {}, {}, {}
     for _, s in ipairs(all) do
-      local bl = rex.call("session.list_blocks", { session_id = s.session_id })
+      local sid = s.session_id
+      local bl = rex.call("session.list_blocks", { session_id = sid })
       for _, b in ipairs(bl and bl.blocks or {}) do
-        local r, path = record(b.block_id)
-        local popup = (b.label or ""):match("^popup:")
-        if r and not popup and at_prompt(s.session_id, b.block_id) then
-          local _, werr = lib.safe_write(s.session_id, b.block_id,
+        local bid, label = b.block_id, b.label or ""
+        local r, path = record(bid)
+        local float = label:match("^popup:") or label == "handoff"
+        if float then
+          if restored(sid, bid) and at_prompt(sid, bid) then
+            local _, cerr = rex.call("block.close", { session_id = sid, block_id = bid })
+            if not cerr then
+              if path then os.remove(path) end
+              closed[#closed + 1] = bid
+            end
+          end
+        elseif r and at_prompt(sid, bid) then
+          local _, werr = lib.safe_write(sid, bid,
             r.agent .. " --resume " .. r.session_id .. "\n")
           if not werr then
             os.remove(path)
-            resumed[#resumed + 1] = b.block_id
+            resumed[#resumed + 1] = bid
           end
+        elseif RELAUNCH[label] and restored(sid, bid) and at_prompt(sid, bid) then
+          local _, werr = lib.safe_write(sid, bid, RELAUNCH[label] .. "\n")
+          if not werr then relaunched[#relaunched + 1] = bid end
         end
       end
     end
-    return { resumed = resumed, count = #resumed }
+    return { resumed = resumed, count = #resumed, closed = closed, relaunched = relaunched }
   end,
 }
 

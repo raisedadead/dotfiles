@@ -14,6 +14,9 @@ rex.action{
   run = function(ctx, args)
     local sid, bid = ctx.session_id, args.block or ctx.block_id
     if not bid then error("no pane to close", 0) end
+    local done, perr = lib.close_popup(ctx, bid)
+    if perr then error(perr, 0) end
+    if done then return { block_id = bid, closed = true } end
     local f = lib.fg(sid, bid)
     local what = f and (lib.agent_in(f) or f.name) or "this pane"
     local b, err = lib.popup(ctx, {

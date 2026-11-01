@@ -11,14 +11,13 @@ local LAYOUTS = {
     return rex.layout.horizontal(0.6, then_shell(lib.AGENT, cwd, "agent"), shell(cwd))
   end,
   dev = function(cwd)
-    return rex.layout.horizontal(0.6, then_shell("nvim", cwd, "editor"),
+    return rex.layout.horizontal(0.6, then_shell(lib.EDITOR, cwd, "editor"),
       then_shell(lib.AGENT, cwd, "agent"))
   end,
 }
 
 local function focused_cwd(ctx)
-  local here = lib.where(ctx.session_id)
-  local src = ctx.block_id or (here and here.focused)
+  local src = lib.source(ctx)
   if not src then return nil end
   local _, cwd = lib.fg(ctx.session_id, src)
   return cwd
