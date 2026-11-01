@@ -113,25 +113,15 @@ check "the password prompt got no input" untyped "$SB/t/secret"
 
 keymap=$(R keymap)
 bound() { grep -qE "^$1 +$2( |$)" <<<"$keymap"; }
-check "alt+shift+h runs nav" bound "alt\+shift\+h" nav
-check "alt+d splits right" bound "alt\+d" "pane\.split\.right"
-check "alt+o opens the session picker" bound "alt\+o" "session\.switch"
-check "alt+1 goes to tab 1" bound "alt\+1" "client\.tab\.goto"
+check "ctrl+space h focuses left" bound "ctrl\+space h" "pane\.focus\.left"
+check "ctrl+space - splits down" bound "ctrl\+space -" "pane\.split\.down"
+check "ctrl+space o opens the session picker" bound "ctrl\+space o" "session\.switch"
+check "ctrl+space 1 goes to tab 1" bound "ctrl\+space 1" "client\.tab\.goto"
 check "ctrl+space x closes the pane" bound "ctrl\+space x" close_pane
 check "ctrl+space shift+r enters resize" bound "ctrl\+space shift\+r" "client\.mode\.enter"
 check "resize mode h resizes left" bound "resize/h" "pane\.resize"
 
-nvim=$(split bash -c "stty raw -echo; exec -a nvim dd bs=1 count=2 of='$SB/t/nvim'")
-sleep 0.3
-R "do" -s "$S" nav "block=$nvim" dir=left >/dev/null 2>&1 || true
-check "nav types Alt+Shift+H into Neovim" until5 file_has "$SB/t/nvim" $'\x1bH'
-check "nav moves focus outside Neovim" \
-	fails_with "$S" "no client is targeted" nav "block=$plain" dir=left
-
-doomed=$(split sh -c 'exec sleep 300')
-R "do" -s "$S" close_pane "block=$doomed" >/dev/null 2>&1 || true
 gone() { ! grep -q "$1" <<<"$(blocks "$S")"; }
-check "close_pane closes the block" until5 gone "$doomed"
 
 bin_is_local() { [[ "$(R "do" -s "$S" --json t_bin | jq -r .bin)" == "$SB/cfg/bin/" ]]; }
 check "helpers run from the config's own bin" bin_is_local

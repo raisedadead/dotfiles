@@ -8,6 +8,8 @@ Every row is generated at run time from the tool's own reporting:
     tmux        tmux list-keys -T <table>   (descriptions from -N notes)
     zsh         zsh -i -c bindkey
     nvim        nvim --headless + vim.api.nvim_get_keymap
+    rex         rex keymap --json, titles from rex actions (in Rex, listed first;
+                the app's own cmd+ shortcuts are not reported by rex keymap)
 
 Nothing here is a hand-maintained copy of a binding, so nothing here can go
 stale. This replaced dot_config/keyb/keyb.yml, which was exactly such a copy
@@ -237,25 +239,47 @@ def in_rex() -> bool:
             and not env.get("TMUX"))
 
 
+def rex_json(*argv: str) -> dict:
+    try:
+        data = json.loads(run("rex", "--autostart=false", *argv) or "{}")
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def rex_app_actions() -> list[dict]:
+    for client in rex_json("client", "ls", "--json").get("clients", []):
+        if client.get("info", {}).get("kind") == "app":
+            actions = rex_json("-C", client["client_id"], "actions", "--json")
+            if actions.get("actions"):
+                return actions["actions"]
+    return []
+
+
 def from_rex() -> list[tuple[str, str, str, str]]:
     if not in_rex():
         return []
-    try:
-        data = json.loads(run("rex", "--autostart=false", "keymap", "--json") or "{}")
-    except json.JSONDecodeError:
-        return []
+    data = rex_json("keymap", "--json")
+    actions = data.get("actions", [])
+    hidden = {a["name"] for a in actions if a.get("category") in ("Probe", "Test")}
+    titles = {a["name"]: a["title"] for a in actions + rex_app_actions() if a.get("title")}
     rows = []
     for b in data.get("bindings", []):
-        args = b.get("args")
-        desc = b["action"] + (f" {json.dumps(args)}" if args else "")
-        rows.append(("rex", b.get("mode") or "root", " > ".join(b["keys"]), desc))
-    return rows
+        if b["action"] in hidden:
+            continue
+        values = sorted((b.get("args") or {}).values(), key=lambda v: not isinstance(v, str))
+        args = ", ".join(str(v) for v in values)
+        desc = titles.get(b["action"], b["action"]) + (f" ({args})" if args else "")
+        mode = b.get("mode") or "root"
+        rows.append(((mode != "root", mode, len(b["keys"]), b["keys"]),
+                     ("rex", mode, " > ".join(b["keys"]), desc)))
+    return [row for _, row in sorted(rows)]
 
 
 def render(rows: list[tuple[str, str, str, str]], color: bool) -> list[str]:
     tw = max((len(r[0]) for r in rows), default=4)
     cw = max((len(r[1]) for r in rows), default=0)
-    kw = min(max((len(r[2]) for r in rows), default=3), 22)
+    kw = min(max((len(r[2]) for r in rows), default=3), 24)
     lines = []
     for tool, ctx, key, desc in rows:
         if color:
@@ -277,8 +301,11 @@ def main() -> int:
     show_all = "--all" in argv or "-a" in argv
     query = " ".join(a for a in argv if not a.startswith("-"))
 
+    sources = SOURCES
+    if in_rex():
+        sources = (from_rex, *(s for s in SOURCES if s is not from_rex))
     with concurrent.futures.ThreadPoolExecutor() as pool:
-        pending = [pool.submit(source) for source in SOURCES]
+        pending = [pool.submit(source) for source in sources]
     rows = [row for future in pending for row in future.result()]
     if not rows:
         print("keys: no keybindings found — is any supported tool installed?",
