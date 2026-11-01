@@ -13,7 +13,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Claude validator or formatter registry | Spec smoke test                                                         |
 | Claude plugin                          | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop    | Applicable terminal probes below and the component's own checks         |
-| Rex config or helpers                  | R1 below                                                                |
+| Rex config, helpers, or app settings   | R1 below                                                                |
 
 Use disposable fixtures for checks that write files or send keys. Do not run them against the operator's live windows or sessions.
 
@@ -160,6 +160,8 @@ Expected: CPU and GPU or energy recorded separately
 `rex config check ~/.dotfiles/dot_config/rex/init.lua --json`; `tests/rex/sandbox.sh`; `tests/rex/gate.sh`; `shellcheck dot_config/rex/bin/executable_* tests/rex/*.sh tests/rex/cases/*.sh`
 
 Expected: No diagnostics; both test scripts end with `all passed`; shellcheck exits 0
+
+R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_rex-config-check.sh.tmpl` and `dot_config/rex/themes/`. The sandbox test renders both scripts and runs them in a temporary home. It checks the theme merge, the dark theme id, the terminfo step, and the message and the stop on bad input.
 
 ## Claude Code
 
