@@ -29,12 +29,25 @@ rex.action{
   end,
 }
 
+rex.action{
+  name = "enter_key", title = "Send Enter", category = "Panes",
+  run = function(ctx)
+    if not ctx.block_id then error("no pane to send Enter to", 0) end
+    local r, err = lib.bcall(ctx.session_id, ctx.block_id, "write", { data = "\r" })
+    if not r then error(err, 0) end
+    return r
+  end,
+}
+
 local bind = rex.bind
 local function prefix(key, action, args) bind("ctrl+space>" .. key, action, args) end
 
 bind("alt+shift+enter", "pane.zoom")
 bind("alt+;", "client.palette.toggle")
 bind("alt+e", "popup_urls")
+bind("ctrl+enter", "enter_key")
+bind("ctrl+shift+k", "client.prompt.previous")
+bind("ctrl+shift+j", "client.prompt.next")
 for _, k in ipairs({ "w", "e", "a", "s" }) do
   bind("ctrl+shift+" .. k, "pane.send_key", { key = "ctrl+alt+" .. k })
 end

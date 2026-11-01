@@ -145,6 +145,20 @@ encodes() {
 }
 check "ctrl+alt+w reaches the program as ESC ^W" encodes ctrl+alt+w 1b17
 
+runs_action() {
+	jq -e --arg k "$1" --arg a "$2" \
+		'.bindings[] | select(.keys == [$k] and .action == $a)' <<<"$keys_json" >/dev/null
+}
+check "ctrl+enter sends Enter" runs_action ctrl+enter enter_key
+check "ctrl+shift+k jumps to the previous prompt" runs_action ctrl+shift+k client.prompt.previous
+check "ctrl+shift+j jumps to the next prompt" runs_action ctrl+shift+j client.prompt.next
+entered=$(split bash -c "IFS= read -r l; echo \"got:\$l\" > '$SB/t/entered'; exec sleep 300")
+sleep 0.3
+R send -s "$S" -b "$entered" hi >/dev/null
+R "do" -s "$S" -b "$entered" enter_key >/dev/null 2>&1 || true
+check "enter_key ends the typed line with a carriage return" \
+	until5 file_has "$SB/t/entered" '^got:hi$'
+
 fg_is() {
 	local q
 	q=$(jq -cn --arg s "$S" --arg b "$1" \
