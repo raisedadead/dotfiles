@@ -389,6 +389,12 @@ check "agents_resume removes the record it used" test ! -e "$(rec "$idle")"
 check "agents_resume resumes a session once" \
 	test "$(R "do" -s "$S" --json agents_resume | jq '.resumed | length')" = 0
 
+for case_file in "$REPO"/tests/rex/cases/*.sh; do
+	[[ -e "$case_file" ]] || continue
+	# shellcheck source=/dev/null
+	source "$case_file"
+done
+
 if ((fails)); then
 	printf '%d failed\n' "$fails"
 	exit 1
