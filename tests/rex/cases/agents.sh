@@ -127,6 +127,7 @@ resume_json=$(R "do" -s "$S" --json agents_resume)
 sleep 1
 check "agents_resume types nothing into a popup" not grep -q "$U7" "$SB/t/resumed"
 check "agents_resume reports a count" test "$(jq -r .count <<<"$resume_json")" = 0
+R block close -s "$S" "$pop" >/dev/null 2>&1 || true
 
 U8=0a1b2c3d-0000-4000-8000-000000000008
 far=$(split3 env PATH="$SB/fakebin:$PATH" zsh -f -i)
@@ -145,6 +146,10 @@ here_json() { R "do" -s "$S" -b "$1" --json agent_here | jq -r .block_id; }
 over=$(R "do" -s "$S" -b "$plain" --json popup_keys | jq -r .block_id)
 from_pop=$(here_json "$over")
 check "agent_here in a popup splits the pane under it" test "$(kind_of "$from_pop")" = tiled
+check "agent_here in a popup closes the popup" until5 no_label "$S" popup:keys
+check "agent_here in a popup focuses the agent" \
+	test "$(R api call -s "$S" session.view | jq -r --arg b "$from_pop" \
+		'[.windows[] | select(.focused_block_id == $b)] | length')" = 1
 R block close -s "$S" "$over" >/dev/null 2>&1 || true
 [[ "$(placement)" == placed ]] || drawer >/dev/null
 from_drawer=$(here_json "$did")
@@ -180,3 +185,31 @@ check "agents_resume reports the restarted editor" \
 	test "$(jq -c .relaunched <<<"$after")" = "[\"$editor\"]"
 R block close -s "$S" "$live" >/dev/null 2>&1 || true
 R block close -s "$S" "$editor" >/dev/null 2>&1 || true
+
+stale=$(restored popup:keys)
+until5 at_prompt "$stale" || true
+R focus -s "$S" "$stale" >/dev/null
+fresh=$(R "do" -s "$S" -b "$stale" --json popup_keys | jq -r '.block_id // empty')
+renewed() {
+	[[ -n "$fresh" && "$fresh" != "$stale" ]] && ! grep -qF "$stale" <<<"$(blocks "$S")" &&
+		screen_has "$fresh" 'Keybindings'
+}
+check "the popup key on a restored popup opens a fresh popup" until5 renewed
+R block close -s "$S" "$fresh" >/dev/null 2>&1 || true
+
+first_tiled() {
+	R api call -s "$S" session.view | jq -r --arg w "$1" '.windows[] | select(.window_id == $w)
+		| [.layers[] | select(.kind == "tiled") | .blocks[].block_id][0]'
+}
+focus_in() {
+	R api call -s "$S" session.view |
+		jq -r --arg w "$1" '.windows[] | select(.window_id == $w) | .focused_block_id'
+}
+gone_float=$(restored popup:urls)
+until5 at_prompt "$gone_float" || true
+float_win=$(window_of "$gone_float")
+R focus -s "$S" "$gone_float" >/dev/null
+R "do" -s "$S" agents_resume >/dev/null
+until5 not has_label "$S" popup:urls || true
+check "agents_resume gives a reaped float's focus to the tab's first pane" \
+	test "$(focus_in "$float_win")" = "$(first_tiled "$float_win")"

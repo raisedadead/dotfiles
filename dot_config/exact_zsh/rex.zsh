@@ -157,7 +157,8 @@ _rex_precmd() {
       prev=$w
     done
   done
-  local prog fed app first head=1 last
+  local prog fed app first head=1 last chain op
+  local -i heads
   local -a seg pos flags words=(${(z)${(F)kept}} ';')
   for w in $words; do
     if [[ $w != (\;|\;\;|\;\&|\;\||\&\&|\|\||\||\|\&|\&|\&!|\&\|) ]]; then
@@ -173,13 +174,18 @@ _rex_precmd() {
       if [[ -n $head ]]; then
         app=$prog
         (( $+builtins[$prog] || $+functions[$prog] )) || first=${first:-$prog}
+        chain+="${op:+$op }$prog" op= heads+=1
       fi
+    fi
+    if [[ -n $last && -n $chain ]]; then
+      [[ $w == \; ]] && op=';' || op=" $w"
     fi
     head=$last
   done
   local name=${${${first:-$app}//[[:cntrl:]]/}[1,64]}
   [[ -n $name ]] || return 0
   local id=${${name//[^A-Za-z0-9_.+-]/}[1,32]}
+  (( code && heads > 1 )) && name=${${chain//[[:cntrl:]]/}[1,64]}
   local dur=$(( secs % 60 ))s
   (( secs >= 60 )) && dur="$(( secs / 60 % 60 ))m $dur"
   (( secs >= 3600 )) && dur="$(( secs / 3600 ))h $dur"

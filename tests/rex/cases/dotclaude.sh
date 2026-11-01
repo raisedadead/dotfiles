@@ -42,7 +42,7 @@ sleep 0.5
 in_sb "$last" 'never-matches' >"$SB/t/last" 2>&1 &
 last_pid=$!
 watch_until "$last_pid" 40
-check "the monitor reports the last output of a pane that exits" \
+check "the monitor reports the output it read before a pane exits" \
 	grep -q "error: disk full" "$SB/t/last"
 check "the monitor then reports the exit code" test "$(tail -1 "$SB/t/last")" = "pane exited 2"
 
@@ -149,3 +149,19 @@ end_hook() {
 	test ! -e "$(rec "$ended")"
 }
 check "the SessionEnd hook removes the record of a session the operator exits" end_hook
+
+mkdir -p "$SB/stub-rex"
+printf '#!/bin/sh\necho REX-STUB "$@"\n' >"$SB/stub-rex/rex"
+chmod +x "$SB/stub-rex/rex"
+start_line() {
+	jq -r '.hooks.SessionStart[].hooks[].command | select(test("session-start"))' "$SETTINGS"
+}
+start_says() {
+	hook_in "$SB/bare-home" "$SB/stub-rex:$BARE" "$(start_line)" "$@"
+}
+gated_start() {
+	[[ -z "$(start_says TERM_PROGRAM=tmux TMUX=/tmp/x,1,0 REX_SESSION=x REX_BLOCK="$plain")" ]] &&
+		[[ -z "$(start_says TERM_PROGRAM=ghostty REX_SESSION=x REX_BLOCK="$plain")" ]] &&
+		grep -q REX-STUB <<<"$(start_says TERM_PROGRAM=rex REX_SESSION=x REX_BLOCK="$plain")"
+}
+check "the Rex session-start hook speaks only in a Rex pane outside tmux" gated_start

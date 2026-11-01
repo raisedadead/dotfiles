@@ -86,6 +86,17 @@ rex.action{
       if not anchor then error("this tab has no tiled pane to split", 0) end
       drawer = here.labels[src] == "drawer:scratch"
     end
+    local self = ctx.block_id
+    if not self then
+      local here = lib.where(sid)
+      self = here and here.focused
+    end
+    local at = self and lib.where(sid, lib.window_of(sid, self))
+    local popup = at and (at.labels[self] or ""):match("^popup:") and self
+    if popup then
+      local p = lib.popup_of(sid, self)
+      if not p or p.agent then popup = nil end
+    end
     local r, err = rex.call("session.new_split", {
       session_id = sid, anchor_id = anchor, direction = "horizontal",
       side = "after", focus = true,
@@ -95,13 +106,13 @@ rex.action{
     local bid = r.block_ids[1]
     if drawer then
       rex.session.detach_block{ session_id = sid, block_id = src }
-      rex.session.focus_block{ session_id = sid, block_id = bid }
     end
+    if popup then rex.call("block.close", { session_id = sid, block_id = popup }) end
+    if drawer or popup then rex.session.focus_block{ session_id = sid, block_id = bid } end
     return { block_id = bid }
   end,
 }
 
-local SHELLS = { zsh = true, bash = true, sh = true, fish = true }
 local STATE = (os.getenv("REX_AGENT_DIR")
   or (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/rex/agents")
   .. "/"
@@ -121,18 +132,17 @@ local function record(bid)
   return r, path
 end
 
--- A shell line editor turns canonical mode off; a script that reads a line keeps it on.
-local function at_prompt(sid, bid)
-  local f = lib.fg(sid, bid)
-  if not (f and lib.runs(f, SHELLS)) then return false end
-  local m = lib.bcall(sid, bid, "input_mode")
-  return m ~= nil and m.canonical == false
-end
+local at_prompt, restored = lib.at_prompt, lib.restored
 
--- Rex restores a block without its command, so a restored block runs a login shell.
-local function restored(sid, bid)
-  local p = lib.bcall(sid, bid, "process")
-  return p ~= nil and p.child ~= nil and p.child.name == "login"
+local function reap(sid, bid)
+  local wid = lib.window_of(sid, bid)
+  local before = wid and lib.where(sid, wid)
+  local _, err = rex.call("block.close", { session_id = sid, block_id = bid })
+  if err then return false end
+  if before and before.focused == bid and before.anchor then
+    rex.session.focus_block{ session_id = sid, block_id = before.anchor }
+  end
+  return true
 end
 
 local RELAUNCH = { editor = lib.EDITOR }
@@ -152,8 +162,7 @@ rex.action{
         local float = label:match("^popup:") or label == "handoff"
         if float then
           if restored(sid, bid) and at_prompt(sid, bid) then
-            local _, cerr = rex.call("block.close", { session_id = sid, block_id = bid })
-            if not cerr then
+            if reap(sid, bid) then
               if path then os.remove(path) end
               closed[#closed + 1] = bid
             end

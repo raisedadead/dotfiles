@@ -121,7 +121,7 @@ local function runs_agent(argv)
 end
 
 -- The popup state lives in the rex-popup argv, so it survives a config reload.
-local function popup_of(sid, bid)
+function M.popup_of(sid, bid)
   local p = M.bcall(sid, bid, "process")
   local c = p and p.child
   if not (c and c.pid and c.name == "bash") then return nil end
@@ -145,7 +145,7 @@ function M.source(ctx, here)
     here = here or M.where(ctx.session_id)
     bid = here and here.focused
   end
-  local p = bid and popup_of(ctx.session_id, bid)
+  local p = bid and M.popup_of(ctx.session_id, bid)
   return p and p.src or bid
 end
 
@@ -162,33 +162,61 @@ end
 
 function M.close_popup(ctx, bid)
   local sid = ctx.session_id
-  local p = popup_of(sid, bid)
-  if not p or p.agent then return false end
+  local p = M.popup_of(sid, bid)
   local here = M.where(sid, M.window_of(sid, bid))
-  return close(sid, bid, p, (ctx.block_id or here and here.focused) == bid)
+  if not (p and here and (here.labels[bid] or ""):match("^popup:")) then return false end
+  if p.agent then return false, nil, p end
+  return close(sid, bid, p, (ctx.block_id or here.focused) == bid)
+end
+
+local SHELLS = { zsh = true, bash = true, sh = true, fish = true }
+
+-- A shell line editor turns canonical mode off; a script that reads a line keeps it on.
+function M.at_prompt(sid, bid)
+  local f = M.fg(sid, bid)
+  if not (f and M.runs(f, SHELLS)) then return false end
+  local m = M.bcall(sid, bid, "input_mode")
+  return m ~= nil and m.canonical == false
+end
+
+-- Rex restores a block without its command, so a restored block runs a login shell.
+function M.restored(sid, bid)
+  local p = M.bcall(sid, bid, "process")
+  return p ~= nil and p.child ~= nil and p.child.name == "login"
+end
+
+function M.orphan(sid, bid)
+  return M.restored(sid, bid) and M.at_prompt(sid, bid)
 end
 
 -- An agent popup is never closed by its key: that would end the agent's session.
 local function reuse(ctx, here, bid)
   local sid = ctx.session_id
-  local p = (ctx.block_id or here.focused) == bid and popup_of(sid, bid)
+  local p = (ctx.block_id or here.focused) == bid and M.popup_of(sid, bid)
   if not p or p.agent then
     rex.session.focus_block{ session_id = sid, block_id = bid }
-    return bid
+    return bid, nil, "focused"
   end
   local ok, err = close(sid, bid, p, true)
   if not ok then return nil, err end
-  return bid
+  return bid, nil, "closed"
 end
 
 function M.popup(ctx, o)
   local sid = ctx.session_id
   local here, err = M.where(sid, o.window_id)
   if not here then return nil, err end
-  if o.label and o.label:match("^popup:") then
-    for bid, label in pairs(here.labels) do
-      if label == o.label then return reuse(ctx, here, bid) end
-    end
+  local old
+  for bid, label in pairs(here.labels) do
+    if o.label and o.label:match("^popup:") and label == o.label then old = bid end
+  end
+  if old and not M.orphan(sid, old) then return reuse(ctx, here, old) end
+  if old then
+    local _, cerr = rex.call("block.close", { session_id = sid, block_id = old })
+    if cerr then return nil, cerr end
+    if ctx.block_id == old then ctx = { session_id = sid } end
+    here, err = M.where(sid, o.window_id)
+    if not here then return nil, err end
   end
   local src = M.source(ctx, here)
   local cwd = o.cwd

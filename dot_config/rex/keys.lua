@@ -1,12 +1,17 @@
 local lib = require("lib")
 
-local CONFIRM = [[
+local CONFIRM = [=[
+R() { rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false "$@"; }
 printf '\n  Close %s?\n\n  Enter or y: close · any other key: keep\n' "$3"
 IFS= read -rsn1 key || exit 0
 case $key in
-'' | y | Y) exec rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false block close -s "$1" "$2" ;;
+'' | y | Y)
+  R block close -s "$1" "$2" || exit
+  [[ -z $4 ]] || R focus -s "$1" "$4" >/dev/null 2>&1
+  [[ -z $5 ]] || R zoom -s "$1" "$5" --on >/dev/null 2>&1
+  ;;
 esac
-]]
+]=]
 
 rex.action{
   name = "close_pane", title = "Close Pane", category = "Panes",
@@ -14,15 +19,18 @@ rex.action{
   run = function(ctx, args)
     local sid, bid = ctx.session_id, args.block or ctx.block_id
     if not bid then error("no pane to close", 0) end
-    local done, perr = lib.close_popup(ctx, bid)
+    local done, perr, agent = lib.close_popup(ctx, bid)
     if perr then error(perr, 0) end
     if done then return { block_id = bid, closed = true } end
     local f = lib.fg(sid, bid)
     local what = f and (lib.agent_in(f) or f.name) or "this pane"
+    agent = agent or {}
     local b, err = lib.popup(ctx, {
       label = "popup:close", bounds = { 0.3, 0.4, 0.4, 0.2 },
       window_id = lib.window_of(sid, bid),
-      cmd = { "/bin/bash", "-c", CONFIRM, "close", sid, bid, what },
+      cmd = {
+        "/bin/bash", "-c", CONFIRM, "close", sid, bid, what, agent.ret or "", agent.zoomed or "",
+      },
     })
     if not b then error(err, 0) end
     return { block_id = b }

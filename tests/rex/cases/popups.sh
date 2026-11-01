@@ -79,6 +79,11 @@ check "close_pane on an agent popup asks first" until5 has_label "$S" popup:clos
 check "close_pane on an agent popup keeps the agent" has_label "$S" popup:ask
 asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
 [[ -z "$asked" ]] || closed "$asked" popup:close
+until5 no_label "$S" popup:ask || true
+ask=$(pop ask_pane "$here")
+made=$(R "do" -s "$S" -b "$ask" --json agent_here | jq -r '.block_id // empty')
+check "agent_here in an agent popup keeps the agent" has_label "$S" popup:ask
+[[ -z "$made" ]] || R block close -s "$S" "$made" >/dev/null 2>&1 || true
 closed "$ask" popup:ask
 
 calm=$(split sh -c 'exec sleep 300')
@@ -100,7 +105,29 @@ check "close_pane on a popup gives back focus and zoom" test "$(view_state)" = "
 check "close_pane on a popup asks nothing" no_label "$S" popup:close
 asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
 [[ -z "$asked" ]] || closed "$asked" popup:close
+R focus -s "$S" "$calm" >/dev/null
+ask=$(pop ask_pane "$calm")
+R "do" -s "$S" -b "$ask" close_pane "block=$ask" >/dev/null 2>&1 || true
+until5 has_label "$S" popup:close || true
+asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
+[[ -z "$asked" ]] || R send -s "$S" -b "$asked" y >/dev/null 2>&1 || true
+both_gone() { no_label "$S" popup:ask && no_label "$S" popup:close; }
+until5 both_gone || true
+check "closing an agent popup gives focus and zoom back to its pane" \
+	test "$(view_state)" = "$calm $calm"
 R zoom -s "$S" "$calm" --off >/dev/null
+R focus -s "$S" "$calm" >/dev/null
+wp=$(pop popup_workspace "$calm")
+screen_has "$wp" 'workspace ❯' || true
+wq=$(jq -cn --arg s "$S" --arg b "$wp" \
+	'{action: "popup_workspace", session_id: $s, block_id: $b, origin: "key"}')
+again=$(R api call -s "$S" client.action "$wq" 2>&1 || true)
+no_mode() {
+	jq -e '[.client_actions[]?.action] | (index("client.mode.enter") | not)
+		and (index("client.mode.exit_all") != null)' <<<"$again" >/dev/null
+}
+check "closing the picker with its key leaves the workspace key mode" no_mode
+until5 no_label "$S" popup:workspace || true
 
 p=$(pop popup_reader "$here")
 check "popup_reader lists the files" screen_has "$p" ' [1-9][0-9]*/[0-9]+'

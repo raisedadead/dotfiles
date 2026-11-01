@@ -73,8 +73,12 @@ check "rex.zsh skips a bare [[ ]] test" silent '[[ -f x ]]'
 check "rex.zsh skips a stopped job" silent 'sleep 40' 146
 check "rex.zsh skips an interrupted command" silent 'make' 130
 check "rex.zsh skips a closed pipe" silent 'make' 141
-check "rex.zsh names the first program of a failed list" \
-	test "$(report_for 2 3 'make && echo ok')" = "error make make: exit 2 after 3s"
+check "rex.zsh names each program of a failed list" \
+	test "$(report_for 2 3 'make && echo ok')" = "error make make && echo: exit 2 after 3s"
+check "rex.zsh does not blame the first program for a later failure" \
+	test "$(report_for 1 3 'sleep 3 && false')" = "error sleep sleep && false: exit 1 after 3s"
+check "rex.zsh names one failed program alone" \
+	test "$(report_for 1 3 'make 2>&1 | tee log')" = "error make make: exit 1 after 3s"
 check "rex.zsh names the program before a fallback" reports 'make || true'
 check "rex.zsh names the program before a notifier" reports 'make; say done'
 check "rex.zsh names the program between cd commands" \

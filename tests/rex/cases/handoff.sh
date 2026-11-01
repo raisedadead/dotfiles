@@ -219,3 +219,41 @@ H_BIN="$SB/t/h-broken" h_run hwaiter true
 check "a failed waiter exits 69 with no output" h_failed hwaiter
 check "a failed waiter closes the float" until5 not has_float
 h_close
+
+mid=$(split sh -c 'exec sleep 300')
+split sh -c 'exec sleep 300' >/dev/null
+h_back() {
+	h_view | jq -r --arg w "$(window_of "$mid")" \
+		'.windows[] | select(.window_id == $w) | "\(.focused_block_id) \(.zoomed_block_id)"'
+}
+h_zoomed_mid() {
+	R focus -s "$S" "$mid" >/dev/null
+	R zoom -s "$S" "$mid" --on >/dev/null
+}
+h_zoomed_mid
+H_BLOCK=$mid h_run hback true
+h_settle
+h_key $'\r'
+until5 h_shows "press any key to close" || true
+sleep 0.5
+h_key x
+until5 not has_float || true
+h_wait
+check "a finished hand-off gives focus and zoom back to the caller" test "$(h_back)" = "$mid $mid"
+h_zoomed_mid
+H_BLOCK=$mid h_run hbackno true
+h_settle
+h_key $'\e'
+until5 not has_float || true
+h_wait
+check "a declined hand-off gives focus and zoom back to the caller" test "$(h_back)" = "$mid $mid"
+R zoom -s "$S" "$mid" --off >/dev/null 2>&1 || true
+
+h_old() {
+	local res=$SB/t/h32
+	: >"$res"
+	env TERM_PROGRAM=rex REX_SESSION="$S" TMUX= script -q /dev/null /bin/bash \
+		"$SB/cfg/bin/rex-handoff" --inner "$res" $$ -- true < <(sleep 3) >/dev/null 2>&1 || true
+	[[ "$(cat "$res")" == 69 ]]
+}
+check "rex-handoff under bash 3.2 reports the hand-off unavailable" h_old

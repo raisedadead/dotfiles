@@ -170,7 +170,7 @@ rex.action{
       rex.exec({ "mkdir", "-p", STATE })
       os.remove(out)
     end
-    local b, err = lib.popup(ctx, {
+    local b, err, how = lib.popup(ctx, {
       label = POPUP, bounds = { 0.2, 0.15, 0.6, 0.7 }, cwd = cwd,
       cmd = {
         lib.BIN .. "rex-pick-workspace", ctx.client_id or "", cwd or "",
@@ -180,7 +180,7 @@ rex.action{
     if not b then error(err, 0) end
     if keyed then
       rex.client.queue("client.mode.exit_all")
-      rex.client.queue("client.mode.enter", { name = MODE })
+      if how ~= "closed" then rex.client.queue("client.mode.enter", { name = MODE }) end
     end
     return { block_id = b }
   end,

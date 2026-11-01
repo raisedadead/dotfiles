@@ -9,7 +9,11 @@ rex.action{
     if not here then error(err, 0) end
     local w = ctx.block_id and lib.window_of(sid, ctx.block_id) or here.window_id
     local focus = w == here.window_id
-    local cmd = { lib.BIN .. "rex-handoff", "--inner", args.result, tostring(args.caller), "--" }
+    local back = (w ~= here.window_id and lib.where(sid, w)) or here
+    local cmd = {
+      lib.BIN .. "rex-popup", "-", back.focused or "-", back.zoomed or "-", "--",
+      lib.BIN .. "rex-handoff", "--inner", args.result, tostring(args.caller), "--",
+    }
     for _, a in ipairs(args.argv) do cmd[#cmd + 1] = tostring(a) end
     local r, e = rex.session.new_layer{
       session_id = sid, window_id = w, focus = focus, bounds = { 0.15, 0.25, 0.7, 0.5 },

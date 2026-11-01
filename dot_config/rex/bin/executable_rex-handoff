@@ -111,6 +111,11 @@ inner() {
 [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
 
 if [[ "${1:-}" == "--inner" ]]; then
+	if ((BASH_VERSINFO[0] < 4)); then
+		res=${2:-/dev/null}
+		report 69
+		exit 69
+	fi
 	[[ -t 0 ]] || exit 130
 	if (($# < 5)) || [[ "$4" != "--" ]]; then usage; fi
 	res=$2 caller=$3
