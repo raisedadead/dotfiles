@@ -89,7 +89,7 @@ function omp-clear-screen {
   zle .reset-prompt
 }
 zle -N omp-clear-screen
-bindkey '^L' omp-clear-screen      # Ctrl+L: redraw the prompt without its leading newline
+bindkey '^L' omp-clear-screen      # Ctrl+L: clear and redraw the prompt
 bindkey -M vicmd '^L' omp-clear-screen
 
 bindkey '^[^W' backward-kill-line  # Ctrl+Shift+W

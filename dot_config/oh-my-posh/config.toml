@@ -40,6 +40,11 @@ crust = '#11111b'
 auto = false
 notice = false
 
+[[blocks]]
+type = 'prompt'
+alignment = 'left'
+force = true
+
 # Main prompt
 [[blocks]]
 type = 'prompt'
