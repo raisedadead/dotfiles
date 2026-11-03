@@ -189,6 +189,8 @@ Expected: Configured servers connect. No scope conflict
 
 Expected: `build.sh` exits 0, so the source type-checks against the host types. All tests pass. The second command runs the card runner as real processes in a scratch repo, which the plugin test host cannot do. Report both counts
 
+After a deploy of the rig, run `bun tests/fixture/run.ts` in the same folder. It starts Claude Code on a private tmux socket against a scratch repo and a local bare remote. Expected: `OK: 5 checks passed`
+
 ### M6
 
 `rtk hook check 'ls -la'`; `rtk hook check 'git status'`; `rtk gain`
