@@ -71,6 +71,8 @@ git -C ~/.dotfiles commit -m "feat(zsh): ..."
 
 `chezmoi status` prints two columns. Column one is the change since the last apply. Column two is the change that `chezmoi apply` makes. `MM` after a target edit is normal until you `re-add` or apply that target. No output means no drift.
 
+If column one shows a change, run `chezmoi apply` in a terminal, not in an agent shell such as Pi's `!`. Without a terminal, chezmoi cannot ask whether to overwrite that target. It stops at the first such target, exits 1 with `could not open a new TTY`, and skips every later target.
+
 ## A file under `~/.claude`
 
 ```sh
