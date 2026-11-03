@@ -172,7 +172,7 @@ This document is the overview. Each rig's `RIG.md` is the system design of that 
 
 The rigs are similar but not mirrors. A rig takes a feature from another rig as its own copy, and the copies change independently.
 
-A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In the Claude rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the transcript line records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
+A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In the Claude rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the transcript line records it. A rig target and every outward write (push, `gh` write, publish, deploy) run only from an approved card: the rig's card runner runs the pinned steps and stops at the first failure. See the `Hard actions` and `Cards` items in [RIG.md](../dot_claude/RIG.md). The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 

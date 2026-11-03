@@ -185,9 +185,9 @@ Expected: Configured servers connect. No scope conflict
 
 ### M4
 
-`cd ~/.dotfiles/dot_claude/mods/rig && ./build.sh && claude plugin test dist`
+`cd ~/.dotfiles/dot_claude/mods/rig && ./build.sh && claude plugin test dist`; then `bun test ./tests/card-runner.proc.ts` in the same folder
 
-Expected: `build.sh` exits 0, so the source type-checks against the host types. All tests pass. Report the count
+Expected: `build.sh` exits 0, so the source type-checks against the host types. All tests pass. The second command runs the card runner as real processes in a scratch repo, which the plugin test host cannot do. Report both counts
 
 ### M6
 
