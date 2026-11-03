@@ -444,7 +444,7 @@ rig_gate_run() {
 	work=$(mktemp -d) || return 1
 	{
 		git -C "$PRIV_SOURCE/dot_claude" archive HEAD mods/rig | tar -x -C "$work" &&
-			(cd "$work/mods/rig" && ./build.sh && claude plugin validate dist && claude plugin test dist)
+			(cd "$work/mods/rig" && bun build.ts && claude plugin validate dist && claude plugin test dist)
 	} >"$out" 2>&1
 	rc=$?
 	rm -rf "$work"
