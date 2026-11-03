@@ -10,6 +10,8 @@ lg-stat = log --stat --graph --pretty=oneline --abbrev-commit --date=relative
 
 pull-rebase = "!b() { branch=\"${1:-main}\"; if git remote | grep -q '^upstream$'; then echo \"Rebasing from upstream/$branch\"; git pull --rebase upstream \"$branch\"; else echo \"Rebasing from origin/$branch\"; git pull --rebase origin \"$branch\"; fi; }; b"
 
+deploy-status = "!f() { remote=origin; if git remote | grep -q '^upstream$'; then remote=upstream; fi; git fetch --quiet \"$remote\" || return 1; for env in prod-staging prod-current; do if ! git merge-base --is-ancestor \"$remote/$env\" \"$remote/main\"; then printf '%-15s DIVERGED from main\\n' \"$env\"; continue; fi; behind=$(git rev-list --count \"$remote/$env..$remote/main\") || return 1; printf '%-15s %s commits behind\\n' \"$env\" \"$behind\"; done; }; f"
+
 patch = !git --no-pager diff --no-color --binary
 patch-staged = !git --no-pager diff --no-color --binary --staged
 patch-commit = "!f() { git --no-pager show --no-color --binary \"${1:-HEAD}\"; }; f"
