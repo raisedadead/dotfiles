@@ -6,6 +6,7 @@ printf '%s\n' "$*" >>"$state/argv.log"
 
 account=""
 verb="${1:-} ${2:-}"
+template="${4:-}"
 while (($#)); do
 	if [[ "$1" == "--account" ]]; then
 		account="${2:-}"
@@ -23,6 +24,17 @@ fi
 case "$verb" in
 "item list") cat "$base.list.json" ;;
 "item get") cat "$base.get.json" ;;
+"item template") cat "$state/template-$template.json" ;;
+"item create")
+	[[ -f "$state/create.hang" ]] && exec sleep 30
+	[[ -f "$state/create.delay" ]] && sleep 1
+	if [[ -f "$state/create.err" ]]; then
+		cat "$state/create.err" >&2
+		exit 1
+	fi
+	cat >"$state/created.json"
+	cat "$state/created.json"
+	;;
 *)
 	echo "fake op: no model for: $verb" >&2
 	exit 2

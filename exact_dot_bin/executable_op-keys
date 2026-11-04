@@ -7,14 +7,69 @@ const EXIT_OK = 0;
 const EXIT_FAILED = 1;
 const EXIT_USAGE = 64;
 const WAITING_FOR_APPROVAL = "1Password is waiting for approval; approve it, then run this again";
+const EXIT_INTERRUPTED = 130;
 const USAGE = `usage:
   op-keys find <words>...
   op-keys fields --account <account> [--vault <vault>] <item|id>
+  op-keys new login|api --account <a> --vault <v> --title <t> [--notes <n>]
+  op-keys new r2 --account <a> --vault <v> --title <t> --account-id <id> [--notes <n>]
 
 find lists the items of both accounts whose titles hold every word.
-fields lists the fields of one item. It never prints a value.`;
+fields lists the fields of one item. It never prints a value.
+new creates an item from values typed at its prompts, so it needs a terminal.`;
 
 type OpResult = { ok: true; stdout: string } | { ok: false; error: string };
+
+interface FieldPrompt {
+  label: string;
+  templateField?: string;
+  secret?: boolean;
+  optional?: boolean;
+}
+
+interface ItemKind {
+  template: string;
+  prompts: FieldPrompt[];
+}
+
+interface ItemTemplate {
+  title: string;
+  fields: { id?: string; label?: string; type: string; value: string }[];
+}
+
+const KINDS = new Map<string, ItemKind>([
+  [
+    "login",
+    {
+      template: "Login",
+      prompts: [
+        { label: "username", templateField: "username" },
+        { label: "password", templateField: "password", secret: true },
+      ],
+    },
+  ],
+  [
+    "api",
+    {
+      template: "API Credential",
+      prompts: [
+        { label: "credential", templateField: "credential", secret: true },
+        { label: "ID", templateField: "username", optional: true },
+      ],
+    },
+  ],
+  [
+    "r2",
+    {
+      template: "API Credential",
+      prompts: [
+        { label: "Access Key ID", secret: true },
+        { label: "Secret Access Key", secret: true },
+        { label: "Token value", secret: true, optional: true },
+      ],
+    },
+  ],
+]);
 
 interface ListedItem {
   id: string;
@@ -163,6 +218,143 @@ async function fields(args: string[]): Promise<number> {
   return EXIT_OK;
 }
 
+function fail(message: string): number {
+  console.error(message);
+  return EXIT_FAILED;
+}
+
+async function createItem(
+  account: string,
+  vault: string,
+  item: ItemTemplate,
+): Promise<number> {
+  const proc = Bun.spawn(
+    ["op", "item", "create", "--account", account, "--vault", vault, "--format", "json", "-"],
+    { stdin: Buffer.from(JSON.stringify(item)), stdout: "ignore", stderr: "pipe" },
+  );
+  process.on("SIGINT", () => {
+    proc.kill();
+    console.error(
+      `create was interrupted, so the outcome is unknown; run: op-keys find ${item.title}`,
+    );
+    process.exit(EXIT_INTERRUPTED);
+  });
+  const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+  if (code !== 0) {
+    return fail(firstLine(stderr) || `op exited ${code}`);
+  }
+  console.log(`created ${item.title} in ${vault}`);
+  return EXIT_OK;
+}
+
+async function newItem(args: string[]): Promise<number> {
+  const { values, positionals } = strictArgs(args, {
+    account: { type: "string" },
+    vault: { type: "string" },
+    title: { type: "string" },
+    notes: { type: "string" },
+    "account-id": { type: "string" },
+  });
+  const [kindName, ...extra] = positionals;
+  const kind = KINDS.get(kindName);
+  const { account, vault, title, notes, "account-id": accountId } = values;
+  const accountIdFits = (kindName === "r2") === Boolean(accountId);
+  if (!kind || extra.length > 0 || !account || !vault || !title || !accountIdFits) {
+    throw new UsageError();
+  }
+  if (!process.stdin.isTTY) {
+    return fail("op-keys new needs a terminal; open it in a popup");
+  }
+
+  const templateResult = await runOp([
+    "item", "template", "get", kind.template, "--account", account, "--format", "json",
+  ]);
+  if (!templateResult.ok) {
+    return fail(templateResult.error);
+  }
+  const template = parseOpJson<ItemTemplate>(templateResult.stdout);
+  if (!template) {
+    return fail("op returned a template that is not JSON");
+  }
+  const lostField = kind.prompts.find(
+    ({ templateField }) =>
+      templateField && !template.fields.some(({ id }) => id === templateField),
+  );
+  if (lostField) {
+    return fail(`the ${kind.template} template has no ${lostField.templateField} field`);
+  }
+
+  const listResult = await runOp([
+    "item", "list", "--account", account, "--vault", vault, "--format", "json",
+  ]);
+  if (!listResult.ok) {
+    return fail(listResult.error);
+  }
+  const existing = parseOpJson<ListedItem[]>(listResult.stdout);
+  if (!existing) {
+    return fail("op returned an item list that is not JSON");
+  }
+  if (existing.some((item) => item.title === title)) {
+    return fail(`${title} already exists in ${vault} on ${account}`);
+  }
+
+  const { confirm, isCancel, note, password, text } = await import("@clack/prompts@1.8.1");
+  const typed = new Map<FieldPrompt, string>();
+  for (const prompt of kind.prompts) {
+    const { label, secret, optional } = prompt;
+    const ask = secret ? password : text;
+    const answer = await ask({
+      message: optional ? `${label} (optional)` : label,
+      validate: optional ? undefined : (value) => (value ? undefined : `${label} is required`),
+    });
+    if (isCancel(answer)) {
+      return fail("cancelled, nothing created");
+    }
+    if (answer) {
+      typed.set(prompt, answer);
+    }
+  }
+
+  const fieldsToSend = template.fields.map((field) => ({ ...field }));
+  const customFields: ItemTemplate["fields"] = [];
+  for (const [{ label, templateField }, value] of typed) {
+    const target = fieldsToSend.find(({ id }) => id === templateField);
+    if (target) {
+      target.value = value;
+    } else {
+      customFields.push({ label, type: "CONCEALED", value });
+    }
+  }
+  if (accountId) {
+    customFields.push({
+      label: "Endpoint",
+      type: "URL",
+      value: `https://${accountId}.r2.cloudflarestorage.com`,
+    });
+  }
+  const notesField = fieldsToSend.find(({ id }) => id === "notesPlain");
+  if (notes && notesField) {
+    notesField.value = notes;
+  }
+  const item: ItemTemplate = {
+    ...template,
+    title,
+    fields: [...fieldsToSend.filter(({ value }) => value), ...customFields],
+  };
+
+  const fieldNames = item.fields.map(({ id, label }) => label ?? id).join(", ");
+  note(
+    `account: ${account}\nvault: ${vault}\ntitle: ${title}\nfields: ${fieldNames}`,
+    "New item",
+  );
+  const approved = await confirm({ message: "Create this item?", initialValue: false });
+  if (isCancel(approved) || !approved) {
+    return fail("nothing created");
+  }
+  console.log("creating the item");
+  return createItem(account, vault, item);
+}
+
 async function main([command, ...args]: string[]): Promise<number> {
   try {
     switch (command) {
@@ -170,6 +362,8 @@ async function main([command, ...args]: string[]): Promise<number> {
         return await find(args);
       case "fields":
         return await fields(args);
+      case "new":
+        return await newItem(args);
       default:
         throw new UsageError();
     }

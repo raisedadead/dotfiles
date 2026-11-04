@@ -10,9 +10,92 @@ const ROOT = resolve(import.meta.dir, "../..");
 const DESKTOP_ERROR =
   "[ERROR] 2026/11/04 08:50:45 connecting to desktop app: 1Password CLI couldn't connect\n";
 
+const ENTER = "\r";
+const CTRL_C = "\x03";
+const CONFIRM = "Create this item?";
+const NEW_FLAGS = ["--account", PERSONAL, "--vault", "Infra", "--title", "Example"];
+const TYPED = "typed-example-value";
+const templateField = (id: string, type = "STRING") => ({ id, type, label: id, value: "" });
+const LOGIN_TEMPLATE = {
+  title: "",
+  category: "LOGIN",
+  fields: [
+    templateField("username"),
+    templateField("password", "CONCEALED"),
+    templateField("notesPlain"),
+  ],
+};
+const API_TEMPLATE = {
+  title: "",
+  category: "API_CREDENTIAL",
+  fields: [
+    templateField("notesPlain"),
+    templateField("username"),
+    templateField("credential", "CONCEALED"),
+    templateField("type", "MENU"),
+    templateField("filename"),
+    templateField("validFrom", "DATE"),
+    templateField("expires", "DATE"),
+    templateField("hostname"),
+  ],
+};
+
 let dir: string;
 let state: string;
 let tool: string;
+
+function toolEnv(timeoutMs: string) {
+  return {
+    ...process.env,
+    PATH: `${join(dir, "bin")}:${process.env.PATH}`,
+    FAKE_OP_STATE: state,
+    OP_KEYS_TIMEOUT_MS: timeoutMs,
+  };
+}
+
+async function drive(args: string[], steps: [string, string][], timeoutMs = "2000") {
+  const decoder = new TextDecoder();
+  let screen = "";
+  let seenUpTo = 0;
+  const proc = Bun.spawn([tool, ...args], {
+    env: toolEnv(timeoutMs),
+    terminal: {
+      cols: 120,
+      rows: 40,
+      data(_terminal, data) {
+        screen += decoder.decode(data);
+      },
+    },
+  });
+  for (const [prompt, keys] of steps) {
+    const deadline = performance.now() + 4_000;
+    while (screen.indexOf(prompt, seenUpTo) < 0) {
+      if (performance.now() > deadline) {
+        proc.kill();
+        throw new Error(`no prompt "${prompt}" on screen:\n${screen}`);
+      }
+      await Bun.sleep(10);
+    }
+    seenUpTo = screen.indexOf(prompt, seenUpTo) + prompt.length;
+    proc.terminal!.write(keys);
+  }
+  const code = await proc.exited;
+  await Bun.sleep(20);
+  proc.terminal!.close();
+  return { screen, code };
+}
+
+function created() {
+  return JSON.parse(readFileSync(join(state, "created.json"), "utf8")) as {
+    title: string;
+    category: string;
+    fields: { id?: string; label?: string; type: string; value: string }[];
+  };
+}
+
+function createdValues() {
+  return Object.fromEntries(created().fields.map(({ id, label, value }) => [label ?? id, value]));
+}
 
 function item(title: string, vault: string, id: string, category = "API_CREDENTIAL") {
   return { id, title, category, vault: { id: `v-${vault}`, name: vault }, version: 1 };
@@ -37,12 +120,7 @@ function opCalls() {
 
 async function run(args: string[], timeoutMs = "2000") {
   const proc = Bun.spawn([tool, ...args], {
-    env: {
-      ...process.env,
-      PATH: `${join(dir, "bin")}:${process.env.PATH}`,
-      FAKE_OP_STATE: state,
-      OP_KEYS_TIMEOUT_MS: timeoutMs,
-    },
+    env: toolEnv(timeoutMs),
     stdin: "ignore",
     stdout: "pipe",
     stderr: "pipe",
@@ -67,6 +145,8 @@ beforeEach(() => {
   chmodSync(join(dir, "bin", "op"), 0o755);
   listFor(PERSONAL, []);
   listFor(WORK, []);
+  writeFileSync(join(state, "template-Login.json"), JSON.stringify(LOGIN_TEMPLATE));
+  writeFileSync(join(state, "template-API Credential.json"), JSON.stringify(API_TEMPLATE));
 });
 
 afterEach(() => {
@@ -199,10 +279,208 @@ test.each([
   ["find with no words", ["find"]],
   ["an unknown flag on find", ["find", "--password", "placeholder", "R2"]],
   ["an unknown command", ["read", "R2"]],
+  ["a secret flag on new", ["new", "login", ...NEW_FLAGS, "--password", "placeholder"]],
+  ["an unknown kind", ["new", "ssh", ...NEW_FLAGS]],
+  ["a kind name inherited by every object", ["new", "constructor", ...NEW_FLAGS]],
+  ["new with no title", ["new", "login", "--account", PERSONAL, "--vault", "Infra"]],
+  ["r2 with no account ID", ["new", "r2", ...NEW_FLAGS]],
+  ["an account ID on login", ["new", "login", ...NEW_FLAGS, "--account-id", "abc"]],
 ])("%s prints usage, exits 64 and never calls op", async (_name, args) => {
   const { stderr, code } = await run(args as string[]);
 
   expect(code).toBe(64);
   expect(stderr).toContain("usage:");
   expect(opCalls()).toBe("");
+});
+
+test("new refuses without a terminal and never calls op", async () => {
+  const { stderr, code } = await run(["new", "login", ...NEW_FLAGS]);
+
+  expect(code).toBe(1);
+  expect(stderr).toContain("needs a terminal");
+  expect(opCalls()).toBe("");
+});
+
+test("new login sends the typed values on stdin only, with empty fields dropped", async () => {
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(created().title).toBe("Example");
+  expect(created().category).toBe("LOGIN");
+  expect(createdValues()).toEqual({ username: "me", password: TYPED });
+  expect(opCalls()).toContain(
+    `item create --account ${PERSONAL} --vault Infra --format json -`,
+  );
+  expect(opCalls()).not.toContain(TYPED);
+  expect(screen).not.toContain(TYPED);
+  expect(screen).toContain("created Example");
+});
+
+test("new api with no ID and with notes carries no unasked template field", async () => {
+  const { code } = await drive(["new", "api", ...NEW_FLAGS, "--notes", "why it exists"], [
+    ["credential", `${TYPED}${ENTER}`],
+    ["ID (optional)", ENTER],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(createdValues()).toEqual({ credential: TYPED, notesPlain: "why it exists" });
+});
+
+test("new api stores the optional ID as the username", async () => {
+  const { code } = await drive(["new", "api", ...NEW_FLAGS], [
+    ["credential", `${TYPED}${ENTER}`],
+    ["ID (optional)", `id-1${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(createdValues()).toEqual({ credential: TYPED, username: "id-1" });
+});
+
+test("new r2 writes the custom fields and builds the endpoint from the account ID", async () => {
+  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS, "--account-id", "abc"], [
+    ["Access Key ID", `key-id-value${ENTER}`],
+    ["Secret Access Key", `${TYPED}${ENTER}`],
+    ["Token value (optional)", ENTER],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(createdValues()).toEqual({
+    "Access Key ID": "key-id-value",
+    "Secret Access Key": TYPED,
+    Endpoint: "https://abc.r2.cloudflarestorage.com",
+  });
+  expect(created().fields.map(({ type }) => type)).toEqual(["CONCEALED", "CONCEALED", "URL"]);
+  expect(screen).not.toContain("key-id-value");
+});
+
+test("new shows the account, vault, title and field names before it asks", async () => {
+  const { screen } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, ENTER],
+  ]);
+  const summary = screen.slice(0, screen.lastIndexOf(CONFIRM));
+
+  for (const name of [PERSONAL, "Infra", "Example", "username", "password"]) {
+    expect(summary).toContain(name);
+  }
+});
+
+test("new refuses an empty required value and accepts the retry", async () => {
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", ENTER],
+    ["is required", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(screen).toContain("password is required");
+  expect(createdValues().password).toBe(TYPED);
+});
+
+test("new stops before any prompt when the title exists in the vault", async () => {
+  listFor(PERSONAL, [item("Example", "Infra", "p1")]);
+
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], []);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("already exists");
+  expect(screen).not.toContain("username");
+  expect(opCalls()).not.toContain("item create");
+});
+
+test("new stops before any prompt when 1Password does not answer", async () => {
+  hangFor(PERSONAL);
+
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [], "300");
+
+  expect(code).toBe(1);
+  expect(screen).toContain("1Password is waiting for approval");
+  expect(screen).not.toContain("username");
+  expect(opCalls()).not.toContain("item create");
+});
+
+test("new stops before any prompt when a template lost a field it fills", async () => {
+  writeFileSync(
+    join(state, "template-Login.json"),
+    JSON.stringify({ ...LOGIN_TEMPLATE, fields: [templateField("username")] }),
+  );
+
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], []);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("template has no password field");
+  expect(opCalls()).not.toContain("item create");
+});
+
+test("new creates nothing when the confirm is left at its default", async () => {
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, ENTER],
+  ]);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("nothing created");
+  expect(opCalls()).not.toContain("item create");
+});
+
+test("new creates nothing on Ctrl+C at a prompt", async () => {
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", CTRL_C],
+  ]);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("nothing created");
+  expect(opCalls()).not.toContain("item create");
+});
+
+test("new puts no time limit on create, because the operator is in the popup", async () => {
+  writeFileSync(join(state, "create.delay"), "");
+
+  const { code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ], "200");
+
+  expect(code).toBe(0);
+  expect(createdValues().password).toBe(TYPED);
+});
+
+test("new says the outcome is unknown when create is interrupted", async () => {
+  writeFileSync(join(state, "create.hang"), "");
+
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+    ["creating the item", CTRL_C],
+  ]);
+
+  expect(code).toBe(130);
+  expect(screen).toContain("outcome is unknown");
+  expect(screen).toContain("op-keys find");
+});
+
+test("new reports a failed create and exits 1", async () => {
+  writeFileSync(join(state, "create.err"), "[ERROR] 2026/11/04 10:47:50 create refused\n");
+
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("create refused");
+  expect(screen).not.toContain("created Example");
 });
