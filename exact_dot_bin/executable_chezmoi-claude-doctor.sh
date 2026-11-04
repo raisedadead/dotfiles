@@ -726,6 +726,21 @@ self_test() {
 	fi
 	rmdir "$OUTSIDE_DIR"
 	OUTSIDE_DIR=""
+	if ! (
+		CLAUDE_DIR=$(mktemp -d -t chezmoi-claude-doctor-job.XXXXXX)
+		export CLAUDE_DIR
+		trap 'rm -rf "$CLAUDE_DIR"' EXIT
+		marker="$CLAUDE_DIR/markers/doctor-warnings.txt"
+		mkdir -p "${marker%/*}"
+		printf 'stale\n' >"$marker"
+		out=$(cd "$PUB_SOURCE" && CLAUDE_JOB_DIR="$CLAUDE_DIR" "$SELF" --rewake 2>&1 </dev/null) || exit 1
+		[[ -z "$out" && "$(cat "$marker")" == stale ]] || exit 1
+		out=$(cd "$PUB_SOURCE" && env -u CLAUDE_JOB_DIR "$SELF" --rewake 2>&1 </dev/null)
+		[[ -n "$out" || "$(cat "$marker" 2>/dev/null)" != stale ]]
+	); then
+		err '[test] FAIL: --rewake must skip a background session and still run in a terminal session'
+		return 1
+	fi
 
 	log '[test] phase 2: clean baseline'
 	if ! "$SELF" --quiet >/dev/null 2>&1; then
@@ -878,7 +893,7 @@ self_test() {
 	return 0
 }
 
-if [[ "$MODE" == "rewake" ]] && ! rewake_applies "$(session_cwd)"; then
+if [[ "$MODE" == "rewake" ]] && { [[ -n "${CLAUDE_JOB_DIR:-}" ]] || ! rewake_applies "$(session_cwd)"; }; then
 	exit 0
 fi
 
