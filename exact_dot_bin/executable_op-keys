@@ -10,7 +10,8 @@ const EXIT_USAGE = 64;
 const NO_ANSWER =
   "op did not answer in time; 1Password may be waiting for approval, so approve it and run this again";
 const CLOUDFLARE_ACCOUNT_ID = /^[0-9a-f]{32}$/i;
-const CONTROL_CHARACTER = /\p{Cc}/u;
+const UNSAFE_ON_SCREEN = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u;
+const EVERY_UNSAFE_ON_SCREEN = new RegExp(UNSAFE_ON_SCREEN, "gu");
 const EXIT_INTERRUPTED = 130;
 const EXIT_TERMINATED = 143;
 const OP_CREATE_READS_ONLY_A_FIFO = 'cat | op item create "$@"';
@@ -18,7 +19,7 @@ const USAGE = `usage:
   op-keys find <words>...
   op-keys fields --account <account> [--vault <vault>] <item|id>
   op-keys new login|api --account <a> --vault <v> --title <t> [--notes <n>]
-  op-keys new r2 --account <a> --vault <v> --title <t> --account-id <id> [--notes <n>]
+  op-keys new r2 --account <a> --vault <v> --title <t> --account-id <32-hex-id> [--notes <n>]
 
 find lists the items of both accounts whose titles hold every word.
 fields lists the fields of one item. It never prints a value.
@@ -229,6 +230,13 @@ function fail(message: string): number {
   return EXIT_FAILED;
 }
 
+function shownSafely(text: string): string {
+  return JSON.stringify(text).replace(
+    EVERY_UNSAFE_ON_SCREEN,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
 async function createItem(
   account: string,
   vault: string,
@@ -273,7 +281,7 @@ async function newItem(args: string[]): Promise<number> {
   if (!kind || extra.length > 0 || !account || !vault || !title || !accountIdFits) {
     throw new UsageError();
   }
-  if ([account, vault, title].some((value) => CONTROL_CHARACTER.test(value))) {
+  if ([account, vault, title].some((value) => UNSAFE_ON_SCREEN.test(value))) {
     throw new UsageError();
   }
   if (!process.stdin.isTTY) {
@@ -296,6 +304,9 @@ async function newItem(args: string[]): Promise<number> {
   );
   if (lostField) {
     return fail(`the ${kind.template} template has no ${lostField.templateField} field`);
+  }
+  if (notes && !template.fields.some(({ id }) => id === "notesPlain")) {
+    return fail(`the ${kind.template} template has no notesPlain field`);
   }
 
   const listResult = await runOp([
@@ -363,7 +374,7 @@ async function newItem(args: string[]): Promise<number> {
     `vault: ${vault}`,
     `title: ${title}`,
     `fields: ${fieldNames}`,
-    ...(notes ? [`notes: ${JSON.stringify(notes)}`] : []),
+    ...(notes ? [`notes: ${shownSafely(notes)}`] : []),
     ...(endpoint ? [`endpoint: ${endpoint}`] : []),
   ];
   note(summary.join("\n"), "New item");

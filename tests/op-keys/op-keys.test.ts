@@ -17,6 +17,9 @@ const NEW_FLAGS = ["--account", PERSONAL, "--vault", "Infra", "--title", "Exampl
 const TYPED = "typed-example-value";
 const NO_ANSWER = "1Password may be waiting for approval";
 const ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
+const RIGHT_TO_LEFT_OVERRIDE = String.fromCodePoint(0x202e);
+const REORDERING_TITLE = `abc${RIGHT_TO_LEFT_OVERRIDE}def`;
+const HOSTILE_NOTES = `a\u009b31m${RIGHT_TO_LEFT_OVERRIDE}b`;
 const ENDPOINT = `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`;
 const templateField = (id: string, type = "STRING") => ({ id, type, label: id, value: "" });
 const LOGIN_TEMPLATE = {
@@ -319,6 +322,10 @@ test.each([
     "a title that forges a summary line",
     ["new", "login", "--account", PERSONAL, "--vault", "Infra", "--title", "a\naccount: other"],
   ],
+  [
+    "a title that reorders itself on screen",
+    ["new", "login", "--account", PERSONAL, "--vault", "Infra", "--title", REORDERING_TITLE],
+  ],
 ])("%s prints usage, exits 64 and never calls op", async (_name, args) => {
   const { stderr, code } = await run(args as string[]);
 
@@ -407,6 +414,34 @@ test("new shows the account, vault, title and field names before it asks", async
     expect(summary).toContain(name);
   }
   expect(summary).toContain('notes: "line one\\nline two"');
+});
+
+test("new shows notes with every terminal control character escaped", async () => {
+  const { screen } = await drive(["new", "login", ...NEW_FLAGS, "--notes", HOSTILE_NOTES], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, ENTER],
+  ]);
+
+  expect(screen).toContain('notes: "a\\u009b31m\\u202eb"');
+  expect(screen).not.toContain("\u009b");
+  expect(screen).not.toContain(RIGHT_TO_LEFT_OVERRIDE);
+});
+
+test("new stops before any prompt when --notes has no field to go in", async () => {
+  writeFileSync(
+    join(state, "template-Login.json"),
+    JSON.stringify({
+      ...LOGIN_TEMPLATE,
+      fields: [templateField("username"), templateField("password", "CONCEALED")],
+    }),
+  );
+
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS, "--notes", "kept"], []);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("template has no notesPlain field");
+  expect(opCalls()).not.toContain("item create");
 });
 
 test("new refuses an empty required value and accepts the retry", async () => {
