@@ -8,6 +8,7 @@ const EXIT_FAILED = 1;
 const EXIT_USAGE = 64;
 const WAITING_FOR_APPROVAL = "1Password is waiting for approval; approve it, then run this again";
 const EXIT_INTERRUPTED = 130;
+const OP_CREATE_READS_ONLY_A_FIFO = 'cat | op item create "$@"';
 const USAGE = `usage:
   op-keys find <words>...
   op-keys fields --account <account> [--vault <vault>] <item|id>
@@ -228,10 +229,12 @@ async function createItem(
   vault: string,
   item: ItemTemplate,
 ): Promise<number> {
-  const proc = Bun.spawn(
-    ["op", "item", "create", "--account", account, "--vault", vault, "--format", "json", "-"],
-    { stdin: Buffer.from(JSON.stringify(item)), stdout: "ignore", stderr: "pipe" },
-  );
+  const opArgs = ["--account", account, "--vault", vault, "--format", "json", "-"];
+  const proc = Bun.spawn(["sh", "-c", OP_CREATE_READS_ONLY_A_FIFO, "sh", ...opArgs], {
+    stdin: Buffer.from(JSON.stringify(item)),
+    stdout: "ignore",
+    stderr: "pipe",
+  });
   process.on("SIGINT", () => {
     proc.kill();
     console.error(

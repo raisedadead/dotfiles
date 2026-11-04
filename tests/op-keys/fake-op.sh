@@ -26,6 +26,10 @@ case "$verb" in
 "item get") cat "$base.get.json" ;;
 "item template") cat "$state/template-$template.json" ;;
 "item create")
+	if [[ ! -p /dev/stdin ]]; then
+		echo "[ERROR] 2026/11/04 12:26:25 provide the item category with '--category' flag" >&2
+		exit 1
+	fi
 	[[ -f "$state/create.hang" ]] && exec sleep 30
 	[[ -f "$state/create.delay" ]] && sleep 1
 	if [[ -f "$state/create.err" ]]; then
