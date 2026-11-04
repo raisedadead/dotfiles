@@ -18,8 +18,9 @@ const TYPED = "typed-example-value";
 const NO_ANSWER = "1Password may be waiting for approval";
 const ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
 const RIGHT_TO_LEFT_OVERRIDE = String.fromCodePoint(0x202e);
+const TAG_A = String.fromCodePoint(0xe0041);
 const REORDERING_TITLE = `abc${RIGHT_TO_LEFT_OVERRIDE}def`;
-const HOSTILE_NOTES = `a\u009b31m${RIGHT_TO_LEFT_OVERRIDE}b`;
+const HOSTILE_NOTES = `a\u009b31m${RIGHT_TO_LEFT_OVERRIDE}b${TAG_A}`;
 const ENDPOINT = `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`;
 const templateField = (id: string, type = "STRING") => ({ id, type, label: id, value: "" });
 const LOGIN_TEMPLATE = {
@@ -183,6 +184,14 @@ test("find prints each match from both accounts, matching every word in any case
   ]);
 });
 
+test("find escapes terminal control characters in a vault's title", async () => {
+  listFor(PERSONAL, [item(`Backup\u009b31m${RIGHT_TO_LEFT_OVERRIDE}\tDisk`, "Home", "p2")]);
+
+  const { stdout } = await run(["find", "backup"]);
+
+  expect(stdout).toContain(`Backup\\u{9b}31m\\u{202e}\\u{9}Disk`);
+});
+
 test("find says so when no item matches", async () => {
   listFor(PERSONAL, [item("Backup Disk", "Home", "p2")]);
 
@@ -270,6 +279,17 @@ test("fields prints names and references, and never a value", async () => {
   expect(opCalls()).toContain(`item get R2 --account ${PERSONAL} --format json --vault Infra`);
 });
 
+test("fields escapes terminal control characters in a label", async () => {
+  writeFileSync(
+    join(state, `${PERSONAL}.get.json`),
+    JSON.stringify({ fields: [{ type: "STRING", label: `a${RIGHT_TO_LEFT_OVERRIDE}b` }] }),
+  );
+
+  const { stdout } = await run(["fields", "--account", PERSONAL, "R2"]);
+
+  expect(stdout).toContain("a\\u{202e}b");
+});
+
 test("fields reports a failure from op and exits 1", async () => {
   failFor(PERSONAL, "[ERROR] 2026/11/04 10:47:50 account is not signed in\n");
 
@@ -332,6 +352,14 @@ test.each([
   expect(code).toBe(64);
   expect(stderr).toContain("usage:");
   expect(opCalls()).toBe("");
+});
+
+test("new says why it refuses a title with invisible characters", async () => {
+  const { stderr } = await run([
+    "new", "login", "--account", PERSONAL, "--vault", "Infra", "--title", REORDERING_TITLE,
+  ]);
+
+  expect(stderr).toContain("must not hold control or invisible characters");
 });
 
 test("new refuses without a terminal and never calls op", async () => {
@@ -423,9 +451,10 @@ test("new shows notes with every terminal control character escaped", async () =
     [CONFIRM, ENTER],
   ]);
 
-  expect(screen).toContain('notes: "a\\u009b31m\\u202eb"');
+  expect(screen).toContain('notes: "a\\u{9b}31m\\u{202e}b\\u{e0041}"');
   expect(screen).not.toContain("\u009b");
   expect(screen).not.toContain(RIGHT_TO_LEFT_OVERRIDE);
+  expect(screen).not.toContain(TAG_A);
 });
 
 test("new stops before any prompt when --notes has no field to go in", async () => {

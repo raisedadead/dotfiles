@@ -99,6 +99,13 @@ function timeoutMs(): number {
   return Number(process.env.OP_KEYS_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
 }
 
+function escaped(text: string): string {
+  return text.replace(
+    EVERY_UNSAFE_ON_SCREEN,
+    (character) => `\\u{${character.codePointAt(0)?.toString(16)}}`,
+  );
+}
+
 function firstLine(text: string): string {
   return text.split("\n").find((line) => line.trim()) ?? "";
 }
@@ -155,7 +162,7 @@ function matchingRows(account: string, stdout: string, words: string[]): string[
   return items
     .filter(({ title }) => words.every((word) => title.toLowerCase().includes(word)))
     .map(({ id, title, category, vault }) =>
-      [account, vault.name, category, title, id].join("\t"),
+      [account, vault.name, category, title, id].map(escaped).join("\t"),
     );
 }
 
@@ -219,7 +226,7 @@ async function fields(args: string[]): Promise<number> {
       type || "-",
       value ? "set" : "empty",
       reference || "-",
-    ].join("\t"),
+    ].map(escaped).join("\t"),
   );
   console.log(["section\tlabel\ttype\tvalue\treference", ...rows].join("\n"));
   return EXIT_OK;
@@ -228,13 +235,6 @@ async function fields(args: string[]): Promise<number> {
 function fail(message: string): number {
   console.error(message);
   return EXIT_FAILED;
-}
-
-function shownSafely(text: string): string {
-  return JSON.stringify(text).replace(
-    EVERY_UNSAFE_ON_SCREEN,
-    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
-  );
 }
 
 async function createItem(
@@ -282,7 +282,7 @@ async function newItem(args: string[]): Promise<number> {
     throw new UsageError();
   }
   if ([account, vault, title].some((value) => UNSAFE_ON_SCREEN.test(value))) {
-    throw new UsageError();
+    throw new UsageError("account, vault and title must not hold control or invisible characters");
   }
   if (!process.stdin.isTTY) {
     return fail("op-keys new needs a terminal; open it in a popup");
@@ -374,7 +374,7 @@ async function newItem(args: string[]): Promise<number> {
     `vault: ${vault}`,
     `title: ${title}`,
     `fields: ${fieldNames}`,
-    ...(notes ? [`notes: ${shownSafely(notes)}`] : []),
+    ...(notes ? [`notes: ${escaped(JSON.stringify(notes))}`] : []),
     ...(endpoint ? [`endpoint: ${endpoint}`] : []),
   ];
   note(summary.join("\n"), "New item");
@@ -400,7 +400,7 @@ async function main([command, ...args]: string[]): Promise<number> {
     }
   } catch (error) {
     if (error instanceof UsageError) {
-      console.error(USAGE);
+      console.error([error.message, USAGE].filter(Boolean).join("\n\n"));
       return EXIT_USAGE;
     }
     throw error;
