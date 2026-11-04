@@ -3,6 +3,9 @@ set -euo pipefail
 
 state="$FAKE_OP_STATE"
 printf '%s\n' "$*" >>"$state/argv.log"
+if [[ -n "${OP_CONNECT_HOST:-}" ]]; then
+	printf '%s\n' "$OP_CONNECT_HOST" >"$state/connect-host"
+fi
 
 account=""
 verb="${1:-} ${2:-}"

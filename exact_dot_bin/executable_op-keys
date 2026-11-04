@@ -1,4 +1,5 @@
-#!/usr/bin/env bun
+#!/usr/bin/env -S bun --no-env-file --config=/dev/null
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 
 const ACCOUNTS = ["my.1password.com", "freecodecamp.1password.com"];
@@ -6,8 +7,12 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 const EXIT_OK = 0;
 const EXIT_FAILED = 1;
 const EXIT_USAGE = 64;
-const WAITING_FOR_APPROVAL = "1Password is waiting for approval; approve it, then run this again";
+const NO_ANSWER =
+  "op did not answer in time; 1Password may be waiting for approval, so approve it and run this again";
+const CLOUDFLARE_ACCOUNT_ID = /^[0-9a-f]{32}$/i;
+const CONTROL_CHARACTER = /\p{Cc}/u;
 const EXIT_INTERRUPTED = 130;
+const EXIT_TERMINATED = 143;
 const OP_CREATE_READS_ONLY_A_FIFO = 'cat | op item create "$@"';
 const USAGE = `usage:
   op-keys find <words>...
@@ -112,7 +117,7 @@ async function runOp(args: string[]): Promise<OpResult> {
   clearTimeout(timer);
   if (outcome === "expired") {
     proc.kill();
-    return { ok: false, error: WAITING_FOR_APPROVAL };
+    return { ok: false, error: NO_ANSWER };
   }
   const [stdout, stderr, code] = outcome;
   if (code !== 0) {
@@ -189,7 +194,7 @@ async function fields(args: string[]): Promise<number> {
     vault: { type: "string" },
   });
   const { account, vault } = values;
-  if (!account || positionals.length !== 1) {
+  if (!account || positionals.length !== 1 || positionals[0].startsWith("-")) {
     throw new UsageError();
   }
   const opArgs = ["item", "get", positionals[0], "--account", account, "--format", "json"];
@@ -235,13 +240,15 @@ async function createItem(
     stdout: "ignore",
     stderr: "pipe",
   });
-  process.on("SIGINT", () => {
+  const stopWith = (exitCode: number) => () => {
     proc.kill();
     console.error(
       `create was interrupted, so the outcome is unknown; run: op-keys find ${item.title}`,
     );
-    process.exit(EXIT_INTERRUPTED);
-  });
+    process.exit(exitCode);
+  };
+  process.on("SIGINT", stopWith(EXIT_INTERRUPTED));
+  process.on("SIGTERM", stopWith(EXIT_TERMINATED));
   const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
   if (code !== 0) {
     return fail(firstLine(stderr) || `op exited ${code}`);
@@ -261,8 +268,12 @@ async function newItem(args: string[]): Promise<number> {
   const [kindName, ...extra] = positionals;
   const kind = KINDS.get(kindName);
   const { account, vault, title, notes, "account-id": accountId } = values;
-  const accountIdFits = (kindName === "r2") === Boolean(accountId);
+  const accountIdFits =
+    kindName === "r2" ? CLOUDFLARE_ACCOUNT_ID.test(accountId ?? "") : accountId === undefined;
   if (!kind || extra.length > 0 || !account || !vault || !title || !accountIdFits) {
+    throw new UsageError();
+  }
+  if ([account, vault, title].some((value) => CONTROL_CHARACTER.test(value))) {
     throw new UsageError();
   }
   if (!process.stdin.isTTY) {
@@ -301,14 +312,18 @@ async function newItem(args: string[]): Promise<number> {
     return fail(`${title} already exists in ${vault} on ${account}`);
   }
 
-  const { confirm, isCancel, note, password, text } = await import("@clack/prompts@1.8.1");
+  const { confirm, isCancel, note, password, text } = await import(
+    join(import.meta.dir, "op-keys-prompts.js")
+  );
   const typed = new Map<FieldPrompt, string>();
   for (const prompt of kind.prompts) {
     const { label, secret, optional } = prompt;
     const ask = secret ? password : text;
     const answer = await ask({
       message: optional ? `${label} (optional)` : label,
-      validate: optional ? undefined : (value) => (value ? undefined : `${label} is required`),
+      validate: optional
+        ? undefined
+        : (value: string | undefined) => (value ? undefined : `${label} is required`),
     });
     if (isCancel(answer)) {
       return fail("cancelled, nothing created");
@@ -328,12 +343,9 @@ async function newItem(args: string[]): Promise<number> {
       customFields.push({ label, type: "CONCEALED", value });
     }
   }
-  if (accountId) {
-    customFields.push({
-      label: "Endpoint",
-      type: "URL",
-      value: `https://${accountId}.r2.cloudflarestorage.com`,
-    });
+  const endpoint = accountId && `https://${accountId}.r2.cloudflarestorage.com`;
+  if (endpoint) {
+    customFields.push({ label: "Endpoint", type: "URL", value: endpoint });
   }
   const notesField = fieldsToSend.find(({ id }) => id === "notesPlain");
   if (notes && notesField) {
@@ -346,10 +358,15 @@ async function newItem(args: string[]): Promise<number> {
   };
 
   const fieldNames = item.fields.map(({ id, label }) => label ?? id).join(", ");
-  note(
-    `account: ${account}\nvault: ${vault}\ntitle: ${title}\nfields: ${fieldNames}`,
-    "New item",
-  );
+  const summary = [
+    `account: ${account}`,
+    `vault: ${vault}`,
+    `title: ${title}`,
+    `fields: ${fieldNames}`,
+    ...(notes ? [`notes: ${JSON.stringify(notes)}`] : []),
+    ...(endpoint ? [`endpoint: ${endpoint}`] : []),
+  ];
+  note(summary.join("\n"), "New item");
   const approved = await confirm({ message: "Create this item?", initialValue: false });
   if (isCancel(approved) || !approved) {
     return fail("nothing created");

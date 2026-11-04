@@ -15,6 +15,9 @@ const CTRL_C = "\x03";
 const CONFIRM = "Create this item?";
 const NEW_FLAGS = ["--account", PERSONAL, "--vault", "Infra", "--title", "Example"];
 const TYPED = "typed-example-value";
+const NO_ANSWER = "1Password may be waiting for approval";
+const ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
+const ENDPOINT = `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`;
 const templateField = (id: string, type = "STRING") => ({ id, type, label: id, value: "" });
 const LOGIN_TEMPLATE = {
   title: "",
@@ -53,7 +56,11 @@ function toolEnv(timeoutMs: string) {
   };
 }
 
-async function drive(args: string[], steps: [string, string][], timeoutMs = "2000") {
+async function drive(
+  args: string[],
+  steps: [string, string | { signal: "SIGTERM" }][],
+  timeoutMs = "2000",
+) {
   const decoder = new TextDecoder();
   let screen = "";
   let seenUpTo = 0;
@@ -77,7 +84,11 @@ async function drive(args: string[], steps: [string, string][], timeoutMs = "200
       await Bun.sleep(10);
     }
     seenUpTo = screen.indexOf(prompt, seenUpTo) + prompt.length;
-    proc.terminal!.write(keys);
+    if (typeof keys === "string") {
+      proc.terminal!.write(keys);
+    } else {
+      proc.kill(keys.signal);
+    }
   }
   const code = await proc.exited;
   await Bun.sleep(20);
@@ -118,8 +129,9 @@ function opCalls() {
   return existsSync(log) ? readFileSync(log, "utf8") : "";
 }
 
-async function run(args: string[], timeoutMs = "2000") {
+async function run(args: string[], timeoutMs = "2000", cwd = dir) {
   const proc = Bun.spawn([tool, ...args], {
+    cwd,
     env: toolEnv(timeoutMs),
     stdin: "ignore",
     stdout: "pipe",
@@ -141,6 +153,7 @@ beforeEach(() => {
   tool = join(dir, "bin", "op-keys");
   copyFileSync(join(ROOT, "exact_dot_bin/executable_op-keys"), tool);
   chmodSync(tool, 0o755);
+  copyFileSync(join(ROOT, "exact_dot_bin/op-keys-prompts.js"), join(dir, "bin", "op-keys-prompts.js"));
   copyFileSync(join(import.meta.dir, "fake-op.sh"), join(dir, "bin", "op"));
   chmodSync(join(dir, "bin", "op"), 0o755);
   listFor(PERSONAL, []);
@@ -206,8 +219,8 @@ test("find asks both accounts at once, so two waits cost one time limit", async 
   const elapsed = performance.now() - started;
 
   expect(code).toBe(1);
-  expect(stderr).toContain(`${PERSONAL}: 1Password is waiting for approval`);
-  expect(stderr).toContain(`${WORK}: 1Password is waiting for approval`);
+  expect(stderr).toContain(`${PERSONAL}: op did not answer in time; ${NO_ANSWER}`);
+  expect(stderr).toContain(`${WORK}: op did not answer in time; ${NO_ANSWER}`);
   expect(stdout).not.toContain("no item matches");
   expect(elapsed).toBeLessThan(950);
 });
@@ -269,7 +282,22 @@ test("fields stops at the time limit and names the approval", async () => {
   const { stderr, code } = await run(["fields", "--account", PERSONAL, "R2"], "300");
 
   expect(code).toBe(1);
-  expect(stderr).toContain("1Password is waiting for approval");
+  expect(stderr).toContain(NO_ANSWER);
+});
+
+test("a repo's bunfig.toml and .env do not reach the tool or op", async () => {
+  const hostile = join(dir, "hostile");
+  const marker = join(state, "preload-ran");
+  mkdirSync(hostile);
+  writeFileSync(join(hostile, "bunfig.toml"), 'preload = ["./planted.ts"]\n');
+  writeFileSync(join(hostile, "planted.ts"), `await Bun.write(${JSON.stringify(marker)}, "ran");\n`);
+  writeFileSync(join(hostile, ".env"), "OP_CONNECT_HOST=https://attacker.invalid\n");
+
+  const { code } = await run(["find", "backup"], "2000", hostile);
+
+  expect(code).toBe(0);
+  expect(existsSync(marker)).toBe(false);
+  expect(existsSync(join(state, "connect-host"))).toBe(false);
 });
 
 test.each([
@@ -284,7 +312,13 @@ test.each([
   ["a kind name inherited by every object", ["new", "constructor", ...NEW_FLAGS]],
   ["new with no title", ["new", "login", "--account", PERSONAL, "--vault", "Infra"]],
   ["r2 with no account ID", ["new", "r2", ...NEW_FLAGS]],
-  ["an account ID on login", ["new", "login", ...NEW_FLAGS, "--account-id", "abc"]],
+  ["an account ID on login", ["new", "login", ...NEW_FLAGS, "--account-id", ACCOUNT_ID]],
+  ["an r2 account ID that is not 32 hex digits", ["new", "r2", ...NEW_FLAGS, "--account-id", "abc"]],
+  ["a flag passed as the item after --", ["fields", "--account", PERSONAL, "--", "--reveal"]],
+  [
+    "a title that forges a summary line",
+    ["new", "login", "--account", PERSONAL, "--vault", "Infra", "--title", "a\naccount: other"],
+  ],
 ])("%s prints usage, exits 64 and never calls op", async (_name, args) => {
   const { stderr, code } = await run(args as string[]);
 
@@ -343,7 +377,7 @@ test("new api stores the optional ID as the username", async () => {
 });
 
 test("new r2 writes the custom fields and builds the endpoint from the account ID", async () => {
-  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS, "--account-id", "abc"], [
+  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS, "--account-id", ACCOUNT_ID], [
     ["Access Key ID", `key-id-value${ENTER}`],
     ["Secret Access Key", `${TYPED}${ENTER}`],
     ["Token value (optional)", ENTER],
@@ -354,23 +388,25 @@ test("new r2 writes the custom fields and builds the endpoint from the account I
   expect(createdValues()).toEqual({
     "Access Key ID": "key-id-value",
     "Secret Access Key": TYPED,
-    Endpoint: "https://abc.r2.cloudflarestorage.com",
+    Endpoint: ENDPOINT,
   });
   expect(created().fields.map(({ type }) => type)).toEqual(["CONCEALED", "CONCEALED", "URL"]);
   expect(screen).not.toContain("key-id-value");
+  expect(screen.slice(screen.indexOf("New item"), screen.lastIndexOf(CONFIRM))).toContain(ENDPOINT);
 });
 
 test("new shows the account, vault, title and field names before it asks", async () => {
-  const { screen } = await drive(["new", "login", ...NEW_FLAGS], [
+  const { screen } = await drive(["new", "login", ...NEW_FLAGS, "--notes", "line one\nline two"], [
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, ENTER],
   ]);
-  const summary = screen.slice(0, screen.lastIndexOf(CONFIRM));
+  const summary = screen.slice(screen.indexOf("New item"), screen.lastIndexOf(CONFIRM));
 
   for (const name of [PERSONAL, "Infra", "Example", "username", "password"]) {
     expect(summary).toContain(name);
   }
+  expect(summary).toContain('notes: "line one\\nline two"');
 });
 
 test("new refuses an empty required value and accepts the retry", async () => {
@@ -403,7 +439,7 @@ test("new stops before any prompt when 1Password does not answer", async () => {
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [], "300");
 
   expect(code).toBe(1);
-  expect(screen).toContain("1Password is waiting for approval");
+  expect(screen).toContain(NO_ANSWER);
   expect(screen).not.toContain("username");
   expect(opCalls()).not.toContain("item create");
 });
@@ -469,6 +505,20 @@ test("new says the outcome is unknown when create is interrupted", async () => {
   expect(code).toBe(130);
   expect(screen).toContain("outcome is unknown");
   expect(screen).toContain("op-keys find");
+});
+
+test("new says the outcome is unknown when create gets SIGTERM", async () => {
+  writeFileSync(join(state, "create.hang"), "");
+
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+    ["creating the item", { signal: "SIGTERM" }],
+  ]);
+
+  expect(code).toBe(143);
+  expect(screen).toContain("outcome is unknown");
 });
 
 test("new reports a failed create and exits 1", async () => {
