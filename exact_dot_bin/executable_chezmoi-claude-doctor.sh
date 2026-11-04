@@ -716,11 +716,11 @@ self_test() {
 		err '[test] FAIL: rewake treated an empty cwd as the source repository'
 		return 1
 	fi
-	if ! out=$(cd "$OUTSIDE_DIR" && "$SELF" --rewake 2>&1 </dev/null) || [[ -n "$out" ]]; then
+	if ! out=$(cd "$OUTSIDE_DIR" && env -u CLAUDE_JOB_DIR "$SELF" --rewake 2>&1 </dev/null) || [[ -n "$out" ]]; then
 		err '[test] FAIL: --rewake outside the source repository must exit 0 and stay silent'
 		return 1
 	fi
-	if ! out=$(cd "$PUB_SOURCE" && printf '{"cwd":"%s"}' "$OUTSIDE_DIR" | "$SELF" --rewake 2>&1) || [[ -n "$out" ]]; then
+	if ! out=$(cd "$PUB_SOURCE" && printf '{"cwd":"%s"}' "$OUTSIDE_DIR" | env -u CLAUDE_JOB_DIR "$SELF" --rewake 2>&1) || [[ -n "$out" ]]; then
 		err '[test] FAIL: --rewake must obey an outside cwd in the stdin payload'
 		return 1
 	fi
