@@ -69,21 +69,30 @@ check "mdr edit opens a tmux window in tmux" test "$(edit_hit "${TMUX_IN_REX[@]}
 
 handoff_out() {
 	env "$@" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" -- \
-		sh -c "touch '$SB/handed'"
+		sh -c "touch '$SB/handed'" 2>/dev/null
 }
 quiet_handoff() { [[ -z "$(handoff_out "$@")" && ! -e "$SB/handed" ]]; }
 check "rex-handoff does nothing in Ghostty" quiet_handoff "${GHOSTTY[@]}"
 check "rex-handoff does nothing in tmux in Rex" quiet_handoff "${TMUX_IN_REX[@]}"
 inner_out() {
 	env "$@" REX_BLOCK= bash "$REPO/dot_config/rex/bin/executable_rex-handoff" --inner -- \
-		sh -c "touch '$SB/handed'"
+		sh -c "touch '$SB/handed'" 2>/dev/null
 }
 quiet_inner() { [[ -z "$(inner_out "$@" </dev/null)" && ! -e "$SB/handed" ]]; }
 check "rex-handoff --inner does nothing outside a Rex pane" quiet_inner "${GHOSTTY[@]}"
 check "rex-handoff --inner does nothing in tmux in Rex" quiet_inner "${TMUX_IN_REX[@]}"
 check "rex-handoff --inner runs nothing without a terminal" quiet_inner "${REX[@]}"
-check "rex-handoff gives no usage error outside Rex" \
-	test -z "$(env "${GHOSTTY[@]}" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" 2>&1)"
+handoff_exit() {
+	local code=0
+	env "$@" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" -- true \
+		>/dev/null 2>&1 || code=$?
+	echo "$code"
+}
+check "rex-handoff exits 69 in Ghostty" test "$(handoff_exit "${GHOSTTY[@]}")" = 69
+check "rex-handoff exits 69 in tmux in Rex" test "$(handoff_exit "${TMUX_IN_REX[@]}")" = 69
+check "rex-handoff says that nothing ran outside Rex, with no usage error" \
+	test "$(env "${GHOSTTY[@]}" bash "$REPO/dot_config/rex/bin/executable_rex-handoff" 2>&1)" \
+	= "rex-handoff: not in Rex, so nothing ran"
 
 unpinned() {
 	# shellcheck disable=SC2016

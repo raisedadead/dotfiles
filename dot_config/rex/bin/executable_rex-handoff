@@ -108,7 +108,10 @@ inner() {
 	exit "$code"
 }
 
-[[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] || exit 0
+if [[ "${TERM_PROGRAM:-}" != rex || -z "${REX_SESSION:-}" || -n "${TMUX:-}" ]]; then
+	echo "rex-handoff: not in Rex, so nothing ran" >&2
+	exit 69
+fi
 
 if [[ "${1:-}" == "--inner" ]]; then
 	if ((BASH_VERSINFO[0] < 4)); then
