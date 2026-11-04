@@ -94,7 +94,7 @@ if command -v tmux >/dev/null; then
 	tpid=$(tmux -L "$TL" display -p -t mon:0 '#{pid}')
 	in_tmux() {
 		env TMUX="$tsock,$tpid,0" TERM_PROGRAM=tmux REX_SESSION= TMPDIR="$SB/t" \
-			bash "$WATCH" "$@"
+			bun --no-env-file --config=/dev/null "$WATCH" "$@"
 	}
 	tid=$(in_tmux --resolve mon:0:0)
 	check "the monitor resolves a tmux pane" test "${tid:0:1}" = "%"
@@ -104,6 +104,13 @@ if command -v tmux >/dev/null; then
 	tmux -L "$TL" send-keys -t "$tid" Enter
 	watch_until "$tm_pid" 40
 	check "the monitor reports a settled tmux pane" grep -q "tm: FAIL 3" "$SB/t/tm1"
+	in_tmux "$tid" 'never-matches' >"$SB/t/tm-lost" 2>&1 &
+	tm_pid=$!
+	sleep 1
+	rm -rf "$SB/t/watch-pane-$(id -u)"/*-"${tid#%}"
+	watch_until "$tm_pid" 20
+	check "the monitor reports a lost state folder" \
+		test "$(tail -1 "$SB/t/tm-lost")" = "watch failed: no tmux error captured"
 	in_tmux "$tid" >"$SB/t/tm2" 2>&1 &
 	tm_pid=$!
 	sleep 1
