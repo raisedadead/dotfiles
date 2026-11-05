@@ -1,6 +1,6 @@
 # Skill composition
 
-The kernel holds the precedence rules. This document holds the order, with the Claude Code skill names.
+The kernel holds the precedence rules. This document holds the order. The UI workflow uses shared skill names for Pi and Claude Code. Other sections use Claude Code skill names.
 
 A task has one driver. Every other skill is a reference. A driver runs the loop. A reference gives a rubric that you read and apply. Do not use two drivers on one task. Two drivers give two reports and no decision.
 
@@ -49,10 +49,17 @@ A bug report, a wrong result, or a performance regression.
 1. `cloudflare:web-perf` covers Core Web Vitals in a browser alone.
 1. `dossier:backprop` after the fix, when a new invariant prevents the recurrence.
 
+For a visual layout defect whose cause is known, use the UI workflow below.
+
 ## Build or polish a screen
 
-1. One focused skill for a named concern: `better-typography`, `better-colors`, `better-layout`, `better-accessibility`, `better-ui`, or `better-writing`.
-1. `better-interface` for a full sweep at the end. Run it at most once.
+1. Resolve the scope before selecting a skill. Identify the page shell (navigation, main area and table of contents), the content container (titles, cards, code and tables), and the prose. Record the requested outcome, project tokens and accepted design constraints.
+1. Select one driver. `better-layout` drives a new screen, a redesign, or a change to shared widths or breakpoints. A focused skill drives an isolated concern: `better-typography`, `better-colors`, `better-accessibility`, `better-ui`, or `better-writing`. A typography request alone keeps the accepted layout. For an unexplained rendering or interaction failure, diagnosis drives first: `diagnosing-bugs` in Pi or `whetstone:diagnose` in Claude Code. Use UI skills as references until the cause is known.
+1. Read the applicable references before code. Use this design order: layout, writing, typography, color, then UI polish. Apply `better-accessibility` throughout. Load only the references the scope needs; they do not become additional drivers.
+1. Set the layout before type. Establish how the rails and main area share space, how the content container grows, and when columns collapse. Keep prose measure separate from content width. A character-count guide evaluates paragraphs; it does not set the width of cards, code, tables or the page. Accepted project decisions take precedence over numeric style guidance. Preserve an accepted prose measure even when a typography rubric gives a different target. Accessibility failures still require correction. Ask the operator before a conflict changes the scope or design.
+1. Implement through the project's tokens and components. Check all consumers of a shared change. If a focused task requires a layout change, resolve that scope before editing the shared layout.
+1. Verify the affected scope in the browser. For layout-affecting work, inspect the complete screen at the narrowest, typical desktop and widest supported widths. Check proportions, use of space, wrapping and content fit, as well as overflow, keyboard access and zoom. For an isolated change, inspect the affected components, states, themes and applicable accessibility checks. Compare with the accepted reference or before state. Numeric checks support visual acceptance; they do not replace it. Report unverified coverage explicitly.
+1. Use `better-interface` for a new screen, a redesign, or an explicit whole-interface review, at most once at the end. Other tasks use focused acceptance. A focused pass does not establish whole-interface approval.
 
 The operator runs `/interface-review`; the model cannot invoke it.
 
