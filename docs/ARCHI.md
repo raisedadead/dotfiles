@@ -170,9 +170,18 @@ Two coding agents run on this machine. Each owns its own global kernel and its o
 
 This document is the overview. Each rig's `RIG.md` is the system design of that rig, and the rig's code follows its `RIG.md`. A difference between a `RIG.md` and the code is a defect. Correct the code or the `RIG.md` in the same change.
 
-The rigs are similar but not mirrors. A rig takes a feature from another rig as its own copy, and the copies change independently.
+The same command gets the same outcome in the Claude Code and Pi rigs: it runs, it asks, or it is denied. The prompts have the same options. Each rig keeps its own code, and no UI code moves between rigs. These differences stay:
 
-A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In the Claude rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the transcript line records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
+- The Pi guard denies each `pi` command from the model, because a child session from bash skips the agent contract. The Claude guard lets it run.
+- The Claude guard denies `cp ~/.ssh/id_*`. The Pi guard lets it run.
+- A long Claude dialog offers `Details`, which opens the `Approval` view. A long Pi dialog offers `Show all text`.
+- Pi has the Git identity check and `redact.json`. Claude has neither.
+- The kernels differ where the tools differ. Pi has no advisor, TaskList or `notebook`, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.
+- [SKILLS.md](SKILLS.md) uses Claude names, except in the UI workflow.
+
+Each `RIG.md` holds the limits of its rig. The guards match command text. They are not a sealed boundary.
+
+A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In each rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the rig records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 
