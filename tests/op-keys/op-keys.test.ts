@@ -12,8 +12,14 @@ const DESKTOP_ERROR =
 
 const ENTER = "\r";
 const CTRL_C = "\x03";
+const BACKSPACE = "\x7f";
 const CONFIRM = "Create this item?";
 const NEW_FLAGS = ["--account", PERSONAL, "--vault", "Infra", "--title", "Example"];
+const ACCEPT: [string, string][] = [
+  ["account", ENTER],
+  ["vault", ENTER],
+  ["title", ENTER],
+];
 const TYPED = "typed-example-value";
 const NO_ANSWER = "1Password may be waiting for approval";
 const ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
@@ -333,10 +339,7 @@ test.each([
   ["a secret flag on new", ["new", "login", ...NEW_FLAGS, "--password", "placeholder"]],
   ["an unknown kind", ["new", "ssh", ...NEW_FLAGS]],
   ["a kind name inherited by every object", ["new", "constructor", ...NEW_FLAGS]],
-  ["new with no title", ["new", "login", "--account", PERSONAL, "--vault", "Infra"]],
-  ["r2 with no account ID", ["new", "r2", ...NEW_FLAGS]],
-  ["an account ID on login", ["new", "login", ...NEW_FLAGS, "--account-id", ACCOUNT_ID]],
-  ["an r2 account ID that is not 32 hex digits", ["new", "r2", ...NEW_FLAGS, "--account-id", "abc"]],
+  ["an account ID on r2", ["new", "r2", ...NEW_FLAGS, "--account-id", ACCOUNT_ID]],
   ["a flag passed as the item after --", ["fields", "--account", PERSONAL, "--", "--reveal"]],
   [
     "a title that forges a summary line",
@@ -367,11 +370,135 @@ test("new refuses without a terminal and never calls op", async () => {
 
   expect(code).toBe(1);
   expect(stderr).toContain("needs a terminal");
+  expect(stderr).toContain("run it in your own terminal");
+  expect(opCalls()).toBe("");
+});
+
+test("new with no flags asks for the account, vault and title in the dialog", async () => {
+  const { code } = await drive(["new", "login"], [
+    ["account", `${WORK}${ENTER}`],
+    ["vault", `Team${ENTER}`],
+    ["title", `Chosen${ENTER}`],
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(created().title).toBe("Chosen");
+  expect(opCalls()).toContain(`item create --account ${WORK} --vault Team --format json -`);
+});
+
+test("new lets the operator change a value that a flag prefilled", async () => {
+  const { code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ["account", ENTER],
+    ["vault", `${BACKSPACE.repeat("Infra".length)}Team${ENTER}`],
+    ["title", ENTER],
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(opCalls()).toContain(`item create --account ${PERSONAL} --vault Team --format json -`);
+  expect(opCalls()).not.toContain("--vault Infra");
+});
+
+test("new refuses an empty account, vault or title in the dialog", async () => {
+  const { screen, code } = await drive(["new", "login"], [
+    ["account", ENTER],
+    ["account is required", `${PERSONAL}${ENTER}`],
+    ["vault", `Infra${ENTER}`],
+    ["title", `Example${ENTER}`],
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, ENTER],
+  ]);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("account is required");
+});
+
+test("new trims the dialog values and refuses a title of only spaces", async () => {
+  const { screen, code } = await drive(["new", "login"], [
+    ["account", `${PERSONAL} ${ENTER}`],
+    ["vault", ` Infra${ENTER}`],
+    ["title", `   ${ENTER}`],
+    ["title is required", `Example ${ENTER}`],
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(screen).toContain("title is required");
+  expect(created().title).toBe("Example");
+  expect(opCalls()).toContain(`item create --account ${PERSONAL} --vault Infra --format json -`);
+});
+
+test("new r2 refuses an endpoint that is not one https URL and accepts the retry", async () => {
+  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS], [
+    ...ACCEPT,
+    ["Access Key ID", `key-id-value${ENTER}`],
+    ["Secret Access Key", `${TYPED}${ENTER}`],
+    ["Token value (optional)", ENTER],
+    ["Endpoint (optional)", `${TYPED}${ENTER}`],
+    ["must be one https:// URL", `${BACKSPACE.repeat(TYPED.length)}${ENDPOINT}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(createdValues().Endpoint).toBe(ENDPOINT);
+  expect(screen.slice(screen.indexOf("New item"), screen.lastIndexOf(CONFIRM))).not.toContain(TYPED);
+});
+
+test("new refuses an invisible character typed in the dialog and accepts the retry", async () => {
+  const { screen, code } = await drive(["new", "login"], [
+    ["account", `${PERSONAL}${ENTER}`],
+    ["vault", `Infra${ENTER}`],
+    ["title", `${REORDERING_TITLE}${ENTER}`],
+    ["title must not hold", `${BACKSPACE.repeat(REORDERING_TITLE.length)}Example${ENTER}`],
+    ["username", `me${ENTER}`],
+    ["password", `${TYPED}${ENTER}`],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(screen).toContain("title must not hold control or invisible characters");
+  expect(created().title).toBe("Example");
+});
+
+test.each([
+  ["credentials", "https://user:placeholder@x.example.com"],
+  ["a query", "https://x.example.com/?token=abc"],
+  ["no host", "https://?"],
+  ["an invisible character", `https://x${RIGHT_TO_LEFT_OVERRIDE}.example.com`],
+])("new r2 refuses an endpoint with %s", async (_name, endpoint) => {
+  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS], [
+    ...ACCEPT,
+    ["Access Key ID", `key-id-value${ENTER}`],
+    ["Secret Access Key", `${TYPED}${ENTER}`],
+    ["Token value (optional)", ENTER],
+    ["Endpoint (optional)", `${endpoint}${ENTER}`],
+    ["must be one https:// URL", CTRL_C],
+  ]);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("nothing created");
+  expect(opCalls()).not.toContain("item create");
+});
+
+test("new creates nothing and calls no op on Ctrl+C at the account prompt", async () => {
+  const { screen, code } = await drive(["new", "login"], [["account", CTRL_C]]);
+
+  expect(code).toBe(1);
+  expect(screen).toContain("nothing created");
   expect(opCalls()).toBe("");
 });
 
 test("new login sends the typed values on stdin only, with empty fields dropped", async () => {
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, "y"],
@@ -391,6 +518,7 @@ test("new login sends the typed values on stdin only, with empty fields dropped"
 
 test("new api with no ID and with notes carries no unasked template field", async () => {
   const { code } = await drive(["new", "api", ...NEW_FLAGS, "--notes", "why it exists"], [
+    ...ACCEPT,
     ["credential", `${TYPED}${ENTER}`],
     ["ID (optional)", ENTER],
     [CONFIRM, "y"],
@@ -402,6 +530,7 @@ test("new api with no ID and with notes carries no unasked template field", asyn
 
 test("new api stores the optional ID as the username", async () => {
   const { code } = await drive(["new", "api", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["credential", `${TYPED}${ENTER}`],
     ["ID (optional)", `id-1${ENTER}`],
     [CONFIRM, "y"],
@@ -411,11 +540,31 @@ test("new api stores the optional ID as the username", async () => {
   expect(createdValues()).toEqual({ credential: TYPED, username: "id-1" });
 });
 
-test("new r2 writes the custom fields and builds the endpoint from the account ID", async () => {
-  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS, "--account-id", ACCOUNT_ID], [
+test("new r2 stores no endpoint when the operator skips its prompt", async () => {
+  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["Access Key ID", `key-id-value${ENTER}`],
     ["Secret Access Key", `${TYPED}${ENTER}`],
     ["Token value (optional)", ENTER],
+    ["Endpoint (optional)", ENTER],
+    [CONFIRM, "y"],
+  ]);
+
+  expect(code).toBe(0);
+  expect(createdValues()).toEqual({
+    "Access Key ID": "key-id-value",
+    "Secret Access Key": TYPED,
+  });
+  expect(screen.slice(screen.indexOf("New item"), screen.lastIndexOf(CONFIRM))).not.toContain("endpoint:");
+});
+
+test("new r2 stores the endpoint that the operator types", async () => {
+  const { screen, code } = await drive(["new", "r2", ...NEW_FLAGS], [
+    ...ACCEPT,
+    ["Access Key ID", `key-id-value${ENTER}`],
+    ["Secret Access Key", `${TYPED}${ENTER}`],
+    ["Token value (optional)", ENTER],
+    ["Endpoint (optional)", `${ENDPOINT}${ENTER}`],
     [CONFIRM, "y"],
   ]);
 
@@ -432,6 +581,7 @@ test("new r2 writes the custom fields and builds the endpoint from the account I
 
 test("new shows the account, vault, title and field names before it asks", async () => {
   const { screen } = await drive(["new", "login", ...NEW_FLAGS, "--notes", "line one\nline two"], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, ENTER],
@@ -446,6 +596,7 @@ test("new shows the account, vault, title and field names before it asks", async
 
 test("new shows notes with every terminal control character escaped", async () => {
   const { screen } = await drive(["new", "login", ...NEW_FLAGS, "--notes", HOSTILE_NOTES], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, ENTER],
@@ -457,7 +608,7 @@ test("new shows notes with every terminal control character escaped", async () =
   expect(screen).not.toContain(TAG_A);
 });
 
-test("new stops before any prompt when --notes has no field to go in", async () => {
+test("new stops before any value prompt when --notes has no field to go in", async () => {
   writeFileSync(
     join(state, "template-Login.json"),
     JSON.stringify({
@@ -466,15 +617,17 @@ test("new stops before any prompt when --notes has no field to go in", async () 
     }),
   );
 
-  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS, "--notes", "kept"], []);
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS, "--notes", "kept"], ACCEPT);
 
   expect(code).toBe(1);
   expect(screen).toContain("template has no notesPlain field");
+  expect(screen).not.toContain("username");
   expect(opCalls()).not.toContain("item create");
 });
 
 test("new refuses an empty required value and accepts the retry", async () => {
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", ENTER],
     ["is required", `${TYPED}${ENTER}`],
@@ -486,10 +639,10 @@ test("new refuses an empty required value and accepts the retry", async () => {
   expect(createdValues().password).toBe(TYPED);
 });
 
-test("new stops before any prompt when the title exists in the vault", async () => {
+test("new stops before any value prompt when the title exists in the vault", async () => {
   listFor(PERSONAL, [item("Example", "Infra", "p1")]);
 
-  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], []);
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], ACCEPT);
 
   expect(code).toBe(1);
   expect(screen).toContain("already exists");
@@ -497,10 +650,10 @@ test("new stops before any prompt when the title exists in the vault", async () 
   expect(opCalls()).not.toContain("item create");
 });
 
-test("new stops before any prompt when 1Password does not answer", async () => {
+test("new stops before any value prompt when 1Password does not answer", async () => {
   hangFor(PERSONAL);
 
-  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [], "300");
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], ACCEPT, "300");
 
   expect(code).toBe(1);
   expect(screen).toContain(NO_ANSWER);
@@ -508,21 +661,23 @@ test("new stops before any prompt when 1Password does not answer", async () => {
   expect(opCalls()).not.toContain("item create");
 });
 
-test("new stops before any prompt when a template lost a field it fills", async () => {
+test("new stops before any value prompt when a template lost a field it fills", async () => {
   writeFileSync(
     join(state, "template-Login.json"),
     JSON.stringify({ ...LOGIN_TEMPLATE, fields: [templateField("username")] }),
   );
 
-  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], []);
+  const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], ACCEPT);
 
   expect(code).toBe(1);
   expect(screen).toContain("template has no password field");
+  expect(screen).not.toContain("username");
   expect(opCalls()).not.toContain("item create");
 });
 
 test("new creates nothing when the confirm is left at its default", async () => {
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, ENTER],
@@ -535,6 +690,7 @@ test("new creates nothing when the confirm is left at its default", async () => 
 
 test("new creates nothing on Ctrl+C at a prompt", async () => {
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", CTRL_C],
   ]);
 
@@ -547,6 +703,7 @@ test("new puts no time limit on create, because the operator is in the popup", a
   writeFileSync(join(state, "create.delay"), "");
 
   const { code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, "y"],
@@ -560,6 +717,7 @@ test("new says the outcome is unknown when create is interrupted", async () => {
   writeFileSync(join(state, "create.hang"), "");
 
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, "y"],
@@ -575,6 +733,7 @@ test("new says the outcome is unknown when create gets SIGTERM", async () => {
   writeFileSync(join(state, "create.hang"), "");
 
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, "y"],
@@ -589,6 +748,7 @@ test("new reports a failed create and exits 1", async () => {
   writeFileSync(join(state, "create.err"), "[ERROR] 2026/11/04 10:47:50 create refused\n");
 
   const { screen, code } = await drive(["new", "login", ...NEW_FLAGS], [
+    ...ACCEPT,
     ["username", `me${ENTER}`],
     ["password", `${TYPED}${ENTER}`],
     [CONFIRM, "y"],

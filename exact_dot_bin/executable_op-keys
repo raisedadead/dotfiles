@@ -9,7 +9,7 @@ const EXIT_FAILED = 1;
 const EXIT_USAGE = 64;
 const NO_ANSWER =
   "op did not answer in time; 1Password may be waiting for approval, so approve it and run this again";
-const CLOUDFLARE_ACCOUNT_ID = /^[0-9a-f]{32}$/i;
+const UNSAFE_MESSAGE = "must not hold control or invisible characters";
 const UNSAFE_ON_SCREEN = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u;
 const EVERY_UNSAFE_ON_SCREEN = new RegExp(UNSAFE_ON_SCREEN, "gu");
 const EXIT_INTERRUPTED = 130;
@@ -18,12 +18,12 @@ const OP_CREATE_READS_ONLY_A_FIFO = 'cat | op item create "$@"';
 const USAGE = `usage:
   op-keys find <words>...
   op-keys fields --account <account> [--vault <vault>] <item|id>
-  op-keys new login|api --account <a> --vault <v> --title <t> [--notes <n>]
-  op-keys new r2 --account <a> --vault <v> --title <t> --account-id <32-hex-id> [--notes <n>]
+  op-keys new login|api|r2 [--account <a>] [--vault <v>] [--title <t>] [--notes <n>]
 
 find lists the items of both accounts whose titles hold every word.
 fields lists the fields of one item. It never prints a value.
-new creates an item from values typed at its prompts, so it needs a terminal.`;
+new creates an item from values typed at its prompts, so it needs a terminal.
+It asks for the account, vault and title. A flag only prefills the answer.`;
 
 type OpResult = { ok: true; stdout: string } | { ok: false; error: string };
 
@@ -32,6 +32,7 @@ interface FieldPrompt {
   templateField?: string;
   secret?: boolean;
   optional?: boolean;
+  url?: boolean;
 }
 
 interface ItemKind {
@@ -73,6 +74,7 @@ const KINDS = new Map<string, ItemKind>([
         { label: "Access Key ID", secret: true },
         { label: "Secret Access Key", secret: true },
         { label: "Token value", secret: true, optional: true },
+        { label: "Endpoint", optional: true, url: true },
       ],
     },
   ],
@@ -104,6 +106,18 @@ function escaped(text: string): string {
     EVERY_UNSAFE_ON_SCREEN,
     (character) => `\\u{${character.codePointAt(0)?.toString(16)}}`,
   );
+}
+
+function isPlainHttpsUrl(text: string): boolean {
+  if (UNSAFE_ON_SCREEN.test(text) || /\s/.test(text)) {
+    return false;
+  }
+  try {
+    const { protocol, hostname, username, password, search, hash } = new URL(text);
+    return protocol === "https:" && !!hostname && !username && !password && !search && !hash;
+  } catch {
+    return false;
+  }
 }
 
 function firstLine(text: string): string {
@@ -271,22 +285,45 @@ async function newItem(args: string[]): Promise<number> {
     vault: { type: "string" },
     title: { type: "string" },
     notes: { type: "string" },
-    "account-id": { type: "string" },
   });
   const [kindName, ...extra] = positionals;
   const kind = KINDS.get(kindName);
-  const { account, vault, title, notes, "account-id": accountId } = values;
-  const accountIdFits =
-    kindName === "r2" ? CLOUDFLARE_ACCOUNT_ID.test(accountId ?? "") : accountId === undefined;
-  if (!kind || extra.length > 0 || !account || !vault || !title || !accountIdFits) {
+  if (!kind || extra.length > 0) {
     throw new UsageError();
   }
-  if ([account, vault, title].some((value) => UNSAFE_ON_SCREEN.test(value))) {
-    throw new UsageError("account, vault and title must not hold control or invisible characters");
+  const prefills = [values.account, values.vault, values.title];
+  if (prefills.some((value) => value && UNSAFE_ON_SCREEN.test(value))) {
+    throw new UsageError(`account, vault and title ${UNSAFE_MESSAGE}`);
   }
   if (!process.stdin.isTTY) {
-    return fail("op-keys new needs a terminal; open it in a popup");
+    return fail(
+      "op-keys new needs a terminal; run it in your own terminal, or in a tmux popup or a Rex float",
+    );
   }
+
+  const { confirm, isCancel, note, password, text } = await import(
+    join(import.meta.dir, "op-keys-prompts.js")
+  );
+  const askWhere = async (label: string, message: string, initialValue?: string) => {
+    const answer = await text({
+      message,
+      initialValue,
+      validate: (value: string | undefined) => {
+        if (!value?.trim()) {
+          return `${label} is required`;
+        }
+        return UNSAFE_ON_SCREEN.test(value) ? `${label} ${UNSAFE_MESSAGE}` : undefined;
+      },
+    });
+    return isCancel(answer) ? undefined : answer.trim();
+  };
+  const account = await askWhere("account", `account (${ACCOUNTS.join(" or ")})`, values.account);
+  const vault = account && (await askWhere("vault", "vault", values.vault));
+  const title = vault && (await askWhere("title", "title", values.title));
+  if (!account || !vault || !title) {
+    return fail("cancelled, nothing created");
+  }
+  const { notes } = values;
 
   const templateResult = await runOp([
     "item", "template", "get", kind.template, "--account", account, "--format", "json",
@@ -323,18 +360,18 @@ async function newItem(args: string[]): Promise<number> {
     return fail(`${title} already exists in ${vault} on ${account}`);
   }
 
-  const { confirm, isCancel, note, password, text } = await import(
-    join(import.meta.dir, "op-keys-prompts.js")
-  );
   const typed = new Map<FieldPrompt, string>();
   for (const prompt of kind.prompts) {
-    const { label, secret, optional } = prompt;
+    const { label, secret, optional, url } = prompt;
     const ask = secret ? password : text;
     const answer = await ask({
       message: optional ? `${label} (optional)` : label,
-      validate: optional
-        ? undefined
-        : (value: string | undefined) => (value ? undefined : `${label} is required`),
+      validate: (value: string | undefined) => {
+        if (url && value && !isPlainHttpsUrl(value)) {
+          return `${label} must be one https:// URL with no credentials or query`;
+        }
+        return optional || value ? undefined : `${label} is required`;
+      },
     });
     if (isCancel(answer)) {
       return fail("cancelled, nothing created");
@@ -346,17 +383,17 @@ async function newItem(args: string[]): Promise<number> {
 
   const fieldsToSend = template.fields.map((field) => ({ ...field }));
   const customFields: ItemTemplate["fields"] = [];
-  for (const [{ label, templateField }, value] of typed) {
+  let endpoint = "";
+  for (const [{ label, templateField, url }, value] of typed) {
     const target = fieldsToSend.find(({ id }) => id === templateField);
     if (target) {
       target.value = value;
     } else {
-      customFields.push({ label, type: "CONCEALED", value });
+      customFields.push({ label, type: url ? "URL" : "CONCEALED", value });
     }
-  }
-  const endpoint = accountId && `https://${accountId}.r2.cloudflarestorage.com`;
-  if (endpoint) {
-    customFields.push({ label: "Endpoint", type: "URL", value: endpoint });
+    if (url) {
+      endpoint = value;
+    }
   }
   const notesField = fieldsToSend.find(({ id }) => id === "notesPlain");
   if (notes && notesField) {
@@ -375,7 +412,7 @@ async function newItem(args: string[]): Promise<number> {
     `title: ${title}`,
     `fields: ${fieldNames}`,
     ...(notes ? [`notes: ${escaped(JSON.stringify(notes))}`] : []),
-    ...(endpoint ? [`endpoint: ${endpoint}`] : []),
+    ...(endpoint ? [`endpoint: ${escaped(endpoint)}`] : []),
   ];
   note(summary.join("\n"), "New item");
   const approved = await confirm({ message: "Create this item?", initialValue: false });
