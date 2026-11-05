@@ -133,7 +133,7 @@ git -C ~/.dotfiles status    # lists pending submodule commits
 home push                    # pushes submodules, then the parent
 ```
 
-The operator runs `home push`. A failed submodule push stops the command.
+The operator runs `home push`. A failed submodule push stops the command. `home apply <target>` runs `chezmoi apply <target>`.
 
 [ARCHI.md](ARCHI.md#private-submodules) holds the Git hook details.
 
