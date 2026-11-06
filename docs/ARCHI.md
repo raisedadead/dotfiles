@@ -179,7 +179,7 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 - The kernels differ where the tools differ. Pi has no advisor, TaskList or `notebook`, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.
 - [SKILLS.md](SKILLS.md) uses Claude names, except in the UI workflow.
 
-Each `RIG.md` holds the limits of its rig. The guards match command text. They are not a sealed boundary.
+Each `RIG.md` holds the limits of its rig. The guards match command text and need `shfmt` to read shell syntax. They are not a sealed boundary.
 
 A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In each rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the rig records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
 
