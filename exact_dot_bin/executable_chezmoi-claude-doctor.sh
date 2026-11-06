@@ -38,6 +38,7 @@ SHAPE_EXTS="${SHAPE_EXTS:-md|toml|yaml|yml|kdl|ini}"
 CAVEMEM_HEALTH="${CAVEMEM_HEALTH:-$HOME/.bin/cavemem-health.sh}"
 CODEX_RELEASES="${CODEX_RELEASES:-$HOME/.codex/packages/app-server-daemon/releases}"
 PI_RELEASES="${PI_RELEASES:-$HOME/.pi/agent/install/releases}"
+ADDITIONS_FILE="${ADDITIONS_FILE:-$PUB_SOURCE/docs/agent-additions.txt}"
 # ARCHI_CC_VERSION_PIN removed 2026-05-15 — operator policy: no version pins.
 
 SELF=$(command -v -- "$0" 2>/dev/null) || SELF="$0"
@@ -66,7 +67,7 @@ log() { [[ "$QUIET" -eq 1 ]] || printf '%s\n' "$*"; }
 require() {
 	command -v "$1" >/dev/null 2>&1 || {
 		err "missing dependency: $1"
-		exit 2
+		exit "$FAIL_RC"
 	}
 }
 
@@ -518,6 +519,180 @@ check_links() {
 	return "$rc"
 }
 
+jq_items() {
+	local file=$1
+	shift
+	[[ -e "$file" ]] || return 0
+	jq -r "$@" "$file" 2>/dev/null || printf 'unreadable %s\n' "${file#"$HOME"/}"
+}
+
+list_unmanaged_children() {
+	local kind=$1 dir=$2 manifest=${3:-} path name file
+	[[ -d "$dir" ]] || return 0
+	while IFS= read -r path; do
+		name=${path##*/}
+		is_ignored "$path" && continue
+		if is_managed_path "$path"; then
+			[[ -d "$path" && ! -L "$path" ]] || continue
+			while IFS= read -r file; do
+				is_managed_path "$file" || is_ignored "$file" || printf '%s %s\n' "$kind" "$name/${file#"$path"/}"
+			done < <(find "$path" \( -type f -o -type l \) 2>/dev/null)
+			continue
+		fi
+		[[ -r "$manifest" ]] && cut -f2 "$manifest" | grep -qxF -- "$name" && continue
+		printf '%s %s\n' "$kind" "$name"
+	done < <(find "$dir" -mindepth 1 -maxdepth 1 ! -name '.*' 2>/dev/null)
+}
+
+# shellcheck disable=SC2016
+list_claude_additions() {
+	local source="$PRIV_SOURCE/dot_claude/.settings.managed.json"
+	local installed="$CLAUDE_DIR/plugins/installed_plugins.json"
+	local path name plugin dir
+	jq_items "$CLAUDE_DIR/settings.json" --slurpfile source "$source" '
+		def items:
+			((.hooks // {}) | to_entries[] | .key as $event | .value[]? | (.matcher // "") as $matcher | .hooks[]?
+				| {item: "claude-hook \($event)[\($matcher)]: \(.command // .url // .prompt // .type // "")"}),
+			((.enabledPlugins // {}) | to_entries[] | {item: "claude-plugin \(.key)", value}),
+			((.extraKnownMarketplaces // {}) | keys[] | {item: "claude-marketplace \(.)"}),
+			((.mcpServers // {}) | to_entries[] | {item: "claude-mcp \(.key)", value}),
+			(.statusLine.command? // empty | {item: "claude-statusline \(.)"}),
+			(.subagentStatusLine.command? // empty | {item: "claude-statusline \(.)"}),
+			(.apiKeyHelper // empty | {item: "claude-api-key-helper \(.)"}),
+			((.env // {}) | to_entries[] | {item: "claude-env \(.key)", value});
+		([items] - [$source[0] | items])[].item | gsub("[\\n\\r]"; " ")'
+	jq_items "$CLAUDE_DIR/plugins/known_marketplaces.json" --slurpfile source "$source" '
+		(keys - ($source[0].extraKnownMarketplaces // {} | keys))[] | "claude-marketplace \(.)"'
+	jq_items "$HOME/.claude.json" --slurpfile source "$source" '
+		def servers: (.mcpServers // {}) | to_entries | map({item: "claude-mcp \(.key)", value});
+		((servers - ($source[0] | servers))[].item),
+		((.projects // {})[] | .mcpServers // {} | keys[] | "claude-project-mcp \(.)")'
+	while IFS=$'\t' read -r plugin dir; do
+		if [[ -z "$dir" ]]; then
+			printf '%s\n' "$plugin"
+			continue
+		fi
+		jq_items "$dir/hooks/hooks.json" --arg plugin "$plugin" \
+			'((.hooks // {}) | keys[]), (.modules // [])[] | "claude-plugin-hook \($plugin) \(.)"'
+		jq_items "$dir/.claude-plugin/plugin.json" --arg plugin "$plugin" '
+			(select(.hooks) | "claude-plugin-hook \($plugin) manifest"),
+			(.mcpServers // empty | if type == "object" then keys[] else tostring end | "claude-plugin-mcp \($plugin) \(.)")'
+		jq_items "$dir/.mcp.json" --arg plugin "$plugin" '(.mcpServers // .) | keys[] | "claude-plugin-mcp \($plugin) \(.)"'
+	done < <(jq_items "$installed" '(.plugins // {}) | to_entries[] | .key as $plugin | .value[] | "\($plugin)\t\(.installPath // "")"')
+	list_unmanaged_children claude-skills "$CLAUDE_DIR/skills" "$PUB_SOURCE/docs/skills.tsv"
+	for name in agents rules commands hooks output-styles workflows mods; do
+		list_unmanaged_children "claude-$name" "$CLAUDE_DIR/$name"
+	done
+	while IFS= read -r path; do
+		is_managed_path "$path" && continue
+		is_ignored "$path" && continue
+		printf 'claude-script %s\n' "${path##*/}"
+	done < <(find "$CLAUDE_DIR" -mindepth 1 -maxdepth 1 \( -type f -o -type l \) \( -perm +111 -o -name '*.py' -o -name '*.sh' \
+		-o -name '*.js' -o -name '*.mjs' -o -name '*.ts' \) 2>/dev/null)
+}
+
+list_changed_instructions() {
+	local src target pair
+	local source_claude="$PRIV_SOURCE/dot_claude" source_pi="$PRIV_SOURCE/dot_pi/agent"
+	for pair in "$source_claude/CLAUDE.md:$CLAUDE_DIR/CLAUDE.md" \
+		"$source_pi/AGENTS.md:$HOME/.pi/agent/AGENTS.md" \
+		"$source_pi/AGENTS.override.md:$HOME/.pi/agent/AGENTS.override.md" \
+		"$source_pi/APPEND_SYSTEM.md:$HOME/.pi/agent/APPEND_SYSTEM.md" \
+		"$source_pi/CLAUDE.md:$HOME/.pi/agent/CLAUDE.md" \
+		"$source_pi/SYSTEM.md:$HOME/.pi/agent/SYSTEM.md"; do
+		src=${pair%%:*} target=${pair#*:}
+		[[ -e "$target" ]] || continue
+		[[ -e "$src" ]] && cmp -s "$src" "$target" && continue
+		printf 'instructions %s\n' "${target#"$HOME"/}"
+	done
+	while IFS= read -r src; do
+		case "$src" in
+		"$source_claude"/*) target="$CLAUDE_DIR/${src#"$source_claude"/}" ;;
+		*) target="$HOME/.pi/agent/${src#"$source_pi"/}" ;;
+		esac
+		[[ -e "$target" ]] || continue
+		cmp -s "$src" "$target" || printf 'instructions %s\n' "${target#"$HOME"/}"
+	done < <(
+		find "$source_claude/rules" "$source_claude/agents" "$source_pi/rules" "$source_pi/agents" \
+			-type f -name '*.md' 2>/dev/null
+		find "$source_claude/mods" -mindepth 3 -maxdepth 3 -path '*/hooks/hooks.json' 2>/dev/null
+	)
+}
+
+# shellcheck disable=SC2016,SC2001
+list_pi_additions() {
+	local source_pi="$PRIV_SOURCE/dot_pi" managed name escaped
+	list_unmanaged_children pi-skills "$HOME/.pi/agent/skills" "$source_pi/skills.tsv"
+	for name in extensions agents rules; do
+		list_unmanaged_children "pi-$name" "$HOME/.pi/agent/$name"
+	done
+	managed=$(sed -n "/^managed='{/,/^}'/p" "$source_pi/agent/modify_settings.json" 2>/dev/null | sed -e "s/^managed='//" -e "s/^}'/}/")
+	[[ -n "$managed" ]] || managed='{}'
+	jq_items "$HOME/.pi/agent/settings.json" --argjson source "$managed" '
+		. as $live | ["packages", "extensions", "skills"][] as $key
+		| ((($live[$key] // []) | map(if type == "object" then .source else . end)) - ($source[$key] // []))[]
+		| "pi-\($key) \(.)"'
+	while IFS= read -r name; do
+		escaped=$(sed 's/[][\\.*^$()+?{}|]/\\&/g' <<<"$name")
+		grep -qE -- "\"$escaped\"[[:space:]]*:[[:space:]]*\{" "$source_pi/agent/mcp.json.tmpl" 2>/dev/null ||
+			printf 'pi-mcp %s\n' "$name"
+	done < <(jq_items "$HOME/.pi/agent/mcp.json" '(.mcpServers // {}) | keys[]')
+}
+
+codex_section_items() {
+	sed -nE "s/^\[$1\.(\"([^\"]+)\"|'([^']+)'|([^].\"']+))\]\$/$2 \2\3\4/p"
+}
+
+list_codex_additions() {
+	local codex="$HOME/.codex" config="$HOME/.codex/config.toml" normal notify name
+	if [[ -r "$config" ]]; then
+		normal=$(sed -E 's/^[[:space:]]+//; s/^(\[[^#]*\])[[:space:]]*#.*$/\1/; s/[[:space:]]+$//' "$config")
+		codex_section_items marketplaces codex-marketplace <<<"$normal"
+		codex_section_items mcp_servers codex-mcp <<<"$normal"
+		codex_section_items plugins codex-plugin <<<"$normal"
+		codex_section_items agents codex-agent <<<"$normal"
+		grep -qE '^\[\[?hooks[].]' <<<"$normal" && printf 'codex-hooks config\n'
+		notify=$(sed -nE '/^notify[[:space:]]*=/,/\]/p' <<<"$normal" | tr -d '\n' | tr "'" '"' |
+			sed -E 's/^[^[]*\[//; s/\][^]]*$//; s/,[[:space:]]*$//; s/[[:space:]]*,[[:space:]]*/, /g; s/^[[:space:]]+//')
+		[[ -z "$notify" ]] || printf 'codex-notify %s\n' "$notify"
+	fi
+	for name in AGENTS.md AGENTS.override.md; do
+		[[ -e "$codex/$name" ]] && printf 'codex-instructions %s\n' "$name"
+	done
+	[[ -e "$codex/hooks.json" ]] && printf 'codex-hooks hooks.json\n'
+	for name in skills rules agents; do
+		list_unmanaged_children "codex-$name" "$codex/$name"
+	done
+}
+
+check_additions() {
+	local reason=''
+	command -v jq >/dev/null 2>&1 || reason='jq missing'
+	[[ -r "$PRIV_SOURCE/dot_claude/.settings.managed.json" ]] || reason='dot_claude/.settings.managed.json unreadable'
+	[[ -s "$MANAGED_FILE" ]] || reason='chezmoi managed list empty'
+	if [[ -n "$reason" ]]; then
+		log "  WARN: agent addition: check skipped ($reason)"
+		return 1
+	fi
+	local item found=0
+	while IFS= read -r item; do
+		[[ -n "$item" ]] || continue
+		grep -qxF -- "$item" "$ADDITIONS_FILE" 2>/dev/null && continue
+		log "  WARN: agent addition: $item - remove it, or add this item to docs/agent-additions.txt"
+		found=$((found + 1))
+	done < <(
+		{
+			list_claude_additions
+			list_changed_instructions
+			list_unmanaged_children shared-skills "$HOME/.agents/skills" "$PUB_SOURCE/docs/skills.tsv"
+			list_pi_additions
+			list_codex_additions
+		} | LC_ALL=C tr -cd '[:print:]\n' | sort -u
+	)
+	[[ "$found" -eq 0 ]] && log '  clean'
+	[[ "$found" -eq 0 ]]
+}
+
 check_user_agents() {
 	local agents_dir="$PRIV_SOURCE/dot_claude/agents"
 	if [[ ! -d "$agents_dir" ]]; then
@@ -628,48 +803,63 @@ run_checks() {
 	local total=$((rc1 + rc2 + rc3 + rc4 + rc5))
 	log "Total issues: $total"
 
-	log '[warn 1/7] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
+	log '[warn 1/8] first-party plugin drift (installed sha vs claude-code-plugins origin/main)'
 	check_plugin_src_drift
 	log ''
 
-	log '[warn 2/7] cavemem health (hook, better-sqlite3, embedder, worker)'
+	log '[warn 2/8] cavemem health (hook, better-sqlite3, embedder, worker)'
 	check_cavemem_abi
 	log ''
 
-	log '[warn 3/7] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
+	log '[warn 3/8] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)'
 	check_safeguard_toggle
 	log ''
 
-	log '[warn 4/7] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
+	log '[warn 4/8] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)'
 	check_user_agents
 	log ''
 
-	log '[warn 5/7] rig version gate (validate, type check and tests after a Claude Code update)'
+	log '[warn 5/8] rig version gate (validate, type check and tests after a Claude Code update)'
 	check_rig_gate
 	log ''
 
-	log '[warn 6/7] AI release stores (Codex daemon and Pi keep at most two releases)'
+	log '[warn 6/8] AI release stores (Codex daemon and Pi keep at most two releases)'
 	check_ai_releases
 	log ''
 
-	log '[warn 7/7] dangling links (~/.bin and ~/.claude/skills)'
+	log '[warn 7/8] dangling links (~/.bin and ~/.claude/skills)'
 	check_links
+	log ''
+
+	log '[warn 8/8] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)'
+	check_additions
 	log ''
 
 	[[ "$total" -eq 0 ]]
 }
 
-rewake_finish() {
-	local rc=$1 report=$2 warnings tmp=''
+write_warnings() {
+	local warnings=$1 tmp=''
 	local file="$CLAUDE_DIR/markers/doctor-warnings.txt"
-	warnings=$(sed -nE 's/^[[:space:]]*WARN: //p' <<<"$report")
-	if [[ -n "$warnings" ]]; then
-		if ! { mkdir -p "${file%/*}" && tmp=$(mktemp "$file.XXXXXX") && printf '%s\n' "$warnings" >"$tmp" && mv "$tmp" "$file"; }; then
-			rm -f "$file" ${tmp:+"$tmp"}
-		fi
-	else
+	if [[ -z "$warnings" ]]; then
 		rm -f "$file"
+		return 0
 	fi
+	mkdir -p "${file%/*}" && tmp=$(mktemp "$file.XXXXXX") && printf '%s\n' "$warnings" >"$tmp" && mv "$tmp" "$file" && return 0
+	[[ -z "$tmp" ]] || rm -f "$tmp"
+	return 1
+}
+
+rewake_additions() {
+	local kept added
+	kept=$(grep -v '^agent addition: ' "$CLAUDE_DIR/markers/doctor-warnings.txt" 2>/dev/null)
+	added=$(check_additions | sed -nE 's/^[[:space:]]*WARN: //p')
+	write_warnings "$(printf '%s\n%s\n' "$kept" "$added" | sed '/^$/d')"
+}
+
+rewake_finish() {
+	local rc=$1 report=$2
+	write_warnings "$(sed -nE 's/^[[:space:]]*WARN: //p' <<<"$report")" || rm -f "$CLAUDE_DIR/markers/doctor-warnings.txt"
 	[[ "$rc" -eq 0 ]] && return 0
 	{
 		printf 'chezmoi-claude-doctor: issues found. Run ~/.bin/chezmoi-claude-doctor.sh for the full report.\n'
@@ -889,12 +1079,127 @@ self_test() {
 		return 1
 	fi
 
+	log '[test] phase 11: an agent item outside the source and the approved list warns'
+	if ! (
+		HOME=$(mktemp -d) || exit 1
+		trap 'rm -rf "$HOME"' EXIT
+		QUIET=0
+		IGNORED_PATTERNS=()
+		CLAUDE_DIR="$HOME/.claude" PUB_SOURCE="$HOME/src" PRIV_SOURCE="$HOME/src"
+		ADDITIONS_FILE="$HOME/src/docs/agent-additions.txt"
+		MANAGED_FILE="$HOME/managed"
+		rig="$CLAUDE_DIR/mods/rig"
+		mkdir -p "$HOME/src/dot_claude/mods/rig/hooks" "$HOME/src/dot_pi/agent" "$HOME/src/docs" "$CLAUDE_DIR/skills" \
+			"$CLAUDE_DIR/plugins" "$CLAUDE_DIR/rules/sub" "$rig/hooks" "$HOME/plugin/hooks" "$HOME/plugin/.claude-plugin" \
+			"$HOME/.agents/skills" "$HOME/.pi/agent/extensions" "$HOME/.codex/rules"
+		managed='{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"ok"}]}]},"enabledPlugins":{"good@m":true},"extraKnownMarketplaces":{"m":{}},"env":{"KEEP":"a"},"mcpServers":{"srv":{"url":"a"}}}'
+		printf '%s' "$managed" >"$HOME/src/dot_claude/.settings.managed.json"
+		printf '%s' "$managed" >"$CLAUDE_DIR/settings.json"
+		printf 'kernel\n' >"$HOME/src/dot_claude/CLAUDE.md"
+		printf 'kernel\n' >"$CLAUDE_DIR/CLAUDE.md"
+		printf '{}' >"$HOME/src/dot_claude/mods/rig/hooks/hooks.json"
+		printf '{}' >"$rig/hooks/hooks.json"
+		printf '{"mcpServers":{"good":{"command":"x"}}}' >"$HOME/src/dot_pi/agent/mcp.json.tmpl"
+		printf '{"mcpServers":{"srv":{"url":"a"}},"projects":{}}' >"$HOME/.claude.json"
+		: >"$ADDITIONS_FILE"
+		printf '%s\n' "$CLAUDE_DIR/rules/sub" "$rig" "$rig/hooks" "$rig/hooks/hooks.json" >"$MANAGED_FILE"
+		out=$(check_additions) || exit 1
+		[[ "$out" != *WARN* ]] || exit 1
+
+		printf '%s' '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"ok"}]},{"matcher":"evil","hooks":[{"type":"command","command":"ok"}]}],"FileChanged":[{"hooks":[{"type":"command","command":"evil"}]}]},"enabledPlugins":{"good@m":true,"evil@m":true,"bad\u001bname@m":true},"extraKnownMarketplaces":{"m":{},"evil":{}},"statusLine":{"command":"evil"},"subagentStatusLine":{"command":"evil-sub"},"env":{"KEEP":"b","EVIL_URL":"x"},"mcpServers":{"srv":{"url":"b"}}}' >"$CLAUDE_DIR/settings.json"
+		printf '{"mcpServers":{"srv":{"url":"a"},"evil-user":{}},"projects":{"/p":{"mcpServers":{"evil":{}}}}}' >"$HOME/.claude.json"
+		printf '{"hooks":{"Stop":[]},"modules":["./evil.tsx"]}' >"$HOME/plugin/hooks/hooks.json"
+		printf '{"mcpServers":{"evil-manifest":{}}}' >"$HOME/plugin/.claude-plugin/plugin.json"
+		printf '{"mcpServers":{"evil-file":{}}}' >"$HOME/plugin/.mcp.json"
+		printf '{"plugins":{"evil@m":[{"installPath":"%s"},{"installPath":"%s"}]}}' "$HOME/none" "$HOME/plugin" >"$CLAUDE_DIR/plugins/installed_plugins.json"
+		ln -s ../../.agents/skills/evil "$CLAUDE_DIR/skills/evil"
+		mkdir "$HOME/.agents/skills/evil"
+		printf '#!/bin/sh\n' >"$CLAUDE_DIR/evil.py"
+		ln -s /tmp/x "$CLAUDE_DIR/evil-link.sh"
+		printf 'injected\n' >>"$CLAUDE_DIR/CLAUDE.md"
+		: >"$CLAUDE_DIR/rules/sub/evil.md"
+		printf '{"modules":["evil"]}' >"$rig/hooks/hooks.json"
+		: >"$HOME/.pi/agent/extensions/evil.ts"
+		: >"$HOME/.pi/agent/SYSTEM.md"
+		printf '{"packages":["npm:evil"],"extensions":["/tmp/evil.ts"],"skills":["/tmp/evilskill"]}' >"$HOME/.pi/agent/settings.json"
+		printf '{"mcpServers":{"good":{},"command":{}}}' >"$HOME/.pi/agent/mcp.json"
+		printf "notify = [\n  '/bin/evil',\n  \"arg\",\n]\n[marketplaces.evil]\n[mcp_servers.\"evil.dot\"] # note\n  [mcp_servers.evil_indent]\n[[hooks.Stop]]\n[plugins.'lit@other']\n[agents.evil]\n" >"$HOME/.codex/config.toml"
+		: >"$HOME/.codex/AGENTS.md"
+		: >"$HOME/.codex/AGENTS.override.md"
+		: >"$HOME/.codex/rules/evil.rules"
+		out=$(check_additions) && exit 1
+		for item in 'claude-hook FileChanged[]: evil' 'claude-hook Stop[evil]: ok' 'claude-plugin evil@m' \
+			'claude-marketplace evil' 'claude-statusline evil' 'claude-statusline evil-sub' 'claude-env EVIL_URL' \
+			'claude-env KEEP' 'claude-mcp srv' 'claude-mcp evil-user' 'claude-project-mcp evil' \
+			'claude-plugin-hook evil@m Stop' 'claude-plugin-hook evil@m ./evil.tsx' \
+			'claude-plugin-mcp evil@m evil-manifest' 'claude-plugin-mcp evil@m evil-file' 'claude-skills evil' \
+			'claude-rules sub/evil.md' 'claude-script evil.py' 'claude-script evil-link.sh' \
+			'instructions .claude/CLAUDE.md' 'instructions .claude/mods/rig/hooks/hooks.json' \
+			'instructions .pi/agent/SYSTEM.md' 'shared-skills evil' 'pi-extensions evil.ts' \
+			'pi-packages npm:evil' 'pi-extensions /tmp/evil.ts' 'pi-skills /tmp/evilskill' 'pi-mcp command' \
+			'codex-notify "/bin/evil", "arg"' 'codex-marketplace evil' 'codex-mcp evil.dot' 'codex-mcp evil_indent' \
+			'codex-plugin lit@other' 'codex-agent evil' 'codex-hooks config' 'codex-rules evil.rules' \
+			'codex-instructions AGENTS.md' 'codex-instructions AGENTS.override.md'; do
+			[[ "$out" == *"WARN: agent addition: $item - "* ]] || {
+				err "[test] missing: $item"
+				exit 1
+			}
+		done
+		[[ "$out" != *$'\e'* && "$out" != *'pi-mcp good'* ]] || exit 1
+
+		sed -nE 's/^ *WARN: agent addition: (.*) - remove it.*/\1/p' <<<"$out" >"$ADDITIONS_FILE"
+		out=$(check_additions) || exit 1
+		[[ "$out" != *WARN* ]] || exit 1
+
+		printf 'not json' >"$CLAUDE_DIR/settings.json"
+		out=$(check_additions) && exit 1
+		[[ "$out" == *'WARN: agent addition: unreadable .claude/settings.json - '* ]] || exit 1
+		: >"$MANAGED_FILE"
+		out=$(check_additions) && exit 1
+		[[ "$out" == *'WARN: agent addition: check skipped'* ]]
+	); then
+		err '[test] FAIL: agent additions must warn until they are removed or approved'
+		return 1
+	fi
+
+	log '[test] phase 12: outside the source repository, rewake updates only the agent addition lines'
+	if ! (
+		CLAUDE_DIR=$(mktemp -d) || exit 1
+		trap 'rm -rf "$CLAUDE_DIR"' EXIT
+		QUIET=0
+		marker="$CLAUDE_DIR/markers/doctor-warnings.txt"
+		mkdir -p "${marker%/*}"
+		printf 'other warning\nagent addition: old\n' >"$marker"
+		check_additions() {
+			log '  WARN: agent addition: new'
+			return 1
+		}
+		rewake_additions || exit 1
+		[[ "$(cat "$marker")" == $'other warning\nagent addition: new' ]] || exit 1
+		check_additions() { log '  clean'; }
+		rewake_additions || exit 1
+		[[ "$(cat "$marker")" == 'other warning' ]] || exit 1
+		printf 'agent addition: old\n' >"$marker"
+		rewake_additions || exit 1
+		[[ ! -e "$marker" ]]
+	); then
+		err '[test] FAIL: rewake outside the source repository must keep the other warnings'
+		return 1
+	fi
+
 	log '[test] PASS'
 	return 0
 }
 
-if [[ "$MODE" == "rewake" ]] && { [[ -n "${CLAUDE_JOB_DIR:-}" ]] || ! rewake_applies "$(session_cwd)"; }; then
-	exit 0
+OUTSIDE_REPO=0
+FAIL_RC=2
+if [[ "$MODE" == "rewake" ]]; then
+	[[ -z "${CLAUDE_JOB_DIR:-}" ]] || exit 0
+	if ! rewake_applies "$(session_cwd)"; then
+		OUTSIDE_REPO=1
+		FAIL_RC=0
+		exec 2>/dev/null
+	fi
 fi
 
 require chezmoi
@@ -904,11 +1209,16 @@ require grep
 require sort
 
 OUTSIDE_DIR=""
-MANAGED_FILE=$(mktemp -t chezmoi-claude-doctor.XXXXXX) || exit 2
+MANAGED_FILE=$(mktemp -t chezmoi-claude-doctor.XXXXXX) || exit "$FAIL_RC"
 trap 'rm -f "$MANAGED_FILE"; [[ -n "$OUTSIDE_DIR" ]] && rmdir "$OUTSIDE_DIR" 2>/dev/null' EXIT
 
 build_managed >"$MANAGED_FILE"
 load_ignored
+
+if [[ "$OUTSIDE_REPO" -eq 1 ]]; then
+	rewake_additions
+	exit 0
+fi
 
 if [[ "$MODE" == "test" ]]; then
 	self_test

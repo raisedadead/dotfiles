@@ -171,9 +171,11 @@ R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_r
 
 Expected: Exit 0. No `WARN:`, `ORPHAN:`, or `LINT:` line
 
+A `WARN: agent addition:` line names an item that you did not approve. Remove the item, or add its `<kind> <name>` line to [agent-additions.txt](agent-additions.txt).
+
 ### M2
 
-`claude plugin list`; read doctor check `[warn 1/7]`, which compares each first-party `gitCommitSha` with `origin/main` of `~/DEV/rd/claude-code-plugins`
+`claude plugin list`; read doctor check `[warn 1/8]`, which compares each first-party `gitCommitSha` with `origin/main` of `~/DEV/rd/claude-code-plugins`
 
 Expected: The expected plugins are enabled. First-party revisions agree, or you report the gap
 

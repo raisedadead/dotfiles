@@ -1,0 +1,44 @@
+claude-marketplace claude-plugins-official
+claude-plugin-hook dossier@raisedadead-plugins ./register.tsx
+claude-plugin-hook whetstone@raisedadead-plugins ./register.ts
+claude-plugin-hook worktrunk@worktrunk ./register.tsx
+claude-plugin-hook worktrunk@worktrunk Notification
+claude-plugin-hook worktrunk@worktrunk PermissionRequest
+claude-plugin-hook worktrunk@worktrunk PreToolUse
+claude-plugin-hook worktrunk@worktrunk SessionEnd
+claude-plugin-hook worktrunk@worktrunk Stop
+claude-plugin-hook worktrunk@worktrunk UserPromptSubmit
+claude-plugin-hook worktrunk@worktrunk WorktreeCreate
+claude-plugin-hook worktrunk@worktrunk WorktreeRemove
+claude-plugin-mcp cloudflare@cloudflare ./.mcp.json
+claude-plugin-mcp cloudflare@cloudflare cloudflare
+claude-project-mcp cloudflare-builds
+claude-project-mcp cloudflare-docs
+claude-project-mcp cloudflare-observability
+claude-project-mcp sentry
+codex-marketplace openai-bundled
+codex-marketplace openai-primary-runtime
+codex-mcp computer-use
+codex-mcp node_repl
+codex-notify "/Users/mrugesh/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"
+codex-plugin browser@openai-bundled
+codex-plugin code-review@openai-bundled
+codex-plugin codex-app-tools@openai-bundled
+codex-plugin computer-use@openai-bundled
+codex-plugin documents@openai-primary-runtime
+codex-plugin pdf@openai-primary-runtime
+codex-plugin presentations@openai-primary-runtime
+codex-plugin spreadsheets@openai-primary-runtime
+codex-plugin template-creator@openai-primary-runtime
+codex-plugin unified-computer-use@openai-bundled
+codex-plugin visualize@openai-bundled
+codex-skills MATT-LICENSE.txt
+codex-skills code-review
+codex-skills codebase-design
+codex-skills diagnosing-bugs
+codex-skills domain-modeling
+codex-skills handoff
+codex-skills research
+codex-skills resolving-merge-conflicts
+codex-skills tdd
+codex-skills writing-for-agents
