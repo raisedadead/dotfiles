@@ -19,10 +19,6 @@
 #                               symlink_<name> source entries match a dot_agents/skills/<name>, and no
 #                               common skill is also a CLI-installed copy (skills lock).
 #
-# Six warning checks print WARN lines and do not count as issues:
-#   plugin drift against claude-code-plugins origin/main, cavemem health, the safeguard
-#   toggle, the user-agent cap, the rig version gate, and the AI release stores.
-#
 # Usage:
 #   chezmoi-claude-doctor.sh           # report + non-zero exit on drift
 #   chezmoi-claude-doctor.sh --quiet   # exit code only
@@ -51,7 +47,7 @@ case "${1:-}" in
 --test) MODE="test" ;;
 --rewake) MODE="rewake" ;;
 --help | -h)
-	sed -n '2,30p' "$SELF"
+	sed -n '2,26p' "$SELF"
 	exit 0
 	;;
 '') ;;
@@ -558,6 +554,7 @@ list_claude_additions() {
 			((.mcpServers // {}) | to_entries[] | {item: "claude-mcp \(.key)", value}),
 			(.statusLine.command? // empty | {item: "claude-statusline \(.)"}),
 			(.subagentStatusLine.command? // empty | {item: "claude-statusline \(.)"}),
+			(.fileSuggestion.command? // empty | {item: "claude-file-suggestion \(.)"}),
 			(.apiKeyHelper // empty | {item: "claude-api-key-helper \(.)"}),
 			((.env // {}) | to_entries[] | {item: "claude-env \(.key)", value});
 		([items] - [$source[0] | items])[].item | gsub("[\\n\\r]"; " ")'
@@ -1106,7 +1103,7 @@ self_test() {
 		out=$(check_additions) || exit 1
 		[[ "$out" != *WARN* ]] || exit 1
 
-		printf '%s' '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"ok"}]},{"matcher":"evil","hooks":[{"type":"command","command":"ok"}]}],"FileChanged":[{"hooks":[{"type":"command","command":"evil"}]}]},"enabledPlugins":{"good@m":true,"evil@m":true,"bad\u001bname@m":true},"extraKnownMarketplaces":{"m":{},"evil":{}},"statusLine":{"command":"evil"},"subagentStatusLine":{"command":"evil-sub"},"env":{"KEEP":"b","EVIL_URL":"x"},"mcpServers":{"srv":{"url":"b"}}}' >"$CLAUDE_DIR/settings.json"
+		printf '%s' '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"ok"}]},{"matcher":"evil","hooks":[{"type":"command","command":"ok"}]}],"FileChanged":[{"hooks":[{"type":"command","command":"evil"}]}]},"enabledPlugins":{"good@m":true,"evil@m":true,"bad\u001bname@m":true},"extraKnownMarketplaces":{"m":{},"evil":{}},"statusLine":{"command":"evil"},"fileSuggestion":{"command":"evil"},"subagentStatusLine":{"command":"evil-sub"},"env":{"KEEP":"b","EVIL_URL":"x"},"mcpServers":{"srv":{"url":"b"}}}' >"$CLAUDE_DIR/settings.json"
 		printf '{"mcpServers":{"srv":{"url":"a"},"evil-user":{}},"projects":{"/p":{"mcpServers":{"evil":{}}}}}' >"$HOME/.claude.json"
 		printf '{"hooks":{"Stop":[]},"modules":["./evil.tsx"]}' >"$HOME/plugin/hooks/hooks.json"
 		printf '{"mcpServers":{"evil-manifest":{}}}' >"$HOME/plugin/.claude-plugin/plugin.json"
@@ -1129,7 +1126,7 @@ self_test() {
 		: >"$HOME/.codex/rules/evil.rules"
 		out=$(check_additions) && exit 1
 		for item in 'claude-hook FileChanged[]: evil' 'claude-hook Stop[evil]: ok' 'claude-plugin evil@m' \
-			'claude-marketplace evil' 'claude-statusline evil' 'claude-statusline evil-sub' 'claude-env EVIL_URL' \
+			'claude-marketplace evil' 'claude-statusline evil' 'claude-statusline evil-sub' 'claude-file-suggestion evil' 'claude-env EVIL_URL' \
 			'claude-env KEEP' 'claude-mcp srv' 'claude-mcp evil-user' 'claude-project-mcp evil' \
 			'claude-plugin-hook evil@m Stop' 'claude-plugin-hook evil@m ./evil.tsx' \
 			'claude-plugin-mcp evil@m evil-manifest' 'claude-plugin-mcp evil@m evil-file' 'claude-skills evil' \
