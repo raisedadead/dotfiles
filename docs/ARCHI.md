@@ -84,7 +84,7 @@ chezmoi keeps its packaged `_chezmoi` completion with `completion.custom = false
 
 Ctrl+T replaces the shell argument at the cursor. An existing directory becomes the search root, and the rest becomes the query. It does not evaluate variables or command substitutions. It respects Git ignores. `<C-g>` includes the ignored entries for that call.
 
-`.zshrc` and `.bashrc` load the worktrunk wrapper with `wt config shell init`. Do not run `wt config shell install`, because it writes the deployed files. An agent shell does not load the wrapper, so `wt switch` cannot change its directory there. Move a Claude session with `EnterWorktree`.
+`.zshrc` and `.bashrc` load the worktrunk wrapper with `wt config shell init`. Do not run `wt config shell install`, because it writes the deployed files. An agent shell does not load the wrapper, so `wt switch` cannot change its directory there. An agent stays in the main checkout and works in a worktree by full path.
 
 Keep `DIRENV_LOG_FORMAT` exported above the direnv hook.
 
@@ -231,6 +231,8 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 [Skills](#skills) holds the five kinds and the shared store. A common skill reaches Claude through a `symlink_<name>` entry in `dot_claude/skills/` with the content `../../.agents/skills/<name>`. Doctor lint 5e checks the links and the source entries.
 
 ### RTK and worktrees
+
+A session starts in the main checkout and works in `wt` worktrees by full path. Reason: after `EnterWorktree`, Claude Code refuses an edit to the main checkout, and dossiers stay there. Branch form: `<type>/<cc|pi>-<first 6 of session ID>-<topic>`. `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. Both guards ask before worktree removal (`mutations.ts`).
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
