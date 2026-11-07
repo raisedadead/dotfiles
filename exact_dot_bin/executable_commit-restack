@@ -16,13 +16,13 @@ case $ref in -*)
 esac
 
 dirty() {
-	[ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]
+	[ -n "$(git -C "$repo" status --porcelain --untracked-files=normal)" ]
 }
 
 case $mode in
 start)
 	if dirty; then
-		echo "commit-restack: $repo has uncommitted changes. Commit or stash them first." >&2
+		echo "commit-restack: $repo has uncommitted or untracked changes. Commit them, stash them with git stash -u, or remove them first." >&2
 		exit 1
 	fi
 	base=$(git -C "$repo" rev-parse --verify -q "$ref^{commit}") || {
