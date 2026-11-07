@@ -174,6 +174,7 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 
 - The Pi guard denies each `pi` command from the model, because a child session from bash skips the agent contract. The Claude guard lets it run.
 - The Claude guard denies `cp ~/.ssh/id_*`. The Pi guard lets it run.
+- The skill-order check sees a Claude `Skill` call, and in Pi a read of a `better-*/SKILL.md` file. A `/skill:` command that the operator types in Pi records the skill and is never refused.
 - The Pi guard reads the body of a heredoc for its deny patterns, unless the heredoc is quoted and its line is only `cat` with at most one file redirect. The Claude guard reads only a body that goes to a shell, `ssh`, `eval`, `at` or `batch`, so `ruby <<'EOF'` and `docker exec -i c sh <<'EOF'` bodies are not read.
 - A long Claude dialog offers `Details`, which opens the `Approval` view. A long Pi dialog offers `Show all text`.
 - Pi has `redact.json`. Claude has no such file.
