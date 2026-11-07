@@ -174,6 +174,7 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 
 - The Pi guard denies each `pi` command from the model, because a child session from bash skips the agent contract. The Claude guard lets it run.
 - The Claude guard denies `cp ~/.ssh/id_*`. The Pi guard lets it run.
+- The Pi guard reads the body of a heredoc for its deny patterns, unless the heredoc is quoted and goes to `cat`. The Claude guard reads only a body that goes to a shell, `ssh`, `eval`, `at` or `batch`, so `ruby <<'EOF'` and `docker exec -i c sh <<'EOF'` bodies are not read.
 - A long Claude dialog offers `Details`, which opens the `Approval` view. A long Pi dialog offers `Show all text`.
 - Pi has `redact.json`. Claude has no such file.
 - The kernels differ where the tools differ. Pi has no advisor, TaskList or `notebook`, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.

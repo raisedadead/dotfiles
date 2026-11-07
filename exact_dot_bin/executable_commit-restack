@@ -9,6 +9,11 @@ usage='Usage: commit-restack start <repo> <base> | commit-restack check <repo> <
 mode=$1
 repo=$2
 ref=$3
+case $ref in -*)
+	echo "commit-restack: $ref is not a commit." >&2
+	exit 2
+	;;
+esac
 
 dirty() {
 	[ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]
@@ -42,7 +47,8 @@ start)
 	git -C "$repo" reset -q "$base"
 	;;
 check)
-	if git -C "$repo" diff --quiet "$ref" HEAD && ! dirty; then
+	old=$(git -C "$repo" rev-parse --verify -q "$ref^{tree}") || old=missing
+	if [ "$old" = "$(git -C "$repo" rev-parse 'HEAD^{tree}')" ] && ! dirty; then
 		echo "commit-restack: pass. HEAD has the same tree as $ref."
 	else
 		echo "commit-restack: fail. HEAD differs from $ref, or changes are left uncommitted. Stop, and report $ref to the caller." >&2
