@@ -1,0 +1,56 @@
+#!/bin/sh
+set -eu
+
+usage='Usage: commit-restack start <repo> <base> | commit-restack check <repo> <old-tip>'
+[ $# -eq 3 ] || {
+	echo "$usage" >&2
+	exit 2
+}
+mode=$1
+repo=$2
+ref=$3
+
+dirty() {
+	[ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]
+}
+
+case $mode in
+start)
+	if dirty; then
+		echo "commit-restack: $repo has uncommitted changes. Commit or stash them first." >&2
+		exit 1
+	fi
+	base=$(git -C "$repo" rev-parse --verify -q "$ref^{commit}") || {
+		echo "commit-restack: $ref is not a commit." >&2
+		exit 1
+	}
+	if ! git -C "$repo" merge-base --is-ancestor "$base" HEAD; then
+		echo "commit-restack: $ref is not an ancestor of HEAD." >&2
+		exit 1
+	fi
+	all=$(git -C "$repo" rev-list --count "$base..HEAD")
+	local_only=$(git -C "$repo" rev-list --count "$base..HEAD" --not --remotes)
+	if [ "$all" -eq 0 ]; then
+		echo "commit-restack: no commits after $ref." >&2
+		exit 1
+	fi
+	if [ "$all" -ne "$local_only" ]; then
+		echo "commit-restack: $((all - local_only)) of the $all commits after $ref are on a remote. Restack only unpushed commits." >&2
+		exit 1
+	fi
+	git -C "$repo" rev-parse HEAD
+	git -C "$repo" reset -q "$base"
+	;;
+check)
+	if git -C "$repo" diff --quiet "$ref" HEAD && ! dirty; then
+		echo "commit-restack: pass. HEAD has the same tree as $ref."
+	else
+		echo "commit-restack: fail. HEAD differs from $ref, or changes are left uncommitted. Stop, and report $ref to the caller." >&2
+		exit 1
+	fi
+	;;
+*)
+	echo "$usage" >&2
+	exit 2
+	;;
+esac
