@@ -306,10 +306,13 @@ sleep 1
 R send -s "$S" -b "$mon" $'\n' >/dev/null
 waited() { ! kill -0 "$1" 2>/dev/null; }
 for _ in $(seq 40); do
-	waited "$mon_pid" && break
+	grep -q "build: FAIL 2 tests" "$SB/t/mon1" && break
 	sleep 0.5
 done
-check "the monitor reports the settled lines that match" grep -q "build: FAIL 2 tests" "$SB/t/mon1"
+check "the monitor reports the lines that match" grep -q "build: FAIL 2 tests" "$SB/t/mon1"
+check "the monitor keeps watching after an event" kill -0 "$mon_pid"
+pkill -TERM -f "watch-pane[^ ]* $mon( |\$)" 2>/dev/null || true
+wait "$mon_pid" 2>/dev/null || true
 in_sb "$mon" 'never-matches' >"$SB/t/mon2" 2>&1 &
 mon_pid=$!
 sleep 1

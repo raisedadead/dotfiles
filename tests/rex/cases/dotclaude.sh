@@ -8,6 +8,15 @@ watch_until() {
 	kill "$pid" 2>/dev/null
 	return 1
 }
+saw_then_stop() {
+	local pid=$1 file=$2 text=$3 id=$4
+	for _ in $(seq 40); do
+		grep -q "$text" "$file" && break
+		sleep 0.5
+	done
+	pkill -TERM -f "watch-pane[^ ]* $id( |\$)" 2>/dev/null || true
+	wait "$pid" 2>/dev/null || true
+}
 
 S2=$(R new --json other -- sh -c 'exec sleep 300' | jq -r .session_id)
 far=$(R split -s "$S2" --json -- bash -c 'echo ready; read -r _; echo "far: FAIL 1"; read -r _' |
@@ -22,7 +31,7 @@ in_sb "$far" 'FAIL' >"$SB/t/far1" 2>&1 &
 far_pid=$!
 sleep 1
 R send -s "$S2" -b "$far" $'\n' >/dev/null
-watch_until "$far_pid" 40
+saw_then_stop "$far_pid" "$SB/t/far1" "far: FAIL 1" "$far"
 check "the monitor reports a pane in another session" grep -q "far: FAIL 1" "$SB/t/far1"
 far_state() { compgen -G "$SB/t/watch-pane-$(id -u)/rex.*-${far#block:}" >/dev/null; }
 in_sb --resolve "$plain" >/dev/null
@@ -102,15 +111,15 @@ if command -v tmux >/dev/null; then
 	tm_pid=$!
 	sleep 1
 	tmux -L "$TL" send-keys -t "$tid" Enter
-	watch_until "$tm_pid" 40
-	check "the monitor reports a settled tmux pane" grep -q "tm: FAIL 3" "$SB/t/tm1"
+	saw_then_stop "$tm_pid" "$SB/t/tm1" "tm: FAIL 3" "$tid"
+	check "the monitor reports a matching tmux line" grep -q "tm: FAIL 3" "$SB/t/tm1"
 	in_tmux "$tid" 'never-matches' >"$SB/t/tm-lost" 2>&1 &
 	tm_pid=$!
 	sleep 1
 	rm -rf "$SB/t/watch-pane-$(id -u)"/*-"${tid#%}"
 	watch_until "$tm_pid" 20
 	check "the monitor reports a lost state folder" \
-		test "$(tail -1 "$SB/t/tm-lost")" = "watch failed: no tmux error captured"
+		test "$(tail -1 "$SB/t/tm-lost")" = "watch failed: the state folder was removed; resolve again"
 	in_tmux "$tid" >"$SB/t/tm2" 2>&1 &
 	tm_pid=$!
 	sleep 1
