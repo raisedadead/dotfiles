@@ -235,7 +235,7 @@ Both agents share one workspace in each project: `<repo>/.scratchpad/` of the ma
 
 [ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 6 lines. It does not write `INDEX.md` or `dossier/`. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, under a lock. It logs each move and deletes no `tmp/` content. When the archive already has a name, it leaves that folder and exits 1. The agent that picks up a handoff moves it to `_archive/handoff/`. A name outside the table, except a hidden name, shows in `START.md` as loose.
 
-At session start, both rigs run `ws` and give its summary to the model: the Claude Code rig on each `SessionStart`, and the Pi `workspace` extension on the first run after a start or `/new`. When `ws` fails, the session starts without the summary.
+At session start, both rigs run `ws` and give its summary to the model: the Claude Code rig on each `SessionStart`, and the Pi `workspace` extension on the first run after each session start except `/reload`. When `ws` fails or takes more than 2 seconds, the session starts without the summary.
 
 ## Claude Code
 
