@@ -4,17 +4,18 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 
 ## Choose checks for your change
 
-| Change                                 | Checks                                                                  |
-| -------------------------------------- | ----------------------------------------------------------------------- |
-| Documentation                          | Local links, code blocks, preserved constraints, and `git diff --check` |
-| Shared deployment or Git hooks         | S1 to S3 below; M15 and M16 fixture checks                              |
-| Pi rig                                 | P1 below                                                                |
-| Claude rig mod or hook rules           | M1, M4, S1, and S2                                                      |
-| Claude validator or formatter registry | Spec smoke test                                                         |
-| Claude plugin                          | M1 to M3                                                                |
-| Shell, terminal, editor, or desktop    | Applicable terminal probes below and the component's own checks         |
-| Rex config, helpers, or app settings   | R1 below                                                                |
-| Workspace command `ws`                 | W1 below                                                                |
+| Change                                  | Checks                                                                  |
+| --------------------------------------- | ----------------------------------------------------------------------- |
+| Documentation                           | Local links, code blocks, preserved constraints, and `git diff --check` |
+| Shared deployment or Git hooks          | S1 to S3 below; M15 and M16 fixture checks                              |
+| Pi rig                                  | P1 below                                                                |
+| Claude rig mod or hook rules            | M1, M4, S1, and S2                                                      |
+| Claude validator or formatter registry  | Spec smoke test                                                         |
+| Claude plugin                           | M1 to M3                                                                |
+| Shell, terminal, editor, or desktop     | Applicable terminal probes below and the component's own checks         |
+| Rex config, helpers, or app settings    | R1 below                                                                |
+| Workspace command `ws`                  | W1 below                                                                |
+| Jev question file or second-review gate | J1 below                                                                |
 
 Use disposable fixtures for checks that write files or send keys. Do not run them against the operator's live windows or sessions.
 
@@ -171,6 +172,14 @@ R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_r
 `cd ~/.dotfiles && bun test tests/ws`
 
 Expected: All tests pass. Report the count. A change to the session-start summary also runs M4 and P1
+
+## Second review
+
+### J1: Second review
+
+`cd ~/.dotfiles && bun test ./tests/jev`; `cd ~/.dotfiles/dot_claude/mods/rig && bun build.ts && claude plugin test dist`; `cd ~/.dotfiles/dot_pi && bun test test/jev.test.ts test/gates.test.ts`; `chezmoi status ~/.agents/jev`
+
+Expected: All three test runs pass. Report the counts. `chezmoi status` prints nothing. Run the Pi tests by file name, because `test/rtk-native.test.ts` fails in the full Pi suite. Use `./tests/jev`: a bare `tests/jev` is a name filter and also runs the rig's `jev.test.ts`, which needs `claude plugin test`. [ARCHI.md](ARCHI.md#second-review) describes the gate
 
 ## Claude Code
 

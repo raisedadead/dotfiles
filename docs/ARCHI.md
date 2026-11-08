@@ -195,6 +195,21 @@ A managed rig is a `dot_<agent>/` submodule that deploys to `~/.<agent>/`. [Priv
 
 To add a rig: run `dotfiles-privatize.sh <dir>`, add the rig's entries to [.chezmoiignore](../.chezmoiignore), add a row to the table above, and add the check row.
 
+### Second review
+
+Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second review. The question file [second-review.json](../dot_agents/jev/second-review.json) deploys to `~/.agents/jev/second-review.json`. It holds the pinned Jev model, the 1Password key reference, the time limit, the bands, the three topics (guard or permission rule, secret handling, deploy or release) and the `enforce` flag. Both rigs read it.
+
+- Each rig sends the changed paths to Jev at the end of a turn, with one question for each topic and path. Jev gets no file content. The highest answer for a path decides. A change to the question file counts as a guard change.
+- At or above `bands.block`, two reviews must cover the path. The Claude rig blocks Stop; the Pi rig continues the turn. From `bands.note` up to the block line, the rig tells the model which file can need care.
+- The rig asks Jev once for each new set of paths. A fix to covered paths does not ask again.
+- Jev only adds care. No key, no network, a timeout, a failed `op read` or a bad question file means Jev is down: the status line shows `jev off`, the rig stores no answer and asks for those paths again later, and the kernel review rule applies. Answers stored before stay in force.
+- With `enforce: false`, the rigs ask Jev and log the answer, but do not block or send a note.
+- The Claude rig reads the key with `op read` once per session and keeps it in memory. Pi reads it through a `typesafe` entry in `~/.pi/agent/auth.json` that runs `op read` once for each Pi process, so a failed read keeps Jev off until Pi starts again. `auth.json` stays unmanaged; the operator adds the entry.
+- Both rigs append to `~/.local/state/jev/decisions.jsonl`: the paths with the highest answer for each, the model, the latency, the band and the gate result, and a line when two reviews cover the flagged paths. The log holds no key and no file content.
+- Before a new pinned model goes into the question file, the operator runs the labelled set again. The labelled set stays outside the repository, because it names private paths.
+
+Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` with `gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
+
 ### Project instructions
 
 Pi reads `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and does not read `AGENTS.md`, so `CLAUDE.md` is a symlink that holds `AGENTS.md`. This repository uses that layout. The `cmd-agents-md` skill converts another repository. A global kernel is not a project file.
