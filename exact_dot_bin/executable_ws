@@ -1,5 +1,5 @@
 #!/usr/bin/env -S bun --no-env-file --config=/dev/null
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -8,6 +8,7 @@ const DAY = 86_400_000;
 const LAYOUT = new Set(["START.md", "INDEX.md", "OPEN-WORK.md", "dossier", "handoff", "tmp", "research", "plans", "_archive"]);
 const CLOSED = new Set(["done", "dropped", "moved"]);
 const SHOWN = 3;
+const STALE_LOCK_MS = 60_000;
 
 type Workspace = { root: string; dir: string; note?: string };
 type Row = { id: string; state: string; item: string };
@@ -26,7 +27,7 @@ function locate(cwd: string): Workspace {
   const top = git(cwd, "rev-parse", "--show-toplevel");
   const fallback = (note: string): Workspace => ({ root: home(), dir: join(home(), ".scratchpad"), note });
   if (top.code !== 0 || !top.out) return fallback("not in a git repo, so this uses ~/.scratchpad");
-  if (git(top.out, "check-ignore", "-q", ".scratchpad/START.md").code !== 0) {
+  if (git(top.out, "check-ignore", "-q", ".scratchpad/").code !== 0) {
     return fallback(".scratchpad is not git-ignored in this repo, so this uses ~/.scratchpad");
   }
   return { root: top.out, dir: join(top.out, ".scratchpad") };
@@ -40,7 +41,12 @@ function entries(dir: string): string[] {
   }
 }
 
-function cells(line: string): string[] {
+function cells(line: string, width = 0): string[] {
+  const aware = split(line, true);
+  return width && aware.length !== width ? split(line, false) : aware;
+}
+
+function split(line: string, backticks: boolean): string[] {
   const out: string[] = [];
   let cell = "";
   let code = false;
@@ -49,7 +55,7 @@ function cells(line: string): string[] {
     if (ch === "\\" && line[i + 1] === "|") {
       cell += "|";
       i++;
-    } else if (ch === "`") {
+    } else if (ch === "`" && backticks) {
       code = !code;
       cell += ch;
     } else if (ch === "|" && !code) {
@@ -71,7 +77,7 @@ function openRows(text: string): Row[] {
       columns = undefined;
       continue;
     }
-    const row = cells(line);
+    const row = cells(line, columns?.length);
     if (!columns) {
       columns = row.map(c => c.toLowerCase());
       continue;
@@ -85,18 +91,22 @@ function openRows(text: string): Row[] {
   return rows;
 }
 
-function newest(path: string): number {
+function newestFile(path: string): number {
   const stat = lstatSync(path);
   if (!stat.isDirectory()) return stat.mtimeMs;
-  const times = entries(path).map(name => newest(join(path, name)));
-  return times.length ? Math.max(...times) : stat.mtimeMs;
+  return Math.max(-Infinity, ...entries(path).map(name => newestFile(join(path, name))));
+}
+
+function age(folder: string, now: number): number {
+  const at = newestFile(folder);
+  return Math.floor((now - (at === -Infinity ? lstatSync(folder).mtimeMs : at)) / DAY);
 }
 
 function idle(dir: string, now = Date.now()): Idle[] {
   const tmp = join(dir, "tmp");
   return entries(tmp)
     .filter(name => lstatSync(join(tmp, name)).isDirectory())
-    .map(name => ({ name, days: Math.floor((now - newest(join(tmp, name))) / DAY) }))
+    .map(name => ({ name, days: age(join(tmp, name), now) }))
     .filter(folder => folder.days >= IDLE_DAYS);
 }
 
@@ -185,12 +195,93 @@ function build(cwd: string): string[] {
   return summary(ws, found);
 }
 
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+function staleOwner(path: string): string | undefined {
+  try {
+    const owner = readFileSync(path, "utf8");
+    const pid = Number.parseInt(owner, 10);
+    if (pid > 0) return alive(pid) ? undefined : owner;
+    return Date.now() - lstatSync(path).mtimeMs > STALE_LOCK_MS ? owner : undefined;
+  } catch {
+    return "";
+  }
+}
+
+function lock(dir: string): string | undefined {
+  const path = join(dir, ".ws-tidy.lock");
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      writeFileSync(path, String(process.pid), { flag: "wx" });
+      return path;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+    const owner = staleOwner(path);
+    if (owner === undefined) return undefined;
+    const aside = `${path}.${process.pid}`;
+    try {
+      renameSync(path, aside);
+    } catch {
+      continue;
+    }
+    if (readFileSync(aside, "utf8") !== owner) {
+      renameSync(aside, path);
+      return undefined;
+    }
+    rmSync(aside, { force: true });
+  }
+  return undefined;
+}
+
+function tidy(cwd: string): number {
+  const ws = locate(cwd);
+  mkdirSync(ws.dir, { recursive: true });
+  const held = lock(ws.dir);
+  if (!held) {
+    console.error(`ws tidy: another ws tidy holds the lock ${join(ws.dir, ".ws-tidy.lock")}`);
+    return 1;
+  }
+  let code = 0;
+  try {
+    const archive = join(ws.dir, "_archive", "tmp");
+    const log = join(ws.dir, "_archive", `MOVED-${new Date().toISOString().slice(0, 10)}.txt`);
+    for (const folder of idle(ws.dir)) {
+      const target = join(archive, folder.name);
+      mkdirSync(archive, { recursive: true });
+      try {
+        mkdirSync(target);
+      } catch {
+        console.error(`ws tidy: tmp/${folder.name} stays; _archive/tmp/${folder.name} already exists`);
+        code = 1;
+        continue;
+      }
+      renameSync(join(ws.dir, "tmp", folder.name), target);
+      appendFileSync(log, `${new Date().toISOString()} ws tidy: tmp/${folder.name} -> _archive/tmp/${folder.name}\n`);
+      console.log(`moved tmp/${folder.name} -> _archive/tmp/${folder.name}`);
+    }
+  } finally {
+    rmSync(held, { force: true });
+  }
+  console.log(build(cwd).join("\n"));
+  return code;
+}
+
 if (import.meta.main) {
   const [verb] = process.argv.slice(2);
   if (verb === undefined) {
     console.log(build(process.cwd()).join("\n"));
+  } else if (verb === "tidy") {
+    process.exit(tidy(process.cwd()));
   } else {
-    console.error("Usage: ws");
+    console.error("Usage: ws [tidy]");
     process.exit(64);
   }
 }

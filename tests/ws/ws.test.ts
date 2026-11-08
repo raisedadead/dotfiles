@@ -65,6 +65,13 @@ test("in a repo that does not ignore .scratchpad, ws uses ~/.scratchpad and says
   expect(r.out).toContain("not git-ignored");
 });
 
+test("a pattern that ignores only some files does not count as ignoring .scratchpad", () => {
+  put(join(repo, ".gitignore"), "*.md\n");
+  const r = run(repo);
+  expect(existsSync(join(repo, ".scratchpad"))).toBe(false);
+  expect(r.out).toContain("not git-ignored");
+});
+
 test("outside a repo, ws uses ~/.scratchpad and says why", () => {
   const outside = join(base, "plain");
   mkdirSync(outside);
@@ -100,6 +107,7 @@ test("START.md shows only the open rows of OPEN-WORK.md", () => {
     "| O3 | Dropped thing | dropped | operator | here | x |",
     "| O4 | Moved thing | moved | agent | there | x |",
     "| O5 | Half thing | partial | agent | here | x |",
+    "| O6 | Odd ` tick | done | agent | here | x |",
   ];
   put(join(repo, ".scratchpad", "OPEN-WORK.md"), `# Open work\n\n${rows.join("\n")}\n`);
   const r = run(repo);
@@ -107,7 +115,7 @@ test("START.md shows only the open rows of OPEN-WORK.md", () => {
   expect(text).toContain("O1");
   expect(text).toContain("Fix `a | b` parsing");
   expect(text).toContain("O5");
-  for (const closed of ["O2", "O3", "O4"]) expect(text).not.toContain(closed);
+  for (const closed of ["O2", "O3", "O4", "O6"]) expect(text).not.toContain(closed);
   expect(r.out).toContain("open work rows: 2");
 });
 
@@ -116,6 +124,7 @@ test("a tmp folder is idle when its newest file is 14 or more days old", () => {
   put(join(repo, ".scratchpad", "tmp", "old", "deep", "b.md"), "", 15);
   put(join(repo, ".scratchpad", "tmp", "fresh", "a.md"), "", 20);
   put(join(repo, ".scratchpad", "tmp", "fresh", "deep", "b.md"), "", 2);
+  mkdirSync(join(repo, ".scratchpad", "tmp", "old", "empty"));
   const fresh = join(repo, ".scratchpad", "tmp", "fresh");
   const old = new Date(Date.now() - 30 * DAY);
   utimesSync(fresh, old, old);
@@ -141,6 +150,68 @@ test("the printed summary is at most 10 lines", () => {
   for (let i = 0; i < 15; i++) put(join(repo, ".scratchpad", `loose-${i}.md`), "");
   const r = run(repo);
   expect(r.out.trimEnd().split("\n").length).toBeLessThanOrEqual(10);
+});
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+test("ws tidy moves idle tmp folders to _archive/tmp and logs each move", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "tmp", "old", "a.md"), "kept", 20);
+  put(join(pad, "tmp", "fresh", "a.md"), "", 1);
+  const r = run(repo, "tidy");
+  expect(r.code).toBe(0);
+  expect(readFileSync(join(pad, "_archive", "tmp", "old", "a.md"), "utf8")).toBe("kept");
+  expect(existsSync(join(pad, "tmp", "old"))).toBe(false);
+  expect(existsSync(join(pad, "tmp", "fresh", "a.md"))).toBe(true);
+  expect(readFileSync(join(pad, "_archive", `MOVED-${today()}.txt`), "utf8")).toContain("tmp/old -> _archive/tmp/old");
+  expect(start(repo)).not.toContain("tmp/old`");
+});
+
+test("ws tidy refuses a name that already exists in the archive", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "tmp", "old", "a.md"), "new", 20);
+  put(join(pad, "_archive", "tmp", "old", "a.md"), "archived");
+  const r = run(repo, "tidy");
+  expect(r.code).toBe(1);
+  expect(readFileSync(join(pad, "tmp", "old", "a.md"), "utf8")).toBe("new");
+  expect(readFileSync(join(pad, "_archive", "tmp", "old", "a.md"), "utf8")).toBe("archived");
+  expect(r.err).toContain("tmp/old");
+});
+
+test("a held lock refuses ws tidy and moves nothing", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "tmp", "old", "a.md"), "", 20);
+  put(join(pad, ".ws-tidy.lock"), String(process.pid));
+  const r = run(repo, "tidy");
+  expect(r.code).toBe(1);
+  expect(existsSync(join(pad, "tmp", "old", "a.md"))).toBe(true);
+  expect(r.err).toContain("lock");
+});
+
+test("an empty lock file that is still young counts as held", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "tmp", "old", "a.md"), "", 20);
+  put(join(pad, ".ws-tidy.lock"), "");
+  expect(run(repo, "tidy").code).toBe(1);
+  expect(existsSync(join(pad, "tmp", "old", "a.md"))).toBe(true);
+});
+
+test("ws tidy runs in a project that has no .scratchpad yet", () => {
+  rmSync(join(repo, ".scratchpad"), { recursive: true, force: true });
+  const r = run(repo, "tidy");
+  expect(r.code).toBe(0);
+  expect(existsSync(join(repo, ".scratchpad", "START.md"))).toBe(true);
+});
+
+test("ws tidy takes over a lock whose process is gone", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "tmp", "old", "a.md"), "", 20);
+  const gone = Bun.spawnSync(["true"]).pid;
+  put(join(pad, ".ws-tidy.lock"), String(gone));
+  const r = run(repo, "tidy");
+  expect(r.code).toBe(0);
+  expect(existsSync(join(pad, "_archive", "tmp", "old", "a.md"))).toBe(true);
+  expect(existsSync(join(pad, ".ws-tidy.lock"))).toBe(false);
 });
 
 test("START.md says it is rebuilt by ws and not edited by hand", () => {
