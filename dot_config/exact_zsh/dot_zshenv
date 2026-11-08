@@ -34,7 +34,7 @@ _mrgsh_compose_path
 # Editor configuration
 export EDITOR="nvim"
 export VISUAL="zed"
-export GIT_EDITOR="$EDITOR"
+export GIT_EDITOR="$HOME/.bin/git-editor"
 
 #-----------------------------------------------------------
 # End of .zshenv

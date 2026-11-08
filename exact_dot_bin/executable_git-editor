@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ -t 0 ]; then
+	exec sh -c "${EDITOR:-nvim}"' "$@" >/dev/tty' git-editor "$@"
+fi
+echo "git-editor: no terminal, so git keeps its default text; pass -m to give a message" >&2
+exit 0
