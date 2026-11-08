@@ -217,6 +217,24 @@ Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` 
 
 Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/` through a scratch project install, because a global `-g -a pi` install writes to `~/.agents/skills/` (skills CLI 1.7.4). [dot_pi/RIG.md](../dot_pi/RIG.md) holds the update loop. `dot_pi/skills.tsv` lists those skills.
 
+### Workspace
+
+Both agents share one workspace in each project: `<repo>/.scratchpad/` of the main checkout when Git ignores it, else `~/.scratchpad/`. A linked worktree uses the workspace of its main checkout. A submodule is its own project. An agent starts at the `START.md` path that `ws` prints.
+
+| Name           | Holds                                                 | Owner                           |
+| -------------- | ----------------------------------------------------- | ------------------------------- |
+| `START.md`     | Links, open handoffs, open work, idle and loose names | `ws` rebuilds it; no hand edits |
+| `INDEX.md`     | Live dossiers                                         | dossier plugin                  |
+| `dossier/`     | Dossiers, their archive and `LATER.md`                | dossier plugin                  |
+| `OPEN-WORK.md` | The open work register                                | both agents                     |
+| `handoff/`     | `<date>-<slug>.md` handoffs                           | both agents                     |
+| `tmp/`         | `<date>-<slug>/` scratch output and notes files       | both agents                     |
+| `research/`    | Research reports                                      | both agents                     |
+| `plans/`       | Claude Code plans, always in the project folder       | Claude Code                     |
+| `_archive/`    | Moved files and the `MOVED-<date>.txt` logs           | `ws tidy` and both agents       |
+
+[ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 6 lines. It does not write `INDEX.md` or `dossier/`. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, under a lock. It logs each move, deletes no `tmp/` content and refuses a name that the archive already has. The agent that picks up a handoff moves it to `_archive/handoff/`. A name outside the table, except a hidden name, shows in `START.md` as loose.
+
 ## Claude Code
 
 | Source                                                                                                  | Owns                                                                         |
