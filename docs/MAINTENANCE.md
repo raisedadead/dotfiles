@@ -16,6 +16,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Rex config, helpers, or app settings    | R1 below                                                                |
 | Workspace command `ws`                  | W1 below                                                                |
 | Jev question file or second-review gate | J1 below                                                                |
+| Pane monitor skill `cmd-monitor-pane`   | `bun test ./tests/monitor-pane` (about 1 minute), then R1               |
 
 Use disposable fixtures for checks that write files or send keys. Do not run them against the operator's live windows or sessions.
 
