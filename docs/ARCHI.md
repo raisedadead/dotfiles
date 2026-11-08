@@ -144,7 +144,7 @@ The rig guards control how an agent uses the `rex` CLI. Both guards refuse input
 
 When `REX_SERVER` names a socket that does not answer, the `rex` CLI connects to the default server, which is the live server. An explicit `-S` fails instead. Thus a script that uses `REX_SERVER` must give it to `rex` as `-S`.
 
-Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server with the environment that launchd gives the live server. It uses the live server's build when that build is installed, and the `rex` CLI if not. [testkit.lua](../tests/rex/testkit.lua) adds the test actions to its copy of the config. A `rex` guard on its `PATH` sends each call to the sandbox server and refuses another server, so the test does not touch the live Rex session. With `REX_GUARD_STRICT=1`, the guard also refuses a call that has no `-S`. Set it on a helper check so that the check fails while the helper does not give `-S`. Put the checks for one feature in `tests/rex/cases/<feature>.sh`. The sandbox test sources each of these files.
+Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server with the environment that launchd gives the live server. It uses the live server's build when that build is installed, and the `rex` CLI if not. [testkit.lua](../tests/rex/testkit.lua) adds the test actions to its copy of the config. A `rex` guard on its `PATH` sends each call to the sandbox server and refuses another server, so the test does not touch the live Rex session. With `REX_GUARD_STRICT=1`, the guard also refuses a call that has no `-S` (`tests/rex/rex-guard.sh:25`). Set it on a helper check so that the check fails while the helper does not give `-S`. Put the checks for one feature in `tests/rex/cases/<feature>.sh`. The sandbox test sources each of these files.
 
 ## Desktop and utilities
 
@@ -233,7 +233,9 @@ Both agents share one workspace in each project: `<repo>/.scratchpad/` of the ma
 | `plans/`       | Claude Code plans, always in the project folder       | Claude Code                     |
 | `_archive/`    | Moved files and the `MOVED-<date>.txt` logs           | `ws tidy` and both agents       |
 
-[ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 6 lines. It does not write `INDEX.md` or `dossier/`. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, under a lock. It logs each move, deletes no `tmp/` content and refuses a name that the archive already has. The agent that picks up a handoff moves it to `_archive/handoff/`. A name outside the table, except a hidden name, shows in `START.md` as loose.
+[ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 6 lines. It does not write `INDEX.md` or `dossier/`. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, under a lock. It logs each move and deletes no `tmp/` content. When the archive already has a name, it leaves that folder and exits 1. The agent that picks up a handoff moves it to `_archive/handoff/`. A name outside the table, except a hidden name, shows in `START.md` as loose.
+
+At session start, both rigs run `ws` and give its summary to the model: the Claude Code rig on each `SessionStart`, and the Pi `workspace` extension on the first run after a start or `/new`. When `ws` fails, the session starts without the summary.
 
 ## Claude Code
 

@@ -14,6 +14,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Claude plugin                          | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop    | Applicable terminal probes below and the component's own checks         |
 | Rex config, helpers, or app settings   | R1 below                                                                |
+| Workspace command `ws`                 | W1 below                                                                |
 
 Use disposable fixtures for checks that write files or send keys. Do not run them against the operator's live windows or sessions.
 
@@ -162,6 +163,14 @@ Expected: CPU and GPU or energy recorded separately
 Expected: No diagnostics; both test scripts end with `all passed`; shellcheck exits 0
 
 R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_rex-config-check.sh.tmpl` and `dot_config/rex/themes/`. The sandbox test renders both scripts and runs them in a temporary home. It checks the theme merge, the dark theme id, the terminfo step, and the message and the stop on bad input.
+
+## Workspace
+
+### W1
+
+`cd ~/.dotfiles && bun test tests/ws`
+
+Expected: All tests pass. Report the count. A change to the session-start summary also runs M4 and P1
 
 ## Claude Code
 
