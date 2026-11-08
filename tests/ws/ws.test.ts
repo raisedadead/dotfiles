@@ -65,6 +65,16 @@ test("in a repo that does not ignore .scratchpad, ws uses ~/.scratchpad and says
   expect(r.out).toContain("not git-ignored");
 });
 
+test("from a linked worktree, START.md goes to the main checkout", () => {
+  git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "init");
+  const linked = join(base, "linked");
+  git(repo, "worktree", "add", "-q", linked);
+  const r = run(linked);
+  expect(r.code).toBe(0);
+  expect(existsSync(join(repo, ".scratchpad", "START.md"))).toBe(true);
+  expect(existsSync(join(linked, ".scratchpad"))).toBe(false);
+});
+
 test("a pattern that ignores only some files does not count as ignoring .scratchpad", () => {
   put(join(repo, ".gitignore"), "*.md\n");
   const r = run(repo);

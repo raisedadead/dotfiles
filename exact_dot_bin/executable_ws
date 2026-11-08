@@ -23,14 +23,23 @@ function home(): string {
   return process.env.HOME || homedir();
 }
 
+function mainCheckout(cwd: string, top: string): string {
+  const [own, common] = git(cwd, "rev-parse", "--path-format=absolute", "--git-dir", "--git-common-dir").out.split("\n");
+  if (!own || own === common) return top;
+  const first = git(cwd, "worktree", "list", "--porcelain").out.split("\n")[0] ?? "";
+  const main = first.startsWith("worktree ") ? first.slice("worktree ".length) : "";
+  return main && !main.includes("/.git/") && existsSync(main) ? main : top;
+}
+
 function locate(cwd: string): Workspace {
   const top = git(cwd, "rev-parse", "--show-toplevel");
   const fallback = (note: string): Workspace => ({ root: home(), dir: join(home(), ".scratchpad"), note });
   if (top.code !== 0 || !top.out) return fallback("not in a git repo, so this uses ~/.scratchpad");
-  if (git(top.out, "check-ignore", "-q", ".scratchpad/").code !== 0) {
+  const root = mainCheckout(cwd, top.out);
+  if (git(root, "check-ignore", "-q", ".scratchpad/").code !== 0) {
     return fallback(".scratchpad is not git-ignored in this repo, so this uses ~/.scratchpad");
   }
-  return { root: top.out, dir: join(top.out, ".scratchpad") };
+  return { root, dir: join(root, ".scratchpad") };
 }
 
 function entries(dir: string): string[] {
