@@ -19,7 +19,12 @@ for _, w in ipairs({ "input", "list", "preview" }) do
 end
 io.stdout:write(table.concat(out, "\n") .. "\n")
 EOF
-ZDOTDIR="$SB/zdot" zsh -i -c 'bindkey -M emacs' >"$SB/t/zsh-keys" 2>/dev/null || true
+mkdir -p "$SB/zhome/.local/share/zsh"
+if [[ -d "$HOME/.local/share/zsh/plugins" ]]; then
+	cp -R "$HOME/.local/share/zsh/plugins" "$SB/zhome/.local/share/zsh/plugins"
+fi
+HOME="$SB/zhome" REX_HANDOFF=1 ZDOTDIR="$SB/zdot" zsh -i -c 'bindkey -M emacs' \
+	>"$SB/t/zsh-keys" 2>/dev/null || true
 XDG_CONFIG_HOME="$SB/xdg" XDG_STATE_HOME="$SB/xdg-state" XDG_CACHE_HOME="$SB/xdg-cache" \
 	nvim --headless -c "lua vim.defer_fn(function() dofile('$SB/nvim-keys.lua'); \
 	vim.cmd('qa!') end, 3000)" >"$SB/t/nvim-keys" 2>&1 || true
