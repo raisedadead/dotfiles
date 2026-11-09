@@ -21,12 +21,6 @@ The private sources `dot_claude/`, `dot_agents/`, and `dot_pi/` deploy to `~/.cl
 - Keep `--source ~/.dotfiles` on `chezmoi init`. The default source path is different.
 - The age identity is not in Git. Without the 1Password copy, you cannot recover the encrypted files.
 - The submodules clone over SSH. Test the 1Password SSH agent first: `ssh -T git@github.com`.
-- A clone without submodules needs `git -C ~/.dotfiles submodule update --init`. The doctor fails until you run it.
-- `install.sh` takes no arguments.
-
-### Claude Code
-
-Run `~/.bin/chezmoi-claude-bootstrap.sh` to install the runtime prerequisites. See the [Claude checks](MAINTENANCE.md#claude-code).
 
 ### Pi
 
@@ -39,12 +33,12 @@ Do not install Pi or a Pi package with `npm install -g`. Install npm-global tool
 1. Run `npm ci` in `~/.dotfiles/dot_pi`.
 1. Run the [Pi checks](MAINTENANCE.md#pi).
 
-The `pi` command is the link `~/.bin/pi` to `~/.pi/agent/bin/pi`. chezmoi manages that link, because `~/.bin` is an exact directory. `pi update` updates Pi. After an update, set the Pi versions in `dot_pi/package.json` to the `pi --version` value. Run `npm install` in `~/.dotfiles/dot_pi`. Then run the [Pi checks](MAINTENANCE.md#pi).
+`~/.bin/pi` links to `~/.pi/agent/bin/pi`. After `pi update`, set the Pi versions in `dot_pi/package.json` to the `pi --version` value, run `npm install` in `~/.dotfiles/dot_pi`, then run the [Pi checks](MAINTENANCE.md#pi).
 
 ### Rex
 
 1. Install the Rex beta app, `Rex Beta.app`, in `/Applications`. Rex has no Homebrew cask. The `rex` command is the link `~/.bin/rex` into this app.
-1. Run `chezmoi apply`. The `run_onchange_after_rex-defaults` script writes the app settings and installs the `xterm-rex` terminfo entry. A running server keeps `TERM=xterm-256color`. Restart it once, when no work runs in Rex, so that new panes get `TERM=xterm-rex`.
+1. Run `chezmoi apply`. It writes the Rex app settings and the `xterm-rex` terminfo entry. Restart the server once, with no work running, so that new panes get `TERM=xterm-rex`.
 1. Run the [Rex checks](MAINTENANCE.md#rex).
 
 Rex does not read its config again when a file changes. After you apply a Rex config file, load it:
@@ -54,9 +48,9 @@ chezmoi apply ~/.config/rex
 rex config check && rex config reload
 ```
 
-A new `generation:` in the reload output confirms the load. If a reload fails on a Lua syntax error, the server keeps the keys and the actions of the last load that worked. A server that starts with a bad config has no keys at all, so `chezmoi apply` checks the Rex config first and stops on an error. Correct the source, then apply and load it again.
+A reload that prints no error loaded the file. If it fails, the server keeps the keys of the last good load. A server that starts with a bad config has no keys, so `chezmoi apply` runs the check first and stops on an error. Correct the source, then apply and load it again.
 
-After a Rex restart, run **Resume After Restart** from the command palette. It types `claude --resume` into each pane that ran Claude Code, and `pi --session` into each pane that ran Pi, when the pane now shows a shell prompt. It closes each popup and hand-off float that the restart brought back as a bare shell, and starts the editor again in each editor pane.
+After a Rex restart, run **Resume After Restart** from the command palette. It resumes Claude Code and Pi in their panes, closes restored popups and hand-off floats, and starts the editor again in editor panes.
 
 ## Daily loop
 
@@ -87,14 +81,7 @@ The submodule `post-commit` hook commits the gitlink bump in `~/.dotfiles`.
 
 ## A managed Pi file
 
-```sh
-chezmoi re-add ~/.pi/agent/extensions/router.ts
-cd ~/.dotfiles/dot_pi && npm test
-git -C ~/.dotfiles/dot_pi add agent/extensions/router.ts
-git -C ~/.dotfiles/dot_pi commit -m "fix(rig): ..."
-```
-
-Edit the `settings.json` keys in `dot_pi/agent/modify_settings.json`. Edit the MCP servers in `dot_pi/agent/mcp.json.tmpl`. Then run `chezmoi apply ~/.pi`. `re-add` skips both files. Run `/reload` in an open Pi session.
+Follow [Change the rig](../dot_pi/RIG.md#change-the-rig). Edit the `settings.json` keys in `dot_pi/agent/modify_settings.json` and the MCP servers in `dot_pi/agent/mcp.json.tmpl`. `re-add` skips both files.
 
 ## Restore a target from source
 
@@ -115,16 +102,12 @@ chezmoi apply <target>     # overwrite the target from source
 
 ## Files that need a source edit
 
-`re-add` does nothing for a template, a `modify_` script, an external, or a symlink entry. Edit the source, then apply it:
+`re-add` skips some entry kinds ([ARCHI.md](ARCHI.md#deployment-and-capture)). Edit the source, then apply it:
 
 ```sh
 chezmoi edit --apply <target>     # opens the source file, applies on exit
 chezmoi merge <target>            # three-way merge for a template
 ```
-
-## Exact directories
-
-`~/.bin`, `~/.config/git`, and `~/.config/zsh` are exact. In these directories, `chezmoi apply` removes each file that the source does not hold. Do not keep generated state there.
 
 ## Git and private submodules
 
@@ -133,7 +116,7 @@ git -C ~/.dotfiles status    # lists pending submodule commits
 home push                    # pushes submodules, then the parent
 ```
 
-The operator runs `home push`. A failed submodule push stops the command. `home apply <target>` runs `chezmoi apply <target>`.
+The operator runs `home push`. A failed submodule push stops it. `home <args>` runs `chezmoi <args>` for any other command.
 
 [ARCHI.md](ARCHI.md#private-submodules) holds the Git hook details.
 

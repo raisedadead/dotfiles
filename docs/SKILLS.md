@@ -56,10 +56,10 @@ For a visual layout defect whose cause is known, use the UI workflow below.
 1. Resolve the scope before selecting a skill. Identify the page shell (navigation, main area and table of contents), the content container (titles, cards, code and tables), and the prose. Record the requested outcome, project tokens and accepted design constraints.
 1. Select one driver. `better-layout` drives a new screen, a redesign, or a change to shared widths or breakpoints. A focused skill drives an isolated concern: `better-typography`, `better-colors`, `better-accessibility`, `better-ui`, or `better-writing`. A typography request alone keeps the accepted layout. For an unexplained rendering or interaction failure, diagnosis drives first: `diagnosing-bugs` in Pi or `whetstone:diagnose` in Claude Code. Use UI skills as references until the cause is known.
 1. Read the applicable references before code. Use this design order: layout, writing, typography, color, then UI polish. Apply `better-accessibility` throughout. Load only the references the scope needs; they do not become additional drivers.
-1. Set the layout before type. Establish how the rails and main area share space, how the content container grows, and when columns collapse. Keep prose measure separate from content width. A character-count guide evaluates paragraphs; it does not set the width of cards, code, tables or the page. Accepted project decisions take precedence over numeric style guidance. Preserve an accepted prose measure even when a typography rubric gives a different target. Accessibility failures still require correction. Ask the operator before a conflict changes the scope or design.
-1. Implement through the project's tokens and components. Check all consumers of a shared change. If a focused task requires a layout change, resolve that scope before editing the shared layout.
-1. Verify the affected scope in the browser. For layout-affecting work, inspect the complete screen at the narrowest, typical desktop and widest supported widths. Check proportions, use of space, wrapping and content fit, as well as overflow, keyboard access and zoom. For an isolated change, inspect the affected components, states, themes and applicable accessibility checks. Compare with the accepted reference or before state. Numeric checks support visual acceptance; they do not replace it. Report unverified coverage explicitly.
-1. Use `better-interface` for a new screen, a redesign, or an explicit whole-interface review, at most once at the end. Load `better-layout` before it, also for a review; both rigs refuse `better-interface` until `better-layout` has loaded in the session. Other tasks use focused acceptance. A focused pass does not establish whole-interface approval.
+1. Set the layout before type: how the rails and main area share space, how the content container grows, and when columns collapse. Prose measure is separate from content width. A character-count guide checks paragraphs only, not cards, code, tables or the page. An accepted project decision, such as a prose measure, takes precedence over a numeric guide, but you still fix an accessibility failure. Ask the operator before a conflict changes the scope or design.
+1. Use the project's tokens and components. Check every consumer of a shared change. If a focused task needs a layout change, resolve that scope before you edit the shared layout.
+1. Verify in the browser. For layout work, inspect the full screen at the narrowest, typical desktop and widest supported widths: proportions, use of space, wrapping, content fit, overflow, keyboard and zoom. For an isolated change, inspect the affected components, states, themes and accessibility checks. Compare with the accepted reference or before state. Numeric checks support visual acceptance and do not replace it. Report unverified coverage.
+1. Use `better-interface` for a new screen, a redesign, or an explicit whole-interface review, at most once at the end. Load `better-layout` before `better-interface`, also for a review; both rigs refuse `better-interface` until `better-layout` has loaded in the session. Other tasks use focused acceptance, which does not approve the whole interface.
 
 The operator runs `/interface-review`; the model cannot invoke it.
 
@@ -79,8 +79,6 @@ Several manual steps: credentials, a third-party dashboard, or a cutover.
 ## Signals that the pick is wrong
 
 - Two skills give the same report. One of them is not a driver.
-- A design skill runs after the code exists.
 - A skill fires because its description matched, and its rubric does not apply to the task.
-- The task needs no rubric, and a skill is open.
 
-Do the work when no recipe applies. Do not open a skill that the task does not need.
+Do the work when no recipe applies.

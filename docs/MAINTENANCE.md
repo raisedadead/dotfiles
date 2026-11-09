@@ -10,7 +10,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Shared deployment or Git hooks          | S1 to S3 below; M15 and M16 fixture checks                              |
 | Pi rig                                  | P1 below                                                                |
 | Claude rig mod or hook rules            | M1, M4, S1, and S2                                                      |
-| Claude validator or formatter registry  | Spec smoke test                                                         |
+| Claude validator or formatter registry  | M4                                                                      |
 | Claude plugin                           | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop     | Applicable terminal probes below and the component's own checks         |
 | Rex config, helpers, or app settings    | R1 below                                                                |
@@ -34,14 +34,14 @@ Expect `push.recurseSubmodules` `on-demand`, `submodule.recurse` `false`, and `s
 
 ### S3: Deployment boundary
 
-Run `~/.bin/chezmoi-fixture-check.sh`. It applies a synthetic source to an isolated destination and state file. It checks six boundaries: rendered paths and permissions, an unchanged second apply, survival outside an exact directory, removal inside one, an absent excluded document, and what a named capture takes from its siblings.
+Run `~/.bin/chezmoi-fixture-check.sh`. It applies a synthetic source to an isolated destination and state file. Expected: exit 0.
 
 ## Pi
 
 ### P1: Submodule and deployment boundary
 
 - `git -C ~/.dotfiles/dot_pi status -sb`: expect the `dot_pi` branch.
-- `chezmoi status ~/.pi`: expect no line with a letter in column two. Pi rewrites `settings.json` at run time, so `M` in column one alone is expected there. A `chezmoi diff` of a directory does not recurse without `--recursive` (chezmoi 2.73.1), so read the status, then run `chezmoi diff --recursive ~/.pi`.
+- `chezmoi status ~/.pi`: expect no line with a letter in column two. `M` in column one alone is expected for `settings.json`. Then run `chezmoi diff --recursive ~/.pi`.
 - `pi --version`: expect the `@earendil-works/pi-coding-agent` version in `dot_pi/package.json`.
 - `ls ~/.local/share/fnm/node-versions/*/installation/bin/pi`: expect no match.
 - `cd /tmp && pi -p --no-session "Reply with ok." < /dev/null`: expect `ok`.
@@ -164,7 +164,7 @@ Expected: CPU and GPU or energy recorded separately
 
 Expected: No diagnostics; both test scripts end with `all passed`; shellcheck exits 0
 
-R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_rex-config-check.sh.tmpl` and `dot_config/rex/themes/`. The sandbox test renders both scripts and runs them in a temporary home. It checks the theme merge, the dark theme id, the terminfo step, and the message and the stop on bad input.
+R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_rex-config-check.sh.tmpl` and `dot_config/rex/themes/`.
 
 ## Workspace
 
@@ -180,7 +180,7 @@ Expected: All tests pass. Report the count. A change to the session-start summar
 
 `cd ~/.dotfiles && bun test ./tests/jev`; `cd ~/.dotfiles/dot_claude/mods/rig && bun build.ts && claude plugin test dist`; `cd ~/.dotfiles/dot_pi && bun test test/jev.test.ts test/gates.test.ts`; `chezmoi status ~/.agents/jev`
 
-Expected: All three test runs pass. Report the counts. `chezmoi status` prints nothing. Run the Pi tests by file name, because `test/rtk-native.test.ts` fails in the full Pi suite. Use `./tests/jev`: a bare `tests/jev` is a name filter and also runs the rig's `jev.test.ts`, which needs `claude plugin test`. [ARCHI.md](ARCHI.md#second-review) describes the gate
+Expected: All three runs pass; report the counts. `chezmoi status` prints nothing. Use `./tests/jev` (a bare `tests/jev` is a name filter and also matches the rig's `jev.test.ts`). Run the Pi tests by file name: `test/rtk-native.test.ts` fails in the full suite. See [ARCHI.md](ARCHI.md#second-review)
 
 ## Claude Code
 
@@ -226,23 +226,23 @@ Expected: All resolve
 
 Inspect `~/.claude/markers`
 
-Expected: Fewer than 400 files. No non-exempt file older than two days
+Expected: No file directly in `~/.claude/markers` older than one day. The rig deletes them at each session end
 
 ### M9
 
-Inspect the Cavemem worker state and M3. Read the `better-sqlite3` version under `~/.local/share/fnm/aliases/default/lib/node_modules/cavemem/node_modules`
+`~/.bin/cavemem-health.sh`; read `lastError` in `~/.cavemem/worker.state.json`
 
-Expected: `lastError` is null. MCP connects. The `better-sqlite3` major is 12 or higher
+Expected: Exit 0 (M1 also runs it). `lastError` is null. MCP connects (M3)
 
 ### M10
 
-Run `npx skills check -g`. Review the reported changes, then update the shared skills by name: `npx skills update -g -y $(cut -f2 ~/.dotfiles/docs/skills.tsv)`. The Pi-only skills update through the loop in `dot_pi/RIG.md`. Compare `npx skills list -g` with `docs/skills.tsv`. The manifest has one `source<TAB>name` line for each third-party skill. Add the line by hand at each install. Replay a missing skill with the loop below. Run `find ~/.claude/skills -maxdepth 1 -type l ! -lname '../../.agents/skills/*'`. Run `/skill-doctor` in a session
+Update the shared skills by name: `npx skills update -g -y $(cut -f2 ~/.dotfiles/docs/skills.tsv)`. Pi-only skills update through the loop in `dot_pi/RIG.md`. Compare `npx skills list -g` with `docs/skills.tsv` (one `source<TAB>name` line per third-party skill, added by hand at install). Replay a missing skill with the loop below. Run `/skill-doctor` in a session
 
 ```bash
 while IFS=$'\t' read -r src name; do npx skills add "$src" --skill "$name" -g -a claude-code -a pi -y; done < ~/.dotfiles/docs/skills.tsv
 ```
 
-Expected: Each skill is personal, common, third-party, or plugin. The find prints nothing. `npx skills list -g` equals the manifest. No never-invoked skill that you want to keep. Unused plugins reviewed
+Expected: Each skill is personal, common, third-party, app, or plugin. `npx skills list -g` equals the manifest. No never-invoked skill that you want to keep. Unused plugins reviewed
 
 ### M11
 
@@ -252,7 +252,11 @@ Expected: Each has a consumer, or appears in [Operator tools](ARCHI.md#operator-
 
 ### M12
 
-The claim checker below
+The claim checker. It needs the optional whetstone Claude plugin and is separate from the documentation checks.
+
+```sh
+bash "$(jq -r '.plugins["whetstone@raisedadead-plugins"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/claim-check" AGENTS.md docs/README.md docs/ARCHI.md docs/MAINTENANCE.md
+```
 
 Expected: Exit 0 and `CLAIMS: CLEAN`
 
@@ -267,11 +271,3 @@ Expected: The super tip reads `chore(sub): bump to <sha>`. After each amend the 
 Feed `.githooks/pre-push` a stdin ref line whose sha records a pushed submodule commit, then one whose gitlink is on no submodule remote
 
 Expected: Exit 0, then exit 1 with the submodule, the gitlink, and the push command
-
-M12 needs the optional whetstone Claude plugin. It is separate from the documentation checks.
-
-```sh
-bash "$(jq -r '.plugins["whetstone@raisedadead-plugins"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/claim-check" AGENTS.md docs/README.md docs/ARCHI.md docs/MAINTENANCE.md
-```
-
-The doctor (M1) does not replace the checks in [Choose checks for your change](#choose-checks-for-your-change).
