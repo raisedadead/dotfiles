@@ -50,9 +50,7 @@ rex.action{
 local bind = rex.bind
 local function prefix(key, action, args) bind("ctrl+space>" .. key, action, args) end
 
-bind("alt+shift+enter", "pane.zoom")
-bind("alt+;", "client.palette.toggle")
-bind("alt+e", "popup_urls")
+bind("shift+cmd+e", "popup_urls")
 bind("ctrl+enter", "enter_key")
 bind("ctrl+shift+k", "client.scroll.page_up")
 bind("ctrl+shift+j", "client.scroll.page_down")

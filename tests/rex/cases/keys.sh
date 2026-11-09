@@ -159,6 +159,7 @@ check "ctrl+shift+k scrolls a page up" runs_action ctrl+shift+k client.scroll.pa
 check "ctrl+shift+j scrolls a page down" runs_action ctrl+shift+j client.scroll.page_down
 check "cmd+pageup scrolls a page up" runs_action cmd+pageup client.scroll.page_up
 check "cmd+pagedown scrolls a page down" runs_action cmd+pagedown client.scroll.page_down
+check "shift+cmd+e opens the URL popup" runs_action shift+cmd+e popup_urls
 entered=$(split bash -c "IFS= read -r l; echo \"got:\$l\" > '$SB/t/entered'; exec sleep 300")
 sleep 0.3
 R send -s "$S" -b "$entered" hi >/dev/null
