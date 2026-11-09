@@ -10,6 +10,9 @@ install.sh
 .config/zsh/.zcompcache
 .config/zsh/.zsh_sessions
 .bin/test_*.py
+.claude.*-*
+.pi.*-*
+.agents.*-*
 .pi/*
 !.pi/RIG.md
 !.pi/agent
