@@ -56,7 +56,7 @@ rex config check && rex config reload
 
 A new `generation:` in the reload output confirms the load. If a reload fails on a Lua syntax error, the server keeps the keys and the actions of the last load that worked. A server that starts with a bad config has no keys at all, so `chezmoi apply` checks the Rex config first and stops on an error. Correct the source, then apply and load it again.
 
-After a Rex restart, run **Resume After Restart** from the command palette. It types `claude --resume` into each pane that ran Claude Code and now shows a shell prompt. It closes each popup and hand-off float that the restart brought back as a bare shell, and starts the editor again in each editor pane.
+After a Rex restart, run **Resume After Restart** from the command palette. It types `claude --resume` into each pane that ran Claude Code, and `pi --session` into each pane that ran Pi, when the pane now shows a shell prompt. It closes each popup and hand-off float that the restart brought back as a bare shell, and starts the editor again in each editor pane.
 
 ## Daily loop
 
