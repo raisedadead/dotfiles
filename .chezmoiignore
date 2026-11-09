@@ -27,7 +27,6 @@ install.sh
 !.pi/agent/themes
 .claude/mods/*/src
 .claude/mods/*/tests
-.claude/mods/*/parity
 .claude/mods/*/dist
 .claude/mods/*/build.ts
 .claude/mods/*/tsconfig.json
