@@ -1,5 +1,10 @@
 _mrgsh_completion_init() {
   emulate -L zsh
+  autoload -Uz compinit
+  if [[ -n $REX_HANDOFF && $1 != rebuild ]]; then
+    compinit -C -d ~/.zcompdump
+    return
+  fi
   zmodload zsh/stat || return
   local directory signature=$ZSH_VERSION state=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/completion-state
   local -A metadata
@@ -13,7 +18,6 @@ _mrgsh_completion_init() {
       signature+=$'\n'"$directory:missing"
     fi
   done
-  autoload -Uz compinit
   if [[ $1 == rebuild || ! -r $state || ! -r ~/.zcompdump || "$(<$state)" != "$signature" ]] || (( $#stale )); then
     rm -f -- ~/.zcompdump
     compinit -d ~/.zcompdump || return

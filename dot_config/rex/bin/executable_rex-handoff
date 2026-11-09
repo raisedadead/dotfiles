@@ -93,17 +93,17 @@ inner() {
 	trap : INT
 	status working "$shown"
 	printf '\n\n'
-	"$@" || code=$?
+	REX_HANDOFF=1 zsh +m -i -c 'unset REX_HANDOFF; "$@"' zsh "$@" || code=$?
 	if kill -0 "$caller" 2>/dev/null; then report "$code"; else rm -f "$res"; fi
 	trap 'exit "$code"' INT
 	stty -echo -icanon
+	drain
 	if ((code)); then
 		status error "exit $code: $shown"
 	else
 		status "done" "exit 0: $shown"
 	fi
 	printf '\n  exit %d · press any key to close' "$code"
-	drain
 	IFS= read -rsn1 _ || true
 	exit "$code"
 }

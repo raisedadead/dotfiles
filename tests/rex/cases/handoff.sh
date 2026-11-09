@@ -37,10 +37,25 @@ h_wait
 check "the hand-off runs in the caller's directory" \
 	test "$(cat "$SB/t/hpwd" 2>/dev/null)" = "$(cd "$SB/t/hcwd" && pwd -P)"
 check "rex-handoff returns the code before the float closes" h_out hcwd 0
-check "the finished float asks for any key" h_shows "press any key to close"
-check "the finished float stops reporting working" h_state "done"
+check "the finished float asks for any key" until5 h_shows "press any key to close"
+check "the finished float stops reporting working" until5 h_state "done"
 h_key $'\e'
 check "Esc closes the finished float" until5 not has_float
+h_close
+
+h_run hrc can_haz sh
+h_settle
+h_key $'\r'
+h_wait
+check "a hand-off runs a function from ~/.zshrc" h_out hrc 0
+h_close
+
+# shellcheck disable=SC2016
+h_run hleak sh -c 'test -z "${REX_HANDOFF+x}"'
+h_settle
+h_key $'\r'
+h_wait
+check "the handed command does not see REX_HANDOFF" h_out hleak 0
 h_close
 
 long=$(printf '%*s' 3000 '' | tr ' ' x)

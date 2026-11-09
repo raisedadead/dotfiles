@@ -95,6 +95,7 @@ zsh-plugin-update() {
   }
 }
 
-if _mrgsh_zsh_plugins_install && _mrgsh_zsh_plugins_sync "$ZDOTDIR/plugins.lock"; then
+if [[ -z $REX_HANDOFF ]] && _mrgsh_zsh_plugins_install &&
+  _mrgsh_zsh_plugins_sync "$ZDOTDIR/plugins.lock"; then
   _mrgsh_zsh_pnpm_helper
 fi

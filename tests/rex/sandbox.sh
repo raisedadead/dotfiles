@@ -345,8 +345,12 @@ answer() {
 	f=$(float_id)
 	until5 blocked || return 0
 	R send -s "$S" -b "$f" "$1" >/dev/null
-	sleep 0.5
+	until5 settled "$f" || true
 	R send -s "$S" -b "$f" $'\r' >/dev/null 2>&1 || true
+}
+settled() {
+	[[ "$(float_id)" != *"${1#block:}"* ]] ||
+		grep -q "press any key" <<<"$(R capture -s "$S" -b "$1" 2>/dev/null)"
 }
 handoff >"$SB/t/h1" 2>&1 &
 h_pid=$!
