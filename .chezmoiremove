@@ -1,6 +1,7 @@
 .claude/skills/cmd-git-rules
 .config/tuios
 .config/nvim/lua/plugins/tuios-nvim-navigator.lua
+.config/nvim/README.md
 .claude/skills/rex
 .claude/skills/cmd-monitor-pane/scripts/watch-pane.sh
 .agents/skills/rex
