@@ -73,44 +73,51 @@ local function cwd_of(ctx)
   return src, cwd
 end
 
+local function agent_here(ctx, agent)
+  local sid = ctx.session_id
+  local src, cwd = cwd_of(ctx)
+  if not src then error("no pane to split", 0) end
+  local anchor, drawer, wid, kind = src, false, lib.window_of(sid, src)
+  if kind and kind ~= "tiled" then
+    local here = lib.where(sid, wid)
+    anchor = here and here.anchor
+    if not anchor then error("this tab has no tiled pane to split", 0) end
+    drawer = here.labels[src] == "drawer:scratch"
+  end
+  local self = ctx.block_id
+  if not self then
+    local here = lib.where(sid)
+    self = here and here.focused
+  end
+  local at = self and lib.where(sid, lib.window_of(sid, self))
+  local popup = at and (at.labels[self] or ""):match("^popup:") and self
+  if popup then
+    local p = lib.popup_of(sid, self)
+    if not p or p.agent then popup = nil end
+  end
+  local r, err = rex.call("session.new_split", {
+    session_id = sid, anchor_id = anchor, direction = "horizontal",
+    side = "after", focus = true,
+    layout = lib.then_shell(agent, cwd, "agent"),
+  })
+  if not r then error(err, 0) end
+  local bid = r.block_ids[1]
+  if drawer then
+    rex.session.detach_block{ session_id = sid, block_id = src }
+  end
+  if popup then rex.call("block.close", { session_id = sid, block_id = popup }) end
+  if drawer or popup then rex.session.focus_block{ session_id = sid, block_id = bid } end
+  return { block_id = bid }
+end
+
 rex.action{
   name = "agent_here", title = "Agent Here", category = "Agents",
-  run = function(ctx)
-    local sid = ctx.session_id
-    local src, cwd = cwd_of(ctx)
-    if not src then error("no pane to split", 0) end
-    local anchor, drawer, wid, kind = src, false, lib.window_of(sid, src)
-    if kind and kind ~= "tiled" then
-      local here = lib.where(sid, wid)
-      anchor = here and here.anchor
-      if not anchor then error("this tab has no tiled pane to split", 0) end
-      drawer = here.labels[src] == "drawer:scratch"
-    end
-    local self = ctx.block_id
-    if not self then
-      local here = lib.where(sid)
-      self = here and here.focused
-    end
-    local at = self and lib.where(sid, lib.window_of(sid, self))
-    local popup = at and (at.labels[self] or ""):match("^popup:") and self
-    if popup then
-      local p = lib.popup_of(sid, self)
-      if not p or p.agent then popup = nil end
-    end
-    local r, err = rex.call("session.new_split", {
-      session_id = sid, anchor_id = anchor, direction = "horizontal",
-      side = "after", focus = true,
-      layout = lib.then_shell(lib.AGENT, cwd, "agent"),
-    })
-    if not r then error(err, 0) end
-    local bid = r.block_ids[1]
-    if drawer then
-      rex.session.detach_block{ session_id = sid, block_id = src }
-    end
-    if popup then rex.call("block.close", { session_id = sid, block_id = popup }) end
-    if drawer or popup then rex.session.focus_block{ session_id = sid, block_id = bid } end
-    return { block_id = bid }
-  end,
+  run = function(ctx) return agent_here(ctx, lib.AGENT) end,
+}
+
+rex.action{
+  name = "agent_here_pi", title = "Agent Here (Pi)", category = "Agents",
+  run = function(ctx) return agent_here(ctx, lib.PI) end,
 }
 
 local STATE = (os.getenv("REX_AGENT_DIR")
@@ -127,9 +134,15 @@ local function record(bid)
   local text = f:read("*a")
   f:close()
   local ok, r = pcall(rex.json.decode, text)
-  if not ok or type(r) ~= "table" or r.block ~= bid or r.agent ~= "claude" then return nil end
-  if type(r.session_id) ~= "string" or not r.session_id:match(UUID) then return nil end
-  return r, path
+  if not ok or type(r) ~= "table" or r.block ~= bid then return nil end
+  if r.agent == "claude" and type(r.session_id) == "string" and r.session_id:match(UUID) then
+    return "claude --resume " .. r.session_id, path
+  end
+  local file = r.session_file
+  if r.agent == "pi" and type(file) == "string" and file:match("^/.+%.jsonl$") and not file:find("%c") then
+    return "pi --session '" .. (file:gsub("'", "'\\''")) .. "'", path
+  end
+  return nil
 end
 
 local at_prompt, restored = lib.at_prompt, lib.restored
@@ -158,7 +171,7 @@ rex.action{
       local bl = rex.call("session.list_blocks", { session_id = sid })
       for _, b in ipairs(bl and bl.blocks or {}) do
         local bid, label = b.block_id, b.label or ""
-        local r, path = record(bid)
+        local resume, path = record(bid)
         local float = label:match("^popup:") or label == "handoff"
         if float then
           if restored(sid, bid) and at_prompt(sid, bid) then
@@ -167,9 +180,8 @@ rex.action{
               closed[#closed + 1] = bid
             end
           end
-        elseif r and at_prompt(sid, bid) then
-          local _, werr = lib.safe_write(sid, bid,
-            r.agent .. " --resume " .. r.session_id .. "\n")
+        elseif resume and at_prompt(sid, bid) then
+          local _, werr = lib.safe_write(sid, bid, resume .. "\n")
           if not werr then
             os.remove(path)
             resumed[#resumed + 1] = bid

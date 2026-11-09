@@ -4,6 +4,7 @@ M.TERMINAL = "com.superlogical.terminal"
 M.SHELL = M.TERMINAL .. ".shell"
 M.AGENTS = { claude = true, codex = true, pi = true, opencode = true }
 M.AGENT = os.getenv("REX_TEST_AGENT") or "claude"
+M.PI = os.getenv("REX_TEST_PI") or "pi"
 M.EDITOR = os.getenv("REX_TEST_EDITOR") or "nvim"
 
 local here = debug and debug.getinfo and debug.getinfo(1, "S").source or ""

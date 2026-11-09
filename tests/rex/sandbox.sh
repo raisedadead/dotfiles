@@ -83,6 +83,8 @@ printf '%s\n' "\$1" >> $SB/t/agent.args
 sleep 5
 EOF
 chmod +x "$SB/fake-agent"
+printf '#!/bin/sh\npwd >> %s/t/pi.runs\nsleep 5\n' "$SB" >"$SB/fake-pi"
+chmod +x "$SB/fake-pi"
 printf '#!/bin/sh\npwd >> %s/t/editor.runs\nsleep 5\n' "$SB" >"$SB/fake-editor"
 chmod +x "$SB/fake-editor"
 
@@ -94,7 +96,7 @@ export SANDBOX_CALLER_ONLY=1
 env -i USER="$USER" LOGNAME="$USER" HOME="$HOME" SHELL=/opt/homebrew/bin/zsh \
 	PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin TMPDIR="${TMPDIR:-/tmp/}" \
 	${SSH_AUTH_SOCK:+SSH_AUTH_SOCK="$SSH_AUTH_SOCK"} REX_SERVER="$SOCK" \
-	REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
+	REX_TEST_AGENT="$SB/fake-agent" REX_TEST_PI="$SB/fake-pi" XDG_STATE_HOME="$SB/state-home" \
 	REX_AGENT_DIR="$SB/state-home/rex/agents" REX_TEST_EDITOR="$SB/fake-editor" \
 	"$REXBIN" server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
@@ -388,6 +390,9 @@ runs_before=$(wc -l <"$SB/t/agent.cwds")
 more_runs() { (($(wc -l <"$SB/t/agent.cwds") > runs_before)); }
 R "do" -s "$S" -b "$plain" agent_here >/dev/null
 check "agent_here starts the agent in a new pane" until5 more_runs
+R "do" -s "$S" -b "$plain" agent_here_pi >/dev/null
+check "agent_here_pi starts Pi in the pane's directory" \
+	until5 file_has "$SB/t/pi.runs" "$(tail -1 "$SB/t/agent.cwds")"
 
 R "do" -s "$S" -b "$linky" ask_pane >/dev/null
 check "ask_pane opens popup:ask" has_label "$S" popup:ask
@@ -413,7 +418,13 @@ record_for() {
 mkdir -p "$SB/fakebin"
 printf '#!/bin/sh\necho "claude $*" >> %s/t/resumed\n' "$SB" >"$SB/fakebin/claude"
 chmod +x "$SB/fakebin/claude"
+printf '#!/bin/sh\necho "pi $*" >> %s/t/resumed\n' "$SB" >"$SB/fakebin/pi"
+chmod +x "$SB/fakebin/pi"
 prompt_pane() { split env PATH="$SB/fakebin:$PATH" zsh -f -i; }
+pi_record() {
+	jq -cn --arg b "$1" --arg f "$2" '{block: $b, agent: "pi", session_id: "p", session_file: $f}' \
+		>"$SB/state-home/rex/agents/${1#block:}.json"
+}
 U1=0a1b2c3d-0000-4000-8000-000000000001
 idle=$(prompt_pane)
 flagged=$(prompt_pane)
@@ -427,11 +438,22 @@ recorded() {
 	jq -e --arg u "$U1" '.session_id == $u and (has("cwd") | not)' "$(rec "$idle")" >/dev/null
 }
 check "the SessionStart hook records the pane's Claude session" recorded
+pidle=$(prompt_pane)
+pquote=$(prompt_pane)
+pctl=$(prompt_pane)
+pi_record "$pidle" "$SB/t/pi a.jsonl"
+pi_record "$pquote" "$SB/t/pi'b.jsonl"
+pi_record "$pctl" "$SB/t/x"$'\x15'"touch $SB/t/ctl; #.jsonl"
 sleep 1
-resumed=$(R "do" -s "$S" --json agents_resume | jq -c .resumed)
+resumed=$(R "do" -s "$S" --json agents_resume | jq -c '.resumed | sort')
 check "agents_resume resumes only a shell at its prompt with a valid session" \
-	test "$resumed" = "[\"$idle\"]"
+	test "$resumed" = "$(jq -cn --arg a "$idle" --arg b "$pidle" --arg c "$pquote" '[$a, $b, $c] | sort')"
 check "agents_resume types claude --resume" until5 file_has "$SB/t/resumed" "claude --resume $U1"
+check "agents_resume types pi --session with the session file" \
+	until5 grep -qxF "pi --session $SB/t/pi a.jsonl" "$SB/t/resumed"
+check "agents_resume quotes a session file that holds a quote" \
+	until5 grep -qxF "pi --session $SB/t/pi'b.jsonl" "$SB/t/resumed"
+check "agents_resume types no session file that holds a control character" test ! -e "$SB/t/ctl"
 check "agents_resume types nothing into a script that reads a line" test ! -e "$SB/t/read"
 check "agents_resume removes the record it used" test ! -e "$(rec "$idle")"
 check "agents_resume resumes a session once" \
