@@ -150,8 +150,10 @@ runs_action() {
 		'.bindings[] | select(.keys == [$k] and .action == $a)' <<<"$keys_json" >/dev/null
 }
 check "ctrl+enter sends Enter" runs_action ctrl+enter enter_key
-check "ctrl+shift+k jumps to the previous prompt" runs_action ctrl+shift+k client.prompt.previous
-check "ctrl+shift+j jumps to the next prompt" runs_action ctrl+shift+j client.prompt.next
+check "ctrl+shift+k scrolls a page up" runs_action ctrl+shift+k client.scroll.page_up
+check "ctrl+shift+j scrolls a page down" runs_action ctrl+shift+j client.scroll.page_down
+check "cmd+pageup scrolls a page up" runs_action cmd+pageup client.scroll.page_up
+check "cmd+pagedown scrolls a page down" runs_action cmd+pagedown client.scroll.page_down
 entered=$(split bash -c "IFS= read -r l; echo \"got:\$l\" > '$SB/t/entered'; exec sleep 300")
 sleep 0.3
 R send -s "$S" -b "$entered" hi >/dev/null

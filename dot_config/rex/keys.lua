@@ -54,8 +54,10 @@ bind("alt+shift+enter", "pane.zoom")
 bind("alt+;", "client.palette.toggle")
 bind("alt+e", "popup_urls")
 bind("ctrl+enter", "enter_key")
-bind("ctrl+shift+k", "client.prompt.previous")
-bind("ctrl+shift+j", "client.prompt.next")
+bind("ctrl+shift+k", "client.scroll.page_up")
+bind("ctrl+shift+j", "client.scroll.page_down")
+bind("cmd+pageup", "client.scroll.page_up")
+bind("cmd+pagedown", "client.scroll.page_down")
 for _, k in ipairs({ "w", "e", "a", "s" }) do
   bind("ctrl+shift+" .. k, "pane.send_key", { key = "ctrl+alt+" .. k })
 end
