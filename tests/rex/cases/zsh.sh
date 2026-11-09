@@ -177,3 +177,15 @@ if stubbed; then
 	check "rex.zsh names the program in a typed subshell" \
 		test "$(zstatus)" = "error sh sh: exit 5 after 0s"
 fi
+
+skip_home="$SB/t/handoff-home"
+mkdir -p "$skip_home"
+# shellcheck disable=SC2016
+env -i HOME="$skip_home" PATH="$PATH" REX_HANDOFF=1 ZDOTDIR="$REPO/dot_config/exact_zsh" \
+	ZPLUGDIR="$skip_home/plugins" \
+	zsh -f -c 'source "$ZDOTDIR/plugins.zsh"; source "$ZDOTDIR/completions.zsh"' \
+	>"$SB/t/handoff-skip" 2>&1 || true
+check "a hand-off shell loads the completions" test -s "$skip_home/.zcompdump"
+check "a hand-off shell skips the plugin install" test ! -e "$skip_home/plugins"
+check "a hand-off shell skips the completion rebuild" \
+	test ! -e "$skip_home/.cache/zsh/completion-state"
