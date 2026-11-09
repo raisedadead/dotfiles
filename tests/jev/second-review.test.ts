@@ -14,7 +14,7 @@ type Questions = {
   key: Key;
   timeoutMs: number;
   enforce: boolean;
-  bands: { note: number; block: number };
+  bands: { note: number; block: number; fable?: number };
   topics: Record<string, Topic>;
 };
 
@@ -61,6 +61,13 @@ test("bands order the note line below the block line, inside 0 to 1", () => {
   expect(note).toBeLessThan(1);
   expect(block).toBeGreaterThan(note);
   expect(block).toBeLessThanOrEqual(1);
+});
+
+test("the fable band lies above the block line, at most 1", () => {
+  const { block, fable } = load().bands;
+  expect(typeof fable).toBe("number");
+  expect(fable).toBeGreaterThan(block);
+  expect(fable).toBeLessThanOrEqual(1);
 });
 
 test("timeout is a positive whole number of milliseconds", () => {
