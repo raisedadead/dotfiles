@@ -1,17 +1,6 @@
 # How this setup works
 
-This guide holds the ownership, the load order, and the constraints for a change. [README.md](README.md) here holds the install steps and the chezmoi commands. [MAINTENANCE.md](MAINTENANCE.md) holds the probes. [AGENTS.md](../AGENTS.md) is the entry point for every coding agent. Read versions, revisions, and inventories from the source files or the tools, not from here.
-
-## Contents
-
-- [Deployment and capture](#deployment-and-capture)
-- [Private submodules](#private-submodules)
-- [Terminal stack](#terminal-stack)
-- [Desktop and utilities](#desktop-and-utilities)
-- [Agent rigs](#agent-rigs)
-- [Claude Code](#claude-code)
-- [Pi](#pi)
-- [Operator tools](#operator-tools)
+This guide holds the ownership, the load order, and the constraints for a change. Read versions, revisions, and inventories from the source files or the tools.
 
 ## Deployment and capture
 
@@ -19,33 +8,33 @@ Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including an installer or runtime write. Capture one target at a time when the list holds a change you did not make. Revert the rest with `chezmoi apply <target>`.
 
-| Kind                                       | Source                                                                                                   | Maintenance                                         |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| File, plain or encrypted                   | `dot_`, `private_`, `encrypted_` entries                                                                 | Edit the target and `re-add`. `re-add` re-encrypts  |
-| Template                                   | `dot_config/glow/glow.yml.tmpl`, `dot_pi/agent/mcp.json.tmpl`                                            | Edit the source. `re-add` skips templates           |
-| Modify script                              | `modify_private_dot_claude.json`, `dot_claude/modify_settings.json`, `dot_pi/agent/modify_settings.json` | Edit the source. It merges into the existing target |
-| External                                   | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                                                        | Change the pinned revision or checksum              |
-| Repository document, `docs/`, `install.sh` | Root files                                                                                               | Edit the source. Not deployed                       |
+| Kind                                                                                 | Source                                                                                                   | Maintenance                                         |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| File, plain or encrypted                                                             | `dot_`, `private_`, `encrypted_` entries                                                                 | Edit the target and `re-add`. `re-add` re-encrypts  |
+| Template                                                                             | `dot_config/glow/glow.yml.tmpl`, `dot_pi/agent/mcp.json.tmpl`                                            | Edit the source. `re-add` skips templates           |
+| Modify script                                                                        | `modify_private_dot_claude.json`, `dot_claude/modify_settings.json`, `dot_pi/agent/modify_settings.json` | Edit the source. It merges into the existing target |
+| External                                                                             | [.chezmoiexternal.toml](../.chezmoiexternal.toml)                                                        | Change the pinned revision or checksum              |
+| `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `tests/`, `install.sh`, `.githooks/` | Repository files                                                                                         | Edit the source. Not deployed                       |
 
 `re-add` does not capture templates, modify targets, externals, or symlink entries. Before an apply, read `chezmoi status` and `chezmoi diff`. Column one `M` is a target edit. Column one `D` is a deleted target. Do not delete the chezmoi state to resolve drift.
 
 `exact_dot_bin`, `dot_config/exact_zsh`, and `dot_config/exact_git` own their target directories. Apply removes an entry there that the source does not hold. Keep generated state elsewhere. Completion data lives in `~/.zfunc`, `~/.zcompdump`, and `$XDG_CACHE_HOME/zsh`. Plugin checkouts live under `$XDG_DATA_HOME/zsh/plugins`.
 
-A `re-add` of an exact directory captures new children and removes source entries for deleted children. Inside an exact directory, a `re-add` of one child file also captures new siblings; outside one it takes the named file only (`chezmoi-fixture-check.sh` check 6 asserts both). Inspect the directory before a capture and the source diff after it. Implementation: [readdcmd.go](https://github.com/twpayne/chezmoi/blob/v2.73.1/internal/cmd/readdcmd.go).
+A `re-add` of an exact directory captures new children and removes source entries for deleted children. Inside an exact directory, a `re-add` of one child file also captures new siblings; outside one it takes the named file only (`chezmoi-fixture-check.sh` check 6 asserts both). Inspect the directory before a capture and the source diff after it.
 
-[.chezmoiignore](../.chezmoiignore) controls deployment. Git ignores do not. Its paths are relative to `$HOME`, without a leading `/`. An untracked source file deploys. Do not track authentication, trust records, sessions, databases, logs, caches, generated memories, installed plugins, or skill symlinks. Outside an exact directory, a removed source entry leaves the target in place. Remove that orphan yourself.
+[.chezmoiignore](../.chezmoiignore) controls deployment. Git ignores do not. Its paths are relative to `$HOME`, without a leading `/`. An untracked source file deploys. Do not track authentication, trust records, sessions, databases, logs, caches, generated memories, installed plugins, or the links of third-party and app skills. Outside an exact directory, a removed source entry leaves the target in place. Remove that orphan yourself.
 
 Stage a shell startup change with an isolated destination and state file before a broad apply. A broken `.zshrc` affects every new shell.
 
 ### Private submodules
 
-`dot_claude/`, `dot_agents/`, and `dot_pi/` are git submodules of `raisedadead/dotfiles-private`, on branches with the same names. Each has an independent history. A capture of a `~/.claude` target lands there. Commit inside `dot_claude/`. Its `.githooks/post-commit` then commits the gitlink bump in `~/.dotfiles` as `chore(dot_claude): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. The bump takes the parent author and date. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
+`dot_claude/`, `dot_agents/`, and `dot_pi/` are git submodules of `raisedadead/dotfiles-private`, one branch each, with independent history. A commit inside a submodule runs its `.githooks/post-commit`, which commits the gitlink bump in `~/.dotfiles` as `chore(<dir>): bump to <sha>`. The hook exits 0 without a commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink. When the parent tip is a bump that no remote holds, the hook amends it. `status.submoduleSummary` lists a submodule commit the parent does not record yet.
 
 Both repos run `gitleaks` in `.githooks/pre-commit` and exit 1 on a finding. The parent `.githooks/pre-push` resolves the gitlink of each commit in each pushed range. It exits 1 when that submodule commit is on no remote, or when it cannot check it. A clone of the parent cannot check out such a commit.
 
-Git settings in `dot_gitconfig`: `submodule.recurse = false`, because `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.<name>.update = merge` for each of the three, so `git submodule update` is a no-op while the branch is ahead. `push.recurseSubmodules = on-demand`.
+In `dot_gitconfig`, `submodule.recurse` stays `false`: `true` lets `pull`, `checkout`, `switch`, and `reset` rewind the submodule working tree. `submodule.<name>.update = merge` makes `git submodule update` a no-op while the branch is ahead. Expected values: [S2](MAINTENANCE.md#s2-private-submodules).
 
-Each private directory is one orphan branch with the directory name, mounted with `git submodule add -b <dir>`. Private branch repository metadata uses `.git*`-prefixed files, which chezmoi skips. Deployable configuration also lives at the branch root. `dotfiles-privatize.sh` seeds `pre-commit` and `post-commit` from the parent `.githooks/` into a new private branch.
+Each private directory is one orphan branch named after the directory, mounted with `git submodule add -b <dir>`. `dotfiles-privatize.sh` seeds `.githooks/pre-commit` and `post-commit` into a new branch.
 
 ## Terminal stack
 
@@ -84,7 +73,7 @@ chezmoi keeps its packaged `_chezmoi` completion with `completion.custom = false
 
 Ctrl+T replaces the shell argument at the cursor. An existing directory becomes the search root, and the rest becomes the query. It does not evaluate variables or command substitutions. It respects Git ignores. `<C-g>` includes the ignored entries for that call.
 
-`.zshrc` and `.bashrc` load the worktrunk wrapper with `wt config shell init`. Do not run `wt config shell install`, because it writes the deployed files. An agent shell does not load the wrapper, so `wt switch` cannot change its directory there. An agent stays in the main checkout and works in a worktree by full path.
+`.zshrc` and `.bashrc` load the worktrunk wrapper with `wt config shell init`. Do not run `wt config shell install`, because it writes the deployed files. An agent shell does not load the wrapper, so `wt switch` cannot change its directory there. See [RTK and worktrees](#rtk-and-worktrees).
 
 Keep `DIRENV_LOG_FORMAT` exported above the direnv hook.
 
@@ -94,7 +83,7 @@ An empty, forced, left-aligned OMP block precedes the main prompt. It preserves 
 
 ### tmux and pickers
 
-A tmux test server needs a unique `-L` or `-S` on every command, including subprocesses. `-f` and `TMUX_TMPDIR` do not isolate the live server. Read the parse output as well as the exit status.
+A tmux test server needs a unique `-L` or `-S` on every command, including subprocesses. It follows the probe rules in [MAINTENANCE.md](MAINTENANCE.md#terminal-stack).
 
 [theme.conf](../dot_config/tmux/theme.conf) owns the palette and the menu options. Use IDs for menu targets. Escape displayed names. Command-local menu colors are literal. Global menu style options accept formats. A painted popup background is opaque, also with Ghostty transparency.
 
@@ -116,7 +105,7 @@ Add `-b` only when the child opens a menu or a popup, because a blocking `run-sh
 
 ### Neovim
 
-[lua/config](../dot_config/nvim/lua/config/) holds LazyVim deltas. [lua/plugins](../dot_config/nvim/lua/plugins/) holds plugin overrides. Check the upstream default before you add one. Use `catppuccin-mocha`. Bare `catppuccin` can resolve to the built-in colorscheme.
+[lua/config](../dot_config/nvim/lua/config/) holds LazyVim deltas. [lua/plugins](../dot_config/nvim/lua/plugins/) holds plugin overrides. [lazyvim.json](../dot_config/nvim/lazyvim.json) selects the LazyVim extras. Check the upstream default before you add one. Use `catppuccin-mocha`. Bare `catppuccin` can resolve to the built-in colorscheme.
 
 `chezmoi.nvim` does not watch source buffers. The whitespace autocmd trims selected code and config filetypes only. It keeps Markdown and plain text, and it skips binary, special, nonmodifiable, and large buffers. Keep it separate from a conform catch-all formatter, which suppresses the LSP fallback.
 
@@ -126,27 +115,27 @@ Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config
 
 [dot_config/rex](../dot_config/rex/) holds the Rex terminal config. [init.lua](../dot_config/rex/init.lua) loads the shared helpers in `lib.lua`, then one Lua module for each feature: popups, the drawer, workspaces, the hand-off float, the agent actions, and the keys. [bin](../dot_config/rex/bin/) holds the helper scripts that the actions and `mdr` start. `rex-open FILE[:LINE[:COL]]` opens the editor in a new tab of the current session. Outside Rex it runs the editor in place. `mdr --edit` and the reader popup use it.
 
-Rex and Ghostty with tmux are both daily terminals. Neither replaces the other. Each Rex path that this setup adds to a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]]`. Outside the gate, zsh, `keys`, `mdr` and the session recorder hook behave as before. The older `rex __internal session-start` hook is not part of this setup. It runs in each Claude session, with no gate. tmux inside a Rex pane fails the gate, so the tmux paths stay in use there.
+Rex and Ghostty with tmux are both daily terminals. Neither replaces the other. Each Rex path that this setup adds to a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]]`. Outside the gate, zsh, `keys`, `mdr` and the session recorder hook behave as before. tmux inside a Rex pane fails the gate, so the tmux paths stay in use there.
 
-zsh reports a command that runs at least `REX_STATUS_MIN` seconds (default 15) as an OSC 7501 `done` or `error` record with `app=<program>`. The next command clears that record. [rex.zsh](../dot_config/exact_zsh/rex.zsh) holds its own copy of the gate. `REX_STATUS_SKIP` lists commands whose time is interactive (`prog`, `prog sub` or `prog sub -flag`). `REX_STATUS_PAGER` lists pagers, which are skipped only at the end of a pipeline. `REX_STATUS_REPL` lists programs that are skipped only with no arguments and no piped or redirected input. A command that has a `REX_STATUS_AGENTS` name as a word is skipped. `git commit` reports unless it opens an editor. Aliases and git aliases expand before the match, and heredoc bodies are ignored. An interrupted or stopped command reports nothing.
+zsh reports a command that runs `REX_STATUS_MIN` seconds or more (default 15) as an OSC 7501 `done` or `error` record with `app=<program>`. The next command clears it. [rex.zsh](../dot_config/exact_zsh/rex.zsh) holds its own copy of the gate. It skips interactive programs (`REX_STATUS_SKIP`), pagers at the end of a pipeline (`REX_STATUS_PAGER`), bare REPLs (`REX_STATUS_REPL`), commands that name an agent (`REX_STATUS_AGENTS`), an interrupted or stopped command, and `git commit` when it opens an editor. Aliases and git aliases expand before the match; heredoc bodies are ignored.
 
 Ctrl+Enter sends Enter, as in Ghostty. Ctrl+Shift+K and Ctrl+Shift+J scroll one page up and down; in Ghostty the same keys scroll 5 lines. Cmd+PageUp and Cmd+PageDown also scroll one page, as in Ghostty. Cmd+Up and Cmd+Down jump to the previous and the next prompt (Rex default). Rex has no line, top or bottom scroll action ([feedback](https://discord.com/channels/1546797889009881158/1565009888235622462)).
 
-**Agent Here** starts Claude Code in a new pane, and **Agent Here (Pi)** starts Pi. In Rex, each agent gets the text of `rex __internal session-start` at session start and keeps a restore record in `~/.local/state/rex/agents`. For Claude Code, the managed hooks do this. For Pi, the [rex-session](../dot_pi/agent/extensions/rex-session.ts) extension does it in the interactive TUI only. Pi saves its session file after the first message, so the record waits for it. Pi keeps the record when a signal stops it, as when Rex restarts, and removes it when the operator quits Pi.
+**Agent Here** starts Claude Code in a new pane, and **Agent Here (Pi)** starts Pi. In Rex, each agent gets the text of `rex __internal session-start` at session start and keeps a restore record in `~/.local/state/rex/agents`. For Claude Code, the managed hooks do this. For Pi, the [rex-session](../dot_pi/agent/extensions/rex-session.ts) extension does it in the interactive TUI only. Pi saves its session file after the first message, so the record waits for it.
 
-Rex does not watch `init.lua`. [README.md](README.md#rex) gives the reload step. [run_onchange_before_rex-config-check.sh.tmpl](../run_onchange_before_rex-config-check.sh.tmpl) runs `rex config check` on the source when a module changes. An error stops the apply before chezmoi writes a file. Without the `rex` CLI the check does nothing.
+[run_onchange_before_rex-config-check.sh.tmpl](../run_onchange_before_rex-config-check.sh.tmpl) runs `rex config check` on the source when a module changes and stops the apply on an error. Without the `rex` CLI it does nothing. Reload: [README.md](README.md#rex).
 
 Rex restores a block without its command, so a restored block runs a login shell. `agents_resume` uses that to find the restored popups, hand-off floats and `editor` panes.
 
-[run_onchange_after_rex-defaults.sh.tmpl](../run_onchange_after_rex-defaults.sh.tmpl) writes the Rex app settings with `defaults write com.superlogical.rex`. The source owns each key that the script writes. chezmoi runs the script again when the script or [themes/custom-themes.json](../dot_config/rex/themes/custom-themes.json) changes, and that run replaces an app change to an owned key. The script merges the theme file into `Workspace.customThemes` by id. The first theme is the dark theme. A theme made in the app with a new id stays. The script never deletes a theme: to remove one, delete it from the file and in Rex Settings. If the theme file or the app themes are bad, the script writes nothing and prints a `rex-defaults:` message. To capture the themes, run `defaults export com.superlogical.rex /tmp/rex.plist`, then `/usr/libexec/PlistBuddy -c 'Print :Workspace.customThemes' /tmp/rex.plist | jq . > dot_config/rex/themes/custom-themes.json`. A capture takes the app themes too, so the source then owns them all.
+[run_onchange_after_rex-defaults.sh.tmpl](../run_onchange_after_rex-defaults.sh.tmpl) writes the Rex app settings with `defaults write com.superlogical.rex`. The source owns each key it writes. When the script or [custom-themes.json](../dot_config/rex/themes/custom-themes.json) changes, the script replaces an app change to an owned key. The script merges the theme file into `Workspace.customThemes` by id (the first theme is the dark theme) and never deletes a theme: to remove one, delete it from the file and in Rex Settings. On bad input it writes nothing and prints a `rex-defaults:` message. To capture app themes: `defaults export com.superlogical.rex /tmp/rex.plist`, then `/usr/libexec/PlistBuddy -c 'Print :Workspace.customThemes' /tmp/rex.plist | jq . > dot_config/rex/themes/custom-themes.json`. A capture makes the source own all app themes.
 
 The same script installs the `xterm-rex` terminfo entry with `rex terminfo setup --entry-only`. A plain setup adds an `Include` line to `~/.ssh/config`, which chezmoi owns. `SetEnv TERM=xterm-256color` in that file already keeps the name off ssh hosts.
 
-The rig guards control how an agent uses the `rex` CLI. Both guards refuse input to a block on the live server, so an agent types only on a `-S` sandbox server. On the live server, `rex do` runs only the actions on a short list in each guard, and no Lua. Both guards read a command that `rex run`, `rex split` or `rex new` starts as the same command with no wrapper. [RIG.md](../dot_claude/RIG.md) lists what gets past the guard. An agent cannot stop the live server or run `agents_resume` on it. The Claude Code guard also refuses a `rex kill` or a `rex session kill` of more than one session. An agent runs its probes on a sandbox server under `/tmp`. Outside Rex (no `REX_BLOCK`), the Claude Code guard refuses each `rex` command that reaches the live server, such as `rex capture`, and the Pi guard lets a verified read run. `--help`, `version`, `skill`, `config` and a sandbox server still run in both. A `REX_SERVER` prefix turns off no check. `.chezmoiremove` deletes the global `rex` skill that `rex skill setup` installs, and the managed hooks replace its session-start hook, at each apply. The `rex-handoff` skill is off in the managed Claude Code settings. Its script, `rex-handoff`, still opens a float where the operator approves a command, and runs the command in `zsh` with `~/.zshrc` loaded. In the float, `REX_HANDOFF` makes the zsh setup skip the plugin install and the completion rebuild, so nothing fetches or prompts before the command. The command name resolves through the zsh setup, so a zsh function or builtin runs in place of a program of the same name. The float's shell exits after the command, so a directory change does not reach the agent's pane.
+Both rig guards refuse input to a block on the live Rex server, so an agent types only on a `-S` sandbox server under `/tmp`. On the live server `rex do` runs only the actions on the short list in each guard, and no Lua. An agent cannot stop the live server or run `agents_resume`. [dot_claude/RIG.md](../dot_claude/RIG.md) and [dot_pi/RIG.md](../dot_pi/RIG.md) list the rest. `.chezmoiremove` deletes the global `rex` skill that `rex skill setup` installs. The `rex-handoff` skill is off in the managed Claude Code settings; the `rex-handoff` script still opens a float where the operator approves a command, then runs it in an interactive `zsh`. `REX_HANDOFF` makes the zsh setup skip plugin install and completion rebuild. A zsh function or builtin runs in place of a program of the same name. A directory change does not reach the agent's pane.
 
-When `REX_SERVER` names a socket that does not answer, the `rex` CLI connects to the default server, which is the live server. An explicit `-S` fails instead. Thus a script that uses `REX_SERVER` must give it to `rex` as `-S`.
+A `REX_SERVER` socket that does not answer makes `rex` use the live server; an explicit `-S` fails instead. A script gives `REX_SERVER` to `rex` as `-S`.
 
-Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server with the environment that launchd gives the live server. It uses the live server's build when that build is installed, and the `rex` CLI if not. [testkit.lua](../tests/rex/testkit.lua) adds the test actions to its copy of the config. A `rex` guard on its `PATH` sends each call to the sandbox server and refuses another server, so the test does not touch the live Rex session. With `REX_GUARD_STRICT=1`, the guard also refuses a call that has no `-S` (`tests/rex/rex-guard.sh:25`). Set it on a helper check so that the check fails while the helper does not give `-S`. Put the checks for one feature in `tests/rex/cases/<feature>.sh`. The sandbox test sources each of these files.
+Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server, and [testkit.lua](../tests/rex/testkit.lua) adds the test actions to its copy of the config. A `rex` guard on its `PATH` sends each call to that server and refuses another server, so the test does not touch the live Rex session. With `REX_GUARD_STRICT=1`, the guard also refuses a call that has no `-S` (`tests/rex/rex-guard.sh:25`). Set it on a helper check, so that the check fails while the helper does not give `-S`. Put the checks for one feature in `tests/rex/cases/<feature>.sh`; the sandbox test sources each file.
 
 ## Desktop and utilities
 
@@ -162,11 +151,13 @@ Shell helpers use `_mrgsh_` internal names and `can_haz` for optional tools. `ex
 
 Two coding agents run on this machine. Each owns its own global kernel and its own runtime. One agent edits the other's kernel only when the operator asks. This repository is the source of truth for what they share: where a rig deploys, what stays unmanaged, and how a skill reaches each agent.
 
-| Rig           | Source        | Target       | Kernel      | System design                  | Checks                              |
-| ------------- | ------------- | ------------ | ----------- | ------------------------------ | ----------------------------------- |
-| Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [RIG.md](../dot_claude/RIG.md) | M1 to M16 (no M5, M13, M14), S1, S2 |
-| Pi            | `dot_pi/`     | `~/.pi/`     | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)     | P1                                  |
-| Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)              | S1, S2                              |
+| Rig           | Source        | Target       | Kernel      | System design                  |
+| ------------- | ------------- | ------------ | ----------- | ------------------------------ |
+| Claude Code   | `dot_claude/` | `~/.claude/` | `CLAUDE.md` | [RIG.md](../dot_claude/RIG.md) |
+| Pi            | `dot_pi/`     | `~/.pi/`     | `AGENTS.md` | [RIG.md](../dot_pi/RIG.md)     |
+| Shared skills | `dot_agents/` | `~/.agents/` | None        | [Skills](#skills)              |
+
+[MAINTENANCE.md](MAINTENANCE.md#choose-checks-for-your-change) selects the checks for a change.
 
 ### The rig contract
 
@@ -177,15 +168,16 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 - The Pi guard denies each `pi` command from the model, because a child session from bash skips the agent contract. The Claude guard lets it run.
 - The Claude guard denies `cp ~/.ssh/id_*`. The Pi guard lets it run.
 - The skill-order check sees a Claude `Skill` call, and in Pi a read of a `better-*/SKILL.md` file. A `/skill:` command that the operator types in Pi records the skill and is never refused.
-- The Pi guard reads the body of a heredoc for its deny patterns, unless the heredoc is quoted, nothing on its line or before it opens a `{`, `(` or backtick, and the last command on its line is `cat` with at most one file redirect, or `tee` with files. The Claude guard reads a body as commands when a shell, `ssh`, `eval`, `at`, `batch`, `script`, `xargs`, `parallel` or `crontab` is a command on its line, or when a shell name with only flags comes just before the heredoc, as in `docker exec -i c sh <<'EOF'`. Like Pi, it checks every other body for the deny patterns and secret sinks. Both guards treat input piped to `at` or `batch` as a command built at run time.
+- The Pi guard checks a heredoc body for its deny patterns. It skips the body only when the heredoc is quoted, nothing on its line or before it opens a `{`, `(` or backtick, and the last command on its line is `cat` with at most one file redirect, or `tee` with files. The Claude guard reads a body as commands when a shell, `ssh`, `eval`, `at`, `batch`, `script`, `xargs`, `parallel` or `crontab` runs on its line, or when a shell name with only flags comes just before the heredoc. It checks every other body for the deny patterns and secret sinks. Both guards treat input piped to `at` or `batch` as a command built at run time.
+- Outside Rex (no `REX_BLOCK`), the Claude guard refuses each `rex` command that reaches the live server, such as `rex capture`. The Pi guard lets a verified read run. Only the Claude guard refuses a `rex kill` or a `rex session kill` of more than one session.
 - A long Claude dialog offers `Details`, which opens the `Approval` view. A long Pi dialog offers `Show all text`.
-- Pi has `redact.json`. Claude has no such file.
+- Pi reads an optional local `~/.pi/agent/redact.json` that adds or turns off redaction rules. Claude has no such file.
 - The kernels differ where the tools differ. Pi has no advisor, TaskList or `notebook`, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.
 - [SKILLS.md](SKILLS.md) uses Claude names, except in the UI workflow.
 
 Each `RIG.md` holds the limits of its rig. The guards match command text and need `shfmt` to read shell syntax. They are not a sealed boundary.
 
-A rig's change loop follows one outline: change the source, show the preview (`chezmoi apply --dry-run --verbose <target>`), ask the operator, then apply. In each rig, `chezmoi apply <target>` run alone opens a dialog with that preview, and the operator's answer is the ask. Under a turn or session approval, the rig records it. The rig's `RIG.md` states which steps the model runs and which steps the operator runs.
+In each rig, `chezmoi apply <target>` run alone opens a dialog with the diff, and the operator's answer is the approval. Each `RIG.md` states which steps the model runs.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 
@@ -205,13 +197,12 @@ Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second revi
 - At or above `bands.block`, two reviews must cover the path. The Claude rig blocks Stop; the Pi rig continues the turn. From `bands.note` up to the block line, the rig tells the model which file can need care.
 - The rig asks Jev once for each new set of paths. A fix to covered paths does not ask again.
 - Jev only adds care. No key, no network, a timeout, a failed `op read` or a bad question file means Jev is down: the status line shows `jev off`, the rig stores no answer and asks for those paths again later, and the kernel review rule applies. Answers stored before stay in force.
-- With `enforce: false`, the rigs ask Jev and log the answer. They do not block, send a note or show the `2nd review` status. The status line still shows `jev off` while Jev is down. `enforce` stays `false` until Jev passes two runs on a new labelled set made from later commits. To pass, at the block line, Jev must flag at least 9 in 10 risky commits and at most 1 in 4 safe commits.
+- With `enforce: false`, the rigs ask Jev and log the answer. They do not block, send a note or show the `2nd review` status. The status line still shows `jev off` while Jev is down.
 - Each rig keeps the question file it loaded for the rest of the session. A change to `enforce` takes effect at the next session start or resume. If the file did not load, the rig tries again at the end of each turn.
-- The Claude rig reads the key with `op read` once per session and keeps it in memory. Pi reads it through a `typesafe` entry in `~/.pi/agent/auth.json` that runs `op read` once for each Pi process, so a failed read keeps Jev off until Pi starts again. `auth.json` stays unmanaged; the operator adds the entry.
-- Both rigs append to `~/.local/state/jev/decisions.jsonl`: the paths with the highest answer for each, the model, the latency, the band and the gate result, and a line when two reviews cover the flagged paths. The log holds no key and no file content.
-- Before a new pinned model goes into the question file, the operator runs the labelled set again. The labelled set stays outside the repository, because it names private paths.
+- Each rig reads the key with `op read`. `auth.json` stays unmanaged.
+- Both rigs append each decision to `~/.local/state/jev/decisions.jsonl`. The log holds no key and no file content.
 
-Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` with `gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
+Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
 
 ### Project instructions
 
@@ -233,7 +224,7 @@ Install a third-party skill with the command above, never by hand. Run `npx skil
 
 Claude Code frontmatter: `disallowed-tools` removes a tool, and `allowed-tools` is advisory and does not (anthropics/claude-code#37683). A `cmd-*` skill sets `disable-model-invocation: false`. Keep the trigger phrases disjoint across skills. Write a path with forward slashes, never with a backslash. The `whetstone` plugin's `skill-smith` lints the rest.
 
-Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/` through a scratch project install, because a global `-g -a pi` install writes to `~/.agents/skills/` (skills CLI 1.7.4). [dot_pi/RIG.md](../dot_pi/RIG.md) holds the update loop. `dot_pi/skills.tsv` lists those skills.
+Pi loads every skill under `~/.agents/skills/`. When two skills have the same name, Pi keeps the first and shows a warning. A Pi-only third-party skill goes to `~/.pi/agent/skills/`; [dot_pi/RIG.md](../dot_pi/RIG.md) holds the loop. `dot_pi/skills.tsv` lists those skills.
 
 ### Workspace
 
@@ -251,7 +242,7 @@ Both agents share one workspace in each project: `<repo>/.scratchpad/` of the ma
 | `plans/`       | Claude Code plans, always in the project folder       | Claude Code                     |
 | `_archive/`    | Moved files and the `MOVED-<date>.txt` logs           | `ws tidy` and both agents       |
 
-[ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 6 lines. It does not write `INDEX.md` or `dossier/`. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, under a lock. It logs each move and deletes no `tmp/` content. When the archive already has a name, it leaves that folder and exits 1. The agent that picks up a handoff moves it to `_archive/handoff/`. A name outside the table, except a hidden name, shows in `START.md` as loose.
+[ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 6 lines. It does not write `INDEX.md` or `dossier/`. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, logs each move, and deletes nothing. When the archive already has a name, it leaves that folder and exits 1. The agent that picks up a handoff moves it to `_archive/handoff/`. A name outside the table, except a hidden name, shows in `START.md` as loose.
 
 At session start, both rigs run `ws` and give its summary to the model: the Claude Code rig on each `SessionStart`, and the Pi `workspace` extension on the first run after each session start except `/reload`. When `ws` fails or takes more than 2 seconds, the session starts without the summary.
 
@@ -272,26 +263,26 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 
 ### RTK and worktrees
 
-A session starts in the main checkout and works in `wt` worktrees by full path. Reason: after `EnterWorktree`, Claude Code refuses an edit to the main checkout, and dossiers stay there. Branch form: `<type>/<cc|pi>-<first 6 of session ID>-<topic>`. `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. Both guards ask before worktree removal (`mutations.ts`).
+A session starts in the main checkout and works in `wt` worktrees by full path. Reason: after `EnterWorktree`, Claude Code refuses an edit to the main checkout, and dossiers stay there. Branch form: `<type>/<cc|pi>-<first 6 of session ID>-<topic>`. `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. Both guards ask before worktree removal (`mods/rig/src/mutations.ts`, `agent/extensions/guard/core/mutations.ts`).
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
-After `EnterWorktree`, the same check also applies to a `!` command that you type. It refuses `git -C ~/<path>`, because it treats `~` as a runtime value (anthropics/claude-code#88550). It accepts an absolute path and `"$HOME/<path>"`. Tested with `git status` on 2.1.289 and 2.1.291; `push` is not tested. Rig hooks do not receive `!` commands, so the rig does not cause this refusal and cannot prevent it. When Remote Control is connected, the terminal shows only `detail withheld on this connection`. Start the session with `--debug-file <path>` to read the reason (anthropics/claude-code#99855).
+After `EnterWorktree`, the same check also applies to a `!` command that you type. It refuses `git -C ~/<path>`, because it treats `~` as a runtime value (anthropics/claude-code#88550). It accepts an absolute path and `"$HOME/<path>"`. Rig hooks do not receive `!` commands, so the rig does not cause this refusal and cannot prevent it. When Remote Control is connected, the terminal shows only `detail withheld on this connection`. Start the session with `--debug-file <path>` to read the reason (anthropics/claude-code#99855).
 
 ### Plugins, MCP, and memory
 
 First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed file from `installPath` in `~/.claude/plugins/installed_plugins.json`. A cache directory name can be a version, not a SHA. A plugin-registered hook runs outside the rig mod. Disable the plugin in `enabledPlugins` to stop it. Read the manifest and the hook registrations before you enable one.
 
-Three components add hidden context to a prompt: the rig (gate and validator reminders, on `composer` and `bridge` prompts only), cavemem (`user-prompt-submit`), and the dossier plugin (the wave contract line). They do not coordinate and have no cap. The settings do not wire the cavemem `session-start` context; this is deliberate. The worktrunk plugin's `PermissionRequest` hook approves `EnterWorktree` outside the rig guard; this is accepted.
+Three components add hidden context to a prompt: the rig (gate and validator reminders, on `composer` and `bridge` prompts only), cavemem (`user-prompt-submit`), and the dossier plugin (the wave contract line). They do not coordinate and have no cap. The settings do not wire cavemem `session-start`, by design. The worktrunk plugin's `PermissionRequest` hook approves `EnterWorktree` outside the rig guard; this is an accepted gap.
 
 `settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi-claude-doctor.sh` check 4, which compares the `mcpServers` key alone. Do not use `chezmoi diff ~/.claude.json`: Claude Code writes other keys at run time, and a whole-file diff reports a false drift. Probe connectivity with `claude mcp list`. A duplicate server name at two scopes can split OAuth state.
 
 Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over the managed settings. Keep native `autoMemoryEnabled` off, because a native write creates target drift.
 
 - **Install.** After an fnm default change, run `chezmoi-claude-bootstrap.sh --only cavemem`.
-- **better-sqlite3 pin.** cavemem 0.2.1 pins `better-sqlite3@^11`. Every 11.x aborts in the Node 24 garbage collector with `Assertion failed: (env) != nullptr` ([WiseLibs/better-sqlite3#1515](https://github.com/WiseLibs/better-sqlite3/issues/1515), closed without a fix). On Node 26 the 11.x install script fails: no prebuild exists, and the source does not compile. The bootstrap installs cavemem with `--ignore-scripts`, then installs `better-sqlite3@12.11.1` under cavemem. A manual `npm i -g cavemem` reinstalls 11.x, so run `--only cavemem` after it.
-- **Install scripts.** Keep the temporary `.npmrc` of `cavemem_pin_bsql` as the only install-script permission for better-sqlite3. npm 11.19 runs an unlisted install script and only warns.
-- **Ranker patch.** cavemem 0.2.1 search passes every embedding to `Math.min`, so a large store raises `Maximum call stack size exceeded`. `cavemem-health.sh` reports it as `rank`, and the bootstrap patches the ranker ([JuliusBrussee/cavemem#62](https://github.com/JuliusBrussee/cavemem/pull/62)). Remove the patch when a release has the fix. An MCP server keeps the old code until it restarts.
+- **better-sqlite3 pin.** cavemem 0.2.1 pins `better-sqlite3@^11`, which aborts in the Node garbage collector ([WiseLibs/better-sqlite3#1515](https://github.com/WiseLibs/better-sqlite3/issues/1515)). The bootstrap installs cavemem with `--ignore-scripts`, then installs the pinned 12.x under cavemem. After a manual `npm i -g cavemem`, run `--only cavemem`.
+- **Install scripts.** Keep the temporary `.npmrc` of `cavemem_pin_bsql` as the only install-script permission for better-sqlite3.
+- **Ranker patch.** cavemem 0.2.1 search overflows the stack on a large store. `cavemem-health.sh` reports it as `rank`, and the bootstrap patches the ranker ([JuliusBrussee/cavemem#62](https://github.com/JuliusBrussee/cavemem/pull/62)). Remove the patch when a release has the fix. An MCP server keeps the old code until it restarts.
 
 ## Pi
 
@@ -301,17 +292,15 @@ Cavemem keeps its database under `~/.cavemem`. Do not run `cavemem install` over
 
 ## Operator tools
 
-| Tool                                   | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift. With `--rewake`, writes warnings to `~/.claude/markers/doctor-warnings.txt`, and skips a background session (`CLAUDE_JOB_DIR` is set). When the host types name a new Claude Code version, it re-tests the committed rig mod and logs to `~/.claude/markers/rig-gate.log`. It warns when the Codex daemon or Pi keeps more than two releases, and when a link in `~/.bin` or `~/.claude/skills` points to a missing file |
-| `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                                                                                                                                                                                                                                                                                                                                                               |
-| `cavemem-health.sh`                    | Prints the cavemem problems for the doctor, the bootstrap and `cavemem-repair`. Exit 1 when it finds one                                                                                                                                                                                                                                                                                                                                                    |
-| `claude-flag-audit.sh [days] [-v]`     | Lists safeguard `model_refusal_fallback` events in the Claude transcripts. The doctor calls it                                                                                                                                                                                                                                                                                                                                                              |
-| `chezmoi-fixture-check.sh`             | Runs the S3 deployment fixture checks                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands                                                                                                                                                                                                                                                                                                                                           |
-| `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                                                                                                                                                                                                                                                                                                                                                           |
-| `lens-review`                          | Review a source change                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Tool                                   | Purpose                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chezmoi-claude-doctor.sh`             | Diagnoses configuration and drift. `--rewake` writes warnings to `~/.claude/markers/doctor-warnings.txt` and skips a background session. On a new Claude Code version it re-tests the rig mod and logs to `~/.claude/markers/rig-gate.log`. It warns when the Codex daemon or Pi keeps more than two releases, and on a link in `~/.bin` or `~/.claude/skills` to a missing file. See [M1](MAINTENANCE.md#m1) |
+| `chezmoi-claude-bootstrap.sh`          | Installs runtime prerequisites. `--check`, `--only`, `--skip`                                                                                                                                                                                                                                                                                                                                                 |
+| `cavemem-health.sh`                    | Prints the cavemem problems for the doctor, the bootstrap and `cavemem-repair`. Exit 1 when it finds one                                                                                                                                                                                                                                                                                                      |
+| `claude-flag-audit.sh [days] [-v]`     | Lists safeguard `model_refusal_fallback` events in the Claude transcripts. The doctor calls it                                                                                                                                                                                                                                                                                                                |
+| `chezmoi-fixture-check.sh`             | Runs the S3 deployment fixture checks                                                                                                                                                                                                                                                                                                                                                                         |
+| `dotfiles-privatize.sh <dir> [--push]` | Moves a source directory to the private repo as branch `<dir>`. Without `--push` it prints the remaining commands                                                                                                                                                                                                                                                                                             |
+| `pkill`, `pgrep`                       | Refuses an option that follows the pattern. BSD getopt stops at the first pattern                                                                                                                                                                                                                                                                                                                             |
+| `lens-review`                          | Workflow in `dot_claude/workflows/`, registered through `meta.name`. Reviews a source change                                                                                                                                                                                                                                                                                                                  |
 
-The workflow directory registers scripts through `meta.name`.
-
-The doctor's agent additions check warns about each item in Claude, Pi or Codex that the source and [agent-additions.txt](agent-additions.txt) do not hold. An item is a hook, a plugin or its hooks and MCP servers, a marketplace, an MCP server, a skill, an agent, a rule, a top-level script, an `env` entry, a status line, a file suggestion command, or a changed instruction file. It runs at each new Claude Code session start, also outside this repository, and the statusline shows the warning count. It does not block an item. It detects an item after the write. It does not read project files, the content of a hook, the content of an installed third-party skill, or a Codex TOML dotted key. It matches a Pi, a Codex or a project MCP server by name alone. An edit to the approved list shows in `git status`, not as a warning.
+The doctor's agent additions check warns about each item in Claude, Pi or Codex that the source and [agent-additions.txt](agent-additions.txt) do not hold. It runs at each new Claude Code session start, also outside this repository, and the statusline shows the warning count. It does not block an item and detects it after the write. It does not read project files, the content of a hook, the content of an installed third-party skill, or a Codex TOML dotted key. It matches a Pi, a Codex or a project MCP server by name alone. An edit to the approved list shows in `git status`, not as a warning.
