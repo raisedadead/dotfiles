@@ -207,7 +207,7 @@ function build(cwd: string): string[] {
   return summary(ws, found);
 }
 
-const DATED = /\b(?:due|until) (\d{4}-\d{2}-\d{2})\b/;
+const DATED = /\b(?:due|until):? (\d{4}-\d{2}-\d{2})\b/i;
 
 function read(path: string): string {
   return existsSync(path) ? readFileSync(path, "utf8") : "";
@@ -224,7 +224,7 @@ function due(dir: string, today: string): string[] {
     .filter(line => isDue(line, today))
     .map(line => `- \`dossier/LATER.md\`: ${line.replace(/^-\s*/, "")}`);
   const rows = openTableRows(read(join(dir, "OPEN-WORK.md")))
-    .filter(row => isDue(Object.values(row).join(" "), today))
+    .filter(({ source, ...rest }) => isDue(Object.values(rest).join(" "), today))
     .map(row => `- \`OPEN-WORK.md\`: ${row.id} (${row.owner || "agent"}, ${row.state}): ${row.item}`);
   return [...later, ...rows];
 }
@@ -243,7 +243,8 @@ function gitState(cwd: string): string[] {
   return [".", ...subs].map(path => {
     const lines = git(join(root, path), "status", "--porcelain=v2", "--branch").out.split("\n").filter(Boolean);
     const head = lines.find(line => line.startsWith("# branch.head "))?.slice("# branch.head ".length) ?? "?";
-    const ahead = lines.find(line => line.startsWith("# branch.ab "))?.match(/\+(\d+)/)?.[1];
+    const tracked = lines.find(line => line.startsWith("# branch.ab "))?.match(/\+(\d+)/)?.[1];
+    const ahead = head === "(detached)" ? git(join(root, path), "rev-list", "--count", "HEAD", "--not", "--remotes").out : tracked;
     const dirty = lines.filter(line => !line.startsWith("#")).length;
     return `- \`${path}\` ${head}: ${dirty} uncommitted, ${ahead === undefined ? "no upstream" : `${ahead} unpushed`}`;
   });
@@ -251,7 +252,7 @@ function gitState(cwd: string): string[] {
 
 function brief(cwd: string, today = new Date().toLocaleDateString("en-CA")): string {
   const ws = locate(cwd);
-  const rows = openRows(read(join(ws.dir, "OPEN-WORK.md")));
+  const rows = openRows(read(join(ws.dir, "OPEN-WORK.md"))).map(row => ({ ...row, owner: row.owner.toLowerCase() }));
   const line = (row: Row) => `- ${row.id} (${row.state}): ${row.item}`;
   const block = (name: string, items: string[]) => [`## ${name}`, "", ...(items.length ? items : ["- None."]), ""];
   return [

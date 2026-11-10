@@ -313,6 +313,9 @@ test("ws brief shows uncommitted and unpushed state for the repo and each submod
   const gitState = section(run(repo, "brief").out, "Git");
   expect(gitState).toMatch(/`\.` \S+: 2 uncommitted, no upstream/);
   expect(gitState).toMatch(/`sub` \S+: 1 uncommitted, 1 unpushed/);
+  git(join(repo, "sub"), "checkout", "-q", "--detach");
+  commit(join(repo, "sub"), "detached");
+  expect(section(run(repo, "brief").out, "Git")).toContain("`sub` (detached): 1 uncommitted, 2 unpushed");
 });
 
 test("START.md says it is rebuilt by ws and not edited by hand", () => {
