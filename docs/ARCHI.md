@@ -191,15 +191,15 @@ To add a rig: run `dotfiles-privatize.sh <dir>`, add the rig's entries to [.chez
 
 ### Second review
 
-Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second review. The question file [second-review.json](../dot_agents/jev/second-review.json) deploys to `~/.agents/jev/second-review.json`. It holds the pinned Jev model, the 1Password key reference, the time limit, the bands, the three topics (guard or permission rule, secret handling, deploy or release) and the `enforce` flag. Both rigs read it.
+Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second review. The question file [second-review.json](../dot_agents/jev/second-review.json) deploys to `~/.agents/jev/second-review.json`. It holds the pinned Jev model, the path of the sops key file, the time limit, the bands, the three topics (guard or permission rule, secret handling, deploy or release) and the `enforce` flag. Both rigs read it.
 
 - Each rig sends the changed paths to Jev at the end of a turn, with one question for each topic and path. Jev gets no file content. The highest answer for a path decides. A change to the question file counts as a guard change.
 - At or above `bands.block`, two reviews must cover the path. The Claude rig blocks Stop; the Pi rig continues the turn. From `bands.note` up to the block line, the rig tells the model which file can need care.
 - The rig asks Jev once for each new set of paths. A fix to covered paths does not ask again.
-- Jev only adds care. No key, no network, a timeout, a failed `op read` or a bad question file means Jev is down: the status line shows that Jev is off (the Claude rig shows the Jev icon with `off`; the Pi rig shows `jev off`), the rig stores no answer and asks for those paths again later, and the kernel review rule applies. Answers stored before stay in force.
+- Jev only adds care. No key, no network, a timeout, a failed key read or a bad question file means Jev is down: the status line shows that Jev is off (the Claude rig shows the Jev icon with `off`; the Pi rig shows `jev off`), the rig stores no answer and asks for those paths again later, and the kernel review rule applies. Answers stored before stay in force.
 - With `enforce: false`, the rigs ask Jev and log the answer. They do not block, send a note or show the `2nd review` status. The status line still shows that Jev is off while Jev is down.
 - Each rig keeps the question file it loaded for the rest of the session. A change to `enforce` takes effect at the next session start or resume. If the file did not load, the rig tries again at the end of each turn.
-- Each rig reads the key with `op read`. `auth.json` stays unmanaged.
+- The key is in the sops file `~/.config/jev/key.sops.json`, so no 1Password prompt comes. The operator creates that file; it is not in the repository. Without it, Jev is off. The Claude rig reads the path from the question file. Pi reads the key through the `typesafe` command in `~/.pi/agent/auth.json`, which the operator sets to the same file. `auth.json` stays unmanaged.
 - Both rigs append each decision to `~/.local/state/jev/decisions.jsonl`, mode 600, in a folder of mode 700. The log holds no key and no file content. A failed write, or a link or a special file at that path, drops the line.
 
 Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
