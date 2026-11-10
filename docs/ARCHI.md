@@ -196,8 +196,8 @@ Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second revi
 - Each rig sends the changed paths to Jev at the end of a turn, with one question for each topic and path. Jev gets no file content. The highest answer for a path decides. A change to the question file counts as a guard change.
 - At or above `bands.block`, two reviews must cover the path. The Claude rig blocks Stop; the Pi rig continues the turn. From `bands.note` up to the block line, the rig tells the model which file can need care.
 - The rig asks Jev once for each new set of paths. A fix to covered paths does not ask again.
-- Jev only adds care. No key, no network, a timeout, a failed `op read` or a bad question file means Jev is down: the status line shows `jev off`, the rig stores no answer and asks for those paths again later, and the kernel review rule applies. Answers stored before stay in force.
-- With `enforce: false`, the rigs ask Jev and log the answer. They do not block, send a note or show the `2nd review` status. The status line still shows `jev off` while Jev is down.
+- Jev only adds care. No key, no network, a timeout, a failed `op read` or a bad question file means Jev is down: the status line shows that Jev is off (the Claude rig shows the Jev icon with `off`; the Pi rig shows `jev off`), the rig stores no answer and asks for those paths again later, and the kernel review rule applies. Answers stored before stay in force.
+- With `enforce: false`, the rigs ask Jev and log the answer. They do not block, send a note or show the `2nd review` status. The status line still shows that Jev is off while Jev is down.
 - Each rig keeps the question file it loaded for the rest of the session. A change to `enforce` takes effect at the next session start or resume. If the file did not load, the rig tries again at the end of each turn.
 - Each rig reads the key with `op read`. `auth.json` stays unmanaged.
 - Both rigs append each decision to `~/.local/state/jev/decisions.jsonl`, mode 600, in a folder of mode 700. The log holds no key and no file content. A failed write, or a link or a special file at that path, drops the line.
