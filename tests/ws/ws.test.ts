@@ -224,6 +224,97 @@ test("ws tidy takes over a lock whose process is gone", () => {
   expect(existsSync(join(pad, ".ws-tidy.lock"))).toBe(false);
 });
 
+const commit = (cwd: string, message: string) =>
+  git(cwd, "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", message);
+
+const section = (out: string, name: string) => {
+  const from = out.indexOf(`## ${name}\n`);
+  if (from < 0) return "";
+  const rest = out.slice(from + name.length + 4);
+  const next = rest.indexOf("\n## ");
+  return next < 0 ? rest : rest.slice(0, next);
+};
+
+test("ws brief prints six sections, each with None when empty, and writes no file", () => {
+  rmSync(join(repo, ".scratchpad"), { recursive: true, force: true });
+  const r = run(repo, "brief");
+  expect(r.code).toBe(0);
+  const headings = r.out.split("\n").filter(line => line.startsWith("## "));
+  expect(headings).toEqual(["## Handoffs", "## Due", "## Agent work", "## Operator work", "## Live dossiers", "## Git"]);
+  for (const name of ["Handoffs", "Due", "Agent work", "Operator work", "Live dossiers"]) expect(section(r.out, name)).toContain("- None.");
+  expect(existsSync(join(repo, ".scratchpad"))).toBe(false);
+});
+
+test("ws brief lists each handoff by its full path", () => {
+  put(join(repo, ".scratchpad", "handoff", "2026-11-10-a.md"), "# a\n");
+  const r = run(repo, "brief");
+  expect(section(r.out, "Handoffs")).toContain(join(repo, ".scratchpad", "handoff", "2026-11-10-a.md"));
+});
+
+test("ws brief shows dated items that are due today or earlier, and hides later ones", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "dossier", "LATER.md"), "# Carried work\n- w/T1 · Past check · due 2020-01-01\n- w/T2 · Future check · due 2999-01-01\n");
+  const rows = [
+    "| id | item | state | owner | home | source |",
+    "|----|------|-------|-------|------|--------|",
+    "| O1 | Wait for it | deferred — until 2020-02-02 | agent | here | x |",
+    "| O2 | Not yet | deferred — until 2999-02-02 | agent | here | x |",
+    "| O3 | Closed and old | done | agent | due 2020-03-03 | x |",
+  ];
+  put(join(pad, "OPEN-WORK.md"), `${rows.join("\n")}\n`);
+  const due = section(run(repo, "brief").out, "Due");
+  expect(due).toContain("Past check");
+  expect(due).toContain("O1 (agent, deferred");
+  for (const hidden of ["Future check", "O2", "O3"]) expect(due).not.toContain(hidden);
+});
+
+test("ws brief splits open rows by owner", () => {
+  const rows = [
+    "| id | item | state | owner | home | source |",
+    "|----|------|-------|-------|------|--------|",
+    "| O1 | Agent thing | open | agent | here | x |",
+    "| O2 | Operator thing | open | operator | here | x |",
+    "| O3 | Shipped | done | agent | here | x |",
+  ];
+  put(join(repo, ".scratchpad", "OPEN-WORK.md"), `${rows.join("\n")}\n`);
+  const r = run(repo, "brief");
+  expect(section(r.out, "Agent work")).toContain("O1 (open): Agent thing");
+  expect(section(r.out, "Agent work")).not.toContain("O2");
+  expect(section(r.out, "Operator work")).toContain("O2 (open): Operator thing");
+  expect(r.out).not.toContain("O3");
+});
+
+test("ws brief lists only live dossiers from INDEX.md", () => {
+  const rows = [
+    "| date | slug | state | T | B | mtime | §Z |",
+    "|------|------|-------|---|---|-------|-----|",
+    "| 2026-11-10 | now | live | 1/4 | 0 | x | — |",
+    "| 2026-11-09 | old | done | 4/4 | 0 | x | complete |",
+  ];
+  put(join(repo, ".scratchpad", "INDEX.md"), `# index\n\n${rows.join("\n")}\n`);
+  const live = section(run(repo, "brief").out, "Live dossiers");
+  expect(live).toContain("dossier/2026-11-10-now/DOSSIER.md");
+  expect(live).toContain("1/4");
+  expect(live).not.toContain("2026-11-09-old");
+});
+
+test("ws brief shows uncommitted and unpushed state for the repo and each submodule", () => {
+  const lib = join(base, "lib");
+  mkdirSync(lib);
+  git(lib, "init", "-q");
+  commit(lib, "lib");
+  git(repo, "add", ".gitignore");
+  commit(repo, "init");
+  git(repo, "-c", "protocol.file.allow=always", "submodule", "add", "-q", lib, "sub");
+  commit(repo, "add sub");
+  commit(join(repo, "sub"), "local");
+  put(join(repo, "sub", "new.txt"), "x");
+  put(join(repo, "a.txt"), "x");
+  const gitState = section(run(repo, "brief").out, "Git");
+  expect(gitState).toMatch(/`\.` \S+: 2 uncommitted, no upstream/);
+  expect(gitState).toMatch(/`sub` \S+: 1 uncommitted, 1 unpushed/);
+});
+
 test("START.md says it is rebuilt by ws and not edited by hand", () => {
   run(repo);
   expect(start(repo)).toContain("Do not edit");

@@ -11,11 +11,11 @@ const SHOWN = 3;
 const STALE_LOCK_MS = 60_000;
 
 type Workspace = { root: string; dir: string; note?: string };
-type Row = { id: string; state: string; item: string };
+type Row = { id: string; state: string; item: string; owner: string };
 type Idle = { name: string; days: number };
 
 function git(cwd: string, ...args: string[]): { code: number; out: string } {
-  const proc = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "ignore" });
+  const proc = Bun.spawnSync(["git", ...args], { cwd, env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" }, stdout: "pipe", stderr: "ignore" });
   return { code: proc.exitCode, out: proc.stdout.toString().trim() };
 }
 
@@ -78,8 +78,8 @@ function split(line: string, backticks: boolean): string[] {
   return out.slice(1, -1);
 }
 
-function openRows(text: string): Row[] {
-  const rows: Row[] = [];
+function openTableRows(text: string): Record<string, string>[] {
+  const rows: Record<string, string>[] = [];
   let columns: string[] | undefined;
   for (const line of text.split("\n")) {
     if (!line.startsWith("|")) {
@@ -92,12 +92,15 @@ function openRows(text: string): Row[] {
       continue;
     }
     if (row.every(c => /^:?-+:?$/.test(c))) continue;
-    const at = (name: string) => row[columns!.indexOf(name)] ?? "";
-    const state = at("state").toLowerCase();
-    if (!columns.includes("state") || CLOSED.has(state)) continue;
-    rows.push({ id: at("id"), state, item: at("item") });
+    const named = Object.fromEntries(columns.map((name, i) => [name, row[i] ?? ""]));
+    if (!columns.includes("state") || CLOSED.has(named.state.toLowerCase())) continue;
+    rows.push(named);
   }
   return rows;
+}
+
+function openRows(text: string): Row[] {
+  return openTableRows(text).map(row => ({ id: row.id ?? "", state: row.state.toLowerCase(), item: row.item ?? "", owner: row.owner ?? "" }));
 }
 
 function newestFile(path: string): number {
@@ -204,6 +207,68 @@ function build(cwd: string): string[] {
   return summary(ws, found);
 }
 
+const DATED = /\b(?:due|until) (\d{4}-\d{2}-\d{2})\b/;
+
+function read(path: string): string {
+  return existsSync(path) ? readFileSync(path, "utf8") : "";
+}
+
+function isDue(text: string, today: string): boolean {
+  const date = DATED.exec(text)?.[1];
+  return date !== undefined && date <= today;
+}
+
+function due(dir: string, today: string): string[] {
+  const later = read(join(dir, "dossier", "LATER.md"))
+    .split("\n")
+    .filter(line => isDue(line, today))
+    .map(line => `- \`dossier/LATER.md\`: ${line.replace(/^-\s*/, "")}`);
+  const rows = openTableRows(read(join(dir, "OPEN-WORK.md")))
+    .filter(row => isDue(Object.values(row).join(" "), today))
+    .map(row => `- \`OPEN-WORK.md\`: ${row.id} (${row.owner || "agent"}, ${row.state}): ${row.item}`);
+  return [...later, ...rows];
+}
+
+function liveDossiers(dir: string): string[] {
+  return openTableRows(read(join(dir, "INDEX.md")))
+    .filter(row => row.state.toLowerCase() === "live")
+    .map(row => `- \`${join(dir, "dossier", `${row.date}-${row.slug}`, "DOSSIER.md")}\` (${row.t ?? "?"})`);
+}
+
+function gitState(cwd: string): string[] {
+  const top = git(cwd, "rev-parse", "--show-toplevel");
+  if (top.code !== 0 || !top.out) return [];
+  const root = top.out;
+  const subs = git(root, "submodule", "foreach", "--quiet", "--recursive", 'echo "$displaypath"').out.split("\n").filter(Boolean);
+  return [".", ...subs].map(path => {
+    const lines = git(join(root, path), "status", "--porcelain=v2", "--branch").out.split("\n").filter(Boolean);
+    const head = lines.find(line => line.startsWith("# branch.head "))?.slice("# branch.head ".length) ?? "?";
+    const ahead = lines.find(line => line.startsWith("# branch.ab "))?.match(/\+(\d+)/)?.[1];
+    const dirty = lines.filter(line => !line.startsWith("#")).length;
+    return `- \`${path}\` ${head}: ${dirty} uncommitted, ${ahead === undefined ? "no upstream" : `${ahead} unpushed`}`;
+  });
+}
+
+function brief(cwd: string, today = new Date().toLocaleDateString("en-CA")): string {
+  const ws = locate(cwd);
+  const rows = openRows(read(join(ws.dir, "OPEN-WORK.md")));
+  const line = (row: Row) => `- ${row.id} (${row.state}): ${row.item}`;
+  const block = (name: string, items: string[]) => [`## ${name}`, "", ...(items.length ? items : ["- None."]), ""];
+  return [
+    "# Workspace brief",
+    "",
+    `Project: \`${ws.root}\``,
+    ...(ws.note ? [`Note: ${ws.note}.`] : []),
+    "",
+    ...block("Handoffs", handoffs(ws.dir).map(name => `- \`${join(ws.dir, "handoff", name)}\``)),
+    ...block("Due", due(ws.dir, today)),
+    ...block("Agent work", rows.filter(row => !row.owner || row.owner === "agent").map(line)),
+    ...block("Operator work", rows.filter(row => row.owner && row.owner !== "agent").map(line)),
+    ...block("Live dossiers", liveDossiers(ws.dir)),
+    ...block("Git", gitState(cwd)),
+  ].join("\n");
+}
+
 function alive(pid: number): boolean {
   try {
     process.kill(pid, 0);
@@ -289,8 +354,10 @@ if (import.meta.main) {
     console.log(build(process.cwd()).join("\n"));
   } else if (verb === "tidy") {
     process.exit(tidy(process.cwd()));
+  } else if (verb === "brief") {
+    console.log(brief(process.cwd()));
   } else {
-    console.error("Usage: ws [tidy]");
+    console.error("Usage: ws [tidy|brief]");
     process.exit(64);
   }
 }
