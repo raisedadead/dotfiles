@@ -16,11 +16,11 @@ const EXIT_INTERRUPTED = 130;
 const EXIT_TERMINATED = 143;
 const OP_CREATE_READS_ONLY_A_FIFO = 'cat | op item create "$@"';
 const USAGE = `usage:
-  op-keys find <words>...
+  op-keys find --account <account> <words>...
   op-keys fields --account <account> [--vault <vault>] <item|id>
   op-keys new login|api|r2 [--account <a>] [--vault <v>] [--title <t>] [--notes <n>]
 
-find lists the items of both accounts whose titles hold every word.
+find lists the items of one account whose titles hold every word.
 fields lists the fields of one item. It never prints a value.
 new creates an item from values typed at its prompts, so it needs a terminal.
 It asks for the account, vault and title. A flag only prefills the answer.`;
@@ -181,33 +181,27 @@ function matchingRows(account: string, stdout: string, words: string[]): string[
 }
 
 async function find(args: string[]): Promise<number> {
-  const { positionals } = strictArgs(args, {});
-  if (positionals.length === 0) {
+  const {
+    values: { account },
+    positionals,
+  } = strictArgs(args, { account: { type: "string" } });
+  if (!account || positionals.length === 0) {
     throw new UsageError();
   }
   const words = positionals.map((word) => word.toLowerCase());
-  const results = await Promise.all(ACCOUNTS.map(listAccount));
-
-  const rows: string[] = [];
-  let failed = false;
-  results.forEach((result, index) => {
-    const account = ACCOUNTS[index];
-    const matched = result.ok ? matchingRows(account, result.stdout, words) : undefined;
-    if (matched) {
-      rows.push(...matched);
-      return;
-    }
-    failed = true;
+  const result = await listAccount(account);
+  const rows = result.ok ? matchingRows(account, result.stdout, words) : undefined;
+  if (!rows) {
     const reason = result.ok ? "op returned output that is not JSON" : result.error;
     console.error(`${account}: ${reason}`);
-  });
-
+    return EXIT_FAILED;
+  }
   if (rows.length > 0) {
     console.log(["account\tvault\tcategory\ttitle\tid", ...rows].join("\n"));
-  } else if (!failed) {
+  } else {
     console.log(`no item matches: ${positionals.join(" ")}`);
   }
-  return failed ? EXIT_FAILED : EXIT_OK;
+  return EXIT_OK;
 }
 
 async function fields(args: string[]): Promise<number> {
@@ -264,9 +258,9 @@ async function createItem(
   });
   const stopWith = (exitCode: number) => () => {
     proc.kill();
-    console.error(
-      `create was interrupted, so the outcome is unknown; run: op-keys find ${item.title}`,
-    );
+    const title = `'${item.title.replaceAll("'", "'\\''")}'`;
+    const check = `op-keys find --account ${account} -- ${title}`;
+    console.error(`create was interrupted, so the outcome is unknown; run: ${check}`);
     process.exit(exitCode);
   };
   process.on("SIGINT", stopWith(EXIT_INTERRUPTED));

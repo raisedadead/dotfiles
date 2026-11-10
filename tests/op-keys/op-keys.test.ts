@@ -176,24 +176,34 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-test("find prints each match from both accounts, matching every word in any case", async () => {
+test("find prints each match from the named account, matching every word in any case", async () => {
   listFor(PERSONAL, [item("R2 Backup Token", "Infra", "p1"), item("Backup Disk", "Home", "p2")]);
   listFor(WORK, [item("r2-backup-tfstate", "Service-Automation", "w1", "SERVER")]);
 
-  const { stdout, code } = await run(["find", "r2", "BACKUP"]);
+  const { stdout, code } = await run(["find", "--account", PERSONAL, "r2", "BACKUP"]);
 
   expect(code).toBe(0);
   expect(stdout.trimEnd().split("\n")).toEqual([
     "account\tvault\tcategory\ttitle\tid",
     `${PERSONAL}\tInfra\tAPI_CREDENTIAL\tR2 Backup Token\tp1`,
-    `${WORK}\tService-Automation\tSERVER\tr2-backup-tfstate\tw1`,
+  ]);
+});
+
+test("find asks op for the named account only, so one search prompts once", async () => {
+  listFor(WORK, [item("r2-backup-tfstate", "Service-Automation", "w1", "SERVER")]);
+
+  const { code } = await run(["find", "--account", WORK, "backup"]);
+
+  expect(code).toBe(0);
+  expect(readFileSync(join(state, "argv.log"), "utf8").trimEnd().split("\n")).toEqual([
+    `item list --account ${WORK} --format json`,
   ]);
 });
 
 test("find escapes terminal control characters in a vault's title", async () => {
   listFor(PERSONAL, [item(`Backup\u009b31m${RIGHT_TO_LEFT_OVERRIDE}\tDisk`, "Home", "p2")]);
 
-  const { stdout } = await run(["find", "backup"]);
+  const { stdout } = await run(["find", "--account", PERSONAL, "backup"]);
 
   expect(stdout).toContain(`Backup\\u{9b}31m\\u{202e}\\u{9}Disk`);
 });
@@ -201,7 +211,7 @@ test("find escapes terminal control characters in a vault's title", async () => 
 test("find says so when no item matches", async () => {
   listFor(PERSONAL, [item("Backup Disk", "Home", "p2")]);
 
-  const { stdout, code } = await run(["find", "nothing-like-this"]);
+  const { stdout, code } = await run(["find", "--account", PERSONAL, "nothing-like-this"]);
 
   expect(code).toBe(0);
   expect(stdout).toContain("no item matches");
@@ -209,38 +219,41 @@ test("find says so when no item matches", async () => {
 
 test("find reports a failing account apart from zero hits, and exits 1", async () => {
   failFor(WORK, DESKTOP_ERROR);
-  listFor(PERSONAL, [item("Backup Disk", "Home", "p2")]);
 
-  const { stdout, stderr, code } = await run(["find", "nothing-like-this"]);
+  const { stdout, stderr, code } = await run(["find", "--account", WORK, "nothing-like-this"]);
 
   expect(code).toBe(1);
   expect(stderr).toContain(`${WORK}: ${DESKTOP_ERROR.trimEnd()}`);
   expect(stdout).not.toContain("no item matches");
 });
 
-test("find still prints the hits of the account that answered", async () => {
-  failFor(WORK, DESKTOP_ERROR);
-  listFor(PERSONAL, [item("Backup Disk", "Home", "p2")]);
+test("find reports output that is not JSON, and exits 1", async () => {
+  writeFileSync(join(state, `${PERSONAL}.list.json`), "not json");
 
-  const { stdout, code } = await run(["find", "backup"]);
+  const { stdout, stderr, code } = await run(["find", "--account", PERSONAL, "backup"]);
 
   expect(code).toBe(1);
-  expect(stdout).toContain(`${PERSONAL}\tHome\tAPI_CREDENTIAL\tBackup Disk\tp2`);
+  expect(stderr).toContain(`${PERSONAL}: op returned output that is not JSON`);
+  expect(stdout).not.toContain("no item matches");
 });
 
-test("find asks both accounts at once, so two waits cost one time limit", async () => {
-  hangFor(PERSONAL);
-  hangFor(WORK);
+test("find takes a title that starts with a dash after --", async () => {
+  listFor(PERSONAL, [item("-dash token", "Infra", "p3")]);
 
-  const started = performance.now();
-  const { stdout, stderr, code } = await run(["find", "backup"], "500");
-  const elapsed = performance.now() - started;
+  const { stdout, code } = await run(["find", "--account", PERSONAL, "--", "-dash token"]);
+
+  expect(code).toBe(0);
+  expect(stdout).toContain(`${PERSONAL}\tInfra\tAPI_CREDENTIAL\t-dash token\tp3`);
+});
+
+test("find says when op does not answer in time", async () => {
+  hangFor(PERSONAL);
+
+  const { stdout, stderr, code } = await run(["find", "--account", PERSONAL, "backup"], "500");
 
   expect(code).toBe(1);
   expect(stderr).toContain(`${PERSONAL}: op did not answer in time; ${NO_ANSWER}`);
-  expect(stderr).toContain(`${WORK}: op did not answer in time; ${NO_ANSWER}`);
   expect(stdout).not.toContain("no item matches");
-  expect(elapsed).toBeLessThan(950);
 });
 
 test("fields prints names and references, and never a value", async () => {
@@ -322,7 +335,7 @@ test("a repo's bunfig.toml and .env do not reach the tool or op", async () => {
   writeFileSync(join(hostile, "planted.ts"), `await Bun.write(${JSON.stringify(marker)}, "ran");\n`);
   writeFileSync(join(hostile, ".env"), "OP_CONNECT_HOST=https://attacker.invalid\n");
 
-  const { code } = await run(["find", "backup"], "2000", hostile);
+  const { code } = await run(["find", "--account", PERSONAL, "backup"], "2000", hostile);
 
   expect(code).toBe(0);
   expect(existsSync(marker)).toBe(false);
@@ -333,7 +346,8 @@ test.each([
   ["an unknown flag", ["fields", "--account", PERSONAL, "--password", "placeholder", "R2"]],
   ["a missing account", ["fields", "R2"]],
   ["a missing item", ["fields", "--account", PERSONAL]],
-  ["find with no words", ["find"]],
+  ["find with no words", ["find", "--account", PERSONAL]],
+  ["find with no account", ["find", "backup"]],
   ["an unknown flag on find", ["find", "--password", "placeholder", "R2"]],
   ["an unknown command", ["read", "R2"]],
   ["a secret flag on new", ["new", "login", ...NEW_FLAGS, "--password", "placeholder"]],
@@ -726,7 +740,7 @@ test("new says the outcome is unknown when create is interrupted", async () => {
 
   expect(code).toBe(130);
   expect(screen).toContain("outcome is unknown");
-  expect(screen).toContain("op-keys find");
+  expect(screen).toContain(`op-keys find --account ${PERSONAL} -- 'Example'`);
 });
 
 test("new says the outcome is unknown when create gets SIGTERM", async () => {
