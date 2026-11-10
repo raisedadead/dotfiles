@@ -19,7 +19,8 @@ for _, w in ipairs({ "input", "list", "preview" }) do
 end
 io.stdout:write(table.concat(out, "\n") .. "\n")
 EOF
-mkdir -p "$SB/zhome/.local/share/zsh"
+mkdir -p "$SB/zhome/.local/share/zsh" "$SB/zhome/.cache/fsh"
+: >"$SB/zhome/.cache/fsh/secondary_theme.zsh"
 if [[ -d "$HOME/.local/share/zsh/plugins" ]]; then
 	cp -R "$HOME/.local/share/zsh/plugins" "$SB/zhome/.local/share/zsh/plugins"
 fi
