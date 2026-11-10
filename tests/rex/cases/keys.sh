@@ -154,7 +154,16 @@ runs_action() {
 	jq -e --arg k "$1" --arg a "$2" \
 		'.bindings[] | select(.keys == [$k] and .action == $a)' <<<"$keys_json" >/dev/null
 }
-check "ctrl+enter sends Enter" runs_action ctrl+enter enter_key
+check "ctrl+enter runs ctrl_enter" runs_action ctrl+enter ctrl_enter
+ctrl_enter_writes() {
+	local f="$SB/t/ctrl-enter-$1" b
+	b=$(split bash -c "stty raw -echo; exec -a $1 dd bs=1 count=1 of='$f' 2>/dev/null")
+	sleep 0.3
+	R "do" -s "$S" -b "$b" ctrl_enter >/dev/null 2>&1 || true
+	until5 test -s "$f" && [[ "$(od -An -tx1 "$f" | tr -d ' \n')" == "$2" ]]
+}
+check "ctrl_enter writes a line feed where Claude Code runs" ctrl_enter_writes claude 0a
+check "ctrl_enter writes a carriage return elsewhere" ctrl_enter_writes dd 0d
 check "ctrl+shift+k scrolls a page up" runs_action ctrl+shift+k client.scroll.page_up
 check "ctrl+shift+j scrolls a page down" runs_action ctrl+shift+j client.scroll.page_down
 check "cmd+pageup scrolls a page up" runs_action cmd+pageup client.scroll.page_up

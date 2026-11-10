@@ -37,13 +37,23 @@ rex.action{
   end,
 }
 
+local function write_key(ctx, data)
+  if not ctx.block_id then error("no pane to send the key to", 0) end
+  local r, err = lib.unchecked_write(ctx.session_id, ctx.block_id, data)
+  if not r then error(err, 0) end
+  return r
+end
+
 rex.action{
   name = "enter_key", title = "Send Enter", category = "Panes",
+  run = function(ctx) return write_key(ctx, "\r") end,
+}
+
+rex.action{
+  name = "ctrl_enter", title = "Ctrl+Enter: new line in Claude Code, Enter elsewhere", category = "Panes",
   run = function(ctx)
-    if not ctx.block_id then error("no pane to send Enter to", 0) end
-    local r, err = lib.unchecked_write(ctx.session_id, ctx.block_id, "\r")
-    if not r then error(err, 0) end
-    return r
+    local f = ctx.block_id and lib.fg(ctx.session_id, ctx.block_id)
+    return write_key(ctx, f and lib.runs(f, { claude = true }) and "\n" or "\r")
   end,
 }
 
@@ -51,7 +61,7 @@ local bind = rex.bind
 local function prefix(key, action, args) bind("ctrl+space>" .. key, action, args) end
 
 bind("shift+cmd+e", "popup_urls")
-bind("ctrl+enter", "enter_key")
+bind("ctrl+enter", "ctrl_enter")
 bind("ctrl+shift+k", "client.scroll.page_up")
 bind("ctrl+shift+j", "client.scroll.page_down")
 bind("cmd+pageup", "client.scroll.page_up")
