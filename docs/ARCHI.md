@@ -200,7 +200,7 @@ Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second revi
 - With `enforce: false`, the rigs ask Jev and log the answer. They do not block, send a note or show the `2nd review` status. The status line still shows `jev off` while Jev is down.
 - Each rig keeps the question file it loaded for the rest of the session. A change to `enforce` takes effect at the next session start or resume. If the file did not load, the rig tries again at the end of each turn.
 - Each rig reads the key with `op read`. `auth.json` stays unmanaged.
-- Both rigs append each decision to `~/.local/state/jev/decisions.jsonl`. The log holds no key and no file content.
+- Both rigs append each decision to `~/.local/state/jev/decisions.jsonl`, mode 600, in a folder of mode 700. The log holds no key and no file content. A failed write, or a link or a special file at that path, drops the line.
 
 Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
 
