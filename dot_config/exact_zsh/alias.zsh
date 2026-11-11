@@ -41,11 +41,6 @@ can_haz lazygit && alias g="lazygit"
 #----------------------------
 can_haz brew && alias bu="cd ~/.config/brewfile && just update && just dump --all && just commit && just sync && cd -"
 
-#----------------------------
-# Claude
-#----------------------------
-alias c="claude"
-
 ca() {
   local dir
   if [[ -n "$1" && "$1" != -* ]]; then dir="$HOME/DEV/$1"; shift
