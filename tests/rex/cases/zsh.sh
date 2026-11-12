@@ -146,14 +146,14 @@ if stubbed; then
 	zin 'sh -c "exit 4"'
 	base='error sh sh: exit 4 after 0s'
 	check "rex.zsh reports in a pane with the real aliases" test "$(zstatus)" = "$base"
-	zin c
+	zin ca
 	base='- - -'
 	check "rex.zsh clears its record when the next command starts" \
 		test "$(zstatus)" = "$base"
 	zin g
 	ran() { [[ "$(tr '\n' ' ' <"$SB/t/zstub.ran" 2>/dev/null)" == "claude lazygit " ]]; }
-	check "the c and g aliases ran the stubs" until5 ran
-	check "rex.zsh skips the c and g aliases" test "$(zstatus)" = "$base"
+	check "the ca function and the g alias ran the stubs" until5 ran
+	check "rex.zsh skips the ca function and the g alias" test "$(zstatus)" = "$base"
 	zin "sh -c 'sleep 3; touch $SB/t/zfg'"
 	R send -s "$S" -b "$zr" $'\x1a' >/dev/null
 	sleep 0.5
