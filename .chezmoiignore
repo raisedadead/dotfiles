@@ -37,3 +37,31 @@ install.sh
 .claude/output-styles/*.original.md
 docs
 tests
+{{- if ne .chezmoi.os "darwin" }}
+Library
+.1password
+.config/1Password
+.config/aerospace
+.config/ghostty
+.config/mole
+.config/rex
+.config/sketchybar
+.config/zed
+.bin/rex
+.bin/rex-open
+{{- end }}
+{{- if not (stat (joinPath .chezmoi.homeDir ".config/chezmoi/age-identity.txt")) }}
+.config/1Password/ssh/agent.toml
+.config/gh/hosts.yml
+.config/linode-cli
+.config/rclone/rclone.conf
+.ssh
+.terraform.d
+.wakatime.cfg
+{{- end }}
+{{- if not (stat (joinPath .chezmoi.sourceDir "dot_claude/CLAUDE.md")) }}
+.bin/pi
+.cavemem
+.claude
+.claude.json
+{{- end }}

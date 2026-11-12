@@ -1,6 +1,7 @@
 [user]
     name = Mrugesh Mohapatra
     email = noreply@mrugesh.dev
+{{- if stat (joinPath .chezmoi.homeDir ".ssh/id_ed25519_signing") }}
     signingkey = ~/.ssh/id_ed25519_signing
 
 [gpg]
@@ -11,3 +12,4 @@
 
 [commit]
     gpgsign = true
+{{- end }}
