@@ -11,7 +11,7 @@ const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
 const REVIEWERS = new Set(["reviewer", "dossier:dossier-reviewer"]);
 const SPAWN_DENIED = "Agent spawn missing";
 const LONG_CONTEXT = 200_000;
-const BASELINE_UNTIL = "2026-11-12";
+const BASELINE_UNTIL = "2026-11-11";
 const AB_START: string | null = null;
 const CHASE_SECONDS = 72 * 3600;
 
@@ -19,7 +19,7 @@ const THRESHOLDS = {
   sheetKill: { need: 60, margin: 0.1 },
   effortHarm: { need: 60, worse: 0.15 },
   effortDefault: { need: 160, costRatio: 0.9, reworkSlack: 0.05 },
-  replay: { need: 3, slack: 0.1 },
+  replay: { need: 3 },
   router: { need: 270, recall: 0.85, falseAlarm: 0.2 },
   secondReview: { need: 50 },
   optionalReview: { need: 50, rate: 0.15 },
@@ -424,7 +424,7 @@ const trigger = (name: string, rule: string, figure: unknown, n: number, need: n
 function replayFigures(path: string | undefined) {
   const recall: Record<string, number> = {};
   if (!path) return recall;
-  for (const m of readFileSync(path, "utf8").matchAll(/^(sonnet-medium|sonnet-high|opus-medium) recall (\d+(?:\.\d+)?)/gm)) recall[m[1]] = Number(m[2]);
+  for (const m of readFileSync(path, "utf8").matchAll(/^(sonnet-medium|sonnet-high|opus-medium) recall (\d+(?:\.\d+)?)(%?)/gm)) recall[m[1]] = m[3] ? Number(m[2]) / 100 : Number(m[2]);
   return recall;
 }
 
@@ -444,7 +444,8 @@ function triggers(days: number, until: number, replay: string | undefined, from:
   const costRatio = ab.a.costPerEditRequest && ab.b.costPerEditRequest !== null ? ab.b.costPerEditRequest / ab.a.costPerEditRequest : null;
   const reworkGap = ab.a.reworkRate !== null && ab.b.reworkRate !== null ? ab.b.reworkRate - ab.a.reworkRate : null;
   const recall = replayFigures(replay);
-  const replayGap = recall["sonnet-medium"] !== undefined && recall["opus-medium"] !== undefined ? recall["sonnet-medium"] - recall["opus-medium"] : null;
+  const gapOf = (arm: string) => (recall[arm] !== undefined && recall["opus-medium"] !== undefined ? recall[arm] - recall["opus-medium"] : null);
+  const replayGap = { "sonnet-medium": gapOf("sonnet-medium"), "sonnet-high": gapOf("sonnet-high") };
   const labelled = outcomeRows.filter(r => Array.isArray(r.srcFiles));
   const routes = rows.filter(r => r.kind === "route" && r.arms);
   const routerRows = Object.keys(Object.assign({}, ...routes.map(r => r.arms))).map(name => {
@@ -482,7 +483,7 @@ function triggers(days: number, until: number, replay: string | undefined, from:
     trigger("sheet kill rule", `first-review blocking rate on sheet requests > baseline - ${t.sheetKill.margin}`, { rate: sheetRate, baseline: base }, sheet.length, t.sheetKill.need, sheetRate !== null && base !== null && sheetRate > base - t.sheetKill.margin),
     trigger("effort A/B harm", `b rework - a rework >= ${t.effortHarm.worse}`, { reworkGap }, abN, t.effortHarm.need, ab.harmStop),
     trigger("effort A/B default", `b/a cost per edit request <= ${t.effortDefault.costRatio} and rework gap <= ${t.effortDefault.reworkSlack}`, { costRatio, reworkGap }, abN, t.effortDefault.need, costRatio !== null && reworkGap !== null && costRatio <= t.effortDefault.costRatio && reworkGap <= t.effortDefault.reworkSlack),
-    trigger("reviewer replay", `sonnet-medium recall - opus-medium recall >= -${t.replay.slack}`, { recall, gap: replayGap }, Object.keys(recall).length, t.replay.need, replayGap !== null && replayGap >= -t.replay.slack),
+    trigger("reviewer replay", "report only", { recall, gap: replayGap }, Object.keys(recall).length, t.replay.need, false),
     ...routerRows,
     trigger("second-review labels", `labelled second reviews >= ${t.secondReview.need}`, { labelled: secondReviews.length }, secondReviews.length, t.secondReview.need, secondReviews.length >= t.secondReview.need),
     trigger("optional review", `first-review blocking rate on signed-off green requests < ${t.optionalReview.rate}`, { rate: optionalRate }, optional.length, t.optionalReview.need, optionalRate !== null && optionalRate < t.optionalReview.rate),

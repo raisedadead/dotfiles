@@ -52,7 +52,7 @@ const step = (tools: { name: string; input: Record<string, unknown> }[] = [], op
 
 const edit = (file = "/work/repo/src/a.ts") => ({ name: "Edit", input: { file_path: file } });
 const review = (id: string) => ({ id, name: "Agent", input: { subagent_type: "reviewer", prompt: "review" } });
-const spawned = (agentId: string, call: string) => ({ type: "user", timestamp: DAY_TS, message: { role: "user", content: [{ type: "tool_result", tool_use_id: call, content: "launched" }] }, toolUseResult: { agentId, status: "async_launched" } });
+const spawned = (agentId: string, call: string, ts = DAY_TS) => ({ type: "user", timestamp: ts, message: { role: "user", content: [{ type: "tool_result", tool_use_id: call, content: "launched" }] }, toolUseResult: { agentId, status: "async_launched" } });
 
 const project = (session: string, rows: unknown[]) => put(join(home, ".claude/projects/-work-repo", `${session}.jsonl`), rows);
 
@@ -63,10 +63,10 @@ const subagent = (session: string, agentId: string, type: string, verdict: strin
   writeFileSync(`${base}.meta.json`, JSON.stringify({ agentType: type }));
 };
 
-const reviewedRequest = (session: string, verdict: string, reworked: boolean, effort = "high") => {
+const reviewedRequest = (session: string, verdict: string, reworked: boolean, effort = "high", ts = DAY_TS) => {
   const agentId = `a${++ids}`;
   const call = `tu_${++ids}`;
-  project(session, [prompt(), step([edit()], { effort }), step([review(call)], { effort }), spawned(agentId, call), ...(reworked ? [step([edit("/work/repo/src/b.ts")], { effort })] : [])]);
+  project(session, [prompt(ts), step([edit()], { effort, ts }), step([review(call)], { effort, ts }), spawned(agentId, call, ts), ...(reworked ? [step([edit("/work/repo/src/b.ts")], { effort, ts })] : [])]);
   subagent(session, agentId, "reviewer", verdict);
 };
 
@@ -169,14 +169,26 @@ test("triggers lists every threshold as too few on an empty state and exits 0", 
   }
 });
 
-test("reviewer replay trigger fires within 10 points of Opus and holds beyond", () => {
+test("baseline14 ends before the build day", () => {
+  reviewedRequest("s1", "REVIEW: CHANGES — 1 blocker", false, "high", "2026-11-12T10:00:00.000Z");
+  reviewedRequest("s2", "REVIEW: clean", false, "high", "2026-11-10T10:00:00.000Z");
+  expect(report("--until", "2026-11-13", "30").baseline14.firstReviewBlockingRate).toBe(0);
+});
+
+test("reviewer replay reads the percentages of replay-notes.md and reports only", () => {
   const notes = join(home, "replay-notes.md");
-  const status = (sonnet: string) => {
-    writeFileSync(notes, `opus-medium recall 0.85 (34 of 40)\nsonnet-high recall 0.80\nsonnet-medium recall ${sonnet}\n`);
-    return report("triggers", "--until", UNTIL, "--replay", notes).find((r: { name: string }) => r.name === "reviewer replay");
-  };
-  expect(status("0.80")).toMatchObject({ status: "fire", n: 3 });
-  expect(status("0.70")).toMatchObject({ status: "hold", n: 3 });
+  writeFileSync(notes, "sonnet-medium recall 64.1% (41/64)\nsonnet-high recall 79.7% (51/64)\nopus-medium recall 82.8% (53/64)\n");
+  const row = report("triggers", "--until", UNTIL, "--replay", notes).find((r: { name: string }) => r.name === "reviewer replay");
+  expect(row.rule).toBe("report only");
+  expect(row.status).toBe("hold");
+  expect(row.figure.recall["sonnet-medium"]).toBeCloseTo(0.641, 3);
+  expect(row.figure.recall["sonnet-high"]).toBeCloseTo(0.797, 3);
+  expect(row.figure.recall["opus-medium"]).toBeCloseTo(0.828, 3);
+  expect(row.figure.gap["sonnet-medium"]).toBeCloseTo(-0.187, 3);
+  expect(row.figure.gap["sonnet-high"]).toBeCloseTo(-0.031, 3);
+  writeFileSync(notes, "sonnet-medium recall 0.85\nsonnet-high recall 64.1%\nopus-medium recall 82.8%\n");
+  const plain = report("triggers", "--until", UNTIL, "--replay", notes).find((r: { name: string }) => r.name === "reviewer replay");
+  expect(plain.figure.recall["sonnet-medium"]).toBeCloseTo(0.85, 3);
 });
 
 test("sign-off trigger reports count, cost, minutes and CHANGES rate from signoff spawns", () => {

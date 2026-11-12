@@ -172,7 +172,7 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 - Outside Rex (no `REX_BLOCK`), the Claude guard refuses each `rex` command that reaches the live server, such as `rex capture`. The Pi guard lets a verified read run. Only the Claude guard refuses a `rex kill` or a `rex session kill` of more than one session.
 - A long Claude dialog offers `Details`, which opens the `Approval` view. A long Pi dialog offers `Show all text`.
 - Pi reads an optional local `~/.pi/agent/redact.json` that adds or turns off redaction rules. Claude has no such file.
-- The kernels differ where the tools differ. Pi has no advisor, TaskList or `notebook`, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.
+- The kernels differ where the tools differ. Pi has no TaskList, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.
 - [SKILLS.md](SKILLS.md) uses Claude names, except in the UI workflow.
 
 Each `RIG.md` holds the limits of its rig. The guards match command text and need `shfmt` to read shell syntax. They are not a sealed boundary.
