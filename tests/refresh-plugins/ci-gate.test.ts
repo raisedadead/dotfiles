@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -60,14 +60,52 @@ afterEach(() => {
 const success = '{"status":"completed","conclusion":"success"}';
 const running = '{"status":"in_progress","conclusion":""}';
 
-test("mine and all exit 1 before any update while a run on the clone's commit is unfinished", () => {
+const seedInstalls = () => {
+  const claudeDir = join(home, ".claude");
+  const cache = join(claudeDir, "plugins", "cache");
+  const mineInstall = join(cache, "raisedadead-plugins", "mine-plugin", "1.0.0");
+  const otherInstall = join(cache, "other-market", "other-plugin", "1.0.0");
+  mkdirSync(mineInstall, { recursive: true });
+  mkdirSync(otherInstall, { recursive: true });
+  writeFileSync(
+    join(claudeDir, "plugins", "installed_plugins.json"),
+    JSON.stringify({
+      plugins: {
+        "mine-plugin@raisedadead-plugins": [{ installPath: mineInstall, version: "1.0.0", gitCommitSha: "a".repeat(40) }],
+        "other-plugin@other-market": [{ installPath: otherInstall, version: "1.0.0" }],
+      },
+    }),
+  );
+  writeFileSync(join(claudeDir, "settings.json"), JSON.stringify({ enabledPlugins: { "mine-plugin@raisedadead-plugins": true } }));
+  const manifestDir = join(claudeDir, "plugins", "marketplaces", "raisedadead-plugins", ".claude-plugin");
+  mkdirSync(manifestDir, { recursive: true });
+  writeFileSync(
+    join(manifestDir, "marketplace.json"),
+    JSON.stringify({ plugins: [{ name: "mine-plugin", source: { source: "github", repo: "x/y", sha: "b".repeat(40) } }] }),
+  );
+  stub("claude", 'printf \'%s\\n\' "$*" >> "$HOME/claude-calls"\nexit 0');
+};
+
+const claudeCalls = () => readFileSync(join(home, "claude-calls"), "utf8").split("\n").filter(Boolean);
+
+test("mine exits 1 before any update while a run on the clone's commit is unfinished", () => {
   ghReturning(`[${success},${running}]`);
-  for (const mode of ["mine", "all"]) {
-    const r = run(mode);
-    expect(r.code).toBe(1);
-    expect(r.out).not.toContain("UPDATE");
-    expect(r.err).toContain(sha);
-  }
+  const r = run("mine");
+  expect(r.code).toBe(1);
+  expect(r.out).not.toContain("UPDATE");
+  expect(r.err).toContain(sha);
+});
+
+test("all exits 1 but updates only third-party plugins while a run on the clone's commit is unfinished", () => {
+  seedInstalls();
+  ghReturning(`[${success},${running}]`);
+  const r = run("all");
+  expect(r.code).toBe(1);
+  expect(r.out).toContain("UPDATE");
+  expect(r.err).toContain(sha);
+  const calls = claudeCalls();
+  expect(calls).toContain("plugin update other-plugin@other-market --scope user");
+  expect(calls.filter((call) => call.includes("@raisedadead-plugins"))).toEqual([]);
 });
 
 test("a commit with no CI run yet counts as not green", () => {
