@@ -30,6 +30,7 @@ install.sh
 .claude/mods/*/tests
 .claude/mods/*/dist
 .claude/mods/*/build.ts
+.claude/mods/*/record-shfmt.ts
 .claude/mods/*/tsconfig.json
 .claude/mods/*/.claude-plugin/types/*
 .claude/rules/*.original.md
