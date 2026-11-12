@@ -1,137 +1,10 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env -S bun --no-env-file --config=/dev/null
+import { randomBytes } from "node:crypto";
+import { closeSync, existsSync, openSync, readFileSync, readSync, realpathSync, rmSync, writeFileSync, writeSync } from "node:fs";
+import { join } from "node:path";
+import { isatty } from "node:tty";
 
-usage() {
-	echo "usage: rex-handoff -- COMMAND..." >&2
-	exit 64
-}
-
-status() {
-	local LC_ALL=en_US.UTF-8 msg
-	msg=${2//[[:cntrl:]]/}
-	msg=$(printf '%s' "${msg:0:500}" | base64 | tr -d '\n')
-	printf '\e]7501;state=%s:app=handoff:msg=%s\a' "$1" "$msg" 2>/dev/null || true
-}
-
-drain() { while IFS= read -rsn1 -t 0.3 _; do typed=1; done; }
-
-cols() {
-	local c=80
-	read -r _ c < <(stty size 2>/dev/null) || true
-	echo "$c"
-}
-
-hint() {
-	local LC_ALL=en_US.UTF-8 w
-	w=$(($(cols) - 3))
-	((w > 20)) || w=20
-	printf '\r\e[K  %s' "${1:0:w}"
-}
-
-show() {
-	local LC_ALL=en_US.UTF-8 cols w i
-	cols=$(cols)
-	w=$((cols > 26 ? cols - 6 : 20))
-	for ((i = 0; i < ${#1}; i += w)); do
-		printf '    %s\n' "${1:i:w}"
-	done
-}
-
-report() { [[ ! -e "$res" ]] || printf '%s\n' "$1" >"$res" 2>/dev/null || true; }
-
-decline() {
-	report 130
-	status "done" "Declined: $shown"
-	exit 130
-}
-
-cancel() {
-	rm -f "$res"
-	status "done" "Cancelled: $shown"
-	exit 130
-}
-
-inner() {
-	local key tty prog run typed=0 stray=0 code=0
-	printf -v shown '%q ' "$@"
-	shown=${shown% }
-	printf -v prog '%q' "${1##*/}"
-	run="Enter: run $prog · Esc: decline"
-	tty=$(stty -g)
-	stty -echo -icanon
-	printf '\n  The agent hands you this command:\n\n'
-	show "$shown"
-	printf '\n  in %s\n\n' "${PWD//[[:cntrl:]]/?}"
-	hint "$run"
-	drain
-	status blocked "Run: $shown"
-	while :; do
-		if ((typed)); then
-			typed=0 stray=1
-			hint "Ignored typed keys. Enter twice: run $prog · Esc: decline"
-		fi
-		kill -0 "$caller" 2>/dev/null || cancel
-		IFS= read -rsn1 -t 1 key || {
-			(($? > 128)) && continue
-			decline
-		}
-		if [[ -z "$key" ]]; then
-			((stray)) || break
-			drain
-			((typed)) && continue
-			stray=0
-			hint "Ignored typed keys. Enter again: run $prog · Esc: decline"
-			continue
-		fi
-		[[ "$key" != q ]] || decline
-		if [[ "$key" == $'\e' ]] && ! IFS= read -rsn1 -t 0.05 _; then decline; fi
-		typed=1
-		drain
-	done
-	kill -0 "$caller" 2>/dev/null || cancel
-	stty "$tty"
-	trap : INT
-	status working "$shown"
-	printf '\n\n'
-	REX_HANDOFF=1 zsh +m -i -c 'unset REX_HANDOFF; "$@"' zsh "$@" || code=$?
-	if kill -0 "$caller" 2>/dev/null; then report "$code"; else rm -f "$res"; fi
-	trap 'exit "$code"' INT
-	stty -echo -icanon
-	drain
-	if ((code)); then
-		status error "exit $code: $shown"
-	else
-		status "done" "exit 0: $shown"
-	fi
-	printf '\n  exit %d · press any key to close' "$code"
-	IFS= read -rsn1 _ || true
-	exit "$code"
-}
-
-if [[ "${TERM_PROGRAM:-}" != rex || -z "${REX_SESSION:-}" || -n "${TMUX:-}" ]]; then
-	echo "rex-handoff: not in Rex, so nothing ran" >&2
-	exit 69
-fi
-
-if [[ "${1:-}" == "--inner" ]]; then
-	if ((BASH_VERSINFO[0] < 4)); then
-		res=${2:-/dev/null}
-		report 69
-		exit 69
-	fi
-	[[ -t 0 ]] || exit 130
-	if (($# < 5)) || [[ "$4" != "--" ]]; then usage; fi
-	res=$2 caller=$3
-	shift 4
-	inner "$@"
-fi
-
-[[ "${1:-}" == "--" ]] || usage
-shift
-(($#)) || usage
-
-WAITER=$(
-	cat <<'EOF'
+const WAITER = `
 local a = rex.args
 local function done()
   local f = io.open(a.result)
@@ -158,27 +31,299 @@ end
 if not open then rex.stop(0) end
 rex.every(0.2, done)
 done()
-EOF
-)
+`;
 
-R() { rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false "$@"; }
-res=$(mktemp "${TMPDIR:-/tmp}/rex-handoff.XXXXXX")
-trap 'rm -f "$res"' EXIT
-args=$(jq -cn --arg cwd "$PWD" --arg result "$res" --argjson caller $$ \
-	'{argv: $ARGS.positional, cwd: $cwd, result: $result, caller: $caller}' --args -- "$@")
-open() { R "do" --json -s "$REX_SESSION" "$@" handoff_float --args "$args" 2>/dev/null; }
-opened=$(open ${REX_BLOCK:+-b "$REX_BLOCK"}) || opened=$(open) || exit 69
-float=$(jq -r .block_id <<<"$opened")
-watch=$(jq -c --arg r "$res" \
-	'{float: .block_id, window: .window_id, focused: .focused, result: $r}' <<<"$opened")
+const SIGNALS: Record<string, number> = { SIGHUP: 129, SIGINT: 130, SIGTERM: 143 };
+const CNTRL = /[\x00-\x1f\x7f-\x9f]/g;
+const NONPRINT = /[\p{Cc}\p{Cf}\p{Cn}\p{Cs}]/u;
+const BACKSLASHED = new Set(" \t\n'\"\\|&;()<>!{}*[?]^$`,");
+const ANSI: Record<string, string> = {
+  "\x07": "\\a",
+  "\b": "\\b",
+  "\x1b": "\\E",
+  "\f": "\\f",
+  "\n": "\\n",
+  "\r": "\\r",
+  "\t": "\\t",
+  "\v": "\\v",
+  "\\": "\\\\",
+  "'": "\\'",
+};
 
-wrc=0
-R "do" -s "$REX_SESSION" -e "$WAITER" --args "$watch" >/dev/null 2>&1 || wrc=$?
-code=$(cat "$res")
-if [[ ! "$code" =~ ^[0-9]+$ ]]; then
-	R block close -s "$REX_SESSION" "$float" >/dev/null 2>&1 || true
-	((wrc == 0 || wrc == 130)) || exit 69
-	code=130
-fi
-echo "$code"
-exit "$code"
+const env = process.env;
+const rex = (...a: string[]) => ["rex", ...(process.env.REX_SERVER ? ["-S", process.env.REX_SERVER] : []), "--autostart=false", ...a];
+
+function say(text: string, fd = 1) {
+  try {
+    writeSync(fd, text);
+  } catch {}
+}
+
+function usage(): never {
+  say("usage: rex-handoff -- COMMAND...\n", 2);
+  process.exit(64);
+}
+
+function chars(s: string) {
+  return Array.from(s);
+}
+
+function wideLocale() {
+  return !/^(C|POSIX)$/.test(env.LC_ALL || env.LC_CTYPE || env.LANG || "");
+}
+
+function quote(s: string) {
+  if (s === "") return "''";
+  const all = chars(s);
+  const wide = wideLocale();
+  const hidden = (c: string) => NONPRINT.test(c) || (!wide && c > "\x7f");
+  if (all.some(hidden)) {
+    const octal = (c: string) => [...Buffer.from(c)].map((b) => `\\${b.toString(8).padStart(3, "0")}`).join("");
+    return `$'${all.map((c) => ANSI[c] ?? (hidden(c) ? octal(c) : c)).join("")}'`;
+  }
+  return all
+    .map((c, i) => {
+      const prev = all[i - 1];
+      if (BACKSLASHED.has(c)) return `\\${c}`;
+      if (c === "#" && i === 0) return "\\#";
+      if (c === "~" && (i === 0 || prev === "=" || prev === ":")) return "\\~";
+      return c;
+    })
+    .join("");
+}
+
+function pwd() {
+  const p = env.PWD;
+  try {
+    if (p?.startsWith("/") && realpathSync(p) === realpathSync(".")) return p;
+  } catch {}
+  return process.cwd();
+}
+
+function stty(...a: string[]) {
+  const r = Bun.spawnSync(["stty", ...a], { stdin: "inherit", stdout: "pipe", stderr: "ignore" });
+  return { ok: r.exitCode === 0, out: r.stdout.toString().trim() };
+}
+
+function cols() {
+  return Number(stty("size").out.split(/\s+/)[1]) || 0;
+}
+
+function status(state: string, msg: string) {
+  const text = chars(msg.replace(CNTRL, "")).slice(0, 500).join("");
+  say(`\x1b]7501;state=${state}:app=handoff:msg=${Buffer.from(text).toString("base64")}\x07`);
+}
+
+function hint(text: string) {
+  const w = Math.max(cols() - 3, 20);
+  say(`\r\x1b[K  ${chars(text).slice(0, w).join("")}`);
+}
+
+function show(text: string) {
+  const c = cols();
+  const w = c > 26 ? c - 6 : 20;
+  const all = chars(text);
+  for (let i = 0; i < all.length; i += w) say(`    ${all.slice(i, i + w).join("")}\n`);
+}
+
+function alive(pid: string) {
+  if (!/^-?\d+$/.test(pid)) return false;
+  try {
+    process.kill(Number(pid), 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readKey(tenths: number): Promise<string> {
+  const buf = Buffer.alloc(1);
+  for (let i = 0; i < tenths; i++) {
+    const at = Date.now();
+    let n: number;
+    try {
+      n = readSync(0, buf, 0, 1, null);
+    } catch {
+      return "eof";
+    }
+    if (n && buf[0] !== 0) return buf.toString("latin1");
+    if (!n && Date.now() - at < 50) return "eof";
+    await Bun.sleep(0);
+  }
+  return "timeout";
+}
+
+async function inner(res: string, caller: string, cmd: string[]): Promise<never> {
+  let typed = false;
+  let stray = false;
+  const shown = cmd.map(quote).join(" ");
+  const prog = quote(cmd[0].replace(/^.*\//s, ""));
+  const run = `Enter: run ${prog} · Esc: decline`;
+  const report = (code: number) => {
+    if (!existsSync(res)) return;
+    try {
+      writeFileSync(res, `${code}\n`);
+    } catch {}
+  };
+  const decline = (): never => {
+    report(130);
+    status("done", `Declined: ${shown}`);
+    process.exit(130);
+  };
+  const cancel = (): never => {
+    rmSync(res, { force: true });
+    status("done", `Cancelled: ${shown}`);
+    process.exit(130);
+  };
+  const drain = async () => {
+    for (;;) {
+      const k = await readKey(3);
+      if (k === "timeout" || k === "eof") return;
+      typed = true;
+    }
+  };
+
+  const tty = stty("-g");
+  if (!tty.ok) process.exit(1);
+  stty("-echo", "-icanon", "min", "0", "time", "1");
+  say("\n  The agent hands you this command:\n\n");
+  show(shown);
+  say(`\n  in ${pwd().replace(CNTRL, "?")}\n\n`);
+  hint(run);
+  await drain();
+  status("blocked", `Run: ${shown}`);
+  for (;;) {
+    if (typed) {
+      typed = false;
+      stray = true;
+      hint(`Ignored typed keys. Enter twice: run ${prog} · Esc: decline`);
+    }
+    if (!alive(caller)) cancel();
+    const k = await readKey(10);
+    if (k === "timeout") continue;
+    if (k === "eof") decline();
+    if (k === "\n") {
+      if (!stray) break;
+      await drain();
+      if (typed) continue;
+      stray = false;
+      hint(`Ignored typed keys. Enter again: run ${prog} · Esc: decline`);
+      continue;
+    }
+    if (k === "q") decline();
+    if (k === "\x1b" && ["timeout", "eof"].includes(await readKey(1))) decline();
+    typed = true;
+    await drain();
+  }
+  if (!alive(caller)) cancel();
+  stty(tty.out);
+  process.on("SIGINT", () => {});
+  status("working", shown);
+  say("\n\n");
+  let code: number;
+  try {
+    const child = Bun.spawn(["zsh", "+m", "-i", "-c", 'unset REX_HANDOFF; "$@"', "zsh", ...cmd], {
+      stdio: ["inherit", "inherit", "inherit"],
+      env: { ...env, REX_HANDOFF: "1" },
+    });
+    code = await child.exited;
+  } catch {
+    say("rex-handoff: zsh: command not found\n", 2);
+    code = 127;
+  }
+  if (alive(caller)) report(code);
+  else rmSync(res, { force: true });
+  process.removeAllListeners("SIGINT");
+  process.on("SIGINT", () => process.exit(code));
+  stty("-echo", "-icanon", "min", "0", "time", "1");
+  await drain();
+  if (code) status("error", `exit ${code}: ${shown}`);
+  else status("done", `exit 0: ${shown}`);
+  say(`\n  exit ${code} · press any key to close`);
+  await readKey(Number.POSITIVE_INFINITY);
+  process.exit(code);
+}
+
+function tempFile(dir: string) {
+  const abc = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (;;) {
+    const name = join(dir, `rex-handoff.${[...randomBytes(6)].map((b) => abc[b % abc.length]).join("")}`);
+    try {
+      closeSync(openSync(name, "wx", 0o600));
+      return name;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+    }
+  }
+}
+
+async function capture(argv: string[]) {
+  let child;
+  try {
+    child = Bun.spawn(argv, { stdin: "inherit", stdout: "pipe", stderr: "ignore" });
+  } catch {
+    return { code: 127, out: "" };
+  }
+  const [code, out] = await Promise.all([child.exited, new Response(child.stdout).text()]);
+  return { code, out };
+}
+
+async function quietly(argv: string[]) {
+  try {
+    return await Bun.spawn(argv, { stdin: "inherit", stdout: "ignore", stderr: "ignore" }).exited;
+  } catch {
+    return 127;
+  }
+}
+
+async function outer(cmd: string[]): Promise<never> {
+  const session = env.REX_SESSION as string;
+  const res = tempFile(env.TMPDIR || "/tmp");
+  process.on("exit", () => rmSync(res, { force: true }));
+  for (const [name, code] of Object.entries(SIGNALS)) process.on(name, () => process.exit(code));
+  const args = JSON.stringify({ argv: cmd, cwd: pwd(), result: res, caller: process.pid });
+  const open = async (block?: string) => {
+    const r = await capture(rex("do", "--json", "-s", session, ...(block ? ["-b", block] : []), "handoff_float", "--args", args));
+    return r.code === 0 ? r.out : null;
+  };
+  const opened = (await open(env.REX_BLOCK)) ?? (await open());
+  if (opened === null) process.exit(69);
+  const o = JSON.parse(opened);
+  const float = typeof o.block_id === "string" ? o.block_id : JSON.stringify(o.block_id ?? null);
+  const watch = JSON.stringify({ float: o.block_id ?? null, window: o.window_id ?? null, focused: o.focused ?? null, result: res });
+
+  const wrc = await quietly(rex("do", "-s", session, "-e", WAITER, "--args", watch));
+  let code = "";
+  try {
+    code = readFileSync(res, "utf8").replace(/\n+$/, "");
+  } catch {}
+  if (!/^[0-9]+$/.test(code)) {
+    await quietly(rex("block", "close", "-s", session, float));
+    if (wrc !== 0 && wrc !== 130) process.exit(69);
+    code = "130";
+  }
+  say(`${code}\n`);
+  process.exit(Number(code) % 256);
+}
+
+async function main(): Promise<never> {
+  if (env.TERM_PROGRAM !== "rex" || !env.REX_SESSION || env.TMUX) {
+    say("rex-handoff: not in Rex, so nothing ran\n", 2);
+    process.exit(69);
+  }
+  const args = process.argv.slice(2);
+  if (args[0] === "--inner") {
+    if (!isatty(0)) process.exit(130);
+    if (args.length < 5 || args[3] !== "--") usage();
+    return inner(args[1], args[2], args.slice(4));
+  }
+  if (!args.length) usage();
+  return outer(args);
+}
+
+try {
+  await main();
+} catch (e) {
+  say(`rex-handoff: ${e instanceof Error ? e.message : String(e)}\n`, 2);
+  process.exit(69);
+}

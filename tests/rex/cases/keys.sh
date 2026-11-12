@@ -118,7 +118,7 @@ for b in data["bindings"]:
 EOF
 taken_keys() {
 	python3 "$SB/taken.py" "$SB/t/zsh-keys" "$SB/t/nvim-keys" \
-		"$REPO/dot_claude/keybindings.json" <<<"$1"
+		"$DOTCLAUDE/keybindings.json" <<<"$1"
 }
 taken=$(taken_keys "$keys_json")
 [[ -z "$taken" ]] || printf '     %s\n' "$taken"

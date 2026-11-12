@@ -64,6 +64,29 @@ check "the picker lists the worktrees first" test "$(head -1 <<<"$rows" | cut -f
 check "the picker leaves out the current session" lacks "$S"
 check "the picker lists a worktree that has a session once" lacks "$(sid "$o1")"
 
+pick_usage() {
+	local out rc=0
+	out=$(strict "$SB/cfg/bin/rex-pick-workspace" "$@" 2>&1 </dev/null) || rc=$?
+	[[ "$rc" == 64 && "$out" == "usage: rex-pick-workspace [--list] CLIENT CWD [SESSION [OUT]]" ]]
+}
+check "the picker with too few arguments prints its usage and exits 64" pick_usage --list ""
+check "the picker with too many arguments prints its usage and exits 64" pick_usage a b c d e
+pick_fails() {
+	local out rc=0
+	out=$(strict "$SB/cfg/bin/rex-pick-workspace" --list "" "$WS/plain" session:bogus \
+		"$SB/t/pick.out" 2>/dev/null </dev/null) || rc=$?
+	[[ "$rc" != 0 && "$out" == "Failed (exit $rc)."$'\n'"Press a key to close." ]] &&
+		[[ ! -e "$SB/t/pick.out" && ! -e "$SB/t/pick.out.tmp" ]]
+}
+touch "$SB/t/pick.out" "$SB/t/pick.out.tmp"
+check "a failed picker shows its exit code and removes its hand-off files" pick_fails
+pick_plain() {
+	local out
+	out=$(strict "$SB/cfg/bin/rex-pick-workspace" --list "" "$WS/plain" "$S" 2>&1 </dev/null) &&
+		[[ "$out" == *$'session\t'* && "$out" != *worktree* ]]
+}
+check "the picker outside git lists no worktree" pick_plain
+
 W=$(R new --json wsx -- sh -c 'exec sleep 300' | jq -r .session_id)
 pane_in() {
 	R window new -s "$W" t -c "$1" --json -- sh -c 'exec sleep 300' | jq -r '.block_ids[0]'

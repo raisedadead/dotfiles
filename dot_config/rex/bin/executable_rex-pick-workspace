@@ -1,152 +1,311 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env -S bun --no-env-file --config=/dev/null
+import { existsSync, read, readSync, renameSync, rmSync, writeFileSync, writeSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import { isatty } from "node:tty";
 
-list=0
-if [[ "${1:-}" == "--list" ]]; then
-	list=1
-	shift
-fi
-if (($# < 2 || $# > 4)); then
-	echo "usage: rex-pick-workspace [--list] CLIENT CWD [SESSION [OUT]]" >&2
-	exit 64
-fi
-client=$1 cwd=$2 here=${3:-} out=${4:-}
-R() { rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false "$@"; }
+const USAGE = "usage: rex-pick-workspace [--list] CLIENT CWD [SESSION [OUT]]";
+const SIGNALS: Record<string, number> = { SIGHUP: 129, SIGINT: 130, SIGTERM: 143 };
 
-hold() {
-	printf '%s\nPress a key to close.' "$1"
-	read -rsn1 || true
-}
-finish() {
-	local rc=$?
-	trap - EXIT
-	[[ -z "$out" ]] || rm -f "$out" "$out.tmp"
-	((rc == 0)) || hold "Failed (exit $rc)."
-}
-trap finish EXIT
+type Stream = "pipe" | "inherit" | "ignore";
+type Ran = { code: number; out: string; err: string };
+type Json = any;
 
-root='' repo='' wtj='{"items":[]}'
-if [[ -n "$cwd" ]] && root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null); then
-	wtj=$(wt -C "$root" list --format json 2>/dev/null) || wtj='{"items":[]}'
-	repo=$(jq -r '[.items[] | select(.worktree.main) | .worktree.path][0] // empty' <<<"$wtj")
-	repo=$(basename "${repo:-$root}")
-fi
-
-all=$(R ls --json)
-sess=${here:-$(jq -r '.sessions[0].session_id // empty' <<<"$all")}
-D() { R "do" -s "$sess" --json "$@"; }
-
-rows() {
-	local known
-	known=$(D workspace_known | jq -c '.paths // {}')
-	jq -nr --argjson w "$wtj" --argjson k "$known" --argjson s "$all" --arg here "$here" '
-		[$w.items[] | select(.worktree.path and (.worktree.prunable | not))] as $wts
-		| [$wts[] | $k[.worktree.path] // empty] as $taken
-		| ($wts[] | .worktree.path as $p | select($here == "" or ($k[$p] // "") != $here)
-			| "worktree\t\(.branch // ($p | split("/") | last))\t\($p)"),
-		($s.sessions[] | .session_id as $id
-			| select($id != $here and ($taken | index($id) | not))
-			| "session\t\(.label)\t\($id)")'
+class Exit {
+  constructor(readonly code: number) {}
 }
 
-if ((list)); then
-	rows
-	exit 0
-fi
+let pending = "";
+let final = false;
 
-select_session() {
-	local err=
-	if [[ -n "$client" ]] &&
-		err=$(R -C "$client" "do" session.select "session_id=$1" 2>&1 >/dev/null); then
-		return 0
-	fi
-	[[ -z "$err" ]] || echo "$err"
-	local keys
-	keys=$(R keymap --json 2>/dev/null | jq -r 'def cap: (.[0:1] | ascii_upcase) + .[1:];
-		[.bindings[] | select(.action == "session.switch" and .mode == null)][0].keys // []
-		| map(split("+") | map(cap) | join("+")) | join(" ")' 2>/dev/null) || keys=
-	if [[ -n "$keys" ]]; then
-		hold "Rex did not switch. Press $keys and pick $2."
-	else
-		hold "Rex did not switch. Open the session picker and pick $2."
-	fi
+for (const name of Object.keys(SIGNALS)) {
+  process.on(name, () => {
+    if (final) process.exit(SIGNALS[name]);
+    pending = name;
+  });
 }
 
-hand_off() {
-	local sid=$1 label=$2 round
-	if [[ -n "$out" ]]; then
-		for round in 1 2; do
-			printf '%s\n' "$sid" >"$out.tmp"
-			mv "$out.tmp" "$out"
-			for _ in {1..10}; do
-				[[ -e "$out" ]] || exit 0
-				sleep 0.1
-			done
-			((round == 1)) || break
-			rm -f "$out"
-			printf '\nPress Enter to open %s, or Esc to stay.' "$label"
-			read -rsn1 || exit 0
-			[[ -z "$REPLY" ]] || exit 0
-		done
-		rm -f "$out"
-		echo
-	fi
-	select_session "$sid" "$label"
+const rex = (...a: string[]) => ["rex", ...(process.env.REX_SERVER ? ["-S", process.env.REX_SERVER] : []), "--autostart=false", ...a];
+
+function say(text: string, fd = 1) {
+  try {
+    writeSync(fd, text);
+  } catch {}
 }
 
-open_worktree() {
-	local res
-	res=$(D workspace_open "path=$1" "name=$repo-${2//\//-}")
-	hand_off "$(jq -r .session_id <<<"$res")" "$(jq -r .label <<<"$res")"
+function interrupted() {
+  if (pending) throw new Exit(SIGNALS[pending]);
 }
 
-has_branch() {
-	git -C "$root" show-ref --verify --quiet "refs/heads/$1" ||
-		[[ -n "$(git -C "$root" for-each-ref "refs/remotes/*/$1")" ]]
+async function run(argv: string[], o: { input?: string; out?: Stream; err?: Stream } = {}): Promise<Ran> {
+  let proc;
+  try {
+    proc = Bun.spawn(argv, {
+      stdin: o.input === undefined ? "inherit" : new TextEncoder().encode(o.input),
+      stdout: o.out ?? "pipe",
+      stderr: o.err ?? "inherit",
+    });
+  } catch {
+    if (o.err !== "ignore") say(`rex-pick-workspace: ${argv[0]}: command not found\n`, 2);
+    return { code: 127, out: "", err: "" };
+  }
+  const [code, out, err] = await Promise.all([
+    proc.exited,
+    (o.out ?? "pipe") === "pipe" ? new Response(proc.stdout as ReadableStream).text() : "",
+    o.err === "pipe" ? new Response(proc.stderr as ReadableStream).text() : "",
+  ]);
+  if (pending === "SIGINT" && proc.signalCode !== "SIGINT") pending = "";
+  interrupted();
+  return { code, out, err };
 }
 
-create() {
-	local path
-	if has_branch "$1"; then
-		wt -C "$root" switch "$1" --no-cd >/dev/null
-	else
-		wt -C "$root" switch --create "$1" --no-cd >/dev/null
-	fi
-	path=$(wt -C "$root" list --format json | jq -r --arg b "$1" \
-		'[.items[] | select(.branch == $b) | .worktree.path][0] // empty')
-	if [[ -z "$path" ]]; then
-		echo "wt made no worktree for $1."
-		exit 1
-	fi
-	open_worktree "$path" "$1"
+function chomp(s: string) {
+  return s.replace(/\n+$/, "");
 }
 
-header='Enter: go'
-[[ -z "$root" ]] || header+=' · Ctrl+O: create a worktree from the typed name'
+function json(text: string): Json {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Exit(5);
+  }
+}
 
-choices=$(rows)
-rc=0
-res=$({ [[ -z "$choices" ]] || printf '%s\n' "$choices"; } |
-	"$(dirname "$0")/rex-fzf" --delimiter=$'\t' --with-nth=1,2 --nth=2 --tabstop=9 \
-		--print-query --expect=ctrl-o --border-label=' Workspaces ' \
-		--header="$header" --prompt='workspace ❯ ') || rc=$?
-((rc != 130)) || exit 0
-((rc <= 1)) || exit "$rc"
-query=$(sed -n 1p <<<"$res")
-key=$(sed -n 2p <<<"$res")
-pick=$(sed -n 3p <<<"$res")
+function set(v: unknown) {
+  return v !== undefined && v !== null && v !== false;
+}
 
-if [[ "$key" != ctrl-o && -n "$pick" ]]; then
-	IFS=$'\t' read -r kind label target <<<"$pick"
-	case $kind in
-	session) hand_off "$target" "$label" ;;
-	worktree) open_worktree "$target" "$label" ;;
-	esac
-	exit 0
-fi
-[[ -n "$query" ]] || exit 0
-if [[ -z "$root" ]]; then
-	hold "Not in a git repository, so there is no worktree to create for $query."
-	exit 0
-fi
-create "$query"
+function str(v: unknown) {
+  return typeof v === "string" ? v : JSON.stringify(v ?? null);
+}
+
+function stty(...a: string[]) {
+  return Bun.spawnSync(["stty", ...a], { stdin: "inherit", stdout: "pipe", stderr: "ignore" }).stdout.toString().trim();
+}
+
+async function key(): Promise<string | null> {
+  const buf = Buffer.alloc(1);
+  if (!isatty(0)) {
+    const got = new Promise<string | null>((done) => read(0, buf, 0, 1, null, (e, n) => done(!e && n ? buf.toString("latin1") : null)));
+    for (;;) {
+      const k = await Promise.race([got, Bun.sleep(100).then(() => undefined)]);
+      if (k !== undefined) return k;
+      if (!final) interrupted();
+    }
+  }
+  const saved = stty("-g");
+  stty("-echo", "-icanon", "min", "0", "time", "1");
+  try {
+    for (;;) {
+      if (!final) interrupted();
+      const at = Date.now();
+      const n = readSync(0, buf, 0, 1, null);
+      if (n && buf[0] !== 0) return buf.toString("latin1");
+      if (!n && Date.now() - at < 50) return null;
+      await Bun.sleep(0);
+    }
+  } catch (e) {
+    if (e instanceof Exit) throw e;
+    return null;
+  } finally {
+    stty(saved);
+  }
+}
+
+async function hold(text: string) {
+  say(`${text}\nPress a key to close.`);
+  await key();
+}
+
+const args = process.argv.slice(2);
+const list = args[0] === "--list";
+if (list) args.shift();
+if (args.length < 2 || args.length > 4) {
+  say(`${USAGE}\n`, 2);
+  process.exit(64);
+}
+const [client, cwd, here = "", out = ""] = args;
+
+let root = "";
+let repo = "";
+let wtj: Json = { items: [] };
+let all: Json = {};
+let sess = "";
+
+async function rows(): Promise<string[]> {
+  const k = await run(rex("do", "-s", sess, "--json", "workspace_known"));
+  if (k.code) throw new Exit(list ? k.code : 2);
+  const known = json(k.out)?.paths;
+  const paths: Record<string, unknown> = set(known) ? known : {};
+  const wts = (wtj.items as Json[]).filter((i) => set(i?.worktree?.path) && !set(i?.worktree?.prunable));
+  const taken = wts.map((w) => paths[w.worktree.path]).filter(set);
+  const lines: string[] = [];
+  for (const w of wts) {
+    const p = w.worktree.path;
+    const owner = set(paths[p]) ? paths[p] : "";
+    if (here !== "" && owner === here) continue;
+    lines.push(`worktree\t${str(set(w.branch) ? w.branch : str(p).split("/").at(-1))}\t${str(p)}`);
+  }
+  for (const s of all.sessions as Json[]) {
+    const id = s.session_id;
+    if (id === here || taken.includes(id)) continue;
+    lines.push(`session\t${str(s.label)}\t${str(id)}`);
+  }
+  return lines;
+}
+
+async function selectSession(sid: string, label: string) {
+  if (client) {
+    const r = await run(rex("-C", client, "do", "session.select", `session_id=${sid}`), { out: "ignore", err: "pipe" });
+    if (r.code === 0) return;
+    if (chomp(r.err)) say(`${chomp(r.err)}\n`);
+  }
+  let keys = "";
+  const r = await run(rex("keymap", "--json"), { err: "ignore" });
+  try {
+    if (r.code) throw new Exit(r.code);
+    const cap = (s: string) => s.slice(0, 1).replace(/[a-z]/, (c) => c.toUpperCase()) + s.slice(1);
+    const hit = (json(r.out).bindings as Json[]).filter((b) => b.action === "session.switch" && b.mode == null)[0];
+    const combos: string[] = set(hit?.keys) ? hit.keys : [];
+    keys = combos.map((k) => k.split("+").map(cap).join("+")).join(" ");
+  } catch {
+    keys = "";
+  }
+  if (keys) await hold(`Rex did not switch. Press ${keys} and pick ${label}.`);
+  else await hold(`Rex did not switch. Open the session picker and pick ${label}.`);
+}
+
+async function handOff(sid: string, label: string) {
+  if (out) {
+    for (const round of [1, 2]) {
+      writeFileSync(`${out}.tmp`, `${sid}\n`);
+      renameSync(`${out}.tmp`, out);
+      for (let i = 0; i < 10; i++) {
+        if (!existsSync(out)) throw new Exit(0);
+        await Bun.sleep(100);
+        interrupted();
+      }
+      if (round === 2) break;
+      rmSync(out, { force: true });
+      say(`\nPress Enter to open ${label}, or Esc to stay.`);
+      if ((await key()) !== "\n") throw new Exit(0);
+    }
+    rmSync(out, { force: true });
+    say("\n");
+  }
+  await selectSession(sid, label);
+}
+
+async function openWorktree(path: string, name: string) {
+  const r = await run(rex("do", "-s", sess, "--json", "workspace_open", `path=${path}`, `name=${repo}-${name.replaceAll("/", "-")}`));
+  if (r.code) throw new Exit(r.code);
+  let j: Json;
+  try {
+    j = JSON.parse(r.out);
+  } catch {
+    return handOff("", "");
+  }
+  return handOff(str(j?.session_id ?? null), str(j?.label ?? null));
+}
+
+async function hasBranch(b: string) {
+  if ((await run(["git", "-C", root, "show-ref", "--verify", "--quiet", `refs/heads/${b}`])).code === 0) return true;
+  return chomp((await run(["git", "-C", root, "for-each-ref", `refs/remotes/*/${b}`])).out) !== "";
+}
+
+async function create(b: string) {
+  const how = (await hasBranch(b)) ? ["switch", b, "--no-cd"] : ["switch", "--create", b, "--no-cd"];
+  const sw = await run(["wt", "-C", root, ...how], { out: "ignore" });
+  if (sw.code) throw new Exit(sw.code);
+  const l = await run(["wt", "-C", root, "list", "--format", "json"]);
+  if (l.code) throw new Exit(l.code);
+  const hit = (json(l.out).items as Json[]).filter((i) => i.branch === b)[0]?.worktree?.path;
+  const path = set(hit) ? str(hit) : "";
+  if (!path) {
+    say(`wt made no worktree for ${b}.\n`);
+    throw new Exit(1);
+  }
+  await openWorktree(path, b);
+}
+
+function fields(line: string) {
+  const m = line.replace(/^\t+/, "").match(/^([^\t]*)(?:\t+([^\t]*)(?:\t+(.*?))?)?\t*$/s);
+  return { kind: m?.[1] ?? "", label: m?.[2] ?? "", target: m?.[3] ?? "" };
+}
+
+async function main() {
+  if (cwd) {
+    const top = await run(["git", "-C", cwd, "rev-parse", "--show-toplevel"], { err: "ignore" });
+    if (top.code === 0) {
+      root = chomp(top.out);
+      const w = await run(["wt", "-C", root, "list", "--format", "json"], { err: "ignore" });
+      wtj = w.code === 0 ? json(w.out) : { items: [] };
+      const main = (wtj.items as Json[]).filter((i) => set(i?.worktree?.main)).map((i) => i.worktree.path)[0];
+      repo = basename(set(main) ? str(main) : root);
+    }
+  }
+  const ls = await run(rex("ls", "--json"));
+  if (ls.code) throw new Exit(ls.code);
+  all = json(ls.out);
+  const first = all?.sessions?.[0]?.session_id;
+  sess = here || (set(first) ? str(first) : "");
+
+  if (list) {
+    const lines = await rows();
+    if (lines.length) say(`${lines.join("\n")}\n`);
+    return;
+  }
+
+  let header = "Enter: go";
+  if (root) header += " · Ctrl+O: create a worktree from the typed name";
+  const choices = (await rows()).join("\n");
+  const picked = await run(
+    [
+      join(dirname(process.argv[1]), "rex-fzf"),
+      "--delimiter=\t",
+      "--with-nth=1,2",
+      "--nth=2",
+      "--tabstop=9",
+      "--print-query",
+      "--expect=ctrl-o",
+      "--border-label= Workspaces ",
+      `--header=${header}`,
+      "--prompt=workspace ❯ ",
+    ],
+    { input: choices ? `${choices}\n` : "" },
+  );
+  if (picked.code === 130) return;
+  if (picked.code > 1) throw new Exit(picked.code);
+  const [query = "", pressed = "", pick = ""] = chomp(picked.out).split("\n");
+
+  if (pressed !== "ctrl-o" && pick) {
+    const { kind, label, target } = fields(pick);
+    if (kind === "session") await handOff(target, label);
+    else if (kind === "worktree") await openWorktree(target, label);
+    return;
+  }
+  if (!query) return;
+  if (!root) {
+    await hold(`Not in a git repository, so there is no worktree to create for ${query}.`);
+    return;
+  }
+  await create(query);
+}
+
+let code = 0;
+try {
+  await main();
+} catch (e) {
+  if (e instanceof Exit) code = e.code;
+  else {
+    say(`rex-pick-workspace: ${e instanceof Error ? e.message : String(e)}\n`, 2);
+    code = e instanceof TypeError ? 5 : 1;
+  }
+}
+final = true;
+for (const f of out ? [out, `${out}.tmp`] : []) {
+  try {
+    rmSync(f, { force: true });
+  } catch {}
+}
+if (code) await hold(`Failed (exit ${code}).`);
+process.exit(code);

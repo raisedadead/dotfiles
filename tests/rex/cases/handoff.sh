@@ -73,6 +73,15 @@ h_wait
 wide=$(printf '%*s' 1200 '' | sed 's/ /é/g')
 h_run hwide sh -c "exit 0" "$wide"
 check "a 1200-character UTF-8 hand-off reports blocked" h_ready
+h_msg() {
+	local q
+	q=$(jq -cn --arg s "$S" --arg b "$(float_id)" \
+		'{session_id: $s, block_id: $b, method: "program_status", args: {}}')
+	R api call -s "$S" block.method "$q" | jq -r '.records[0].msg // "-"'
+}
+h_msg_is() { [[ "$(h_msg)" == "$1" ]]; }
+check "a long UTF-8 hand-off status keeps its first 500 characters" \
+	h_msg_is "Run: sh -c exit\\ 0 $(printf '%*s' 481 '' | sed 's/ /é/g')"
 h_close
 h_wait
 
@@ -264,11 +273,45 @@ h_wait
 check "a declined hand-off gives focus and zoom back to the caller" test "$(h_back)" = "$mid $mid"
 R zoom -s "$S" "$mid" --off >/dev/null 2>&1 || true
 
-h_old() {
-	local res=$SB/t/h32
-	: >"$res"
-	env TERM_PROGRAM=rex REX_SESSION="$S" TMUX= script -q /dev/null /bin/bash \
-		"$SB/cfg/bin/rex-handoff" --inner "$res" $$ -- true < <(sleep 3) >/dev/null 2>&1 || true
-	[[ "$(cat "$res")" == 69 ]]
-}
-check "rex-handoff under bash 3.2 reports the hand-off unavailable" h_old
+h_run hquote /usr/bin/printf '%s' "a b" "" "it's" $'x\ty' é '~x' 'a=~b' '#c' 'd#'
+h_settle
+check "the float quotes each word of the command" \
+	h_shows "/usr/bin/printf %s a\\ b '' it\\'s \$'x\\ty' é \\~x a=\\~b \\#c d#"
+check "the float names the program by its base name" h_shows "Enter: run printf · Esc: decline"
+check "the blocked status names the quoted command" \
+	h_msg_is "Run: /usr/bin/printf %s a\\ b '' it\\'s \$'x\\ty' é \\~x a=\\~b \\#c d#"
+h_key $'\e'
+h_wait
+check "Esc declines a quoted hand-off" h_out hquote 130
+h_close
+
+h_run hkeys sh -c "IFS= read -r l; printf '%s' \"\$l\" > '$SB/t/hkeys'"
+h_settle
+h_key $'\r'
+sleep 0.5
+h_key $'typed line\r'
+h_wait
+check "the handed command reads the keys the operator types" \
+	test "$(cat "$SB/t/hkeys" 2>/dev/null)" = "typed line"
+check "rex-handoff returns the code of a command that read keys" h_out hkeys 0
+h_close
+
+h_run hfail sh -c "exit 3"
+h_settle
+h_key $'\r'
+h_wait
+check "rex-handoff prints the failed command's code" h_out hfail 3
+check "a failed hand-off reports an error with its code" \
+	until5 h_msg_is "exit 3: sh -c exit\\ 3"
+check "a failed hand-off reports the error state" h_state error
+h_close
+
+rm -f "$SB/t/hterm.ran"
+mkdir -p "$SB/t/hterm-tmp"
+H_TMP="$SB/t/hterm-tmp" h_run hterm2 sh -c "touch '$SB/t/hterm.ran'"
+h_settle
+kill -TERM "$h_pid" 2>/dev/null || true
+until5 not has_float || true
+check "a stopped caller leaves no result file" until5 h_empty "$SB/t/hterm-tmp"
+check "a stopped caller runs nothing" test ! -e "$SB/t/hterm.ran"
+h_close

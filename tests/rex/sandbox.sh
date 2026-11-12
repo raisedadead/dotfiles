@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 SRC="$REPO/dot_config/rex"
+DOTCLAUDE=${SANDBOX_DOT_CLAUDE:-"$REPO/dot_claude"}
 SB=$(mktemp -d /tmp/rexsb.test.XXXXXX)
 SOCK="unix://$SB/server.sock"
 fails=0 finished='' abort_at=''
@@ -293,7 +294,7 @@ check "rex.zsh reports done" test "$(status_of)" = "done true true: exit 0 after
 type_in 'bat'
 check "rex.zsh skips a full-screen program" test "$(status_of)" = "- - -"
 
-WATCH="$REPO/dot_claude/skills/cmd-monitor-pane/scripts/executable_watch-pane.ts"
+WATCH="$DOTCLAUDE/skills/cmd-monitor-pane/scripts/executable_watch-pane.ts"
 in_sb() {
 	env REX_GUARD_STRICT=1 REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= \
 		TMPDIR="$SB/t" bun --no-env-file --config=/dev/null "$WATCH" "$@"

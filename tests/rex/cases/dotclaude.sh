@@ -130,7 +130,7 @@ if command -v tmux >/dev/null; then
 	tmux -L "$TL" kill-server 2>/dev/null || true
 fi
 
-SETTINGS="$REPO/dot_claude/.settings.managed.json"
+SETTINGS="$DOTCLAUDE/.settings.managed.json"
 BARE=/usr/bin:/bin:/usr/sbin:/sbin
 rex_hooks() {
 	jq -r --arg e "$1" '.hooks[$e][]?.hooks[].command | select(test("rex"))' "$SETTINGS"
