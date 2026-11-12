@@ -51,7 +51,7 @@ Library
 .bin/rex
 .bin/rex-open
 {{- end }}
-{{- if not (stat (joinPath .chezmoi.homeDir ".config/chezmoi/age-identity.txt")) }}
+{{- if and (ne .chezmoi.os "darwin") (not (stat (joinPath .chezmoi.homeDir ".config/chezmoi/age-identity.txt"))) }}
 .config/1Password/ssh/agent.toml
 .config/gh/hosts.yml
 .config/linode-cli
@@ -61,8 +61,10 @@ Library
 .wakatime.cfg
 {{- end }}
 {{- if not (stat (joinPath .chezmoi.sourceDir "dot_claude/CLAUDE.md")) }}
+.agents
 .bin/pi
 .cavemem
 .claude
 .claude.json
+.pi
 {{- end }}

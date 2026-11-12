@@ -39,11 +39,15 @@ Run `~/.bin/chezmoi-fixture-check.sh`. It applies a synthetic source to an isola
 
 ### X1: Linux sandbox
 
-Commit the change first. The check clones the named branch.
+Commit the change first. The check clones the branch `b`. For a branch in a worktree, set `w` to the worktree path, so the check script comes from that branch.
 
-`docker run --rm -v ~/.dotfiles:/src:ro -v ~/.dotfiles/tests/sandbox:/probe:ro -e CODESPACES=true ubuntu:24.04 bash /probe/check.sh main`
+```sh
+b=main w=~/.dotfiles
+docker run --rm -v ~/.dotfiles:/src:ro -v "$w/tests/sandbox:/probe:ro" \
+  -e CODESPACES=true ubuntu:24.04 bash /probe/check.sh "$b"
+```
 
-Expected: `0 failed`. The check runs `install.sh` from a fresh clone, as Codespaces does, then checks that the shell, git, editor and tmux files exist, that no macOS, secret or agent target exists, that a commit works unsigned, that zsh starts, and that a second apply changes nothing. A missing `unzip` line from zsh is expected in the bare image
+Expected: `0 failed`. The check runs `install.sh` from a fresh clone, as Codespaces does, then checks that the shell, git, editor and tmux files exist, that no macOS, secret or agent target exists, that a commit and a tag work unsigned, that `install.sh` from a pipe stops, that zsh starts, and that a second apply changes nothing. A missing `unzip` line from zsh is expected in the bare image
 
 ## Pi
 

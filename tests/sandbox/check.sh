@@ -18,6 +18,7 @@ check() {
 absent() { [ ! -e "$1" ] && [ ! -L "$1" ]; }
 unset_key() { [ -z "$(git config --global --includes "$1")" ]; }
 set_key() { [ -n "$(git config --global --includes "$1")" ]; }
+refuses_pipe() { ! (cd /tmp && bash <"$HOME/dotfiles/install.sh" >/dev/null 2>&1); }
 clean_reapply() {
 	local diff
 	diff=$(chezmoi --source "$HOME/.dotfiles" diff --no-pager)
@@ -49,15 +50,24 @@ check "no Library tree" absent "$HOME/Library"
 check "no aerospace config" absent "$HOME/.config/aerospace"
 check "no sketchybar config" absent "$HOME/.config/sketchybar"
 check "no rex config" absent "$HOME/.config/rex"
-check "no ssh config" absent "$HOME/.ssh/config"
+check "no ssh tree" absent "$HOME/.ssh"
 check "no wakatime secret" absent "$HOME/.wakatime.cfg"
 check "no gh hosts secret" absent "$HOME/.config/gh/hosts.yml"
+check "no linode secret" absent "$HOME/.config/linode-cli"
+check "no rclone secret" absent "$HOME/.config/rclone/rclone.conf"
+check "no terraform secret" absent "$HOME/.terraform.d"
+check "no 1Password config" absent "$HOME/.config/1Password"
 check "no claude config" absent "$HOME/.claude"
 check "no claude.json" absent "$HOME/.claude.json"
+check "no agents tree" absent "$HOME/.agents"
+check "no pi tree" absent "$HOME/.pi"
 check "git identity is set" set_key user.email
 check "commits are not signed" unset_key commit.gpgsign
+check "tags are not signed" unset_key tag.gpgsign
 git init -q /tmp/r
 check "a commit works" git -C /tmp/r commit -q --allow-empty -m probe
+check "a tag works" git -C /tmp/r tag -a -m probe v0
+check "a piped install.sh stops" refuses_pipe
 check "zsh starts" zsh -i -c true </dev/null
 check "a second apply has nothing to change" clean_reapply
 

@@ -33,7 +33,7 @@ check_cmd() {
 CHEZMOI_VERSION="2.74.1"
 
 install_chezmoi() {
-	local arch sum tmp
+	local arch sum
 	case "$(uname -m)" in
 	x86_64) arch=amd64 sum=ae01c66b1a6dbf563667c63fbbd9986b3cfa3c98dd266ddee732f63e8af2e9d1 ;;
 	aarch64 | arm64) arch=arm64 sum=8c62619c4303770342e7c7e75d168b6cc6efee4ad5e4b994980de7cf794d68e2 ;;
@@ -43,18 +43,30 @@ install_chezmoi() {
 		;;
 	esac
 	tmp=$(mktemp -d)
+	trap 'rm -rf "${tmp:-}"' EXIT
 	curl -fsSL -o "$tmp/chezmoi.tgz" "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_${arch}.tar.gz"
 	printf '%s  %s\n' "$sum" "$tmp/chezmoi.tgz" | sha256sum -c --quiet
 	mkdir -p "$HOME/.local/bin"
 	tar -xzf "$tmp/chezmoi.tgz" -C "$HOME/.local/bin" chezmoi
-	rm -rf "$tmp"
 	export PATH="$HOME/.local/bin:$PATH"
 }
 
 if [[ "$(uname -s)" != Darwin ]]; then
 	info "Linux sandbox: dotfiles only, without Homebrew or the private submodules."
-	here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-	[[ -e "$DOTFILES_DIR" ]] || ln -s "$here" "$DOTFILES_DIR"
+	if [[ -z "${BASH_SOURCE[0]:-}" ]]; then
+		err "Run install.sh from a clone of the dotfiles repository, not from a pipe."
+		exit 1
+	fi
+	here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+	if [[ ! -f "$here/.chezmoiignore" ]]; then
+		err "$here is not a clone of the dotfiles repository."
+		exit 1
+	fi
+	[[ -e "$DOTFILES_DIR" || -L "$DOTFILES_DIR" ]] || ln -s "$here" "$DOTFILES_DIR"
+	if [[ "$(cd "$DOTFILES_DIR" 2>/dev/null && pwd -P)" != "$here" ]]; then
+		err "$DOTFILES_DIR exists and is not this clone ($here)."
+		exit 1
+	fi
 	check_cmd chezmoi || install_chezmoi
 	chezmoi init --apply --no-tty --source "$DOTFILES_DIR"
 	ok "Dotfiles applied."
