@@ -17,6 +17,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Workspace command `ws`                         | W1 below                                                                |
 | Jev question file or second-review gate        | J1 below                                                                |
 | Rig metrics `rig-metrics`                      | G1 below                                                                |
+| `signoff` agent prompt                         | G2 below                                                                |
 | Pane monitor skill `cmd-monitor-pane`          | `bun test ./tests/monitor-pane` (about 1 minute), then R1               |
 | `install.sh`, `.chezmoiignore`, or an external | X1 below                                                                |
 
@@ -205,6 +206,12 @@ Expected: All three runs pass; report the counts. `chezmoi status` prints nothin
 `cd ~/.dotfiles && bun test ./tests/rig-metrics`; `rig-metrics triggers >/dev/null`
 
 Expected: All tests pass; report the count. `rig-metrics triggers` exits 0. See [ARCHI.md](ARCHI.md#rig-metrics)
+
+### G2: Signoff agent
+
+`cd ~/.dotfiles/tests/signoff-eval && mkdir -p agents && cp ../../dot_claude/agents/signoff.md agents/ && claude plugin eval . --no-publish --runs 2 --ablation none --trust-plugin --allow-tools Bash Write Read Agent`
+
+Expected: Exit 0. Case `sound-design` matches `SIGNOFF: PASS` and case `pinned-wrong-value` matches `SIGNOFF: CHANGES` in every run. The plugin loader does not follow a symlinked agent file, so the check copies the agent; `agents/` and `evals/results/` are gitignored. Keep `--no-publish`: without it, the report goes to claude.ai. Four Fable runs cost about $1.
 
 ## Claude Code
 
