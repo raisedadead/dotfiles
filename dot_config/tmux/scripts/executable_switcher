@@ -1,0 +1,718 @@
+#!/usr/bin/env -S bun --no-env-file --config=/dev/null
+import { appendFileSync, closeSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname } from "node:path";
+
+const SELF = process.argv[1] ?? "";
+const HOME = process.env.HOME || homedir();
+const PROJECTS_JSON = `${HOME}/.config/switcher/projects.json`;
+const BOOKMARKS_FILE = `${process.env.XDG_STATE_HOME || `${HOME}/.local/state`}/switcher/bookmarks`;
+let tabFile = process.env.SWITCHER_TAB_FILE ?? "";
+
+const DIM = "\x1b[38;2;147;153;178m";
+const HI = "\x1b[38;2;137;180;250m";
+const ACCENT = "\x1b[38;2;249;226;175m";
+const SUB = "\x1b[38;2;166;173;200m";
+const GREEN = "\x1b[38;2;166;227;161m";
+const MAUVE = "\x1b[38;2;203;166;247m";
+const RST = "\x1b[0m";
+const FZF_COLORS = [
+  "bg+:#313244,bg:#11111B,spinner:#F5E0DC,hl:#F38BA8",
+  "fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC",
+  "marker:#B4BEFE,fg+:#CDD6F4,prompt:#CBA6F7,hl+:#F38BA8",
+  "selected-bg:#45475A,border:#6C7086,label:#CDD6F4",
+].join(",");
+
+const ICON = {
+  session: "\u{F018D}",
+  project: "\u{F0770}",
+  config: "\u{F0493}",
+  zoxide: "\u{F02DA}",
+  files: "\u{F0219}",
+  text: "\u{F0284}",
+  bookmark: "\u{F00C0}",
+};
+
+const LOOK = new Map([
+  ["tmux", { icon: ICON.session, label: "session", color: GREEN }],
+  ["parked", { icon: ICON.session, label: "parked", color: DIM }],
+  ["proj", { icon: ICON.project, label: "project", color: HI }],
+  ["conf", { icon: ICON.config, label: "config", color: ACCENT }],
+  ["zox", { icon: ICON.zoxide, label: "zoxide", color: MAUVE }],
+]);
+
+const CONTROL = /[\x00-\x1f\x7f]/g;
+const TMUX_TIERS = [108000, 104000, 101500, 100500];
+const SESSION_TIERS = [8000, 4000, 1500, 500];
+
+type Json = unknown;
+type Entry = { cat: string; target: string; path: string };
+
+function collator(): (a: string, b: string) => number {
+  const locale = process.env.LC_ALL || process.env.LC_COLLATE || process.env.LANG || "C";
+  if (/^(C|POSIX)([.@]|$)/.test(locale)) return (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b));
+  try {
+    return new Intl.Collator(locale.split(/[.@]/)[0].replace("_", "-")).compare;
+  } catch {
+    return new Intl.Collator().compare;
+  }
+}
+
+const collate = collator();
+
+function read(path: string): string {
+  try {
+    return readFileSync(path, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+function stat(path: string) {
+  try {
+    return path ? statSync(path, { throwIfNoEntry: false }) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const isDir = (path: string) => stat(path)?.isDirectory() ?? false;
+const isFile = (path: string) => stat(path)?.isFile() ?? false;
+const lines = (text: string) => text.split("\n").slice(0, -1);
+const chomp = (text: string) => text.replace(/\n+$/, "");
+const trimSlash = (path: string) => (path.endsWith("/") ? path.slice(0, -1) : path);
+const expandTilde = (path: string) => (path.startsWith("~") ? HOME + path.slice(1) : path);
+const shorten = (path: string) => (HOME && path.startsWith(HOME) ? `~${path.slice(HOME.length)}` : path);
+const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - Buffer.byteLength(text)));
+const b64 = (text: string) => Buffer.from(text).toString("base64");
+const unb64 = (text: string) => Buffer.from(text, "base64").toString();
+const sortNumber = (text: string) => Number(/^\s*(-?\d*(?:\.\d*)?)/.exec(text)?.[1]) || 0;
+const awkNumber = (n: number) => String(Number.isInteger(n) ? n : Number(n.toPrecision(6)));
+const toInt = (text: string) => (/^\s*-?\d+\s*$/.test(text) ? Number.parseInt(text, 10) : 0);
+const sessionOf = (target: string) => target.split(":")[0];
+const windowOf = (target: string) => (target.includes(":") ? target.slice(target.indexOf(":") + 1) : target);
+
+function basename(path: string): string {
+  const trimmed = path.replace(/\/+$/, "");
+  if (!trimmed) return path ? "/" : "";
+  return trimmed.slice(trimmed.lastIndexOf("/") + 1);
+}
+
+function words(line: string): [string, string] {
+  const match = /^[ \t\n]*([^ \t\n]*)[ \t\n]*(.*?)[ \t\n]*$/.exec(line);
+  return [match?.[1] ?? "", match?.[2] ?? ""];
+}
+
+function fields(line: string, count: number): string[] {
+  const parts = line.split("|");
+  const head = parts.slice(0, count - 1);
+  while (head.length < count - 1) head.push("");
+  return [...head, parts.slice(count - 1).join("|")];
+}
+
+function cut(text: string, from: number, to = from): string {
+  if (!text.includes("|")) return text;
+  return text.split("|").slice(from - 1, to).join("|");
+}
+
+function parse(entry: string): Entry {
+  const internal = entry.split("\t")[0];
+  const cat = cut(internal, 1);
+  const target = cut(internal, 2);
+  const path = cat === "search" ? unb64(cut(internal, 3)) : cut(internal, 3, Number.POSITIVE_INFINITY);
+  return { cat, target, path };
+}
+
+function capture(cmd: string[], stderr: "ignore" | "inherit" = "ignore"): { code: number; out: string } {
+  try {
+    const proc = Bun.spawnSync(cmd, { stdin: "inherit", stdout: "pipe", stderr });
+    return { code: proc.exitCode ?? 1, out: proc.stdout.toString() };
+  } catch {
+    return { code: 127, out: "" };
+  }
+}
+
+function run(cmd: string[], stderr: "ignore" | "inherit" = "inherit"): number {
+  try {
+    return Bun.spawnSync(cmd, { stdin: "inherit", stdout: "inherit", stderr }).exitCode ?? 1;
+  } catch (error) {
+    const denied = (error as NodeJS.ErrnoException).code === "EACCES";
+    if (stderr === "inherit") writeSync(2, `switcher: ${cmd[0]}: ${denied ? "Permission denied" : "command not found"}\n`);
+    return denied ? 126 : 127;
+  }
+}
+
+let child: { kill(): void } | undefined;
+
+function out(text: string): void {
+  const bytes = Buffer.from(text);
+  try {
+    for (let at = 0; at < bytes.length; ) at += writeSync(1, bytes, at);
+  } catch {
+    child?.kill();
+    process.exit(141);
+  }
+}
+
+async function stream(cmd: string[], separator: number, each: (record: Buffer) => string): Promise<number> {
+  let proc: ReturnType<typeof Bun.spawn>;
+  try {
+    proc = Bun.spawn(cmd, { stdin: "inherit", stdout: "pipe", stderr: "ignore" });
+  } catch {
+    return 0;
+  }
+  child = proc;
+  let rest = Buffer.alloc(0);
+  for await (const chunk of proc.stdout as ReadableStream<Uint8Array>) {
+    let buffer = Buffer.concat([rest, chunk]);
+    let text = "";
+    for (let at = buffer.indexOf(separator); at >= 0; at = buffer.indexOf(separator)) {
+      text += each(buffer.subarray(0, at));
+      buffer = buffer.subarray(at + 1);
+    }
+    rest = buffer;
+    out(text);
+  }
+  if (rest.length) out(each(rest));
+  await proc.exited;
+  return 0;
+}
+
+function makeTemp(prefix: string): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (;;) {
+    const suffix = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const path = `${prefix}.${suffix}`;
+    try {
+      closeSync(openSync(path, "wx", 0o600));
+      return path;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+  }
+}
+
+const BOOKMARKS = isFile(BOOKMARKS_FILE) ? read(BOOKMARKS_FILE) : "";
+const marked = new Set(BOOKMARKS.split("\n"));
+const isBookmarked = (path: string) => path !== "" && marked.has(path);
+
+function toggleBookmark(input: string): boolean {
+  const path = trimSlash(input);
+  if (!path || !isDir(path)) return false;
+  try {
+    mkdirSync(dirname(BOOKMARKS_FILE), { recursive: true });
+    if (!isBookmarked(path)) {
+      appendFileSync(BOOKMARKS_FILE, `${path}\n`);
+      return true;
+    }
+    const kept = BOOKMARKS.split("\n");
+    if (BOOKMARKS.endsWith("\n")) kept.pop();
+    const temp = makeTemp(BOOKMARKS_FILE);
+    writeFileSync(temp, kept.filter((line) => line !== path).map((line) => `${line}\n`).join(""));
+    try {
+      renameSync(temp, BOOKMARKS_FILE);
+    } catch {
+      rmSync(temp, { force: true });
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function render(cat: string, target: string, path: string): string {
+  const look = LOOK.get(cat);
+  if (!look) return "";
+  const name = cat === "tmux" || cat === "parked" ? sessionOf(target) : basename(path);
+  const mark = isBookmarked(path) ? `${ACCENT}${ICON.bookmark}${RST}  ` : "   ";
+  const label = `${look.color}${pad(look.label, 7)}${RST}`;
+  return `${cat}|${target}|${path}\t${mark}${HI}${look.icon}  ${pad(name, 20)}${RST}\t${label}\t${DIM}${shorten(path)}${RST}\n`;
+}
+
+function renderLines(rows: string[]): string {
+  return rows
+    .map((row) => {
+      const [, cat, target, path] = fields(row, 4);
+      return render(cat, target, path);
+    })
+    .join("");
+}
+
+const byScore = (a: string, b: string) => sortNumber(b) - sortNumber(a) || collate(b, a);
+
+function projects(): Json | undefined {
+  if (!isFile(PROJECTS_JSON)) return undefined;
+  try {
+    return JSON.parse(read(PROJECTS_JSON));
+  } catch {
+    return undefined;
+  }
+}
+
+const each = (value: Json): Json[] =>
+  Array.isArray(value) ? value : value !== null && typeof value === "object" ? Object.values(value) : [];
+const key = (value: Json, name: string): Json =>
+  value !== null && typeof value === "object" && !Array.isArray(value) ? ((value as Record<string, Json>)[name] ?? null) : null;
+const truthy = (value: Json) => value !== null && value !== undefined && value !== false;
+const text = (value: Json) => (typeof value === "string" ? value : JSON.stringify(value ?? null));
+
+function configDirs(json: Json | undefined): string[] {
+  const listed = each(key(json, "configDirs"))
+    .filter(truthy)
+    .map((dir) => expandTilde(text(dir)))
+    .filter(isDir);
+  if (listed.length) return listed;
+  return [`${HOME}/.config/nvim`, `${HOME}/.config/tmux`, `${HOME}/.config/ghostty`, `${HOME}/.dotfiles`];
+}
+
+function favorites(json: Json): string[] {
+  return each(key(json, "favorites"))
+    .filter((fav) => key(fav, "enabled") !== false)
+    .map((fav) => key(fav, "rootPath"))
+    .filter(truthy)
+    .map((fav) => trimSlash(expandTilde(text(fav))))
+    .filter(isDir);
+}
+
+function baseFolders(json: Json): string[] {
+  return each(key(json, "baseFolders"))
+    .map((folder) => {
+      const scope = key(folder, "scope");
+      const line = `${text(truthy(scope) ? scope : "Other")}|${text(key(folder, "path"))}`;
+      return expandTilde(line.slice(line.indexOf("|") + 1));
+    })
+    .filter(isDir);
+}
+
+function children(base: string): string[] {
+  const cmd = Bun.which("fd") ? ["fd", "-d", "1", "-t", "d", ".", base] : ["find", base, "-maxdepth", "1", "-mindepth", "1", "-type", "d"];
+  return lines(capture(cmd).out);
+}
+
+function zoxideList(): [string, string][] {
+  return lines(capture(["zoxide", "query", "--list", "--score"]).out).map(words);
+}
+
+function windowList(): string[][] {
+  const format = "#{session_last_attached}|#{session_name}:#{window_index}|#{pane_current_path}|#{@parked}|#{window_active}";
+  return lines(capture(["tmux", "list-windows", "-a", "-F", format]).out)
+    .map((line) => fields(line, 5))
+    .filter(([, , , , active]) => active === "1");
+}
+
+function tier(age: number, scores: number[]): number {
+  if (age < 3600) return scores[0];
+  if (age < 86400) return scores[1];
+  if (age < 604800) return scores[2];
+  return scores[3];
+}
+
+function merge(rows: string[]): string[] {
+  const sorted = rows
+    .map((row) => ({ row, part: row.split("|") }))
+    .sort(
+      (a, b) =>
+        collate(a.part[4] ?? "", b.part[4] ?? "") || sortNumber(a.part[1] ?? "") - sortNumber(b.part[1] ?? "") || collate(a.row, b.row),
+    );
+  const merged: string[] = [];
+  let last = "";
+  let best = 0;
+  let cat = "";
+  let target = "";
+  const flush = () => last !== "" && merged.push(`${awkNumber(best)}|${cat}|${target}|${last}`);
+  for (const { part } of sorted) {
+    const score = Number.parseFloat(part[0]) || 0;
+    const path = part[4] ?? "";
+    if (path === last) {
+      if (score > best) best = score;
+      continue;
+    }
+    flush();
+    [last, best, cat, target] = [path, score, part[2] ?? "", part[3] ?? ""];
+  }
+  flush();
+  return merged.sort(byScore);
+}
+
+function sourceAll(): string {
+  const now = Math.floor(Date.now() / 1000);
+  const json = projects();
+  const rows: string[] = [];
+  for (const [score, path] of zoxideList()) if (isDir(path)) rows.push(`${score}|4|zox||${path}`);
+  for (const dir of configDirs(json)) if (isDir(dir)) rows.push(`50|3|conf||${dir}`);
+  for (const line of lines(BOOKMARKS)) {
+    const mark = trimSlash(line);
+    if (isDir(mark)) rows.push(`200|2|proj||${mark}`);
+  }
+  if (json !== undefined) {
+    for (const base of baseFolders(json)) {
+      for (const line of children(base)) {
+        const path = trimSlash(line);
+        if (isDir(path)) rows.push(`100|2|proj||${path}`);
+      }
+    }
+    for (const fav of favorites(json)) rows.push(`200|2|proj||${fav}`);
+  }
+  for (const [last, target, path, parked] of windowList()) {
+    if (parked === "1") rows.push(`50000|1|parked|${target}|${path}`);
+    else rows.push(`${tier(now - toInt(last), TMUX_TIERS)}|1|tmux|${target}|${path}`);
+  }
+  return renderLines(merge(rows));
+}
+
+function sourceTmux(): string {
+  const now = Math.floor(Date.now() / 1000);
+  const rows = windowList().map(([last, target, path, parked]) =>
+    parked === "1" ? `300|parked|${target}|${path}` : `${tier(now - toInt(last), SESSION_TIERS)}|tmux|${target}|${path}`,
+  );
+  return renderLines(rows.sort(byScore));
+}
+
+function sourceProj(): string {
+  const seen = new Set<string>();
+  let rows = "";
+  const add = (path: string) => {
+    if (seen.has(path)) return;
+    seen.add(path);
+    rows += render("proj", "", path);
+  };
+  for (const line of lines(BOOKMARKS)) {
+    const mark = trimSlash(line);
+    if (isDir(mark)) add(mark);
+  }
+  const json = projects();
+  if (json === undefined) return rows;
+  for (const fav of favorites(json)) add(fav);
+  const paths: string[] = [];
+  for (const base of baseFolders(json)) {
+    for (const line of children(base).sort(collate)) {
+      const path = trimSlash(line);
+      if (isDir(path)) paths.push(path);
+    }
+  }
+  for (const path of paths) add(path);
+  return rows;
+}
+
+function sourceConf(): string {
+  return configDirs(projects())
+    .filter(isDir)
+    .map((dir) => render("conf", "", dir))
+    .join("");
+}
+
+function sourceZox(): string {
+  return zoxideList()
+    .filter(([, path]) => isDir(path))
+    .map(([, path]) => render("zox", "", path))
+    .join("");
+}
+
+function searchBase(): string {
+  const pane = capture(["tmux", "display-message", "-p", "#{pane_current_path}"]);
+  return pane.code === 0 ? chomp(pane.out) : HOME;
+}
+
+function grepRow(record: Buffer, prefix: string): string {
+  let hit: { type?: string; data?: Record<string, { text?: string; bytes?: string } | number | undefined> };
+  try {
+    hit = JSON.parse(record.toString());
+  } catch {
+    return "";
+  }
+  if (hit.type !== "match" || !hit.data) return "";
+  const data = hit.data as { path?: { text?: string; bytes?: string }; lines?: { text?: string; bytes?: string }; line_number?: number };
+  const path = data.path?.text ?? unb64(data.path?.bytes ?? "");
+  const body = data.lines?.text ?? unb64(data.lines?.bytes ?? "");
+  const line = data.line_number ?? null;
+  const rel = path.startsWith(prefix) ? path.slice(prefix.length) : path;
+  return `search|${line}|${b64(path)}\t${HI}${ICON.text}  ${`${rel}:${line}:${body}`.replace(CONTROL, " ")}\n`;
+}
+
+function fileRow(record: Buffer): string {
+  const raw = record.at(-1) === 0x2f ? record.subarray(0, -1) : record;
+  const path = raw.toString();
+  const name = (/([^/]+)$/.exec(path)?.[1] ?? "").replace(CONTROL, " ");
+  const short = (path === HOME || path.startsWith(`${HOME}/`) ? `~${path.slice(HOME.length)}` : path).replace(CONTROL, " ");
+  const mark = marked.has(path) ? `${ACCENT}${ICON.bookmark}${RST}  ` : "   ";
+  return `search||${raw.toString("base64")}\t${mark}${HI}${ICON.files}  ${pad(name, 22)}${RST}\t${DIM}srch${RST}\t${DIM}${short}${RST}\n`;
+}
+
+function sourceSearch(mode: string, query: string): Promise<number> {
+  const base = searchBase();
+  if (mode === "text") {
+    if (!query) return Promise.resolve(0);
+    const prefix = `${trimSlash(base)}/`;
+    return stream(["rg", "--json", "--hidden", "--glob", "!.git", "--", query, base], 0x0a, (record) => grepRow(record, prefix));
+  }
+  return stream(["fd", "--hidden", "--exclude", ".git", "--type", "f", "--type", "d", "--print0", ".", base], 0, fileRow);
+}
+
+async function source(tab: string, arg = "", query = ""): Promise<number> {
+  if (tabFile) {
+    try {
+      writeFileSync(tabFile, `${tab} ${arg}\n`);
+    } catch {}
+  }
+  switch (tab) {
+    case "all":
+      out(sourceAll());
+      return 0;
+    case "tmux":
+      out(sourceTmux());
+      return 0;
+    case "proj":
+      out(sourceProj());
+      return 0;
+    case "conf":
+      out(sourceConf());
+      return 0;
+    case "zox":
+      out(sourceZox());
+      return 0;
+    case "search":
+      return sourceSearch(arg || "files", query);
+    default:
+      writeSync(2, `Unknown source: ${tab}\n`);
+      return 1;
+  }
+}
+
+function sourceCurrent(): Promise<number> {
+  const recorded = tabFile ? read(tabFile) : "";
+  if (!recorded) return source("all");
+  const [tab, arg] = words(recorded.split("\n")[0]);
+  return source(tab || "all", arg);
+}
+
+function tree(path: string): number {
+  const eza = [
+    "eza",
+    "--tree",
+    "--level=2",
+    "--icons",
+    "--color=always",
+    "--group-directories-first",
+    "--ignore-glob=node_modules|.git|__pycache__|.next|dist|build|.cache|.turbo|vendor",
+    path,
+  ];
+  return run(eza, "ignore") === 0 ? 0 : run(["ls", "-la", path], "ignore");
+}
+
+function preview(entry: string): number {
+  const { cat, target, path } = parse(entry);
+  if (cat === "tmux" || cat === "parked") {
+    if (run(["tmux", "capture-pane", "-t", `=${sessionOf(target)}:`, "-p"], "ignore") !== 0) out("No preview available\n");
+    return 0;
+  }
+  if (cat === "proj" || cat === "conf" || cat === "zox") {
+    const readme = ["README.md", "readme.md", "README", "README.rst"].map((name) => `${path}/${name}`).find(isFile);
+    return readme ? run(["bat", "-n", "--color=always", "--style=plain", readme], "ignore") : tree(path);
+  }
+  if (cat !== "search") return 0;
+  if (isDir(path)) return tree(path);
+  if (!isFile(path)) return 0;
+  if (chomp(capture(["file", "--brief", "--mime-encoding", "--", path], "inherit").out) === "binary") {
+    return run(["file", "--brief", "--", path]);
+  }
+  if (!target) return run(["bat", "--color=always", "--style=numbers", "--line-range=:500", "--", path]);
+  const line = toInt(target);
+  const range = `${line > 20 ? line - 20 : 1}:${line + 50}`;
+  return run(["bat", "--color=always", "--style=numbers", "--highlight-line", target, "--line-range", range, "--", path]);
+}
+
+function edit(path: string, line = ""): number {
+  const editor = process.env.EDITOR || "nvim";
+  if (!isFile(path)) return run(["tmux", "new-window", "-c", path, editor]);
+  return run(["tmux", "new-window", "-c", dirname(path), editor, ...(line ? [`+${line}`] : []), path]);
+}
+
+const visual = (target: string) => run([process.env.VISUAL || "zed", target]);
+
+function connect(path: string): number {
+  let name = basename(path).replace(/^\./, "");
+  if (run(["tmux", "has-session", "-t", `=${name}`], "ignore") === 0) {
+    const existing = chomp(capture(["tmux", "display-message", "-t", `=${name}:`, "-p", "#{session_path}"]).out);
+    if (existing !== path) {
+      let suffix = 2;
+      while (run(["tmux", "has-session", "-t", `=${name}-${suffix}`], "ignore") === 0) suffix++;
+      name = `${name}-${suffix}`;
+    }
+  }
+  run(["tmux", "new-session", "-d", "-s", name, "-c", path], "ignore");
+  return run(["tmux", "switch-client", "-t", `=${name}`]);
+}
+
+function kill(session: string): number {
+  const listed = lines(capture(["tmux", "list-sessions", "-F", "#{session_id} #{session_name}"]).out).map(words);
+  const sid = listed.find(([, name]) => name === session)?.[0] ?? "";
+  const shown = session.replaceAll("#", "##");
+  if (!sid) return run(["tmux", "display-message", `No session ${shown}`]);
+  return run(["tmux", "confirm-before", "-p", `Kill ${shown}? (y/n)`, `kill-session -t ${sid}`]);
+}
+
+function act(entry: string, pressed: string): number {
+  const { cat, target, path } = parse(entry);
+  const open = () => (pressed === "ctrl-e" ? edit(path) : pressed === "ctrl-v" ? visual(path) : connect(path));
+  if (cat === "tmux" || cat === "parked") {
+    const session = sessionOf(target);
+    if (pressed === "ctrl-d") return kill(session);
+    if (pressed === "ctrl-e") return edit(path);
+    if (pressed === "ctrl-v") return visual(path);
+    if (cat === "parked") run(["tmux", "set", "-t", `=${session}:`, "-u", "@parked"]);
+    run(["tmux", "switch-client", "-t", `=${session}`]);
+    return run(["tmux", "select-window", "-t", `${session}:${windowOf(target)}`]);
+  }
+  if (cat === "proj" || cat === "conf" || cat === "zox") return open();
+  if (cat !== "search") return 0;
+  if (target) return pressed === "ctrl-v" ? visual(`${path}:${target}`) : edit(path, target);
+  if (isDir(path)) return open();
+  if (isFile(path)) return pressed === "ctrl-v" ? visual(path) : edit(path);
+  return 0;
+}
+
+function header(active: string): string {
+  const items = ["All", "Sessions", "Projects", "Zoxide", "Files", "Grep"];
+  const keys = ["<C-a>", "<C-t>", "<C-p>", "<C-z>", "<C-f>", "<C-g>"];
+  return `  ${items.map((item, i) => `${item === active ? ACCENT : SUB}${keys[i]} ${item}${RST}`).join(` ${DIM}·${RST} `)}`;
+}
+
+function fzfArgs(): string[] {
+  const navFooter = `${DIM}  Connect <CR> ◆ Bookmark <C-s> ◆ Editor <C-e> ◆ Zed <C-v> ◆ Kill <C-d> ◆ Preview <C-/>${RST}`;
+  const tmuxFooter = `${DIM}  Switch <CR> ◆ Bookmark <C-s> ◆ Kill <C-d> ◆ Preview <C-/>${RST}`;
+  const filesFooter = `${DIM}  Open <CR> ◆ Editor <C-e> ◆ Zed <C-v> ◆ Preview <C-/> ◆ Text grep <C-g>${RST}`;
+  const grepFooter = `${DIM}  Open <CR> ◆ Editor <C-e> ◆ Zed <C-v> ◆ Files <C-f> ◆ Regex query${RST}`;
+  const show = (icon: string, label: string, footer: string) =>
+    [`change-prompt(${icon}  ${label} ❯ )`, `change-header(${header(label)})`, `change-footer(${footer})`].join("+");
+  const tab = (src: string, icon: string, label: string, footer: string) =>
+    ["unbind(change)", "enable-search", `reload(${SELF} --source ${src})`, show(icon, label, footer)].join("+");
+  const grep = [
+    "disable-search",
+    "rebind(change)",
+    `reload(${SELF} --source search text {q})`,
+    show(ICON.text, "Grep", grepFooter),
+    "hide-preview",
+  ].join("+");
+  return [
+    "--tmux",
+    "center,55%,60%",
+    "--ansi",
+    "--no-info",
+    "--cycle",
+    "--tiebreak=begin,index",
+    "--no-keep-right",
+    "--delimiter",
+    "\t",
+    "--with-nth",
+    "2..",
+    "--nth",
+    "1,3..",
+    "--border",
+    "rounded",
+    "--border-label",
+    " Switcher ",
+    "--padding=1,2",
+    "--color",
+    FZF_COLORS,
+    "--header",
+    header("All"),
+    "--header-first",
+    "--header-border=line",
+    "--prompt",
+    `${ICON.project}  All ❯ `,
+    "--footer",
+    navFooter,
+    "--footer-border=line",
+    "--preview",
+    `${SELF} --preview {}`,
+    "--preview-window",
+    "bottom:30%:wrap:hidden",
+    "--bind",
+    "start:unbind(change)",
+    "--bind",
+    `change:reload(${SELF} --source search text {q})`,
+    "--bind",
+    `ctrl-a:${tab("all", ICON.project, "All", navFooter)}`,
+    "--bind",
+    `ctrl-t:${tab("tmux", ICON.session, "Sessions", tmuxFooter)}`,
+    "--bind",
+    `ctrl-p:${tab("proj", ICON.project, "Projects", navFooter)}`,
+    "--bind",
+    `ctrl-z:${tab("zox", ICON.zoxide, "Zoxide", navFooter)}`,
+    "--bind",
+    `ctrl-f:${tab("search files", ICON.files, "Files", filesFooter)}`,
+    "--bind",
+    `ctrl-g:${grep}`,
+    "--bind",
+    `ctrl-s:transform(${SELF} --bookmark {})`,
+    "--bind",
+    "ctrl-/:toggle-preview",
+    "--bind",
+    "ctrl-o:toggle-preview",
+    "--expect",
+    "ctrl-e,ctrl-v,ctrl-d",
+    "--bind",
+    "esc:abort",
+  ];
+}
+
+async function pick(): Promise<string> {
+  let proc: Bun.Subprocess<"pipe", "pipe", "inherit">;
+  try {
+    proc = Bun.spawn(["fzf", ...fzfArgs()], {
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "inherit",
+      env: { ...process.env, SWITCHER_TAB_FILE: tabFile },
+    });
+  } catch {
+    return "";
+  }
+  try {
+    proc.stdin.write(sourceAll());
+    await proc.stdin.end();
+  } catch {}
+  const result = await new Response(proc.stdout).text();
+  await proc.exited;
+  return chomp(result);
+}
+
+async function main(): Promise<number> {
+  tabFile = makeTemp("/tmp/switcher-tab");
+  for (const [signal, number] of [["SIGHUP", 1], ["SIGINT", 2], ["SIGTERM", 15]] as const) {
+    process.on(signal, () => {
+      rmSync(tabFile, { force: true });
+      process.exit(128 + number);
+    });
+  }
+  try {
+    writeFileSync(tabFile, "all \n");
+    const result = await pick();
+    if (!result) return 0;
+    const rows = result.split("\n");
+    const entry = rows.at(-1) ?? "";
+    if (!entry) return 0;
+    return act(entry, rows[0]);
+  } finally {
+    rmSync(tabFile, { force: true });
+  }
+}
+
+const [mode = "", ...rest] = process.argv.slice(2);
+switch (mode) {
+  case "--source":
+    process.exit(await source(rest[0] || "all", rest[1] ?? "", rest[2] ?? ""));
+    break;
+  case "--preview":
+    process.exit(preview(rest[0] ?? ""));
+    break;
+  case "--bookmark":
+    if (toggleBookmark(parse(rest[0] ?? "").path)) out(`reload(${SELF} --source-current)`);
+    process.exit(0);
+    break;
+  case "--source-current":
+    process.exit(await sourceCurrent());
+    break;
+  default:
+    process.exit(await main());
+}
