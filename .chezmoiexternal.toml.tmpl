@@ -10,6 +10,7 @@
     [".config/tmux/plugins/tpm".clone]
         args = ["--branch", "v3.1.0", "--depth", "1"]
 
+{{ if eq .chezmoi.os "darwin" -}}
 ["Library/Fonts/sketchybar-app-font.ttf"]
     type = "file"
     url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.5/sketchybar-app-font.ttf"
@@ -25,3 +26,4 @@
     refreshPeriod = "0"
     [".config/sketchybar/lua/icon_map.lua".checksum]
         sha256 = "b4180f13cb26b03e3cb09e554c5406f527b49ebdf31aba43ffa724c99f4e715b"
+{{ end -}}
