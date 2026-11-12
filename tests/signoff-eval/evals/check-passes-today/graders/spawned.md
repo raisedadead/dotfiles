@@ -1,6 +1,6 @@
 ---
 type: tool_used
-name: spawned-signoff
+name: spawned-evidence
 tool: Agent
-input_match: "signoff-eval:signoff"
+input_match: "signoff-eval:evidence"
 ---

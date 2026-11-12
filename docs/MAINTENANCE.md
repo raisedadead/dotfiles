@@ -1,6 +1,6 @@
 # Maintenance checks
 
-Diagnose only. Do not apply, repair, update, or commit during a check. Run each applicable probe. Compare the result with the pass criterion. Report each failure and each skipped check in one line.
+Diagnose only. Do not apply, repair, update, or commit during a check. Run each applicable probe. Compare the result with the pass criterion. Report each failure and each skipped check in one line. An agent whose rig denies a step marked "operator runs" skips it and reports it as skipped.
 
 ## Choose checks for your change
 
@@ -57,12 +57,12 @@ Expected: `0 failed`. The check runs `install.sh` from a fresh clone, as Codespa
 
 - `git -C ~/.dotfiles/dot_pi status -sb`: expect the `dot_pi` branch.
 - `chezmoi status ~/.pi`: expect no line with a letter in column two. `M` in column one alone is expected for `settings.json`. Then run `chezmoi diff --recursive ~/.pi`.
-- `pi --version`: expect the `@earendil-works/pi-coding-agent` version in `dot_pi/package.json`.
+- Operator runs: `pi --version`: expect the `@earendil-works/pi-coding-agent` version in `dot_pi/package.json`.
 - `ls ~/.local/share/fnm/node-versions/*/installation/bin/pi`: expect no match.
-- `cd /tmp && pi -p --no-session "Reply with ok." < /dev/null`: expect `ok`.
-- Start `pi` once: expect no error or warning above the editor.
+- Operator runs: `cd /tmp && pi -p --no-session "Reply with ok." < /dev/null`: expect `ok`.
+- Operator runs: start `pi` once: expect no error or warning above the editor.
 - `cd ~/.dotfiles/dot_pi && npm test`: expect exit 0.
-- `pi mcp list`: expect 5 connected servers.
+- Operator runs: `pi mcp list`: expect 5 connected servers.
 - `ls ~/.pi/agent/skills`: expect the names in `dot_pi/skills.tsv`.
 
 ## Terminal stack
@@ -209,9 +209,9 @@ Expected: All tests pass; report the count. `rig-metrics triggers` exits 0. See 
 
 ### G2: Signoff agent
 
-`cd ~/.dotfiles/tests/signoff-eval && rm -rf agents && mkdir agents && cp ../../dot_claude/agents/signoff.md agents/ && claude plugin eval . --no-publish --runs 2 --ablation none --trust-plugin --allow-tools Bash Write Read Agent`
+`cd ~/.dotfiles/tests/signoff-eval && rm -rf agents && mkdir agents && cp ../../dot_claude/agents/signoff.md ../../dot_claude/agents/evidence.md agents/ && claude plugin eval . --no-publish --runs 2 --ablation none --trust-plugin --allow-tools Bash Write Read Agent`
 
-Expected: Exit 0. In every run, the driver spawns `signoff-eval:signoff`, the reply of case `sound-design` is `SIGNOFF: PASS` and the reply of case `check-passes-today` is `SIGNOFF: CHANGES`. The two designs differ only in the first invariant: in `check-passes-today`, its check passes on the current code. The suite shows that the agent returns `SIGNOFF: CHANGES` for a design whose only difference is such a check, not why. Needs the private `dot_claude` submodule; without it, `cp` fails. The plugin loader does not follow a symlinked agent file, so the check copies the agent; `agents/` and `evals/results/` are gitignored. Keep `--no-publish`: without it, the report goes to claude.ai. Four runs cost about $1; the agent runs on Fable and the driver on the default model.
+Expected: Exit 0. In every run, the driver spawns `signoff-eval:evidence`, and the reply of case `sound-design` is `SIGNOFF: PASS` and the reply of case `check-passes-today` is `SIGNOFF: CHANGES`. The two designs differ only in the first invariant: in `check-passes-today`, its check passes on the current code. The suite shows that the agent returns `SIGNOFF: CHANGES` for a design whose only difference is such a check, not why. The graders read only the driver's spawn and last line; to confirm that the evidence agent spawned `signoff-eval:signoff`, add `--keep-temp` and read `out/trace.jsonl`. The suite has no dossier case, so it does not cover the `ds design-check` step. Needs the private `dot_claude` submodule; without it, `cp` fails. The plugin loader does not follow a symlinked agent file, so the check copies the agent; `agents/` and `evals/results/` are gitignored. Keep `--no-publish`: without it, the report goes to claude.ai. Four runs cost about $1; the evidence agent runs on Haiku, the signoff agent on Fable and the driver on the default model.
 
 ## Claude Code
 
