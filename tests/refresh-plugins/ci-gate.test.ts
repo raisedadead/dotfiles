@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-
-const SCRIPT = resolve(import.meta.dir, "../../dot_claude/skills/cmd-refresh-plugins/scripts/executable_refresh_plugins.sh");
+import { join } from "node:path";
+import { SCRIPT } from "./harness";
 
 let home: string;
 let bin: string;
@@ -28,7 +27,7 @@ jq -r "$expr" <<< '${runs}'`,
   );
 
 const run = (mode: string) => {
-  const proc = Bun.spawnSync(["bash", SCRIPT, mode], {
+  const proc = Bun.spawnSync([SCRIPT, mode], {
     env: { PATH: `${bin}:${process.env.PATH ?? ""}`, HOME: home },
   });
   return { code: proc.exitCode, out: proc.stdout.toString(), err: proc.stderr.toString() };
