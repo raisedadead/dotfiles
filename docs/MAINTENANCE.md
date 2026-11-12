@@ -145,6 +145,8 @@ Switcher: a file deeper than four directories, a text match after line 5,000, a 
 
 Expected: Deep and late matches appear. The query reloads. Files mode restores fuzzy search. The bookmark marker stays visible
 
+After a change to the switcher, also run `cd ~/.dotfiles && bun test ./tests/switcher`. Expected: All tests pass. Report the count
+
 ### T13
 
 `nvim --headless '+checkhealth' +qa`; compare lazy-lock entries with installed plugin heads
@@ -173,9 +175,11 @@ Expected: CPU and GPU or energy recorded separately
 
 ### R1
 
-`rex config check ~/.dotfiles/dot_config/rex/init.lua --json`; `tests/rex/sandbox.sh`; `tests/rex/gate.sh`; `shellcheck dot_config/rex/bin/executable_* tests/rex/*.sh tests/rex/cases/*.sh`
+`rex config check ~/.dotfiles/dot_config/rex/init.lua --json`; `tests/rex/sandbox.sh`; `tests/rex/gate.sh`; `shellcheck dot_config/rex/bin/executable_rex-{agent-record,ask,fzf,open,popup,reader,urls} tests/rex/*.sh tests/rex/cases/*.sh`
 
 Expected: No diagnostics; both test scripts end with `all passed`; shellcheck exits 0
+
+In a worktree with no `dot_claude` submodule, run `sandbox.sh` with `SANDBOX_DOT_CLAUDE=~/.dotfiles/dot_claude`.
 
 R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_rex-config-check.sh.tmpl` and `dot_config/rex/themes/`.
 
@@ -199,9 +203,11 @@ Expected: All three runs pass; report the counts. `chezmoi status` prints nothin
 
 ### M1
 
-`~/.bin/chezmoi-claude-doctor.sh`
+`~/.bin/chezmoi-claude-doctor`
 
 Expected: Exit 0. No `WARN:`, `ORPHAN:`, or `LINT:` line
+
+After a change to the doctor, also run `cd ~/.dotfiles && bun test ./tests/doctor`. Expected: All tests pass. Report the count
 
 A `WARN: agent addition:` line names an item that you did not approve. Remove the item, or add its `<kind> <name>` line to [agent-additions.txt](agent-additions.txt).
 
