@@ -5,5 +5,6 @@
 .claude/skills/rex
 .claude/skills/cmd-monitor-pane/scripts/watch-pane.sh
 .claude/skills/cmd-refresh-plugins/scripts/refresh_plugins.sh
+.config/tmux/scripts/switcher.sh
 .agents/skills/rex
 .pi/agent/extensions/guard/git-identity.ts
