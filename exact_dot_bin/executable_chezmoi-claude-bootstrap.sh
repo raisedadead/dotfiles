@@ -294,7 +294,7 @@ step_verify() {
 		warn "doctor missing at $doctor — skipping verify"
 		return 1
 	fi
-	p "running doctor (5 phases)…"
+	p "running doctor…"
 	"$doctor" || {
 		err "doctor reported drift — review above"
 		return 1

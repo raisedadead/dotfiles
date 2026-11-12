@@ -118,6 +118,26 @@ test("burst keeps a version dir that holds the install, and the report says why"
   );
 });
 
+test("burst keeps every version dir that another scope of the same plugin still uses", () => {
+  const user = version(fx, "m", "p", "1.0.0");
+  const project = version(fx, "m", "p", "2.0.0");
+  installs(fx, {
+    "p@m": [
+      { scope: "user", installPath: user, version: "1.0.0" },
+      { scope: "project", projectPath: join(fx.home, "proj"), installPath: project, version: "2.0.0" },
+    ],
+  });
+
+  const r = run(fx, "burst");
+
+  expect(r.code).toBe(0);
+  expect(r.out).not.toContain("reclaimed p/");
+  expect(r.out).not.toContain("REFUSING");
+  expect(section(r.out, "BURST", "REPORT")).toBe("BURST\n  removed 0 version dir(s), pruned 0 dead marker(s)\n");
+  expect(existsSync(user)).toBe(true);
+  expect(existsSync(project)).toBe(true);
+});
+
 test("burst on an empty install list removes nothing", () => {
   const r = run(fx, "burst");
   expect(r.code).toBe(0);

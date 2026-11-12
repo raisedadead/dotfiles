@@ -62,6 +62,38 @@ test("report labels each cached version, names its holder, and changes nothing",
   expect(readdirSync(join(fx.cache, "m", "p")).sort()).toEqual(["1.0.0", "1.5.0", "1.8.0", "2.0.0"]);
 });
 
+test("report never calls reclaimable a version dir that another scope of the same plugin uses", () => {
+  const user = version(fx, "m", "p", "1.0.0");
+  const project = version(fx, "m", "p", "2.0.0");
+  installs(fx, {
+    "p@m": [
+      { scope: "user", installPath: user, version: "1.0.0" },
+      { scope: "project", projectPath: join(fx.home, "proj"), installPath: project, version: "2.0.0" },
+    ],
+  });
+
+  const r = run(fx, "report");
+
+  const other = "kept: current for another install of this plugin";
+  expect(r.code).toBe(0);
+  expect(r.err).toBe("");
+  expect(r.out).not.toContain("reclaimable\n      ");
+  expect(sized(r.out)).toBe(
+    [
+      "REPORT",
+      "  p@m -> 1.0.0",
+      row("1.0.0", UNVERIFIED),
+      row("2.0.0", other),
+      "  p@m -> 2.0.0",
+      row("1.0.0", other),
+      row("2.0.0", UNVERIFIED),
+      "  reclaimable version dirs: 0",
+      "  cache size: SIZE",
+      "",
+    ].join("\n"),
+  );
+});
+
 test("report compares each install with what its marketplace ships", () => {
   const sha = "abcdef1234567890abcdef1234567890abcdef12";
   const names = ["short", "stale", "nosha", "same", "diff", "missing", "link", "unread", "gitdir", "nodir", "none", "located", "listed"];
