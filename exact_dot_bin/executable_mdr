@@ -177,10 +177,14 @@ edit_file() {
 }
 
 visual_file() {
-  local file
-  local -a cmd
+  local file word
+  local -a words cmd=()
   file="$(abs_path "$1")"
-  IFS=' ' read -r -a cmd <<< "${VISUAL:-}"
+  IFS=' ' read -r -a words <<< "${VISUAL:-}"
+  ((${#words[@]})) || return 1
+  for word in "${words[@]}"; do
+    [[ "$word" == -w || "$word" == --wait ]] || cmd+=("$word")
+  done
   ((${#cmd[@]})) || return 1
   command -v "${cmd[0]}" > /dev/null || return 1
   "${cmd[@]}" "$file" > /dev/null 2>&1

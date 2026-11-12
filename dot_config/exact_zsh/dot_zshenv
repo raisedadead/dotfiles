@@ -33,7 +33,7 @@ _mrgsh_compose_path
 
 # Editor configuration
 export EDITOR="nvim"
-export VISUAL="zed"
+export VISUAL="zed --wait"
 export GIT_EDITOR="$HOME/.bin/git-editor"
 
 #-----------------------------------------------------------

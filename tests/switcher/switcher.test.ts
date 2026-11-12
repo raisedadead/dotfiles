@@ -656,6 +656,12 @@ test("a $VISUAL that is not a command exits 127", () => {
   expect(pick("ctrl-v", row("proj", "", `${work}/Beta`).trimEnd(), { VISUAL: "no-such-visual-cmd" }).code).toBe(127);
 });
 
+test("ctrl-v runs a waiting $VISUAL without its wait flag", () => {
+  const waiting = { VISUAL: `${join(stubs, "visual")} --wait` };
+  expect(pick("ctrl-v", row("proj", "", `${work}/Beta`).trimEnd(), waiting).code).toBe(0);
+  expect(actions()).toEqual([`visual[${work}/Beta]`]);
+});
+
 test("a grep hit opens at its line, in the editor or in $VISUAL", () => {
   const hit = textRow(`${work}/notes.txt`, 2, "needle here ").trimEnd();
   pick("", hit);

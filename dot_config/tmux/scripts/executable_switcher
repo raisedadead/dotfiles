@@ -527,7 +527,12 @@ function edit(path: string, line = ""): number {
   return run(["tmux", "new-window", "-c", dirname(path), editor, ...(line ? [`+${line}`] : []), path]);
 }
 
-const visual = (target: string) => run([process.env.VISUAL || "zed", target]);
+const WAIT_FLAGS = new Set(["-w", "--wait"]);
+
+function visual(target: string): number {
+  const words = (process.env.VISUAL || "zed").split(" ").filter((word) => word && !WAIT_FLAGS.has(word));
+  return run([...words, target]);
+}
 
 function connect(path: string): number {
   let name = basename(path).replace(/^\./, "");

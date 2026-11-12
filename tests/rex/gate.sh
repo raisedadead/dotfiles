@@ -66,6 +66,13 @@ edit_hit() {
 check "mdr edit opens rex-open in Rex" test "$(edit_hit "${REX[@]}")" = rex-open
 check "mdr edit runs the editor in Ghostty" test "$(edit_hit "${GHOSTTY[@]}")" = editor
 check "mdr edit opens a tmux window in tmux" test "$(edit_hit "${TMUX_IN_REX[@]}")" = tmux
+visual_hit() {
+	rm -f "$SB/hit"
+	(cd "$SB" && env VISUAL="$SB/editor -w" \
+		bash "$REPO/exact_dot_bin/executable_mdr" --visual notes.md) >/dev/null 2>&1 || true
+	cat "$SB/hit" 2>/dev/null
+}
+check "mdr visual runs VISUAL without its wait flag" test "$(visual_hit)" = "editor $SB/notes.md"
 
 mkdir -p "$SB/bin"
 HANDOFF="$SB/bin/rex-handoff"
