@@ -1,5 +1,6 @@
 ---
 type: regex
 name: asks-for-changes
-pattern: "SIGNOFF: CHANGES"
+pattern: "^SIGNOFF: CHANGES\\s*$"
+flags: m
 ---

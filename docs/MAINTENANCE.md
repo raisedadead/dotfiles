@@ -209,9 +209,9 @@ Expected: All tests pass; report the count. `rig-metrics triggers` exits 0. See 
 
 ### G2: Signoff agent
 
-`cd ~/.dotfiles/tests/signoff-eval && mkdir -p agents && cp ../../dot_claude/agents/signoff.md agents/ && claude plugin eval . --no-publish --runs 2 --ablation none --trust-plugin --allow-tools Bash Write Read Agent`
+`cd ~/.dotfiles/tests/signoff-eval && rm -rf agents && mkdir agents && cp ../../dot_claude/agents/signoff.md agents/ && claude plugin eval . --no-publish --runs 2 --ablation none --trust-plugin --allow-tools Bash Write Read Agent`
 
-Expected: Exit 0. Case `sound-design` matches `SIGNOFF: PASS` and case `pinned-wrong-value` matches `SIGNOFF: CHANGES` in every run. The plugin loader does not follow a symlinked agent file, so the check copies the agent; `agents/` and `evals/results/` are gitignored. Keep `--no-publish`: without it, the report goes to claude.ai. Four Fable runs cost about $1.
+Expected: Exit 0. In every run, the driver spawns the agent, case `sound-design` ends with `SIGNOFF: PASS` and case `pinned-wrong-value` ends with `SIGNOFF: CHANGES`. The two designs differ only in the first invariant, whose check pins today's wrong value. Needs the private `dot_claude` submodule; without it, `cp` fails. The plugin loader does not follow a symlinked agent file, so the check copies the agent; `agents/` and `evals/results/` are gitignored. Keep `--no-publish`: without it, the report goes to claude.ai. Four runs cost about $1; the agent runs on Fable and the driver on the default model.
 
 ## Claude Code
 

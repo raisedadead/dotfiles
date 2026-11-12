@@ -33,14 +33,15 @@ test('an empty list totals zero', () => expect(total([])).toBe(0))
 
 Goal (operator, verbatim): "total counts every item of the list"
 
-Current behaviour: src/total.ts:1 starts the loop at index 1.
+Current behaviour: src/total.ts:3 starts the loop at index 1, so the first item is never added; total([2, 3]) returns 3.
 
 Invariants:
-- I1: total([2, 3]) returns 3. Check: a new test `totals two items` in tests/total.test.ts with `expect(total([2, 3])).toBe(3)`, run with `bun test tests/total.test.ts`.
+- I1: total([2, 3]) returns 3. Check: a new test `counts the first item` in tests/total.test.ts with `expect(total([2, 3])).toBe(3)`, run with `bun test tests/total.test.ts`.
+- I2 (kept behaviour, control): total([]) returns 0. Check: the existing test `an empty list totals zero` (tests/total.test.ts:4). It passes today and must still pass.
 
-Change: src/total.ts starts the loop at index 0.
+Change: src/total.ts:3 starts the loop at index 0.
 
-Host facts: none.
+Host facts: none. The change calls no host API, CLI or tool.
 
 Files: src/total.ts, tests/total.test.ts.
 ```
