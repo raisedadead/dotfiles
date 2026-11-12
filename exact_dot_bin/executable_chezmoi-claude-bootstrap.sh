@@ -8,7 +8,6 @@
 #   1. cavemem  — cavemem-health.sh, then install or repair on fnm-default node
 #   2. MCP reconcile — chezmoi apply ~/.claude.json
 #   3. plugins  — claude plugin install for each enabledPlugins entry
-#   4. verify   — ~/.bin/chezmoi-claude-doctor.sh (5 phases)
 #
 # Usage:
 #   chezmoi-claude-bootstrap.sh             # run all steps
@@ -290,7 +289,7 @@ step_plugins() {
 }
 
 step_verify() {
-	local doctor="$HOME/.bin/chezmoi-claude-doctor.sh"
+	local doctor="$HOME/.bin/chezmoi-claude-doctor"
 	if [[ ! -x "$doctor" ]]; then
 		warn "doctor missing at $doctor — skipping verify"
 		return 1

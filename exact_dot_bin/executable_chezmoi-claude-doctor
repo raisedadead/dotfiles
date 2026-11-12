@@ -1,0 +1,1568 @@
+#!/usr/bin/env -S bun --no-env-file --config=/dev/null
+import {
+  accessSync,
+  closeSync,
+  constants,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  readlinkSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+  writeSync,
+} from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { isatty } from "node:tty";
+
+const HELP = [
+  "# chezmoi-claude-doctor — detect drift in ~/.claude/ vs chezmoi sources.",
+  "# Exits 1 on any issue. No allowlist file: pure shape + coverage.",
+  "#",
+  "# Five checks:",
+  "#   1. chezmoi status   — managed files modified in place (drift in source-tracked content).",
+  "#   2. coverage         — files inside managed top-level dirs that aren't themselves managed",
+  "#                         (catches external installers dropping files into ~/.claude/agents/, etc.).",
+  "#   3. shape filter     — unmanaged top-level config-shape files (*.md/.toml/.yaml/.yml/.kdl/.ini)",
+  "#                         (catches hand-edited orphan docs like the original RTK.md case).",
+  "#   4. mcp drift        — settings.json.mcpServers (canonical) vs ~/.claude.json (runtime),",
+  "#                         compared on .mcpServers, plus a 0600 mode check.",
+  "#   5. lint             — schema-shape checks:",
+  "#                           5a. enabledPlugins values must be boolean (array form silently disables in CC 2.1.x).",
+  "#                           5b. mcpServers entries must declare `type` (stdio/http/sse).",
+  "#                           5c. log `claude --version` informationally (no pin — operator policy 2026-05-15).",
+  "#                           5d. SKILL.md frontmatter `name:` must match parent directory.",
+  "#                           5e. skill layers: ~/.claude/skills links resolve into ../../.agents/skills/<name>,",
+  "#                               symlink_<name> source entries match a dot_agents/skills/<name>, and no",
+  "#                               common skill is also a CLI-installed copy (skills lock).",
+  "#",
+  "# Usage:",
+  "#   chezmoi-claude-doctor           # report + non-zero exit on drift",
+  "#   chezmoi-claude-doctor --quiet   # exit code only",
+  "#   chezmoi-claude-doctor --rewake  # hook mode: issues on stderr with exit 2; WARN lines to ~/.claude/markers/doctor-warnings.txt",
+].join("\n");
+
+type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+
+type State = {
+  home: string;
+  claudeDir: string;
+  pubSource: string;
+  privSource: string;
+  shapeExts: string;
+  cavemem: string;
+  codexReleases: string;
+  piReleases: string;
+  additionsFile: string;
+  ownPluginSrc: string;
+  quiet: boolean;
+  managed: string[];
+  managedSet: Set<string>;
+  ignored: string[];
+  sink: string[] | null;
+  errTo: "stderr" | "sink" | "drop";
+};
+
+class Exit {
+  constructor(readonly code: number) {}
+}
+
+const env = (name: string) => process.env[name] ?? "";
+const HOME = env("HOME") || homedir();
+const PUB = env("PUB_SOURCE") || `${HOME}/.dotfiles`;
+
+const S: State = {
+  home: HOME,
+  claudeDir: env("CLAUDE_DIR") || `${HOME}/.claude`,
+  pubSource: PUB,
+  privSource: env("PRIV_SOURCE") || `${HOME}/.dotfiles`,
+  shapeExts: env("SHAPE_EXTS") || "md|toml|yaml|yml|kdl|ini",
+  cavemem: env("CAVEMEM_HEALTH") || `${HOME}/.bin/cavemem-health.sh`,
+  codexReleases: env("CODEX_RELEASES") || `${HOME}/.codex/packages/app-server-daemon/releases`,
+  piReleases: env("PI_RELEASES") || `${HOME}/.pi/agent/install/releases`,
+  additionsFile: env("ADDITIONS_FILE") || `${PUB}/docs/agent-additions.txt`,
+  ownPluginSrc: env("OWN_PLUGIN_SRC"),
+  quiet: false,
+  managed: [],
+  managedSet: new Set(),
+  ignored: [],
+  sink: null,
+  errTo: "stderr",
+};
+
+function capture(fn: () => unknown): string {
+  const saved = S.sink;
+  const lines: string[] = [];
+  S.sink = lines;
+  try {
+    fn();
+  } finally {
+    S.sink = saved;
+  }
+  return chomp(lines.join("\n"));
+}
+
+function log(line: string) {
+  if (S.quiet) return;
+  if (S.sink) S.sink.push(line);
+  else writeSync(1, `${line}\n`);
+}
+
+function err(line: string) {
+  if (S.errTo === "drop") return;
+  if (S.errTo === "sink" && S.sink) S.sink.push(line);
+  else writeSync(2, `${line}\n`);
+}
+
+function firstField(text: string): string {
+  return chomp(
+    lines(text)
+      .map(line => line.replace(/^[ \t]+/, "").split(/[ \t]+/)[0])
+      .join("\n"),
+  );
+}
+
+function chomp(text: string): string {
+  return text.replace(/\n+$/, "");
+}
+
+function lines(text: string): string[] {
+  return text === "" ? [] : chomp(text).split("\n");
+}
+
+function readLines(text: string): string[] {
+  const all = text.split("\n");
+  all.pop();
+  return all;
+}
+
+function read(path: string): string | undefined {
+  try {
+    return readFileSync(path, "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
+function access(path: string, mode: number): boolean {
+  try {
+    accessSync(path, mode);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const readable = (path: string) => access(path, constants.R_OK);
+const executable = (path: string) => access(path, constants.X_OK);
+
+function stat(path: string) {
+  try {
+    return statSync(path);
+  } catch {
+    return undefined;
+  }
+}
+
+function lstat(path: string) {
+  try {
+    return lstatSync(path);
+  } catch {
+    return undefined;
+  }
+}
+
+const isDir = (path: string) => stat(path)?.isDirectory() ?? false;
+const isFile = (path: string) => stat(path)?.isFile() ?? false;
+const isLink = (path: string) => lstat(path)?.isSymbolicLink() ?? false;
+
+function readlink(path: string): string {
+  try {
+    return readlinkSync(path);
+  } catch {
+    return "";
+  }
+}
+
+function names(dir: string): string[] {
+  try {
+    return readdirSync(dir);
+  } catch {
+    return [];
+  }
+}
+
+function children(dir: string): string[] {
+  if (!lstat(dir)?.isDirectory()) return [];
+  return names(dir).map(name => `${dir}/${name}`);
+}
+
+function walk(dir: string, max = Infinity, depth = 1, out: { path: string; depth: number }[] = []) {
+  for (const path of children(dir)) {
+    out.push({ path, depth });
+    if (depth < max) walk(path, max, depth + 1, out);
+  }
+  return out;
+}
+
+const kind = (path: string) => lstat(path);
+
+function tilde(path: string): string {
+  return path.startsWith(S.home) ? `~${path.slice(S.home.length)}` : path;
+}
+
+function relHome(path: string): string {
+  return path.startsWith(`${S.home}/`) ? path.slice(S.home.length + 1) : path;
+}
+
+function which(name: string): boolean {
+  return Bun.which(name) !== null;
+}
+
+type Ran = { code: number; out: string };
+
+function sh(argv: string[], opts: { cwd?: string; input?: string | Uint8Array; pass?: boolean } = {}): Ran {
+  const mode = !opts.pass || S.errTo === "drop" ? "ignore" : S.errTo === "sink" && S.sink ? "pipe" : "inherit";
+  try {
+    const proc = Bun.spawnSync(argv, {
+      cwd: opts.cwd,
+      env: process.env,
+      stdin: opts.input === undefined ? "ignore" : typeof opts.input === "string" ? Buffer.from(opts.input) : opts.input,
+      stdout: "pipe",
+      stderr: mode,
+    });
+    if (mode === "pipe" && proc.stderr) for (const line of lines(proc.stderr.toString())) err(line);
+    return { code: proc.exitCode ?? 1, out: proc.stdout.toString() };
+  } catch {
+    return { code: 127, out: "" };
+  }
+}
+
+function sortUnique(text: string): string {
+  if (text === "") return "";
+  return sh(["sort", "-u"], { input: text.endsWith("\n") ? text : `${text}\n` }).out;
+}
+
+function git(dir: string, ...args: string[]): Ran {
+  return sh(["git", "-C", dir, ...args]);
+}
+
+function gitCommonDir(dir: string): string {
+  return chomp(git(dir, "rev-parse", "--path-format=absolute", "--git-common-dir").out);
+}
+
+function rewakeApplies(dir: string): boolean {
+  if (!dir) return false;
+  const here = gitCommonDir(dir);
+  if (!here) return false;
+  for (const src of [S.pubSource, S.privSource]) {
+    const root = gitCommonDir(src);
+    if (!root) continue;
+    if (here === root || here.startsWith(`${root}/`)) return true;
+  }
+  return false;
+}
+
+async function readStdin(ms: number): Promise<string> {
+  if (isatty(0)) return "";
+  const chunks: Uint8Array[] = [];
+  try {
+    const reader = Bun.stdin.stream().getReader();
+    const timeout = Bun.sleep(ms).then(() => null);
+    for (;;) {
+      const next = await Promise.race([reader.read(), timeout]);
+      if (next === null || next.done) break;
+      chunks.push(next.value);
+    }
+  } catch {}
+  return Buffer.concat(chunks).toString().split("\0")[0];
+}
+
+async function sessionCwd(): Promise<string> {
+  const payload = await readStdin(1000);
+  let cwd = "";
+  if (payload) {
+    try {
+      cwd = chomp(
+        parseStream(payload)
+          .map(value => get(value, "cwd"))
+          .filter(value => value !== null && value !== false)
+          .map(raw)
+          .join("\n"),
+      );
+    } catch {
+      cwd = "";
+    }
+  }
+  if (cwd) return cwd;
+  try {
+    return process.cwd();
+  } catch {
+    return env("PWD");
+  }
+}
+
+function parseStream(text: string): Json[] {
+  if (text.trim() === "") return [];
+  return [JSON.parse(text) as Json];
+}
+
+function readJson(path: string): Json[] {
+  const text = read(path);
+  if (text === undefined) throw new Error(`unreadable ${path}`);
+  return parseStream(text);
+}
+
+function isObject(value: Json | undefined): value is { [key: string]: Json } {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function get(value: Json, key: string): Json {
+  if (value === null) return null;
+  if (isObject(value)) return Object.hasOwn(value, key) ? value[key] : null;
+  throw new Error(`cannot index ${typeof value} with ${key}`);
+}
+
+function first0(value: Json): Json {
+  if (value === null) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  throw new Error("cannot index with 0");
+}
+
+function alt(value: Json, fallback: Json): Json {
+  return value === null || value === false ? fallback : value;
+}
+
+function altLazy(...options: (() => Json)[]): Json {
+  for (const option of options) {
+    const value = option();
+    if (value !== null && value !== false) return value;
+  }
+  return null;
+}
+
+function keys(value: Json): Json[] {
+  if (Array.isArray(value)) return value.map((_, at) => at);
+  if (isObject(value)) return Object.keys(value).sort();
+  throw new Error("value has no keys");
+}
+
+function entries(value: Json): [Json, Json][] {
+  if (Array.isArray(value)) return value.map((item, at) => [at, item]);
+  if (isObject(value)) return Object.entries(value);
+  throw new Error("value has no keys");
+}
+
+function values(value: Json): Json[] {
+  if (Array.isArray(value)) return value;
+  if (isObject(value)) return Object.values(value);
+  throw new Error("cannot iterate");
+}
+
+function valuesTry(value: Json): Json[] {
+  return Array.isArray(value) || isObject(value) ? values(value) : [];
+}
+
+function equal(a: Json, b: Json): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every((item, at) => equal(item, b[at]));
+  if (isObject(a) && isObject(b)) {
+    const left = Object.keys(a);
+    return left.length === Object.keys(b).length && left.every(key => Object.hasOwn(b, key) && equal(a[key], b[key]));
+  }
+  return false;
+}
+
+function minus(a: Json, b: Json): Json[] {
+  if (!Array.isArray(a) || !Array.isArray(b)) throw new Error("cannot be subtracted");
+  return a.filter(item => !b.some(other => equal(item, other)));
+}
+
+function quote(text: string): string {
+  return JSON.stringify(text).replace(/\x7f/g, "\\u007f");
+}
+
+function compact(value: Json): string {
+  if (Array.isArray(value)) return `[${value.map(compact).join(",")}]`;
+  if (isObject(value)) return `{${Object.keys(value).map(key => `${quote(key)}:${compact(value[key])}`).join(",")}}`;
+  return typeof value === "string" ? quote(value) : JSON.stringify(value);
+}
+
+function pretty(value: Json, sorted: boolean, pad = ""): string {
+  const inner = `${pad}  `;
+  if (Array.isArray(value)) {
+    if (!value.length) return "[]";
+    return `[\n${value.map(item => inner + pretty(item, sorted, inner)).join(",\n")}\n${pad}]`;
+  }
+  if (isObject(value)) {
+    const all = Object.keys(value);
+    if (sorted) all.sort();
+    if (!all.length) return "{}";
+    return `{\n${all.map(key => `${inner}${quote(key)}: ${pretty(value[key], sorted, inner)}`).join(",\n")}\n${pad}}`;
+  }
+  return typeof value === "string" ? quote(value) : JSON.stringify(value);
+}
+
+function interp(value: Json): string {
+  return typeof value === "string" ? value : compact(value);
+}
+
+function raw(value: Json): string {
+  return typeof value === "string" ? value : pretty(value, false);
+}
+
+function globRegex(pattern: string): string {
+  let out = "";
+  for (let at = 0; at < pattern.length; at++) {
+    const ch = pattern[at];
+    if (ch === "*") out += ".*";
+    else if (ch === "?") out += ".";
+    else if (ch === "\\" && at + 1 < pattern.length) out += escape(pattern[++at]);
+    else if (ch === "[") {
+      const close = pattern.indexOf("]", at + (pattern[at + 1] === "!" || pattern[at + 1] === "^" ? 3 : 2));
+      if (close < 0) {
+        out += "\\[";
+        continue;
+      }
+      let body = pattern.slice(at + 1, close);
+      if (body.startsWith("!")) body = `^${body.slice(1)}`;
+      out += `[${body.replace(/\\/g, "\\\\")}]`;
+      at = close;
+    } else out += escape(ch);
+  }
+  return out;
+}
+
+function escape(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+}
+
+function globMatch(path: string, pattern: string): boolean {
+  try {
+    return new RegExp(`^${globRegex(pattern)}$`, "s").test(path);
+  } catch {
+    return false;
+  }
+}
+
+function buildManaged(): string[] {
+  if (!isDir(S.pubSource)) return [];
+  const text = sortUnique(sh(["chezmoi", "managed", "--source", S.pubSource, "--path-style", "absolute"]).out);
+  return text === "" ? [] : readLines(text);
+}
+
+function setManaged(list: string[]) {
+  S.managed = list;
+  S.managedSet = new Set(list);
+}
+
+function loadIgnored() {
+  S.ignored = [];
+  const path = `${S.privSource}/.chezmoiignore`;
+  if (!readable(path)) return;
+  for (let line of readLines(read(path) ?? "")) {
+    line = line.split("#")[0].replace(/^[ \t\n\r\f\v]+/, "").replace(/[ \t\n\r\f\v]+$/, "");
+    if (!line || line.startsWith("!")) continue;
+    if (!line.startsWith(".claude/")) continue;
+    S.ignored.push(`${S.home}/${line}`);
+  }
+}
+
+function isIgnored(path: string): boolean {
+  for (const pat of S.ignored) {
+    if (!pat) continue;
+    if (path === pat) return true;
+    if (isDir(pat) && path.startsWith(`${pat}/`)) return true;
+    if (pat.includes("/**/")) {
+      const prefix = pat.slice(0, pat.indexOf("/**/"));
+      const suffix = pat.slice(pat.lastIndexOf("/**/") + 4);
+      const literal = path.startsWith(`${prefix}/`) && path.endsWith(suffix) && path.length >= prefix.length + 1 + suffix.length;
+      if (literal || globMatch(path, `${prefix.replace(/[*?[\\]/g, "\\$&")}/*/${suffix}`)) return true;
+    }
+    if (pat.endsWith("/**") && path.startsWith(`${pat.slice(0, -3)}/`)) return true;
+    if (pat.includes("*") && !pat.includes("**") && globMatch(path, pat)) return true;
+  }
+  return false;
+}
+
+const isManaged = (path: string) => S.managedSet.has(path);
+
+function topLevelManaged(): string[] {
+  const prefix = `${S.claudeDir}/`;
+  const tops = S.managed.filter(path => path.startsWith(prefix)).map(path => prefix + path.slice(prefix.length).split("/")[0]);
+  return readLines(sortUnique(tops.length ? `${tops.join("\n")}\n` : ""));
+}
+
+function checkStatus(): number {
+  let out = "";
+  if (isDir(S.pubSource)) {
+    const status = sh(["chezmoi", "status", "--source", S.pubSource, "--path-style", "absolute", "--", S.claudeDir]);
+    if (status.code !== 0) {
+      log("  ERROR: chezmoi status failed");
+      return 1;
+    }
+    out = chomp(sortUnique(status.out));
+  }
+  if (out) {
+    log(out);
+    return out.split("\n").length;
+  }
+  log("  clean");
+  return 0;
+}
+
+function checkCoverage(): number {
+  let found = 0;
+  for (const dir of topLevelManaged()) {
+    if (!isDir(dir) || isLink(dir)) continue;
+    for (const { path } of walk(dir)) {
+      if (!kind(path)?.isFile()) continue;
+      if (isManaged(path) || isIgnored(path)) continue;
+      log(`  ORPHAN: ${path}`);
+      found++;
+    }
+  }
+  if (found === 0) log("  clean");
+  return found;
+}
+
+function checkShape(): number {
+  let found = 0;
+  let shape: RegExp;
+  try {
+    shape = new RegExp(`^.*\\.(${S.shapeExts})$`, "s");
+  } catch {
+    shape = /$^/;
+  }
+  for (const path of children(S.claudeDir)) {
+    if (!kind(path)?.isFile() || !shape.test(path)) continue;
+    if (isManaged(path) || isIgnored(path)) continue;
+    log(`  ORPHAN: ${path}`);
+    found++;
+  }
+  if (found === 0) log("  clean");
+  return found;
+}
+
+function withTemp<T>(prefix: string, fn: (dir: string) => T): T {
+  const dir = mkdtempSync(`${tmpdir()}/${prefix}`);
+  try {
+    return fn(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function checkMcp(): number {
+  const settings = `${S.privSource}/dot_claude/.settings.managed.json`;
+  const runtime = `${S.home}/.claude.json`;
+  let found = 0;
+  if (!readable(settings)) {
+    log("  skip (dot_claude/.settings.managed.json unreadable)");
+    return 0;
+  }
+  if (!readable(runtime)) {
+    log("  DRIFT: ~/.claude.json is absent or unreadable");
+    return 1;
+  }
+  let source: Json[];
+  try {
+    source = readJson(settings);
+  } catch {
+    log("  LINT: dot_claude/.settings.managed.json is not valid JSON");
+    return 1;
+  }
+  const mode = stat(runtime);
+  const bits = mode ? (mode.mode & 0o777).toString(8) : "";
+  if (bits !== "600") {
+    log(`  DRIFT: ~/.claude.json mode is ${bits || "unknown"}, not 600`);
+    found++;
+  }
+  let canonical: string;
+  try {
+    const servers = source.map(value => get(value, "mcpServers"));
+    const last = servers.at(-1);
+    if (last === undefined || last === null || last === false) throw new Error("no mcpServers");
+    canonical = servers.map(value => pretty(value, true)).join("\n");
+  } catch {
+    log("  skip (settings.json declares no mcpServers; apply is a passthrough)");
+    return found;
+  }
+  let live: string;
+  try {
+    live = readJson(runtime)
+      .map(value => pretty(alt(get(value, "mcpServers"), {}), true))
+      .join("\n");
+  } catch {
+    log("  LINT: ~/.claude.json is not valid JSON");
+    return found + 1;
+  }
+  if (canonical === live) {
+    if (found === 0) log("  clean");
+    return found;
+  }
+  log("  DRIFT in mcpServers (dot_claude/.settings.managed.json is canonical)");
+  let diff = "";
+  attempt(() => {
+    diff = withTemp("chezmoi-claude-doctor.", dir => {
+      writeFileSync(`${dir}/live`, `${live}\n`);
+      writeFileSync(`${dir}/canonical`, `${canonical}\n`);
+      return sh(["diff", "-u", "--label", ".claude.json", "--label", "settings.json", `${dir}/live`, `${dir}/canonical`], { pass: true }).out;
+    });
+  });
+  for (const line of chomp(diff).split("\n")) log(`  ${line}`);
+  return found + 1;
+}
+
+function jqLines(fn: () => Json[]): string[] {
+  try {
+    return fn()
+      .map(interp)
+      .join("\n")
+      .split("\n")
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function frontmatterName(text: string): string {
+  let inside = false;
+  for (const line of text.split("\n")) {
+    if (/^---[ \t\n\r\f\v]*$/.test(line)) {
+      inside = !inside;
+      continue;
+    }
+    if (inside && line.startsWith("name:")) return line.replace(/^name:[ \t\n\r\f\v]*/, "").replace(/["']/g, "");
+  }
+  return "";
+}
+
+function checkLint(): number {
+  const settings = `${S.privSource}/dot_claude/.settings.managed.json`;
+  let found = 0;
+  if (readable(settings)) {
+    let source: Json[] = [];
+    try {
+      source = readJson(settings);
+    } catch {
+      source = [];
+    }
+    for (const plugin of jqLines(() =>
+      source.flatMap(value => entries(alt(get(value, "enabledPlugins"), {})).filter(([, flag]) => typeof flag !== "boolean").map(([key]) => key)),
+    )) {
+      log(`  LINT: enabledPlugins[${plugin}] is not boolean (CC 2.1.x silently disables array form)`);
+      found++;
+    }
+    for (const server of jqLines(() =>
+      source.flatMap(value =>
+        entries(alt(get(value, "mcpServers"), {}))
+          .filter(([, entry]) => isObject(entry) && !Object.hasOwn(entry, "type"))
+          .map(([key]) => key),
+      ),
+    )) {
+      log(`  LINT: mcpServers[${server}] missing 'type' field (stdio/http/sse)`);
+      found++;
+    }
+  }
+
+  if (which("claude")) {
+    const version = firstField(sh(["claude", "--version"]).out);
+    if (version) log(`  INFO: claude --version=${version} (informational)`);
+  }
+
+  for (const root of [`${S.privSource}/dot_claude/skills`, `${S.privSource}/dot_agents/skills`]) {
+    if (!isDir(root)) continue;
+    for (const dir of children(root)) {
+      if (!kind(dir)?.isDirectory()) continue;
+      const skill = `${dir}/SKILL.md`;
+      if (!readable(skill)) continue;
+      const name = frontmatterName(read(skill) ?? "");
+      const base = dir.slice(dir.lastIndexOf("/") + 1);
+      if (name && name !== base) {
+        log(`  LINT: skill frontmatter name='${name}' != dir='${base}' (${skill})`);
+        found++;
+      }
+    }
+  }
+
+  const common = `${S.privSource}/dot_agents/skills`;
+  const state = env("XDG_STATE_HOME");
+  const lock = state ? `${state}/skills/.skill-lock.json` : `${S.home}/.agents/.skill-lock.json`;
+  for (const path of children(`${S.claudeDir}/skills`)) {
+    if (!isLink(path)) continue;
+    const name = path.slice(path.lastIndexOf("/") + 1);
+    const target = readlink(path);
+    if (!existsSync(path)) {
+      log(`  LINT: skill link ${path} is dangling`);
+      found++;
+    } else if (target !== `../../.agents/skills/${name}`) {
+      log(`  LINT: skill link ${path} targets '${target}', not '../../.agents/skills/${name}'`);
+      found++;
+    }
+  }
+  for (const entry of children(`${S.privSource}/dot_claude/skills`)) {
+    const file = entry.slice(entry.lastIndexOf("/") + 1);
+    if (!kind(entry)?.isFile() || !file.startsWith("symlink_")) continue;
+    const name = file.slice("symlink_".length);
+    const target = chomp(read(entry) ?? "");
+    if (target !== `../../.agents/skills/${name}`) {
+      log(`  LINT: ${entry} holds '${target}', not '../../.agents/skills/${name}'`);
+      found++;
+    }
+    if (!readable(`${common}/${name}/SKILL.md`)) {
+      log(`  LINT: ${entry} has no ${common}/${name}/SKILL.md`);
+      found++;
+    }
+  }
+  if (isDir(common) && readable(lock)) {
+    let skills: Json = null;
+    try {
+      skills = get(readJson(lock)[0] ?? null, "skills");
+    } catch {
+      skills = null;
+    }
+    for (const dir of children(common)) {
+      if (!kind(dir)?.isDirectory()) continue;
+      const name = dir.slice(dir.lastIndexOf("/") + 1);
+      if (isObject(skills) && Object.hasOwn(skills, name)) {
+        log(`  LINT: common skill '${name}' is also a CLI-installed copy (${lock})`);
+        found++;
+      }
+    }
+  }
+
+  if (found === 0) log("  clean");
+  return found;
+}
+
+function checkPluginSrcDrift(): number {
+  const installed = `${S.claudeDir}/plugins/installed_plugins.json`;
+  if (!readable(installed)) {
+    log("  skip (installed_plugins.json missing)");
+    return 0;
+  }
+  let data: Json = null;
+  let plugins: string[] = [];
+  try {
+    data = readJson(installed)[0] ?? null;
+    plugins = jqLines(() => keys(get(data, "plugins")));
+  } catch {
+    plugins = [];
+  }
+  if (!plugins.length) {
+    log("  clean");
+    return 0;
+  }
+  const own = S.ownPluginSrc || `${S.home}/DEV/rd/claude-code-plugins`;
+  const hasGit = isDir(`${own}/.git`);
+  let main = "";
+  if (hasGit) {
+    const head = git(own, "rev-parse", "--verify", "-q", "origin/main^{commit}");
+    if (head.code !== 0) {
+      log(`  note: ${own} has no origin/main — fetch it to compare the installs`);
+      return 0;
+    }
+    main = chomp(head.out);
+  }
+  let found = 0;
+  for (const key of plugins) {
+    if (!key.endsWith("@raisedadead-plugins") || !hasGit) continue;
+    let sha = "";
+    try {
+      const first = get(get(data, "plugins"), key);
+      sha = chomp(raw(alt(get(first0(first), "gitCommitSha"), "")));
+    } catch {
+      sha = "";
+    }
+    if (!sha) continue;
+    if (git(own, "cat-file", "-e", `${sha}^{commit}`).code !== 0) {
+      log(`  note: ${key} installed ${sha.slice(0, 12)} is not in ${own} — fetch to compare it with origin/main`);
+      continue;
+    }
+    if (git(own, "merge-base", "--is-ancestor", main, sha).code === 0) continue;
+    const name = key.replace(/@[^@]*$/, "");
+    const rc = sh(["git", "-C", own, "diff", "--quiet", sha, main, "--", `plugins/${name}`, `:(exclude)plugins/${name}/CHANGELOG.md`], { pass: true }).code;
+    if (rc === 0) continue;
+    if (rc !== 1) {
+      log(`  note: ${key} git diff exited ${rc} in ${own}`);
+      continue;
+    }
+    log(`  WARN: ${key} installed ${sha.slice(0, 12)} differs from plugins/${name} on origin/main (${main.slice(0, 12)}) — run /cmd-refresh-plugins`);
+    found++;
+  }
+  if (found === 0) log("  clean");
+  return found;
+}
+
+function checkCavemem(): number {
+  if (!executable(S.cavemem)) {
+    log(`  WARN: ${S.cavemem} missing - run chezmoi apply ~/.bin`);
+    return 1;
+  }
+  const health = sh([S.cavemem], { pass: true });
+  const out = chomp(health.out);
+  if (health.code === 0) {
+    log("  clean");
+    return 0;
+  }
+  if (out.startsWith("missing ")) {
+    log("  skip (cavemem binary missing)");
+    return 0;
+  }
+  for (const line of out.split("\n")) {
+    const msg = line
+      .replace(/^[ \t\n]+/, "")
+      .replace(/^[^ \t\n]*[ \t\n]*/, "")
+      .replace(/[ \t\n]+$/, "");
+    log(`  WARN: ${msg} - run chezmoi-claude-bootstrap.sh --only cavemem`);
+  }
+  return 1;
+}
+
+function checkSafeguard(): number {
+  let rc = 0;
+  for (const file of [`${S.privSource}/dot_claude/.settings.managed.json`, `${S.claudeDir}/settings.json`]) {
+    if (!isFile(file)) {
+      log(`  skip (${tilde(file)} missing)`);
+      continue;
+    }
+    let value = "";
+    try {
+      value = chomp(
+        readJson(file)
+          .map(item => raw(get(item, "switchModelsOnFlag")))
+          .join("\n"),
+      );
+    } catch {
+      value = "";
+    }
+    if (value !== "false") {
+      log(`  WARN: switchModelsOnFlag != false in ${tilde(file)} (got: ${value}) — safeguard flag will silently switch model; re-flip via /config`);
+      rc = 1;
+    }
+  }
+  const audit = `${S.home}/.bin/claude-flag-audit.sh`;
+  if (executable(audit)) {
+    const count = chomp(
+      lines(sh([audit, "7"]).out)
+        .filter(line => /^total .* last 7d /.test(line))
+        .map(line => line.replace(/^total .* last 7d /, ""))
+        .join("\n"),
+    );
+    if (count && count !== "0") log(`  note: ${count} safeguard flag(s) in last 7 days — claude-flag-audit.sh 7`);
+  }
+  if (rc === 0) log("  clean");
+  return rc;
+}
+
+const TS = /^(\d\d\d\d)-(1[0-2]|0[1-9]|[1-9])-(3[01]|[12]\d|0[1-9]|[1-9]| [1-9])T(2[0-3]|[0-1]\d|\d):([0-5]\d|\d):(6[0-1]|[0-5]\d|\d)Z$/;
+
+function utcSeconds(text: string): number | undefined {
+  const match = TS.exec(text);
+  if (!match) return undefined;
+  const [year, month, day, hour, minute, second] = match.slice(1).map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return undefined;
+  return Date.UTC(year, month - 1, day, hour, minute) / 1000 + second;
+}
+
+function userAgentIssues(agentsDir: string, logDir: string, cap: number): string[] {
+  const agents = names(agentsDir)
+    .filter(name => name.endsWith(".md"))
+    .map(name => name.slice(0, -3))
+    .sort();
+  const window = 30 * 86400;
+  const now = Date.now() / 1000;
+  const issues: string[] = [];
+  if (agents.length > cap) issues.push(`${agents.length} user agents exceed the cap of ${cap}`);
+  const spawns = new Map<Json, number>();
+  for (const file of names(logDir).filter(name => name.endsWith(".jsonl") && !name.startsWith("."))) {
+    const text = read(`${logDir}/${file}`);
+    if (text === undefined) continue;
+    for (const line of text.split("\n")) {
+      let entry: Json;
+      try {
+        entry = JSON.parse(line) as Json;
+      } catch {
+        continue;
+      }
+      if (!isObject(entry)) continue;
+      const ts = Object.hasOwn(entry, "ts") ? entry.ts : "";
+      const at = typeof ts === "string" ? utcSeconds(ts) : undefined;
+      if (at === undefined) continue;
+      if (now - at <= window) {
+        const key = Object.hasOwn(entry, "agent_type") ? entry.agent_type : "";
+        spawns.set(key, (spawns.get(key) ?? 0) + 1);
+      }
+    }
+  }
+  for (const name of agents) {
+    const mtime = stat(`${agentsDir}/${name}.md`)?.mtimeMs;
+    if (mtime !== undefined && now - mtime / 1000 < window) continue;
+    if (!spawns.get(name)) issues.push(`agent '${name}' has 0 spawns in 30d - retire it or fix its trigger`);
+  }
+  return issues;
+}
+
+function checkUserAgents(): number {
+  const agentsDir = `${S.privSource}/dot_claude/agents`;
+  if (!isDir(agentsDir)) {
+    log("  clean (no user agents)");
+    return 0;
+  }
+  const issues = userAgentIssues(agentsDir, `${S.claudeDir}/markers/subagent-spawns`, 4).filter(Boolean);
+  if (issues.length) {
+    for (const line of issues) log(`  WARN: ${line}`);
+    return issues.length;
+  }
+  log("  clean");
+  return 0;
+}
+
+function rigGateRun(out: string): boolean {
+  let work: string;
+  let fd: number;
+  try {
+    work = mkdtempSync(`${tmpdir()}/tmp.`);
+  } catch {
+    return false;
+  }
+  try {
+    fd = openSync(out, "w");
+  } catch {
+    rmSync(work, { recursive: true, force: true });
+    return false;
+  }
+  const step = (argv: string[], cwd?: string, input?: Uint8Array) => {
+    try {
+      const proc = Bun.spawnSync(argv, { cwd, env: process.env, stdin: input ?? "ignore", stdout: fd, stderr: fd });
+      return proc.exitCode ?? 1;
+    } catch (error) {
+      writeSync(fd, `${(error as Error).message}\n`);
+      return 127;
+    }
+  };
+  try {
+    const archive = Bun.spawnSync(["git", "-C", `${S.privSource}/dot_claude`, "archive", "HEAD", "mods/rig"], {
+      env: process.env,
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: fd,
+    });
+    const untar = step(["tar", "-x", "-C", work], undefined, archive.stdout);
+    if (archive.exitCode !== 0 || untar !== 0) return false;
+    const rig = `${work}/mods/rig`;
+    if (!isDir(rig)) {
+      writeSync(fd, `cd: ${rig}: No such file or directory\n`);
+      return false;
+    }
+    return (
+      step(["bun", "build.ts"], rig) === 0 &&
+      step(["claude", "plugin", "validate", "dist"], rig) === 0 &&
+      step(["claude", "plugin", "test", "dist"], rig) === 0
+    );
+  } catch {
+    return false;
+  } finally {
+    closeSync(fd);
+    rmSync(work, { recursive: true, force: true });
+  }
+}
+
+function checkRigGate(): number {
+  const types = `${S.claudeDir}/mods/rig/.claude-plugin/types/claude-code/index.d.ts`;
+  const marker = `${S.claudeDir}/markers/rig-verified-version`;
+  const out = `${S.claudeDir}/markers/rig-gate.log`;
+  if (!isFile(types)) {
+    log("  skip (no host types; Claude Code writes them when it loads the rig)");
+    return 0;
+  }
+  const version = /^\/\/ Written by Claude Code ([^ ]+)\.$/.exec((read(types) ?? "").split("\n")[0])?.[1] ?? "";
+  if (!version) {
+    log(`  WARN: line 1 of ${tilde(types)} names no Claude Code version`);
+    return 1;
+  }
+  const passed = chomp(read(marker) ?? "");
+  if (version === passed) {
+    log(`  clean (${version} verified)`);
+    return 0;
+  }
+  for (const bin of ["claude", "bun", "bunx", "git"]) {
+    if (!which(bin)) {
+      log(`  skip (${bin} missing)`);
+      return 0;
+    }
+  }
+  if (!isDir(`${S.privSource}/dot_claude/mods/rig`)) {
+    log(`  skip (${tilde(S.privSource)}/dot_claude/mods/rig missing)`);
+    return 0;
+  }
+  attempt(() => mkdirSync(marker.slice(0, marker.lastIndexOf("/")), { recursive: true }));
+  if (!rigGateRun(out)) {
+    log(`  WARN: the committed rig fails build, validate or tests on Claude Code ${version}; read ${tilde(out)}`);
+    return 1;
+  }
+  attempt(() => writeFileSync(marker, `${version}\n`));
+  log(`  clean (${version} verified now)`);
+  return 0;
+}
+
+function checkAiReleases(): number {
+  let rc = 0;
+  for (const dir of [S.codexReleases, S.piReleases]) {
+    if (!isDir(dir)) {
+      log(`  skip (${tilde(dir)} missing)`);
+      continue;
+    }
+    const count = children(dir).filter(path => kind(path)?.isDirectory()).length;
+    if (count > 2) {
+      const size = firstField(sh(["du", "-sh", dir], { pass: true }).out);
+      log(`  WARN: ${tilde(dir)} holds ${count} releases (${size}); keep only the newest two`);
+      rc = 1;
+    }
+  }
+  if (rc === 0) log("  clean");
+  return rc;
+}
+
+function checkLinks(): number {
+  let rc = 0;
+  for (const dir of [`${S.home}/.bin`, `${S.claudeDir}/skills`]) {
+    for (const path of children(dir)) {
+      if (!isLink(path) || existsSync(path)) continue;
+      log(`  WARN: ${tilde(path)} points to a missing ${readlink(path)}; reinstall the target or run its setup command`);
+      rc = 1;
+    }
+  }
+  if (rc === 0) log("  clean");
+  return rc;
+}
+
+function jqItems(file: string, fn: (root: Json, emit: (item: Json) => void) => void): string {
+  if (!existsSync(file)) return "";
+  let out = "";
+  const emit = (item: Json) => {
+    out += `${interp(item)}\n`;
+  };
+  try {
+    for (const root of readJson(file)) fn(root, emit);
+  } catch {
+    out += `unreadable ${relHome(file)}\n`;
+  }
+  return out;
+}
+
+function slurp(path: string): Json {
+  return readJson(path)[0] ?? null;
+}
+
+function manifestNames(path: string): Set<string> {
+  const text = read(path);
+  if (text === undefined) return new Set();
+  return new Set(
+    text
+      .split("\n")
+      .slice(0, text.endsWith("\n") ? -1 : undefined)
+      .map(line => (line.includes("\t") ? line.split("\t")[1] : line)),
+  );
+}
+
+function listUnmanagedChildren(kindName: string, dir: string, manifest = ""): string {
+  if (!isDir(dir)) return "";
+  let out = "";
+  for (const path of children(dir)) {
+    const name = path.slice(dir.length + 1);
+    if (name.startsWith(".")) continue;
+    if (isIgnored(path)) continue;
+    if (isManaged(path)) {
+      if (!kind(path)?.isDirectory()) continue;
+      for (const { path: file } of walk(path)) {
+        const type = kind(file);
+        if (!type?.isFile() && !type?.isSymbolicLink()) continue;
+        if (isManaged(file) || isIgnored(file)) continue;
+        out += `${kindName} ${name}/${file.slice(path.length + 1)}\n`;
+      }
+      continue;
+    }
+    if (manifest && readable(manifest) && manifestNames(manifest).has(name)) continue;
+    out += `${kindName} ${name}\n`;
+  }
+  return out;
+}
+
+type Item = { item: string; value?: Json };
+
+function claudeItems(x: Json): Item[] {
+  const items: Item[] = [];
+  for (const [event, groups] of entries(alt(get(x, "hooks"), {}))) {
+    for (const group of valuesTry(groups)) {
+      const matcher = alt(get(group, "matcher"), "");
+      for (const hook of valuesTry(get(group, "hooks"))) {
+        const command = altLazy(
+          () => get(hook, "command"),
+          () => get(hook, "url"),
+          () => get(hook, "prompt"),
+          () => get(hook, "type"),
+          () => "",
+        );
+        items.push({ item: `claude-hook ${interp(event)}[${interp(matcher)}]: ${interp(command)}` });
+      }
+    }
+  }
+  for (const [key, value] of entries(alt(get(x, "enabledPlugins"), {}))) items.push({ item: `claude-plugin ${interp(key)}`, value });
+  for (const key of keys(alt(get(x, "extraKnownMarketplaces"), {}))) items.push({ item: `claude-marketplace ${interp(key)}` });
+  for (const [key, value] of entries(alt(get(x, "mcpServers"), {}))) items.push({ item: `claude-mcp ${interp(key)}`, value });
+  const command = (field: string) => {
+    const holder = get(x, field);
+    try {
+      return get(holder, "command");
+    } catch {
+      return null;
+    }
+  };
+  for (const [field, label] of [
+    ["statusLine", "claude-statusline"],
+    ["subagentStatusLine", "claude-statusline"],
+    ["fileSuggestion", "claude-file-suggestion"],
+  ]) {
+    const value = command(field);
+    if (value !== null && value !== false) items.push({ item: `${label} ${interp(value)}` });
+  }
+  const helper = get(x, "apiKeyHelper");
+  if (helper !== null && helper !== false) items.push({ item: `claude-api-key-helper ${interp(helper)}` });
+  for (const [key, value] of entries(alt(get(x, "env"), {}))) items.push({ item: `claude-env ${interp(key)}`, value });
+  return items;
+}
+
+function itemsMinus(a: Item[], b: Item[]): Item[] {
+  return a.filter(left => !b.some(right => equal(left as unknown as Json, right as unknown as Json)));
+}
+
+function listClaudeAdditions(): string {
+  const source = `${S.privSource}/dot_claude/.settings.managed.json`;
+  const installed = `${S.claudeDir}/plugins/installed_plugins.json`;
+  let out = "";
+  out += jqItems(`${S.claudeDir}/settings.json`, (root, emit) => {
+    const base = slurp(source);
+    for (const { item } of itemsMinus(claudeItems(root), claudeItems(base))) emit(item.replace(/[\n\r]/g, " "));
+  });
+  out += jqItems(`${S.claudeDir}/plugins/known_marketplaces.json`, (root, emit) => {
+    const base = slurp(source);
+    for (const key of minus(keys(root), keys(alt(get(base, "extraKnownMarketplaces"), {})))) emit(`claude-marketplace ${interp(key)}`);
+  });
+  out += jqItems(`${S.home}/.claude.json`, (root, emit) => {
+    const base = slurp(source);
+    const servers = (x: Json): Item[] => entries(alt(get(x, "mcpServers"), {})).map(([key, value]) => ({ item: `claude-mcp ${interp(key)}`, value }));
+    for (const { item } of itemsMinus(servers(root), servers(base))) emit(item);
+    for (const project of values(alt(get(root, "projects"), {}))) {
+      for (const key of keys(alt(get(project, "mcpServers"), {}))) emit(`claude-project-mcp ${interp(key)}`);
+    }
+  });
+  const pairs = jqItems(installed, (root, emit) => {
+    for (const [plugin, installs] of entries(alt(get(root, "plugins"), {}))) {
+      for (const install of values(installs)) emit(`${interp(plugin)}\t${interp(alt(get(install, "installPath"), ""))}`);
+    }
+  });
+  for (const line of readLines(pairs)) {
+    const trimmed = line.replace(/^\t+/, "");
+    const tab = trimmed.indexOf("\t");
+    const plugin = tab < 0 ? trimmed : trimmed.slice(0, tab);
+    const dir = tab < 0 ? "" : trimmed.slice(tab).replace(/^\t+/, "").replace(/\t+$/, "");
+    if (!dir) {
+      out += `${plugin}\n`;
+      continue;
+    }
+    out += jqItems(`${dir}/hooks/hooks.json`, (root, emit) => {
+      for (const key of keys(alt(get(root, "hooks"), {}))) emit(`claude-plugin-hook ${plugin} ${interp(key)}`);
+      for (const module of values(alt(get(root, "modules"), []))) emit(`claude-plugin-hook ${plugin} ${interp(module)}`);
+    });
+    out += jqItems(`${dir}/.claude-plugin/plugin.json`, (root, emit) => {
+      const hooks = get(root, "hooks");
+      if (hooks !== null && hooks !== false) emit(`claude-plugin-hook ${plugin} manifest`);
+      const servers = get(root, "mcpServers");
+      if (servers === null || servers === false) return;
+      for (const name of isObject(servers) ? keys(servers) : [interp(servers)]) emit(`claude-plugin-mcp ${plugin} ${interp(name)}`);
+    });
+    out += jqItems(`${dir}/.mcp.json`, (root, emit) => {
+      for (const key of keys(alt(get(root, "mcpServers"), root))) emit(`claude-plugin-mcp ${plugin} ${interp(key)}`);
+    });
+  }
+  out += listUnmanagedChildren("claude-skills", `${S.claudeDir}/skills`, `${S.pubSource}/docs/skills.tsv`);
+  for (const name of ["agents", "rules", "commands", "hooks", "output-styles", "workflows", "mods"]) {
+    out += listUnmanagedChildren(`claude-${name}`, `${S.claudeDir}/${name}`);
+  }
+  for (const path of children(S.claudeDir)) {
+    const type = kind(path);
+    if (!type || (!type.isFile() && !type.isSymbolicLink())) continue;
+    const name = path.slice(path.lastIndexOf("/") + 1);
+    if (!(type.mode & 0o111) && !/\.(py|sh|js|mjs|ts)$/.test(name)) continue;
+    if (isManaged(path) || isIgnored(path)) continue;
+    out += `claude-script ${name}\n`;
+  }
+  return out;
+}
+
+function same(a: string, b: string): boolean {
+  try {
+    return readFileSync(a).equals(readFileSync(b));
+  } catch {
+    return false;
+  }
+}
+
+function findFiles(dir: string, test: (path: string, depth: number) => boolean, max = Infinity): string[] {
+  return walk(dir, max)
+    .filter(({ path, depth }) => test(path, depth))
+    .map(({ path }) => path);
+}
+
+function listChangedInstructions(): string {
+  const sourceClaude = `${S.privSource}/dot_claude`;
+  const sourcePi = `${S.privSource}/dot_pi/agent`;
+  const piHome = `${S.home}/.pi/agent`;
+  let out = "";
+  for (const [src, target] of [
+    [`${sourceClaude}/CLAUDE.md`, `${S.claudeDir}/CLAUDE.md`],
+    [`${sourcePi}/AGENTS.md`, `${piHome}/AGENTS.md`],
+    [`${sourcePi}/AGENTS.override.md`, `${piHome}/AGENTS.override.md`],
+    [`${sourcePi}/APPEND_SYSTEM.md`, `${piHome}/APPEND_SYSTEM.md`],
+    [`${sourcePi}/CLAUDE.md`, `${piHome}/CLAUDE.md`],
+    [`${sourcePi}/SYSTEM.md`, `${piHome}/SYSTEM.md`],
+  ]) {
+    if (!existsSync(target)) continue;
+    if (existsSync(src) && same(src, target)) continue;
+    out += `instructions ${relHome(target)}\n`;
+  }
+  const sources = [
+    ...[`${sourceClaude}/rules`, `${sourceClaude}/agents`, `${sourcePi}/rules`, `${sourcePi}/agents`].flatMap(dir =>
+      findFiles(dir, path => (kind(path)?.isFile() ?? false) && path.endsWith(".md")),
+    ),
+    ...findFiles(`${sourceClaude}/mods`, (path, depth) => depth === 3 && path.endsWith("/hooks/hooks.json"), 3),
+  ];
+  for (const src of sources) {
+    const target = src.startsWith(`${sourceClaude}/`)
+      ? `${S.claudeDir}/${src.slice(sourceClaude.length + 1)}`
+      : `${piHome}/${src.slice(sourcePi.length + 1)}`;
+    if (!existsSync(target)) continue;
+    if (!same(src, target)) out += `instructions ${relHome(target)}\n`;
+  }
+  return out;
+}
+
+function piManaged(path: string): string {
+  const text = read(path);
+  if (text === undefined) return "";
+  const picked: string[] = [];
+  let inside = false;
+  for (const line of lines(text)) {
+    if (!inside) {
+      if (/^managed='\{/.test(line)) {
+        inside = true;
+        picked.push(line);
+      }
+      continue;
+    }
+    picked.push(line);
+    if (/^\}'/.test(line)) inside = false;
+  }
+  return chomp(picked.map(line => line.replace(/^managed='/, "").replace(/^\}'/, "}")).join("\n"));
+}
+
+function listPiAdditions(): string {
+  const sourcePi = `${S.privSource}/dot_pi`;
+  const piHome = `${S.home}/.pi/agent`;
+  let out = listUnmanagedChildren("pi-skills", `${piHome}/skills`, `${sourcePi}/skills.tsv`);
+  for (const name of ["extensions", "agents", "rules"]) out += listUnmanagedChildren(`pi-${name}`, `${piHome}/${name}`);
+  const managed = piManaged(`${sourcePi}/agent/modify_settings.json`) || "{}";
+  out += jqItems(`${piHome}/settings.json`, (live, emit) => {
+    const source = JSON.parse(managed) as Json;
+    for (const key of ["packages", "extensions", "skills"]) {
+      const mapped = values(alt(get(live, key), [])).map(item => (isObject(item) ? get(item, "source") : item));
+      for (const item of minus(mapped, alt(get(source, key), []))) emit(`pi-${key} ${interp(item)}`);
+    }
+  });
+  const template = read(`${sourcePi}/agent/mcp.json.tmpl`);
+  const servers = jqItems(`${piHome}/mcp.json`, (root, emit) => {
+    for (const key of keys(alt(get(root, "mcpServers"), {}))) emit(key);
+  });
+  for (const name of readLines(servers)) {
+    const pattern = new RegExp(`"${escape(name)}"[ \\t\\r\\f\\v]*:[ \\t\\r\\f\\v]*\\{`);
+    if (template !== undefined && template.split("\n").some(line => pattern.test(line))) continue;
+    out += `pi-mcp ${name}\n`;
+  }
+  return out;
+}
+
+const SPACE = "[ \\t\\n\\r\\f\\v]";
+
+function codexSectionItems(normal: string[], section: string, label: string): string {
+  const pattern = new RegExp(`^\\[${section}\\.("([^"]+)"|'([^']+)'|([^\\].\"']+))\\]$`);
+  let out = "";
+  for (const line of normal) {
+    const match = pattern.exec(line);
+    if (match) out += `${label} ${match[2] ?? ""}${match[3] ?? ""}${match[4] ?? ""}\n`;
+  }
+  return out;
+}
+
+function codexNotify(normal: string[]): string {
+  const picked: string[] = [];
+  let inside = false;
+  for (const line of normal) {
+    if (!inside) {
+      if (new RegExp(`^notify${SPACE}*=`).test(line)) {
+        inside = true;
+        picked.push(line);
+      }
+      continue;
+    }
+    picked.push(line);
+    if (line.includes("]")) inside = false;
+  }
+  return picked
+    .join("")
+    .replace(/'/g, '"')
+    .replace(/^[^[]*\[/, "")
+    .replace(/\][^\]]*$/, "")
+    .replace(new RegExp(`,${SPACE}*$`), "")
+    .replace(new RegExp(`${SPACE}*,${SPACE}*`, "g"), ", ")
+    .replace(new RegExp(`^${SPACE}+`), "");
+}
+
+function listCodexAdditions(): string {
+  const codex = `${S.home}/.codex`;
+  const config = `${codex}/config.toml`;
+  let out = "";
+  if (readable(config)) {
+    const text = read(config) ?? "";
+    const normal = lines(
+      chomp(
+        (text.endsWith("\n") ? text.slice(0, -1) : text)
+          .split("\n")
+          .map(line =>
+            line
+              .replace(new RegExp(`^${SPACE}+`), "")
+              .replace(new RegExp(`^(\\[[^#]*\\])${SPACE}*#.*$`, "s"), "$1")
+              .replace(new RegExp(`${SPACE}+$`), ""),
+          )
+          .join("\n"),
+      ),
+    );
+    out += codexSectionItems(normal, "marketplaces", "codex-marketplace");
+    out += codexSectionItems(normal, "mcp_servers", "codex-mcp");
+    out += codexSectionItems(normal, "plugins", "codex-plugin");
+    out += codexSectionItems(normal, "agents", "codex-agent");
+    if (normal.some(line => /^\[\[?hooks[\].]/.test(line))) out += "codex-hooks config\n";
+    const notify = codexNotify(normal);
+    if (notify) out += `codex-notify ${notify}\n`;
+  }
+  for (const name of ["AGENTS.md", "AGENTS.override.md"]) {
+    if (existsSync(`${codex}/${name}`)) out += `codex-instructions ${name}\n`;
+  }
+  if (existsSync(`${codex}/hooks.json`)) out += "codex-hooks hooks.json\n";
+  for (const name of ["skills", "rules", "agents"]) out += listUnmanagedChildren(`codex-${name}`, `${codex}/${name}`);
+  return out;
+}
+
+function checkAdditions(): boolean {
+  let reason = "";
+  if (!readable(`${S.privSource}/dot_claude/.settings.managed.json`)) reason = "dot_claude/.settings.managed.json unreadable";
+  if (!S.managed.length) reason = "chezmoi managed list empty";
+  if (reason) {
+    log(`  WARN: agent addition: check skipped (${reason})`);
+    return false;
+  }
+  const text = [
+    listClaudeAdditions(),
+    listChangedInstructions(),
+    listUnmanagedChildren("shared-skills", `${S.home}/.agents/skills`, `${S.pubSource}/docs/skills.tsv`),
+    listPiAdditions(),
+    listCodexAdditions(),
+  ].join("");
+  const approvedText = read(S.additionsFile);
+  const approved = new Set(approvedText === undefined ? [] : approvedText.split("\n"));
+  let found = 0;
+  for (const item of readLines(sortUnique(text.replace(/[^\x20-\x7e\n]/g, "")))) {
+    if (!item || approved.has(item)) continue;
+    log(`  WARN: agent addition: ${item} - remove it, or add this item to docs/agent-additions.txt`);
+    found++;
+  }
+  if (found === 0) log("  clean");
+  return found === 0;
+}
+
+function checkSubmodule() {
+  const status = chomp(git(S.privSource, "submodule", "status", "dot_claude").out);
+  if (status === "" || status.startsWith("-")) {
+    err(`dot_claude submodule not initialised: git -C ${S.privSource} submodule update --init`);
+    throw new Exit(2);
+  }
+  if (status.startsWith("+")) log(`WARN: dot_claude checkout differs from the recorded gitlink; commit the bump in ${S.privSource}`);
+  if (!isFile(`${S.privSource}/dot_claude/.settings.managed.json`)) {
+    err(`missing ${S.privSource}/dot_claude/.settings.managed.json`);
+    throw new Exit(2);
+  }
+}
+
+function runChecks(): number {
+  checkSubmodule();
+  const issues = [
+    ["[1/5] chezmoi status (managed-file modifications)", checkStatus],
+    ["[2/5] coverage (unmanaged files inside managed dirs)", checkCoverage],
+    [`[3/5] shape (unmanaged top-level *.{${S.shapeExts}})`, checkShape],
+    ["[4/5] mcp drift (settings.json vs ~/.claude.json user-level)", checkMcp],
+    ["[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name, skill layers)", checkLint],
+  ] as const;
+  let total = 0;
+  for (const [head, check] of issues) {
+    log(head);
+    total += check();
+    log("");
+  }
+  log(`Total issues: ${total}`);
+  const warns = [
+    ["[warn 1/8] first-party plugin drift (installed sha vs claude-code-plugins origin/main)", checkPluginSrcDrift],
+    ["[warn 2/8] cavemem health (hook, better-sqlite3, embedder, worker)", checkCavemem],
+    ["[warn 3/8] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)", checkSafeguard],
+    ["[warn 4/8] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)", checkUserAgents],
+    ["[warn 5/8] rig version gate (validate, type check and tests after a Claude Code update)", checkRigGate],
+    ["[warn 6/8] AI release stores (Codex daemon and Pi keep at most two releases)", checkAiReleases],
+    ["[warn 7/8] dangling links (~/.bin and ~/.claude/skills)", checkLinks],
+    ["[warn 8/8] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)", checkAdditions],
+  ] as const;
+  for (const [head, check] of warns) {
+    log(head);
+    check();
+    log("");
+  }
+  return total === 0 ? 0 : 1;
+}
+
+function warnLines(report: string): string {
+  return chomp(
+    report
+      .split("\n")
+      .filter(line => new RegExp(`^${SPACE}*WARN: `).test(line))
+      .map(line => line.replace(new RegExp(`^${SPACE}*WARN: `), ""))
+      .join("\n"),
+  );
+}
+
+function attempt(fn: () => unknown): boolean {
+  try {
+    fn();
+    return true;
+  } catch (error) {
+    err((error as Error).message);
+    return false;
+  }
+}
+
+function remove(path: string): boolean {
+  try {
+    rmSync(path, { force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function writeWarnings(warnings: string): boolean {
+  const file = `${S.claudeDir}/markers/doctor-warnings.txt`;
+  if (!warnings) return remove(file);
+  let tmp = "";
+  try {
+    mkdirSync(file.slice(0, file.lastIndexOf("/")), { recursive: true });
+    tmp = `${file}.${Math.random().toString(36).slice(2, 8)}`;
+    writeFileSync(tmp, `${warnings}\n`, { mode: 0o600, flag: "wx" });
+    renameSync(tmp, file);
+    return true;
+  } catch {
+    if (tmp) rmSync(tmp, { force: true });
+    return false;
+  }
+}
+
+function rewakeAdditions(): boolean {
+  const file = `${S.claudeDir}/markers/doctor-warnings.txt`;
+  const text = read(file);
+  const kept = text === undefined ? "" : chomp(lines(text).filter(line => !line.startsWith("agent addition: ")).join("\n"));
+  const added = warnLines(capture(checkAdditions));
+  return writeWarnings(chomp(`${kept}\n${added}\n`.split("\n").filter(Boolean).join("\n")));
+}
+
+function rewakeFinish(rc: number, report: string): number {
+  if (!writeWarnings(warnLines(report))) remove(`${S.claudeDir}/markers/doctor-warnings.txt`);
+  if (rc === 0) return 0;
+  err("chezmoi-claude-doctor: issues found. Run ~/.bin/chezmoi-claude-doctor for the full report.");
+  err(report);
+  return 2;
+}
+
+async function main(): Promise<number> {
+  const arg = process.argv[2] ?? "";
+  let mode: "run" | "rewake" = "run";
+  if (arg === "--quiet") S.quiet = true;
+  else if (arg === "--rewake") mode = "rewake";
+  else if (arg === "--help" || arg === "-h") {
+    writeSync(1, `${HELP}\n`);
+    return 0;
+  } else if (arg !== "") {
+    err(`unknown arg: ${arg}`);
+    return 2;
+  }
+
+  let outside = false;
+  let failRc = 2;
+  if (mode === "rewake") {
+    if (env("CLAUDE_JOB_DIR")) return 0;
+    if (!rewakeApplies(await sessionCwd())) {
+      outside = true;
+      failRc = 0;
+      S.errTo = "drop";
+    }
+  }
+  try {
+    for (const tool of ["chezmoi", "sort"]) {
+      if (!which(tool)) {
+        err(`missing dependency: ${tool}`);
+        return failRc;
+      }
+    }
+    setManaged(buildManaged());
+    loadIgnored();
+    if (outside) {
+      rewakeAdditions();
+      return 0;
+    }
+    if (mode === "rewake") {
+      const report: string[] = [];
+      let rc: number;
+      S.sink = report;
+      S.errTo = "sink";
+      try {
+        rc = runChecks();
+      } catch (error) {
+        if (!(error instanceof Exit)) throw error;
+        rc = error.code;
+      } finally {
+        S.sink = null;
+        S.errTo = "stderr";
+      }
+      return rewakeFinish(rc, chomp(report.join("\n")));
+    }
+    return runChecks();
+  } catch (error) {
+    if (error instanceof Exit) return error.code;
+    err(`chezmoi-claude-doctor: ${(error as Error).message ?? error}`);
+    return failRc;
+  }
+}
+
+process.exit(await main());
