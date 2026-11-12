@@ -105,7 +105,7 @@ function iterations(row: Row): { model: string; usage: Usage; advisor: boolean }
 }
 
 function verdictOf(text: string): Verdict {
-  const line = [...text.matchAll(/(?:REVIEW|VERDICT): ?([^\n]*)/g)].at(-1)?.[1];
+  const line = [...text.matchAll(/^[ \t*_>#]*(?:REVIEW|VERDICT)[*_]*:[*_]*[ \t]*([^\n]*)/gm)].at(-1)?.[1];
   if (line === undefined) return "unparsed";
   const count = (re: RegExp) => [...line.matchAll(re)].reduce((sum, m) => sum + Number(m[1]), 0);
   if (/^CHANGES/.test(line) || count(/(\d+) (?:blocker|major)/gi) + count(/(\d+) (?:critical|high|should-fix)/gi) > 0) return "blocking";

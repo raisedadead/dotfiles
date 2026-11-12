@@ -104,6 +104,13 @@ test("rework and all-spawn blocking rates follow the baseline definitions", () =
   expect(blockingRateAllSpawns).toBeCloseTo(1 / 3, 6);
 });
 
+test("the verdict is the last REVIEW or VERDICT line that starts a line", () => {
+  reviewedRequest("s1", "**REVIEW:** CHANGES — 1 blocker\nThe notes quote PRE-REVIEW: clean.", false);
+  reviewedRequest("s2", "REVIEW: PASS", false);
+  const { blockingRateAllSpawns } = report("--until", UNTIL, "30");
+  expect(blockingRateAllSpawns).toBeCloseTo(1 / 2, 6);
+});
+
 test("first-review rate reads the first review of each request through the Agent result", () => {
   const [first, second] = ["afirst", "asecond"];
   project("s1", [prompt(), step([edit()]), step([review("tu_r1")]), spawned(first, "tu_r1"), step([edit("/work/repo/b.ts")]), step([review("tu_r2")]), spawned(second, "tu_r2")]);
