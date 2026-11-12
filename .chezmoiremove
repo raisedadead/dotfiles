@@ -8,3 +8,4 @@
 .config/tmux/scripts/switcher.sh
 .agents/skills/rex
 .pi/agent/extensions/guard/git-identity.ts
+.claude/agents/notebook.md
