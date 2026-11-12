@@ -204,6 +204,16 @@ Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second revi
 
 Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
 
+### Rig metrics
+
+[rig-metrics](../exact_dot_bin/executable_rig-metrics) reads the Claude Code transcripts, `~/.local/state/jev/route.jsonl` and `git log`, and prints JSON. It writes nothing.
+
+- `rig-metrics [--until YYYY-MM-DD] [days]`: cost, review and rework rates, and the 14-day baseline that ends on the fixed date `BASELINE_UNTIL`.
+- `rig-metrics triggers`: one row for each tuned threshold, with its figure, sample size and status (`hold`, `fire` or `too few`). The thresholds are in the `THRESHOLDS` table of the script.
+- `rig-metrics ab --from YYYY-MM-DD`: the effort A/B arms, one arm for each session effort.
+
+Check: [G1](MAINTENANCE.md#g1-rig-metrics).
+
 ### Project instructions
 
 Pi reads `AGENTS.md` in a project. Claude Code reads `CLAUDE.md` and does not read `AGENTS.md`, so `CLAUDE.md` is a symlink that holds `AGENTS.md`. This repository uses that layout. The `cmd-agents-md` skill converts another repository. A global kernel is not a project file.

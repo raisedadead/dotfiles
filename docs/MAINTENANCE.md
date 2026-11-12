@@ -16,6 +16,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Rex config, helpers, or app settings           | R1 below                                                                |
 | Workspace command `ws`                         | W1 below                                                                |
 | Jev question file or second-review gate        | J1 below                                                                |
+| Rig metrics `rig-metrics`                      | G1 below                                                                |
 | Pane monitor skill `cmd-monitor-pane`          | `bun test ./tests/monitor-pane` (about 1 minute), then R1               |
 | `install.sh`, `.chezmoiignore`, or an external | X1 below                                                                |
 
@@ -198,6 +199,12 @@ Expected: All tests pass. Report the count. A change to the session-start summar
 `cd ~/.dotfiles && bun test ./tests/jev`; `cd ~/.dotfiles/dot_claude/mods/rig && bun build.ts && claude plugin test dist`; `cd ~/.dotfiles/dot_pi && bun test test/jev.test.ts test/gates.test.ts`; `chezmoi status ~/.agents/jev`
 
 Expected: All three runs pass; report the counts. `chezmoi status` prints nothing. Use `./tests/jev` (a bare `tests/jev` is a name filter and also matches the rig's `jev.test.ts`). Run the Pi tests by file name: `test/rtk-native.test.ts` fails in the full suite. See [ARCHI.md](ARCHI.md#second-review)
+
+### G1: Rig metrics
+
+`cd ~/.dotfiles && bun test ./tests/rig-metrics`; `rig-metrics triggers >/dev/null`
+
+Expected: All tests pass; report the count. `rig-metrics triggers` exits 0. See [ARCHI.md](ARCHI.md#rig-metrics)
 
 ## Claude Code
 
