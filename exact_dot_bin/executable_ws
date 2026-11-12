@@ -9,9 +9,12 @@ const LAYOUT = new Set(["START.md", "INDEX.md", "OPEN-WORK.md", "dossier", "hand
 const CLOSED = new Set(["done", "dropped", "moved"]);
 const SHOWN = 3;
 const STALE_LOCK_MS = 60_000;
+const DONE = join("_archive", "OPEN-WORK-done.md");
 
 type Workspace = { root: string; dir: string; note?: string };
 type Row = { id: string; state: string; item: string; owner: string };
+type TableRow = { at: number; line: string; head: string; whole: boolean; named: Record<string, string> };
+type Found = { handoffs: string[]; rows: Row[]; idle: Idle[]; loose: string[]; next?: string; moved: number };
 type Idle = { name: string; days: number };
 
 function git(cwd: string, ...args: string[]): { code: number; out: string } {
@@ -78,25 +81,82 @@ function split(line: string, backticks: boolean): string[] {
   return out.slice(1, -1);
 }
 
-function openTableRows(text: string): Record<string, string>[] {
-  const rows: Record<string, string>[] = [];
+function tableRows(text: string): TableRow[] {
+  const rows: TableRow[] = [];
   let columns: string[] | undefined;
-  for (const line of text.split("\n")) {
-    if (!line.startsWith("|")) {
+  let head = "";
+  let fenced = false;
+  text.split("\n").forEach((line, at) => {
+    if (line.trimStart().startsWith("```")) fenced = !fenced;
+    if (fenced || !line.startsWith("|")) {
       columns = undefined;
-      continue;
+      return;
     }
     const row = cells(line, columns?.length);
     if (!columns) {
       columns = row.map(c => c.toLowerCase());
-      continue;
+      head = line;
+      return;
     }
-    if (row.every(c => /^:?-+:?$/.test(c))) continue;
-    const named = Object.fromEntries(columns.map((name, i) => [name, row[i] ?? ""]));
-    if (!columns.includes("state") || CLOSED.has(named.state.toLowerCase())) continue;
-    rows.push(named);
-  }
+    if (row.every(c => /^:?-+:?$/.test(c))) {
+      head += `\n${line}`;
+      return;
+    }
+    const whole = row.length === columns.length;
+    rows.push({ at, line, head, whole, named: Object.fromEntries(columns.map((name, i) => [name, row[i] ?? ""])) });
+  });
   return rows;
+}
+
+function isClosed(row: TableRow): boolean {
+  return "state" in row.named && CLOSED.has(row.named.state.toLowerCase());
+}
+
+function openTableRows(text: string): Record<string, string>[] {
+  return tableRows(text)
+    .filter(row => "state" in row.named && !isClosed(row))
+    .map(row => row.named);
+}
+
+function nextId(dir: string): string | undefined {
+  const counts = new Map<string, { rows: number; top: number }>();
+  for (const name of ["OPEN-WORK.md", DONE]) {
+    for (const row of tableRows(read(join(dir, name)))) {
+      const id = /^([A-Z]+)(\d+)$/.exec(row.named.id ?? "");
+      if (!id) continue;
+      const seen = counts.get(id[1]) ?? { rows: 0, top: 0 };
+      counts.set(id[1], { rows: seen.rows + 1, top: Math.max(seen.top, Number(id[2])) });
+    }
+  }
+  const [prefix, seen] = [...counts].sort((a, b) => b[1].rows - a[1].rows)[0] ?? [];
+  return prefix && seen ? `${prefix}${seen.top + 1}` : undefined;
+}
+
+function archiveClosed(dir: string): number {
+  const work = join(dir, "OPEN-WORK.md");
+  const text = read(work);
+  const closed = tableRows(text).filter(row => row.whole && isClosed(row));
+  if (!closed.length) return 0;
+  const target = join(dir, DONE);
+  const before = read(target);
+  const kept = new Set(before.split("\n"));
+  const tableEnds = (before.trimEnd().split("\n").at(-1) ?? "").startsWith("|");
+  let head = tableEnds ? tableRows(before).at(-1)?.head : undefined;
+  let add = before ? (before.endsWith("\n") ? "" : "\n") : "# Closed open work\n\nRows that `ws` moved out of `OPEN-WORK.md`, word for word.\n";
+  for (const row of closed) {
+    if (kept.has(row.line)) continue;
+    if (row.head !== head) add += `\n${row.head}\n`;
+    head = row.head;
+    add += `${row.line}\n`;
+  }
+  mkdirSync(join(dir, "_archive"), { recursive: true });
+  appendFileSync(target, add);
+  if (read(work) !== text) return 0;
+  const gone = new Set(closed.map(row => row.at));
+  const fresh = join(dir, `.OPEN-WORK.md.${process.pid}`);
+  writeFileSync(fresh, text.split("\n").filter((_, at) => !gone.has(at)).join("\n"));
+  renameSync(fresh, work);
+  return closed.length;
 }
 
 function openRows(text: string): Row[] {
@@ -139,7 +199,7 @@ function names(list: string[]): string {
   return list.slice(0, SHOWN).join(", ") + more;
 }
 
-function render(ws: Workspace, found: { handoffs: string[]; rows: Row[]; idle: Idle[]; loose: string[] }): string {
+function render(ws: Workspace, found: Found): string {
   const link = (path: string, what: string) => (existsSync(join(ws.dir, path)) ? [`- [${path}](${path}): ${what}`] : []);
   const list = (items: string[], empty: string) => (items.length ? items : [empty]);
   const lines = [
@@ -163,6 +223,7 @@ function render(ws: Workspace, found: { handoffs: string[]; rows: Row[]; idle: I
     "## Open work",
     "",
     ...list(found.rows.map(row => `- ${row.id} (${row.state}): ${clip(row.item)}`), "- None."),
+    ...(found.next ? ["", `Next id: \`${found.next}\`. Closed rows move to \`${DONE}\`.`] : []),
     "",
     "## Idle tmp folders",
     "",
@@ -180,12 +241,14 @@ function render(ws: Workspace, found: { handoffs: string[]; rows: Row[]; idle: I
   return lines.join("\n");
 }
 
-function summary(ws: Workspace, found: { handoffs: string[]; rows: Row[]; idle: Idle[]; loose: string[] }): string[] {
+function summary(ws: Workspace, found: Found): string[] {
   return [
     `ws: ${join(ws.dir, "START.md")}`,
     ...(ws.note ? [`ws: ${ws.note}`] : []),
     ...(found.handoffs.length ? [`handoffs: ${found.handoffs.length} — ${names(found.handoffs.map(name => `handoff/${name}`))}`] : []),
     ...(found.rows.length ? [`open work rows: ${found.rows.length} (OPEN-WORK.md)`] : []),
+    ...(found.moved ? [`closed rows moved: ${found.moved} (${DONE})`] : []),
+    ...(found.next ? [`next id: ${found.next}`] : []),
     ...(found.idle.length ? [`idle tmp folders: ${found.idle.length} — run \`ws tidy\` to archive them`] : []),
     ...(found.loose.length ? [`names outside the layout: ${found.loose.length} — ${names(found.loose)}`] : []),
   ];
@@ -194,12 +257,20 @@ function summary(ws: Workspace, found: { handoffs: string[]; rows: Row[]; idle: 
 function build(cwd: string): string[] {
   const ws = locate(cwd);
   mkdirSync(ws.dir, { recursive: true });
-  const work = join(ws.dir, "OPEN-WORK.md");
-  const found = {
+  const held = lock(ws.dir);
+  let moved = 0;
+  try {
+    if (held) moved = archiveClosed(ws.dir);
+  } finally {
+    if (held) rmSync(held, { force: true });
+  }
+  const found: Found = {
     handoffs: handoffs(ws.dir),
-    rows: existsSync(work) ? openRows(readFileSync(work, "utf8")) : [],
+    rows: openRows(read(join(ws.dir, "OPEN-WORK.md"))),
     idle: idle(ws.dir),
     loose: loose(ws.dir),
+    next: nextId(ws.dir),
+    moved,
   };
   const fresh = join(ws.dir, `.START.md.${process.pid}`);
   writeFileSync(fresh, render(ws, found));
@@ -253,6 +324,7 @@ function gitState(cwd: string): string[] {
 function brief(cwd: string, today = new Date().toLocaleDateString("en-CA")): string {
   const ws = locate(cwd);
   const rows = openRows(read(join(ws.dir, "OPEN-WORK.md"))).map(row => ({ ...row, owner: row.owner.toLowerCase() }));
+  const next = nextId(ws.dir);
   const line = (row: Row) => `- ${row.id} (${row.state}): ${row.item}`;
   const block = (name: string, items: string[]) => [`## ${name}`, "", ...(items.length ? items : ["- None."]), ""];
   return [
@@ -260,6 +332,7 @@ function brief(cwd: string, today = new Date().toLocaleDateString("en-CA")): str
     "",
     `Project: \`${ws.root}\``,
     ...(ws.note ? [`Note: ${ws.note}.`] : []),
+    ...(next ? [`Next id: \`${next}\``] : []),
     "",
     ...block("Handoffs", handoffs(ws.dir).map(name => `- \`${join(ws.dir, "handoff", name)}\``)),
     ...block("Due", due(ws.dir, today)),
@@ -321,7 +394,7 @@ function tidy(cwd: string): number {
   mkdirSync(ws.dir, { recursive: true });
   const held = lock(ws.dir);
   if (!held) {
-    console.error(`ws tidy: another ws tidy holds the lock ${join(ws.dir, ".ws-tidy.lock")}`);
+    console.error(`ws tidy: another ws run holds the lock ${join(ws.dir, ".ws-tidy.lock")}`);
     return 1;
   }
   let code = 0;

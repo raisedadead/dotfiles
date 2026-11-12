@@ -129,6 +129,91 @@ test("START.md shows only the open rows of OPEN-WORK.md", () => {
   expect(r.out).toContain("open work rows: 2");
 });
 
+const register = (ids: [string, string][], head = "| id | item | state | owner | home | source |") =>
+  [head, "|----|------|-------|-------|------|--------|", ...ids.map(([id, state]) => `| ${id} | Item \`a | b\` ${id} | ${state} | agent | here | x |`)].join("\n");
+
+test("ws moves closed rows word for word to _archive/OPEN-WORK-done.md and keeps the rest", () => {
+  const pad = join(repo, ".scratchpad");
+  const table = register([["O1", "open"], ["O2", "done"], ["O3", "dropped"], ["O4", "deferred — until x"], ["O5", "moved"]]);
+  const lines = table.split("\n");
+  put(join(pad, "OPEN-WORK.md"), `# Open work\n\nRules stay.\n\n${table}\n\n| a | b |\n|---|---|\n| done | done |\n`);
+  const r = run(repo);
+  expect(r.code).toBe(0);
+  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toBe(
+    `# Open work\n\nRules stay.\n\n${[lines[0], lines[1], lines[2], lines[5]].join("\n")}\n\n| a | b |\n|---|---|\n| done | done |\n`,
+  );
+  const done = readFileSync(join(pad, "_archive", "OPEN-WORK-done.md"), "utf8");
+  for (const moved of [lines[3], lines[4], lines[6]]) expect(done).toContain(`${moved}\n`);
+  expect(done).toContain(`${lines[0]}\n${lines[1]}\n`);
+  expect(r.out).toContain("closed rows moved: 3");
+});
+
+test("a later move appends rows under the same header, and a new header starts a new table", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "OPEN-WORK.md"), `${register([["O1", "done"]])}\n`);
+  run(repo);
+  put(join(pad, "OPEN-WORK.md"), `${register([["O2", "done"]])}\n`);
+  run(repo);
+  const other = "| ID | Item | State | Owner | Home | Source |";
+  put(join(pad, "OPEN-WORK.md"), `${register([["O3", "done"]], other)}\n`);
+  run(repo);
+  const done = readFileSync(join(pad, "_archive", "OPEN-WORK-done.md"), "utf8");
+  expect(done.split("| id | item |").length).toBe(2);
+  expect(done.split(other).length).toBe(2);
+  expect(done.indexOf("O1")).toBeLessThan(done.indexOf("O2"));
+  expect(done.indexOf("O2")).toBeLessThan(done.indexOf(other));
+});
+
+test("an archive that ends without a newline or under a note still gets whole rows that count", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "_archive", "OPEN-WORK-done.md"), `${register([["O1", "done"]])}`);
+  put(join(pad, "OPEN-WORK.md"), `${register([["O9", "done"]])}\n`);
+  run(repo);
+  const done = join(pad, "_archive", "OPEN-WORK-done.md");
+  put(done, `${readFileSync(done, "utf8")}\nA note.\n`);
+  put(join(pad, "OPEN-WORK.md"), `${register([["O3", "open"], ["O10", "done"]])}\n`);
+  expect(run(repo).out).toContain("next id: O11");
+  expect(readFileSync(done, "utf8")).not.toContain("||");
+});
+
+test("a row that does not split into the header's cells stays in the register", () => {
+  const pad = join(repo, ".scratchpad");
+  const odd = "| O1 | rename a | done | open | agent | here | x |";
+  put(join(pad, "OPEN-WORK.md"), `${register([])}\n${odd}\n`);
+  run(repo);
+  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toContain(odd);
+});
+
+test("a row already in the archive is not added again, and rows in a fenced example stay", () => {
+  const pad = join(repo, ".scratchpad");
+  const table = register([["O1", "done"]]);
+  put(join(pad, "_archive", "OPEN-WORK-done.md"), `${table}\n`);
+  put(join(pad, "OPEN-WORK.md"), `\`\`\`\n${register([["O2", "done"]])}\n\`\`\`\n\n${table}\n`);
+  run(repo);
+  const done = readFileSync(join(pad, "_archive", "OPEN-WORK-done.md"), "utf8");
+  expect(done.split("| O1 |").length).toBe(2);
+  expect(done).not.toContain("| O2 |");
+  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toContain("| O2 |");
+});
+
+test("a held lock leaves closed rows in place and ws still succeeds", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "OPEN-WORK.md"), `${register([["O1", "done"]])}\n`);
+  put(join(pad, ".ws-tidy.lock"), String(process.pid));
+  expect(run(repo).code).toBe(0);
+  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toContain("| O1 |");
+  expect(existsSync(join(pad, "_archive", "OPEN-WORK-done.md"))).toBe(false);
+});
+
+test("the next id counts the archive, so a moved id is never used again", () => {
+  const pad = join(repo, ".scratchpad");
+  put(join(pad, "OPEN-WORK.md"), `${register([["O7", "open"], ["O12", "done"]])}\n`);
+  const r = run(repo);
+  expect(r.out).toContain("next id: O13");
+  expect(start(repo)).toContain("Next id: `O13`");
+  expect(run(repo, "brief").out).toContain("Next id: `O13`");
+});
+
 test("a tmp folder is idle when its newest file is 14 or more days old", () => {
   put(join(repo, ".scratchpad", "tmp", "old", "a.md"), "", 20);
   put(join(repo, ".scratchpad", "tmp", "old", "deep", "b.md"), "", 15);
