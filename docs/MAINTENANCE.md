@@ -210,6 +210,12 @@ Expected: Configured servers connect. No scope conflict
 
 Expected: `build.ts` exits 0, so the source type-checks against the host types. All tests pass. Report the count
 
+The parity corpus reads recorded `shfmt` trees from `tests/shfmt-corpus-trees*.ts`. After a change to the corpus, to the rig's shell reader, or to `shfmt`, record them again and check for drift:
+
+`cd ~/.dotfiles/dot_claude/mods/rig && bun record-shfmt.ts && git status --porcelain -- 'tests/shfmt-corpus-trees*'`
+
+Expected: `record-shfmt: <N> trees in <P> passes`, then no output from `git status`. Output from `git status` means the trees changed: run M4 again, and commit the new trees only when the suite passes
+
 ### M6
 
 `rtk hook check 'ls -la'`; `rtk hook check 'git status'`; `rtk gain`
