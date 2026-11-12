@@ -4,19 +4,20 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 
 ## Choose checks for your change
 
-| Change                                  | Checks                                                                  |
-| --------------------------------------- | ----------------------------------------------------------------------- |
-| Documentation                           | Local links, code blocks, preserved constraints, and `git diff --check` |
-| Shared deployment or Git hooks          | S1 to S3 below; M15 and M16 fixture checks                              |
-| Pi rig                                  | P1 below                                                                |
-| Claude rig mod or hook rules            | M1, M4, S1, and S2                                                      |
-| Claude validator or formatter registry  | M4                                                                      |
-| Claude plugin                           | M1 to M3                                                                |
-| Shell, terminal, editor, or desktop     | Applicable terminal probes below and the component's own checks         |
-| Rex config, helpers, or app settings    | R1 below                                                                |
-| Workspace command `ws`                  | W1 below                                                                |
-| Jev question file or second-review gate | J1 below                                                                |
-| Pane monitor skill `cmd-monitor-pane`   | `bun test ./tests/monitor-pane` (about 1 minute), then R1               |
+| Change                                         | Checks                                                                  |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| Documentation                                  | Local links, code blocks, preserved constraints, and `git diff --check` |
+| Shared deployment or Git hooks                 | S1 to S3 below; M15 and M16 fixture checks                              |
+| Pi rig                                         | P1 below                                                                |
+| Claude rig mod or hook rules                   | M1, M4, S1, and S2                                                      |
+| Claude validator or formatter registry         | M4                                                                      |
+| Claude plugin                                  | M1 to M3                                                                |
+| Shell, terminal, editor, or desktop            | Applicable terminal probes below and the component's own checks         |
+| Rex config, helpers, or app settings           | R1 below                                                                |
+| Workspace command `ws`                         | W1 below                                                                |
+| Jev question file or second-review gate        | J1 below                                                                |
+| Pane monitor skill `cmd-monitor-pane`          | `bun test ./tests/monitor-pane` (about 1 minute), then R1               |
+| `install.sh`, `.chezmoiignore`, or an external | X1 below                                                                |
 
 Use disposable fixtures for checks that write files or send keys. Do not run them against the operator's live windows or sessions.
 
@@ -35,6 +36,14 @@ Expect `push.recurseSubmodules` `on-demand`, `submodule.recurse` `false`, and `s
 ### S3: Deployment boundary
 
 Run `~/.bin/chezmoi-fixture-check.sh`. It applies a synthetic source to an isolated destination and state file. Expected: exit 0.
+
+### X1: Linux sandbox
+
+Commit the change first. The check clones the named branch.
+
+`docker run --rm -v ~/.dotfiles:/src:ro -v ~/.dotfiles/tests/sandbox:/probe:ro -e CODESPACES=true ubuntu:24.04 bash /probe/check.sh main`
+
+Expected: `0 failed`. The check runs `install.sh` from a fresh clone, as Codespaces does, then checks that the shell, git, editor and tmux files exist, that no macOS, secret or agent target exists, that a commit works unsigned, that zsh starts, and that a second apply changes nothing. A missing `unzip` line from zsh is expected in the bare image
 
 ## Pi
 

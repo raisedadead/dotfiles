@@ -22,6 +22,16 @@ The private sources `dot_claude/`, `dot_agents/`, and `dot_pi/` deploy to `~/.cl
 - The age identity is not in Git. Without the 1Password copy, you cannot recover the encrypted files.
 - The submodules clone over SSH. Test the 1Password SSH agent first: `ssh -T git@github.com`.
 
+### Linux sandbox
+
+To use this repository as dotfiles in a Codespace or another Linux sandbox, select it as the dotfiles repository. Codespaces runs `install.sh`. On Linux, `install.sh` applies only the shell, git, editor and tmux configuration:
+
+- It installs a pinned chezmoi to `~/.local/bin` when chezmoi is not on `PATH`.
+- It links `~/.dotfiles` to the clone and runs `chezmoi init --apply`.
+- It does not install Homebrew or tools. It does not clone the private submodules.
+
+`.chezmoiignore` skips the macOS-only targets on Linux. It skips the encrypted targets, `~/.ssh`, and commit signing when the age identity or the signing key is not present. It skips the agent configuration when the `dot_claude` submodule is empty. Check the result with the [sandbox check](MAINTENANCE.md#x1-linux-sandbox).
+
 ### Pi
 
 Do not install Pi or a Pi package with `npm install -g`. Install npm-global tools only on the fnm default Node.
