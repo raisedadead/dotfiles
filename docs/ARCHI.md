@@ -172,7 +172,7 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 - Outside Rex (no `REX_BLOCK`), the Claude guard refuses each `rex` command that reaches the live server, such as `rex capture`. The Pi guard lets a verified read run. Only the Claude guard refuses a `rex kill` or a `rex session kill` of more than one session.
 - A long Claude dialog offers `Details`, which opens the `Approval` view. A long Pi dialog offers `Show all text`.
 - Pi reads an optional local `~/.pi/agent/redact.json` that adds or turns off redaction rules. Claude has no such file.
-- The kernels differ where the tools differ. Pi has no advisor, TaskList or `notebook`, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.
+- The kernels differ where the tools differ. Pi has no TaskList, and its `agent` tool runs one child at a time. Claude has no copy of Pi's `07-owasp`, `55-pytest` and `65-go-testing` rules.
 - [SKILLS.md](SKILLS.md) uses Claude names, except in the UI workflow.
 
 Each `RIG.md` holds the limits of its rig. The guards match command text and need `shfmt` to read shell syntax. They are not a sealed boundary.
@@ -203,6 +203,16 @@ Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second revi
 - Both rigs append each decision to `~/.local/state/jev/decisions.jsonl`, mode 600, in a folder of mode 700. The log holds no key and no file content. A failed write, or a link or a special file at that path, drops the line.
 
 Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
+
+### Rig metrics
+
+[rig-metrics](../exact_dot_bin/executable_rig-metrics) reads the Claude Code transcripts, `~/.local/state/jev/route.jsonl` and `git log`, and prints JSON. It writes nothing.
+
+- `rig-metrics [--until YYYY-MM-DD] [days]`: cost, review and rework rates, and the 14-day baseline that ends on the fixed date `BASELINE_UNTIL`.
+- `rig-metrics triggers`: one row for each tuned threshold, with its figure, sample size and status (`hold`, `fire` or `too few`). The thresholds are in the `THRESHOLDS` table of the script.
+- `rig-metrics ab --from YYYY-MM-DD`: the effort A/B arms, one arm for each session effort.
+
+Check: [G1](MAINTENANCE.md#g1-rig-metrics).
 
 ### Project instructions
 

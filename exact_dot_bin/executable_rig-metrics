@@ -1,0 +1,551 @@
+#!/usr/bin/env -S bun --no-env-file --config=/dev/null
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { basename, join } from "node:path";
+
+const DAY = 86_400_000;
+const HOME = process.env.HOME ?? "";
+const PROJECTS = join(HOME, ".claude/projects");
+const STATE = join(HOME, ".local/state/jev");
+const REPOS = [".dotfiles", ".dotfiles/dot_claude", "DEV/rd/claude-code-plugins", "DEV/fCC/infra"];
+const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
+const REVIEWERS = new Set(["reviewer", "dossier:dossier-reviewer"]);
+const SPAWN_DENIED = "Agent spawn missing";
+const LONG_CONTEXT = 200_000;
+const BASELINE_UNTIL = "2026-11-11";
+const AB_START: string | null = null;
+const CHASE_SECONDS = 72 * 3600;
+
+const THRESHOLDS = {
+  sheetKill: { need: 60, margin: 0.1 },
+  effortHarm: { need: 60, worse: 0.15 },
+  effortDefault: { need: 160, costRatio: 0.9, reworkSlack: 0.05 },
+  replay: { need: 3 },
+  router: { need: 270, recall: 0.85, falseAlarm: 0.2 },
+  secondReview: { need: 50 },
+  optionalReview: { need: 50, rate: 0.15 },
+  budget: { need: 3, over: 1.1, days: 3 },
+  signoff: { need: 50, passRate: 0.9 },
+  escalations: { need: 20 },
+  handoff: { need: 1 },
+};
+
+type Price = { in: number; w5: number; w1: number; r: number; out: number };
+const PRICES: [RegExp, Price, Price?][] = [
+  [/^claude-fable-5-2/, { in: 8, w5: 10, w1: 16, r: 0.2, out: 40 }],
+  [/^claude-fable-5-1/, { in: 10, w5: 12.5, w1: 20, r: 0.25, out: 50 }],
+  [/^claude-opus-5-5/, { in: 4, w5: 5, w1: 8, r: 0.2, out: 20 }],
+  [/^claude-opus-5(?!-5)/, { in: 5, w5: 6.25, w1: 10, r: 0.5, out: 25 }],
+  [/^claude-opus-4-8/, { in: 5, w5: 6.25, w1: 10, r: 0.5, out: 25 }],
+  [/^claude-sonnet-5-5/, { in: 2, w5: 2.5, w1: 4, r: 0.1, out: 10 }],
+  [/^claude-haiku-5-5/, { in: 0.1, w5: 0.125, w1: 0.2, r: 0.01, out: 0.5 }, { in: 0.5, w5: 0.625, w1: 1, r: 0.05, out: 2.5 }],
+];
+
+type Usage = Record<string, any>;
+type Verdict = "blocking" | "minor" | "clean" | "unparsed";
+type Row = Record<string, any>;
+
+type Request = {
+  session: string;
+  day: string;
+  start: number;
+  last: number;
+  cost: number;
+  effort: string;
+  sessionEffort: string;
+  srcEdits: number;
+  reviews: number;
+  editsAfterReview: number;
+  firstReviewCall?: string;
+  firstReviewAgent?: string;
+};
+
+type Spawn = { session: string; agentId: string; type: string; verdict: Verdict; signoff?: string; cost: number; minutes: number; start: number };
+
+type Corpus = {
+  since: number;
+  window: number;
+  until: number;
+  cost: number;
+  daily: Map<string, number>;
+  prompts: Map<string, number>;
+  requests: Request[];
+  spawns: Map<string, Spawn>;
+  mainLong: number;
+  mainCost: number;
+  advisorMain: number;
+  advisorSub: number;
+  advisorRequests: number;
+  agentCalls: number;
+  denials: number;
+  compactions: number;
+  sessions: number;
+};
+
+function priceOf(model: string, u: Usage): number {
+  const row = PRICES.find(([re]) => re.test(model));
+  if (!row) return 0;
+  const cc = u.cache_creation ?? {};
+  const w5 = cc.ephemeral_5m_input_tokens ?? 0;
+  const w1 = cc.ephemeral_1h_input_tokens ?? Math.max(0, (u.cache_creation_input_tokens ?? 0) - w5);
+  const input = u.input_tokens ?? 0;
+  const read = u.cache_read_input_tokens ?? 0;
+  const p = row[2] && input + w5 + w1 + read > 100_000 ? row[2] : row[1];
+  return (input * p.in + w5 * p.w5 + w1 * p.w1 + read * p.r + (u.output_tokens ?? 0) * p.out) / 1e6;
+}
+
+function promptTokens(u: Usage): number {
+  return (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+}
+
+function iterations(row: Row): { model: string; usage: Usage; advisor: boolean }[] {
+  const message = row.message ?? {};
+  const its = message.usage?.iterations;
+  if (Array.isArray(its) && its.length) return its.map((it: Usage) => ({ model: it.model ?? message.model, usage: it, advisor: it.type === "advisor_message" }));
+  return message.usage ? [{ model: message.model, usage: message.usage, advisor: false }] : [];
+}
+
+function verdictOf(text: string): Verdict {
+  const line = [...text.matchAll(/^[ \t*_>#]*(?:REVIEW|VERDICT)[*_]*:[*_]*[ \t]*([^\n]*)/gm)].at(-1)?.[1];
+  if (line === undefined) return "unparsed";
+  const count = (re: RegExp) => [...line.matchAll(re)].reduce((sum, m) => sum + Number(m[1]), 0);
+  if (/^CHANGES/.test(line) || count(/(\d+) (?:blocker|major)/gi) + count(/(\d+) (?:critical|high|should-fix)/gi) > 0) return "blocking";
+  if (/^(PASS|clean)|\b0 findings/i.test(line)) return "clean";
+  return "minor";
+}
+
+function readRows(path: string): Row[] {
+  if (!existsSync(path)) return [];
+  return readFileSync(path, "utf8").split("\n").flatMap(line => {
+    if (!line) return [];
+    try {
+      return [JSON.parse(line)];
+    } catch {
+      return [];
+    }
+  });
+}
+
+const dayOf = (at: number) => new Date(at).toISOString().slice(0, 10);
+const scratch = (path: string) => /\.scratchpad\/|\/tmp\/|\/private\/tmp\//.test(path);
+const isHuman = (row: Row) => row.type === "user" && row.origin?.kind === "human" && typeof row.message?.content === "string";
+
+function readSpawn(path: string, session: string, corpus: Corpus): Spawn | undefined {
+  const agentId = basename(path, ".jsonl").replace(/^agent-/, "");
+  const metaPath = path.replace(/\.jsonl$/, ".meta.json");
+  let meta: Row = {};
+  try {
+    meta = existsSync(metaPath) ? JSON.parse(readFileSync(metaPath, "utf8")) : {};
+  } catch {
+    meta = {};
+  }
+  const seen = new Set<string>();
+  let text = "";
+  let structured = false;
+  let cost = 0;
+  let first = Infinity;
+  let last = 0;
+  for (const row of readRows(path)) {
+    if (row.type !== "assistant") continue;
+    const at = Date.parse(row.timestamp ?? "");
+    for (const block of row.message?.content ?? []) {
+      if (block.type === "text" && block.text) text = block.text;
+      if (block.type === "tool_use" && block.name === "StructuredOutput") structured = true;
+    }
+    if (!(at >= corpus.since && at < corpus.until)) continue;
+    const id = row.message?.id;
+    if (id && seen.has(id)) continue;
+    if (id) seen.add(id);
+    for (const it of iterations(row)) {
+      const usd = priceOf(it.model, it.usage);
+      cost += usd;
+      corpus.cost += usd;
+      corpus.daily.set(dayOf(at), (corpus.daily.get(dayOf(at)) ?? 0) + usd);
+      if (it.advisor && at >= corpus.window) corpus.advisorSub++;
+    }
+    first = Math.min(first, at);
+    last = Math.max(last, at);
+  }
+  if (first === Infinity) return undefined;
+  const signoff = text.match(/SIGNOFF: (PASS|CHANGES)/)?.[1];
+  return { session, agentId, type: String(meta.agentType ?? "unknown"), verdict: structured ? "unparsed" : verdictOf(text), signoff, cost, minutes: (last - first) / 60_000, start: first };
+}
+
+function readSession(path: string, corpus: Corpus) {
+  const session = basename(path, ".jsonl");
+  const seen = new Set<string>();
+  const requests: Request[] = [];
+  let request: Request | undefined;
+  let entry = "";
+  let advised = false;
+  let touched = false;
+  for (const row of readRows(path)) {
+    if (!entry && row.entrypoint) entry = row.entrypoint;
+    const at = Date.parse(row.timestamp ?? "");
+    if (!(at >= corpus.since && at < corpus.until)) continue;
+    const live = at >= corpus.window;
+    if (live) touched = true;
+    if (row.type === "user") {
+      if (isHuman(row)) {
+        if (request) requests.push(request);
+        if (request && advised && request.start >= corpus.window) corpus.advisorRequests++;
+        advised = false;
+        request = { session, day: dayOf(at), start: at, last: at, cost: 0, effort: "", sessionEffort: "", srcEdits: 0, reviews: 0, editsAfterReview: 0 };
+        corpus.prompts.set(dayOf(at), (corpus.prompts.get(dayOf(at)) ?? 0) + 1);
+      }
+      if (row.isCompactSummary && live) corpus.compactions++;
+      const agentId = row.toolUseResult?.agentId;
+      for (const block of Array.isArray(row.message?.content) ? row.message.content : []) {
+        if (block.type !== "tool_result") continue;
+        if (live && JSON.stringify(block.content ?? "").includes(SPAWN_DENIED)) corpus.denials++;
+        if (request && typeof agentId === "string" && block.tool_use_id === request.firstReviewCall) request.firstReviewAgent ??= agentId;
+      }
+      continue;
+    }
+    if (row.type !== "assistant") continue;
+    const id = row.message?.id;
+    if (!id || !seen.has(id)) {
+      if (id) seen.add(id);
+      for (const it of iterations(row)) {
+        if (!it.model || it.model === "<synthetic>") continue;
+        const usd = priceOf(it.model, it.usage);
+        corpus.cost += usd;
+        corpus.daily.set(dayOf(at), (corpus.daily.get(dayOf(at)) ?? 0) + usd);
+        if (!live) {
+          if (request) request.cost += usd;
+          continue;
+        }
+        if (it.advisor) {
+          corpus.advisorMain++;
+          advised = true;
+        } else {
+          corpus.mainCost += usd;
+          if (promptTokens(it.usage) >= LONG_CONTEXT) corpus.mainLong += usd;
+        }
+        if (request) request.cost += usd;
+      }
+      if (request) {
+        request.last = at;
+        if (!request.effort && row.effort) request.effort = String(row.effort);
+      }
+    }
+    if (!request) continue;
+    for (const block of row.message?.content ?? []) {
+      if (block.type !== "tool_use") continue;
+      const input = block.input ?? {};
+      if (live && (block.name === "Agent" || block.name === "Task")) corpus.agentCalls++;
+      if (EDIT_TOOLS.has(block.name) && !scratch(String(input.file_path ?? ""))) {
+        request.srcEdits++;
+        if (request.reviews) request.editsAfterReview++;
+      }
+      const agentReview = (block.name === "Agent" || block.name === "Task") && REVIEWERS.has(String(input.subagent_type ?? ""));
+      const workflowReview = block.name === "Workflow" && /lens-review/.test(JSON.stringify(input));
+      if (!agentReview && !workflowReview) continue;
+      if (!request.reviews) request.firstReviewCall = agentReview ? String(block.id ?? "") : "";
+      request.reviews++;
+    }
+  }
+  if (request) requests.push(request);
+  if (request && advised && request.start >= corpus.window) corpus.advisorRequests++;
+  const sessionEffort = requests.find(r => r.effort)?.effort ?? "";
+  for (const r of requests) r.sessionEffort = sessionEffort;
+  if (entry === "cli") corpus.requests.push(...requests);
+  if (touched) corpus.sessions++;
+}
+
+function readCorpus(window: number, until: number, since = window): Corpus {
+  const corpus: Corpus = { since, window, until, cost: 0, daily: new Map(), prompts: new Map(), requests: [], spawns: new Map(), mainLong: 0, mainCost: 0, advisorMain: 0, advisorSub: 0, advisorRequests: 0, agentCalls: 0, denials: 0, compactions: 0, sessions: 0 };
+  if (!existsSync(PROJECTS)) return corpus;
+  for (const project of readdirSync(PROJECTS)) {
+    const dir = join(PROJECTS, project);
+    if (!statSync(dir).isDirectory()) continue;
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith(".jsonl")) continue;
+      const path = join(dir, name);
+      if (statSync(path).mtimeMs < since) continue;
+      const session = basename(name, ".jsonl");
+      readSession(path, corpus);
+      const subdir = join(dir, session, "subagents");
+      if (!existsSync(subdir)) continue;
+      for (const sub of readdirSync(subdir)) {
+        if (!sub.endsWith(".jsonl") || statSync(join(subdir, sub)).mtimeMs < since) continue;
+        const spawn = readSpawn(join(subdir, sub), session, corpus);
+        if (spawn) corpus.spawns.set(`${session}/${spawn.agentId}`, spawn);
+      }
+    }
+  }
+  return corpus;
+}
+
+const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+const quantile = (xs: number[], p: number) => {
+  if (!xs.length) return 0;
+  const sorted = [...xs].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+};
+const rate = (n: number, d: number) => (d ? n / d : null);
+
+function reviewRates(corpus: Corpus, requests: Request[]) {
+  const edits = requests.filter(r => r.srcEdits > 0);
+  const reviewed = edits.filter(r => r.reviews > 0);
+  const firsts = reviewed.flatMap(r => {
+    const spawn = r.firstReviewAgent ? corpus.spawns.get(`${r.session}/${r.firstReviewAgent}`) : undefined;
+    return spawn && spawn.verdict !== "unparsed" ? [spawn.verdict] : [];
+  });
+  return {
+    edits,
+    reviewed,
+    reworkRate: rate(reviewed.filter(r => r.editsAfterReview > 0).length, reviewed.length),
+    firstReviewBlockingRate: rate(firsts.filter(v => v === "blocking").length, firsts.length),
+    costPerEditRequest: rate(sum(edits.map(r => r.cost)), edits.length),
+  };
+}
+
+function fixChase(days: number, until: number) {
+  const out: Record<string, { behaviour: number; chase: number; rate: number | null }> = {};
+  for (const repo of REPOS) {
+    const dir = join(HOME, repo);
+    if (!existsSync(dir)) continue;
+    const run = Bun.spawnSync(["git", "-C", dir, "log", `--since=${new Date(until - days * DAY).toISOString()}`, `--until=${new Date(until).toISOString()}`, "--no-merges", "--format=@@%ct\t%s", "--name-only"], { stdout: "pipe", stderr: "ignore" });
+    if (run.exitCode !== 0) continue;
+    const commits = run.stdout.toString().split("@@").filter(Boolean).map(block => {
+      const [head, ...files] = block.split("\n").filter(Boolean);
+      const [at, subject] = (head ?? "").split("\t");
+      return { at: Number(at), subject: subject ?? "", files };
+    }).reverse();
+    const touched = new Map<string, number>();
+    let behaviour = 0;
+    let chase = 0;
+    for (const commit of commits) {
+      if (/^(feat|fix|refactor|perf|revert)/i.test(commit.subject)) behaviour++;
+      if (/^(fix|revert)/i.test(commit.subject) && commit.files.some(f => commit.at - (touched.get(f) ?? -Infinity) <= 72 * 3600)) chase++;
+      for (const f of commit.files) touched.set(f, commit.at);
+    }
+    out[repo] = { behaviour, chase, rate: rate(chase, behaviour) };
+  }
+  return out;
+}
+
+function rolling7(corpus: Corpus, until: number) {
+  const days: { day: string; costPerPrompt: number | null; costPerEditRequest: number | null }[] = [];
+  for (let end = until - 13 * DAY; end <= until; end += DAY) {
+    const from = end - 7 * DAY;
+    const inWeek = (day: string) => Date.parse(day) >= from && Date.parse(day) < end;
+    const cost = sum([...corpus.daily].filter(([day]) => inWeek(day)).map(([, usd]) => usd));
+    const prompts = sum([...corpus.prompts].filter(([day]) => inWeek(day)).map(([, n]) => n));
+    const edits = corpus.requests.filter(r => r.srcEdits > 0 && inWeek(r.day));
+    days.push({ day: dayOf(end - DAY), costPerPrompt: rate(cost, prompts), costPerEditRequest: rate(sum(edits.map(r => r.cost)), edits.length) });
+  }
+  return days;
+}
+
+const mean = (xs: (number | null)[]) => {
+  const values = xs.filter((x): x is number => x !== null);
+  return values.length ? sum(values) / values.length : null;
+};
+
+function outcomes(since: number, until: number): Row[] {
+  return readRows(join(STATE, "route.jsonl")).filter(row => {
+    const at = Date.parse(row.ts ?? "");
+    return at >= since && at < until;
+  });
+}
+
+const rowsWithoutTs = () => readRows(join(STATE, "route.jsonl")).filter(row => Number.isNaN(Date.parse(row.ts ?? ""))).length;
+
+function chased(path: string, at: number): boolean {
+  let dir = path.slice(0, path.lastIndexOf("/")) || "/";
+  while (dir !== "/" && !existsSync(dir)) dir = dir.slice(0, dir.lastIndexOf("/")) || "/";
+  const from = Math.floor(at / 1000);
+  const run = Bun.spawnSync(["git", "-C", dir, "log", `--since=@${from}`, `--until=@${from + CHASE_SECONDS}`, "--no-merges", "--format=%s", "--", path], { stdout: "pipe", stderr: "ignore" });
+  return run.exitCode === 0 && run.stdout.toString().split("\n").some(subject => /^(fix|revert)/i.test(subject));
+}
+
+function cleanOf(row: Row): boolean | "unknown" {
+  if (!row.reviews || !row.firstReview || row.firstReview === "unparsed") return "unknown";
+  if (row.firstReview === "blocking" || row.editsAfterReview > 0) return false;
+  const files: string[] = Array.isArray(row.srcFiles) ? row.srcFiles : [];
+  return !files.some(path => chased(path, Date.parse(row.ts)));
+}
+
+function metrics(days: number, until: number) {
+  const since = until - days * DAY;
+  const baselineEnd = Math.min(until, Date.parse(`${BASELINE_UNTIL}T00:00:00Z`) + DAY);
+  const corpus = readCorpus(since, until, Math.min(since, until - 21 * DAY, baselineEnd - 21 * DAY));
+  const inWindow = corpus.requests.filter(r => r.start >= since);
+  const { edits, reviewed, reworkRate, firstReviewBlockingRate } = reviewRates(corpus, inWindow);
+  const parsed = [...corpus.spawns.values()].filter(s => REVIEWERS.has(s.type) && s.verdict !== "unparsed" && s.start >= since);
+  const daily = [...corpus.daily].filter(([day]) => Date.parse(day) >= since).map(([, usd]) => usd);
+  const total = sum(daily);
+  const prompts = sum([...corpus.prompts].filter(([day]) => Date.parse(day) >= since).map(([, n]) => n));
+  const window14 = corpus.requests.filter(r => r.start >= baselineEnd - 14 * DAY && r.start < baselineEnd);
+  const series = rolling7(corpus, baselineEnd);
+  const labels = outcomes(since, until).filter(row => row.kind === "outcome").map(cleanOf);
+  return {
+    window: { since: dayOf(since), until: dayOf(until - DAY), days },
+    cost: { total, perDay: { mean: daily.length ? total / days : 0, min: daily.length ? Math.min(...daily) : 0, max: daily.length ? Math.max(...daily) : 0 }, perPrompt: rate(total, prompts) },
+    blockingRateAllSpawns: rate(parsed.filter(s => s.verdict === "blocking").length, parsed.length),
+    reworkRate,
+    firstReviewBlockingRate,
+    reviewCoverage: rate(reviewed.length, edits.length),
+    reviewRounds: { median: quantile(reviewed.map(r => r.reviews), 0.5), p90: quantile(reviewed.map(r => r.reviews), 0.9) },
+    mainCostPerEditRequest: { median: quantile(edits.map(r => r.cost), 0.5), p90: quantile(edits.map(r => r.cost), 0.9), n: edits.length },
+    mainCostShare200k: rate(corpus.mainLong, corpus.mainCost),
+    wallMinutesPerEditRequest: { median: quantile(edits.map(r => r.last - r.start), 0.5) / 60_000, p90: quantile(edits.map(r => r.last - r.start), 0.9) / 60_000 },
+    advisor: { mainRequestRate: rate(corpus.advisorRequests, prompts), mainCalls: corpus.advisorMain, subagentCalls: corpus.advisorSub },
+    spawnDenialRate: rate(corpus.denials, corpus.agentCalls),
+    fixChase: fixChase(days, until),
+    firstTimeRight: { clean: labels.filter(l => l === true).length, notClean: labels.filter(l => l === false).length, unknown: labels.filter(l => l === "unknown").length },
+    routeRowsWithoutTs: rowsWithoutTs(),
+    baseline14: {
+      firstReviewBlockingRate: reviewRates(corpus, window14).firstReviewBlockingRate,
+      costPerPrompt7d: mean(series.map(d => d.costPerPrompt)),
+      costPerEditRequest7d: mean(series.map(d => d.costPerEditRequest)),
+      rolling7: series,
+    },
+    corpus,
+  };
+}
+
+function arms(corpus: Corpus, requests: Request[]) {
+  const arm = (effort: string) => {
+    const mine = requests.filter(r => r.sessionEffort === effort);
+    const { edits, reviewed, reworkRate, firstReviewBlockingRate, costPerEditRequest } = reviewRates(corpus, mine);
+    return { effort, editRequests: edits.length, reviewed: reviewed.length, reworkRate, firstReviewBlockingRate, costPerEditRequest };
+  };
+  const a = arm("high");
+  const b = arm("medium");
+  const harmStop = a.reviewed >= THRESHOLDS.effortHarm.need && b.reviewed >= THRESHOLDS.effortHarm.need && (b.reworkRate ?? 0) - (a.reworkRate ?? 0) >= THRESHOLDS.effortHarm.worse;
+  return { a, b, harmStop };
+}
+
+type Trigger = { name: string; rule: string; figure: unknown; n: number; need: number; status: "hold" | "fire" | "too few" };
+const trigger = (name: string, rule: string, figure: unknown, n: number, need: number, fires: boolean): Trigger => ({ name, rule, figure, n, need, status: n < need ? "too few" : fires ? "fire" : "hold" });
+
+function replayFigures(path: string | undefined) {
+  const recall: Record<string, number> = {};
+  if (!path) return recall;
+  for (const m of readFileSync(path, "utf8").matchAll(/^(sonnet-medium|sonnet-high|opus-medium) recall (\d+(?:\.\d+)?)(%?)/gm)) recall[m[1]] = m[3] ? Number(m[2]) / 100 : Number(m[2]);
+  return recall;
+}
+
+function triggers(days: number, until: number, replay: string | undefined, from: number | undefined): Trigger[] {
+  const m = metrics(days, until);
+  const { corpus } = m;
+  const rows = outcomes(until - days * DAY, until);
+  const outcomeRows = rows.filter(r => r.kind === "outcome");
+  const blockingOf = (xs: Row[]) => rate(xs.filter(r => r.firstReview === "blocking").length, xs.length);
+  const parsedReview = (r: Row) => Boolean(r.firstReview) && r.firstReview !== "unparsed";
+  const sheet = outcomeRows.filter(r => r.sheet && parsedReview(r));
+  const base = m.baseline14.firstReviewBlockingRate;
+  const sheetRate = blockingOf(sheet);
+  const ab = arms(corpus, corpus.requests.filter(r => r.start >= (from ?? Infinity)));
+  const t = THRESHOLDS;
+  const abN = Math.min(ab.a.reviewed, ab.b.reviewed);
+  const costRatio = ab.a.costPerEditRequest && ab.b.costPerEditRequest !== null ? ab.b.costPerEditRequest / ab.a.costPerEditRequest : null;
+  const reworkGap = ab.a.reworkRate !== null && ab.b.reworkRate !== null ? ab.b.reworkRate - ab.a.reworkRate : null;
+  const recall = replayFigures(replay);
+  const gapOf = (arm: string) => (recall[arm] !== undefined && recall["opus-medium"] !== undefined ? recall[arm] - recall["opus-medium"] : null);
+  const replayGap = { "sonnet-medium": gapOf("sonnet-medium"), "sonnet-high": gapOf("sonnet-high") };
+  const labelled = outcomeRows.filter(r => Array.isArray(r.srcFiles));
+  const routes = rows.filter(r => r.kind === "route" && r.arms);
+  const routerRows = Object.keys(Object.assign({}, ...routes.map(r => r.arms))).map(name => {
+    const pairs = routes.flatMap(r => {
+      const label = labelled.find(o => o.session === r.session && o.request === r.request);
+      return label && typeof r.arms[name]?.needsSheet === "boolean" ? [{ guess: r.arms[name].needsSheet as boolean, truth: label.srcFiles.length >= 2 }] : [];
+    });
+    const positives = pairs.filter(p => p.truth);
+    const negatives = pairs.filter(p => !p.truth);
+    const figure = { recall: rate(positives.filter(p => p.guess).length, positives.length), falseAlarm: rate(negatives.filter(p => p.guess).length, negatives.length) };
+    return trigger(`router recall: ${name}`, `recall >= ${t.router.recall} and false alarm <= ${t.router.falseAlarm} on needsSheet`, figure, pairs.length, t.router.need, (figure.recall ?? 0) >= t.router.recall && (figure.falseAlarm ?? 1) <= t.router.falseAlarm);
+  });
+  const secondReviews = outcomeRows.filter(r => r.secondReview === "found" || r.secondReview === "none");
+  const optional = outcomeRows.filter(r => r.signoff === "PASS" && parsedReview(r) && r.checksGreen === true && r.riskPath !== true);
+  const optionalRate = blockingOf(optional);
+  const recent = rolling7(corpus, until).slice(-t.budget.days - 4);
+  const overDays = (key: "costPerPrompt" | "costPerEditRequest", limit: number | null) => {
+    if (limit === null) return 0;
+    let run = 0;
+    for (const day of recent) run = day[key] !== null && (day[key] as number) > limit * t.budget.over ? run + 1 : 0;
+    return run;
+  };
+  const budget = { promptDaysOver: overDays("costPerPrompt", m.baseline14.costPerPrompt7d), editDaysOver: overDays("costPerEditRequest", m.baseline14.costPerEditRequest7d), baseline: { costPerPrompt7d: m.baseline14.costPerPrompt7d, costPerEditRequest7d: m.baseline14.costPerEditRequest7d } };
+  const budgetDays = Math.max(0, Math.floor((until - (Date.parse(`${BASELINE_UNTIL}T00:00:00Z`) + DAY)) / DAY));
+  const signoffs = [...corpus.spawns.values()].filter(s => s.type === "signoff" && s.signoff && s.start >= until - days * DAY);
+  const signoffFigure = {
+    perWeek: (signoffs.length * 7) / days,
+    usdPerSignoff: rate(sum(signoffs.map(s => s.cost)), signoffs.length),
+    minutesPerSignoff: rate(sum(signoffs.map(s => s.minutes)), signoffs.length),
+    changesRate: rate(signoffs.filter(s => s.signoff === "CHANGES").length, signoffs.length),
+  };
+  const sheetRequests = outcomeRows.filter(r => r.sheet);
+  const stuck = sum(sheetRequests.map(r => Number(r.stuck ?? 0)));
+  return [
+    trigger("sheet kill rule", `first-review blocking rate on sheet requests > baseline - ${t.sheetKill.margin}`, { rate: sheetRate, baseline: base }, sheet.length, t.sheetKill.need, sheetRate !== null && base !== null && sheetRate > base - t.sheetKill.margin),
+    trigger("effort A/B harm", `b rework - a rework >= ${t.effortHarm.worse}`, { reworkGap }, abN, t.effortHarm.need, ab.harmStop),
+    trigger("effort A/B default", `b/a cost per edit request <= ${t.effortDefault.costRatio} and rework gap <= ${t.effortDefault.reworkSlack}`, { costRatio, reworkGap }, abN, t.effortDefault.need, costRatio !== null && reworkGap !== null && costRatio <= t.effortDefault.costRatio && reworkGap <= t.effortDefault.reworkSlack),
+    trigger("reviewer replay", "report only", { recall, gap: replayGap }, Object.keys(recall).length, t.replay.need, false),
+    ...routerRows,
+    trigger("second-review labels", `labelled second reviews >= ${t.secondReview.need}`, { labelled: secondReviews.length }, secondReviews.length, t.secondReview.need, secondReviews.length >= t.secondReview.need),
+    trigger("optional review", `first-review blocking rate on signed-off green requests < ${t.optionalReview.rate}`, { rate: optionalRate }, optional.length, t.optionalReview.need, optionalRate !== null && optionalRate < t.optionalReview.rate),
+    trigger("budget guard", `7-day cost per prompt or per edit request over ${t.budget.over} x baseline for ${t.budget.days} days`, budget, budgetDays, t.budget.need, Math.max(budget.promptDaysOver, budget.editDaysOver) >= t.budget.days),
+    trigger("sign-off", `PASS rate >= ${t.signoff.passRate} drops the risk-path trigger`, signoffFigure, signoffs.length, t.signoff.need, signoffFigure.changesRate !== null && 1 - signoffFigure.changesRate >= t.signoff.passRate),
+    trigger("escalations", "report only", { stuckPerSheetRequest: rate(stuck, sheetRequests.length) }, sheetRequests.length, t.escalations.need, false),
+    trigger("handoff nudge", "report only", { mainCostShare200k: m.mainCostShare200k, compactionsPerSession: rate(corpus.compactions, corpus.sessions) }, corpus.sessions, t.handoff.need, false),
+  ];
+}
+
+function parse(argv: string[]) {
+  const args = [...argv];
+  const command = args[0] === "triggers" || args[0] === "ab" ? args.shift() : "report";
+  let until = Date.parse(`${dayOf(Date.now())}T00:00:00Z`) + DAY;
+  let replay: string | undefined;
+  let from = AB_START ? Date.parse(`${AB_START}T00:00:00Z`) : undefined;
+  const rest: string[] = [];
+  const date = (flag: string) => {
+    const value = args.shift() ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`${flag} needs YYYY-MM-DD, got "${value}"`);
+    return Date.parse(`${value}T00:00:00Z`);
+  };
+  while (args.length) {
+    const arg = args.shift() ?? "";
+    if (arg === "--until") until = date(arg) + DAY;
+    else if (arg === "--from") from = date(arg);
+    else if (arg === "--replay") {
+      replay = args.shift();
+      if (!replay || !existsSync(replay)) throw new Error(`--replay needs an existing file, got "${replay ?? ""}"`);
+    }
+    else rest.push(arg);
+  }
+  const days = Number(rest[0] ?? 30);
+  if (!Number.isInteger(days) || days < 1) throw new Error(`days must be a whole number, got "${rest[0]}"`);
+  return { command, until, days, replay, from };
+}
+
+function main(): number {
+  let options: ReturnType<typeof parse>;
+  try {
+    options = parse(process.argv.slice(2));
+  } catch (error) {
+    console.error(`rig-metrics: ${(error as Error).message}\nusage: rig-metrics [triggers|ab] [--until YYYY-MM-DD] [--from YYYY-MM-DD] [--replay <replay-notes.md>] [days]`);
+    return 64;
+  }
+  const { command, until, days, replay, from } = options;
+  if (command === "triggers") {
+    console.log(JSON.stringify(triggers(days, until, replay, from), null, 2));
+    return 0;
+  }
+  if (command === "ab") {
+    if (from === undefined) {
+      console.error("rig-metrics: ab needs --from YYYY-MM-DD while AB_START is not set");
+      return 64;
+    }
+    const corpus = readCorpus(from, until);
+    console.log(JSON.stringify({ from: dayOf(from), ...arms(corpus, corpus.requests) }, null, 2));
+    return 0;
+  }
+  const { corpus: _, ...report } = metrics(days, until);
+  console.log(JSON.stringify(report, null, 2));
+  return 0;
+}
+
+process.exit(main());
