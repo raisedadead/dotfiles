@@ -177,7 +177,7 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 
 Each `RIG.md` holds the limits of its rig. The guards match command text and need `shfmt` to read shell syntax. They are not a sealed boundary.
 
-In each rig, the `dotfile_apply` tool applies named targets. It opens a dialog with the diff only when a changed file is a rig gate, a secret or encrypted file, a git, shell, ssh or `wt` settings file, or a run script, and the operator's answer is the approval. `chezmoi apply <target>` run alone opens the same dialog for every target. The `ship` tool pushes a branch and opens its PR after one dialog. Each `RIG.md` states which steps the model runs.
+In each rig, the `dotfile_apply` tool applies named targets. It opens a dialog with the diff only when a changed file is a rig gate, a secret or encrypted file, a git, shell, ssh or `wt` settings file, a file in `~/.bin`, or a run script, and the operator's answer is the approval. `chezmoi apply <target>` run alone opens the same dialog for every target. The `ship` tool pushes a branch and opens its PR after one dialog. Each `RIG.md` states which steps the model runs.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 
