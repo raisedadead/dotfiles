@@ -177,7 +177,7 @@ The same command gets the same outcome in the Claude Code and Pi rigs: it runs, 
 
 Each `RIG.md` holds the limits of its rig. The guards match command text and need `shfmt` to read shell syntax. They are not a sealed boundary.
 
-In each rig, `chezmoi apply <target>` run alone opens a dialog with the diff, and the operator's answer is the approval. Each `RIG.md` states which steps the model runs.
+In each rig, the `dotfile_apply` tool applies named targets. It opens a dialog with the diff only when a changed file is a rig gate, a secret or encrypted file, or a run script, and the operator's answer is the approval. `chezmoi apply <target>` run alone opens the same dialog for every target. The `ship` tool pushes a branch and opens its PR after one dialog. Each `RIG.md` states which steps the model runs.
 
 Each `RIG.md` has these sections in this order: `Use`, `Change the rig`, `Files`, `Checks`, `Limits`. A rig adds its own sections between `Files` and `Checks`, and can add a reference section after `Limits`.
 
@@ -273,7 +273,7 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 
 ### RTK and worktrees
 
-A session starts in the main checkout and works in `wt` worktrees by full path. Reason: after `EnterWorktree`, Claude Code refuses an edit to the main checkout, and dossiers stay there. Branch form: `<type>/<cc|pi>-<first 6 of session ID>-<topic>`. `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. Both guards ask before worktree removal (`mods/rig/src/mutations.ts`, `agent/extensions/guard/core/mutations.ts`).
+A session starts in the main checkout and works in `wt` worktrees by full path. Reason: after `EnterWorktree`, Claude Code refuses an edit to the main checkout, and dossiers stay there. Branch form: `<type>/<cc|pi>-<first 6 of session ID>-<topic>`. `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. Both guards ask before a worktree removal through `wt` or `git` (`mods/rig/src/mutations.ts`, `agent/extensions/guard/core/mutations.ts`). The `worktree_remove` tool asks only when `force` or `force_delete` would drop uncommitted files or unmerged commits.
 
 Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite because the worktree isolation check refuses a rewritten git command (rtk-ai/rtk#3864).
 
