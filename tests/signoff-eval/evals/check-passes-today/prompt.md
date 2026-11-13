@@ -49,12 +49,12 @@ Files: src/total.ts, tests/total.test.ts.
 2. Run `pwd`. Spawn the agent type `signoff-eval:evidence` once, in the foreground, with this mission, where `<cwd>` is the `pwd` output:
 
 ```
-OUTPUT: the signoff reply word for word.
-DONE: the evidence file is written and the signoff agent has replied.
+OUTPUT: your reply, as your steps define it.
+DONE: your last line is a SIGNOFF: line.
 Design file: <cwd>/design.md
 Repository: <cwd>
 Notes path: <cwd>/.scratchpad/signoff-notes.md
 Signoff agent: signoff-eval:signoff
 ```
 
-3. Reply with the agent's last line verbatim and nothing else.
+3. Reply with the agent's last line verbatim and nothing else. Add no note of your own.
