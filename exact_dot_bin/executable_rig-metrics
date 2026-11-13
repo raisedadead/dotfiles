@@ -379,7 +379,7 @@ function metrics(days: number, until: number) {
   const prompts = sum([...corpus.prompts].filter(([day]) => Date.parse(day) >= since).map(([, n]) => n));
   const window14 = corpus.requests.filter(r => r.start >= baselineEnd - 14 * DAY && r.start < baselineEnd);
   const series = rolling7(corpus, baselineEnd);
-  const labels = outcomes(since, until).filter(row => row.kind === "outcome").map(cleanOf);
+  const labels = outcomes(since, until).filter(row => row.kind === "outcome" && Array.isArray(row.srcFiles) && row.srcFiles.length > 0).map(cleanOf);
   return {
     window: { since: dayOf(since), until: dayOf(until - DAY), days },
     cost: { total, perDay: { mean: daily.length ? total / days : 0, min: daily.length ? Math.min(...daily) : 0, max: daily.length ? Math.max(...daily) : 0 }, perPrompt: rate(total, prompts) },

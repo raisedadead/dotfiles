@@ -132,6 +132,12 @@ test("an outcome row with no review is unknown, not clean", () => {
   expect(firstTimeRight).toEqual({ clean: 1, notClean: 1, unknown: 1 });
 });
 
+test("a request with no source edit stays out of the first-time-right count", () => {
+  put(join(home, ".local/state/jev/route.jsonl"), [outcome({ srcFiles: [] }), outcome({ srcFiles: [], reviews: 1, firstReview: "clean" }), outcome({ reviews: 0 })]);
+  const { firstTimeRight } = report("--until", UNTIL, "30");
+  expect(firstTimeRight).toEqual({ clean: 0, notClean: 0, unknown: 1 });
+});
+
 test("a fix commit on a changed file within 72 hours makes a clean review not clean", () => {
   const repo = join(home, "repo");
   mkdirSync(repo, { recursive: true });
