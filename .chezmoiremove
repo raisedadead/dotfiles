@@ -9,3 +9,4 @@
 .agents/skills/rex
 .pi/agent/extensions/guard/git-identity.ts
 .claude/agents/notebook.md
+.claude/workflows/lens-review.js

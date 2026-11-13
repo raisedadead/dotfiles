@@ -51,7 +51,7 @@ const step = (tools: { name: string; input: Record<string, unknown> }[] = [], op
 });
 
 const edit = (file = "/work/repo/src/a.ts") => ({ name: "Edit", input: { file_path: file } });
-const review = (id: string) => ({ id, name: "Agent", input: { subagent_type: "reviewer", prompt: "review" } });
+const review = (id: string, type = "reviewer") => ({ id, name: "Agent", input: { subagent_type: type, prompt: "review" } });
 const spawned = (agentId: string, call: string, ts = DAY_TS) => ({ type: "user", timestamp: ts, message: { role: "user", content: [{ type: "tool_result", tool_use_id: call, content: "launched" }] }, toolUseResult: { agentId, status: "async_launched" } });
 
 const project = (session: string, rows: unknown[]) => put(join(home, ".claude/projects/-work-repo", `${session}.jsonl`), rows);
@@ -121,6 +121,16 @@ test("first-review rate reads the first review of each request through the Agent
   expect(firstReviewBlockingRate).toBeCloseTo(1 / 2, 6);
   expect(blockingRateAllSpawns).toBeCloseTo(2 / 3, 6);
 });
+
+test("a plugin reviewer spawn counts as a review, and a scout does not", () => {
+  project("s1", [prompt(), step([edit()]), step([review("tu_r1", "whetstone:whetstone-reviewer")]), spawned("aplug", "tu_r1")]);
+  subagent("s1", "aplug", "whetstone:whetstone-reviewer", "REVIEW: CHANGES — 1 major");
+  project("s2", [prompt(), step([edit()]), step([review("tu_r2", "whetstone:whetstone-scout")]), spawned("ascout", "tu_r2")]);
+  subagent("s2", "ascout", "whetstone:whetstone-scout", "REVIEW: CHANGES — 1 major");
+  const { firstReviewBlockingRate, blockingRateAllSpawns } = report("--until", UNTIL, "30");
+  expect(firstReviewBlockingRate).toBeCloseTo(1, 6);
+  expect(blockingRateAllSpawns).toBeCloseTo(1, 6);
+})
 
 test("an outcome row with no review is unknown, not clean", () => {
   put(join(home, ".local/state/jev/route.jsonl"), [
