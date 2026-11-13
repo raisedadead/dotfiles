@@ -126,7 +126,7 @@ test("a plugin reviewer spawn counts as a review, and a scout does not", () => {
   project("s1", [prompt(), step([edit()]), step([review("tu_r1", "whetstone:whetstone-reviewer")]), spawned("aplug", "tu_r1")]);
   subagent("s1", "aplug", "whetstone:whetstone-reviewer", "REVIEW: CHANGES — 1 major");
   project("s2", [prompt(), step([edit()]), step([review("tu_r2", "whetstone:whetstone-scout")]), spawned("ascout", "tu_r2")]);
-  subagent("s2", "ascout", "whetstone:whetstone-scout", "REVIEW: CHANGES — 1 major");
+  subagent("s2", "ascout", "whetstone:whetstone-scout", "REVIEW: clean");
   const { firstReviewBlockingRate, blockingRateAllSpawns } = report("--until", UNTIL, "30");
   expect(firstReviewBlockingRate).toBeCloseTo(1, 6);
   expect(blockingRateAllSpawns).toBeCloseTo(1, 6);
