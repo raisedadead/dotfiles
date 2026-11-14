@@ -79,6 +79,8 @@ If column one shows a change, run `chezmoi apply` in a terminal, not in an agent
 
 ## A file under `~/.claude`
 
+The full loop is [ARCHI.md "Deployment and capture"](ARCHI.md#deployment-and-capture). After an edit in place:
+
 ```sh
 chezmoi re-add ~/.claude/CLAUDE.md
 git -C ~/.dotfiles/dot_claude add CLAUDE.md

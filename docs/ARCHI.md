@@ -4,7 +4,13 @@ This guide holds the ownership, the load order, and the constraints for a change
 
 ## Deployment and capture
 
-Edit the target. Validate it. Run `chezmoi status`, then `chezmoi re-add <target>`. Inspect the Git diff. Commit. Nothing captures a target on its own. A rig file follows the change loop in its rig's `RIG.md` instead. Settings: [.chezmoi.toml.tmpl](../.chezmoi.toml.tmpl).
+This is the one deployment loop; `rules/10-chezmoi.md`, `docs/README.md`, `cmd-chezmoi` and each rig's `RIG.md` point here. Settings: [.chezmoi.toml.tmpl](../.chezmoi.toml.tmpl).
+
+1. **Change the source** (the default, and the only way for a template, a modify script, an external or a symlink entry): edit the file under `~/.dotfiles`, run its checks (`MAINTENANCE.md`), and commit in the repository that owns it. A submodule's `post-commit` hook commits the gitlink bump in `~/.dotfiles`. Then apply that one target: `mcp__rig__dotfile_apply <target>` in a Claude Code session, `chezmoi apply <target>` in a terminal. The dialog shows the diff and is the approval. A rig mod is built and tested before the commit (its `RIG.md`, "Change the rig").
+2. **Capture a target changed in place** (by you, an installer or an app): read `chezmoi status` and the target diff, show the diff and ask before an agent edits a target, validate it with its own tool, then `chezmoi re-add <target>`, read the source diff, and commit.
+3. **Push**: `home push`, run by the operator. It does not reach a repository outside `~/.dotfiles`.
+
+Nothing captures a target on its own.
 
 Read `chezmoi status` before a bare `chezmoi re-add`. A bare `re-add` captures every modified target, including an installer or runtime write. Capture one target at a time when the list holds a change you did not make. Revert the rest with `chezmoi apply <target>`.
 
