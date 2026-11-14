@@ -12,7 +12,7 @@ A feature, a bug fix, or any change to what the code does.
 
 1. `whetstone:tdd-cycle` drives. In a live dossier, `dossier:build` drives instead.
 1. Read `test-driven-development` when you must decide what to test.
-1. `reviewer` or the `whetstone:lens-review` workflow before done. `args.spec` adds the spec lens. `/code-review` runs only when the operator asks for it.
+1. One `reviewer` before the push, then `ds record review`. `/code-review` runs only when the operator asks for it.
 
 ## Change a public interface
 
