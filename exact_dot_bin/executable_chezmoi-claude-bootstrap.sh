@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
 # chezmoi-claude-bootstrap — fresh-machine setup for the Claude Code rig.
 #
-# Idempotent. Run after `chezmoi init --apply` (clone + apply). Installs what
-# chezmoi cannot: the cavemem package, the MCP merge, and the plugins.
+# Idempotent. Run after `chezmoi init --apply` (clone + apply). Does what
+# chezmoi cannot: the MCP merge and the plugins.
 #
 # Steps (each idempotent — re-runs are safe):
-#   1. cavemem  — cavemem-health.sh, then install or repair on fnm-default node
-#   2. MCP reconcile — chezmoi apply ~/.claude.json
-#   3. plugins  — claude plugin install for each enabledPlugins entry
+#   1. MCP reconcile — chezmoi apply ~/.claude.json
+#   2. plugins  — claude plugin install for each enabledPlugins entry
 #
 # Usage:
 #   chezmoi-claude-bootstrap.sh             # run all steps
 #   chezmoi-claude-bootstrap.sh --check     # report missing pieces, no install
-#   chezmoi-claude-bootstrap.sh --skip NAME # skip step (cavemem|mcp|plugins|verify)
+#   chezmoi-claude-bootstrap.sh --skip NAME # skip step (mcp|plugins|verify)
 #   chezmoi-claude-bootstrap.sh --only NAME # run only one step
 
 # step_* dispatch and helper functions are invoked indirectly — silence the
@@ -46,7 +45,7 @@ while [[ $# -gt 0 ]]; do
 		ONLY="$1"
 		;;
 	--help | -h)
-		sed -n '2,18p' "$0"
+		sed -n '2,15p' "$0"
 		exit 0
 		;;
 	*)
@@ -66,162 +65,6 @@ skipped() {
 	[[ "$SKIP" == "$1" ]] && return 0
 	[[ -n "$ONLY" && "$ONLY" != "$1" ]] && return 0
 	return 1
-}
-
-FNM_DEFAULT_BIN="$HOME/.local/share/fnm/aliases/default/bin"
-CAVEMEM_DIR="$HOME/.local/share/fnm/aliases/default/lib/node_modules/cavemem"
-XENOVA_DIR="$HOME/.local/share/fnm/aliases/default/lib/node_modules/@xenova/transformers"
-CAVEMEM_HEALTH="${CAVEMEM_HEALTH:-$HOME/.bin/cavemem-health.sh}"
-BSQL_PIN="better-sqlite3@12.11.1" # workaround: WiseLibs/better-sqlite3#1515
-
-cavemem_pin_bsql() {
-	(
-		cd "$CAVEMEM_DIR" || exit 1
-		[[ -e .npmrc ]] && {
-			err "$CAVEMEM_DIR/.npmrc exists — remove it first"
-			exit 1
-		}
-		trap 'rm -f .npmrc' EXIT INT TERM
-		printf 'allow-scripts=better-sqlite3\n' >.npmrc
-		npm i --no-save "$BSQL_PIN"
-	)
-}
-
-json_field() {
-	"$FNM_DEFAULT_BIN/node" -e 'try { console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[process.argv[2]] ?? "") } catch { console.log("") }' "$1" "$2" 2>/dev/null
-}
-
-cavemem_has() {
-	grep -q "^$1 " <<<"$2"
-}
-
-cavemem_worker_pid() {
-	local pid
-	pid=$(cat "$HOME/.cavemem/worker.pid" 2>/dev/null) && kill -0 "$pid" 2>/dev/null && printf '%s' "$pid"
-}
-
-cavemem_wait_worker() {
-	local dim
-	for _ in 1 2 3 4 5 6 7 8 9 10; do
-		[[ -n "$(cavemem_worker_pid)" ]] || return 0
-		dim=$(json_field "$HOME/.cavemem/worker.state.json" dim)
-		[[ "$dim" =~ ^[1-9][0-9]*$ ]] && return 0
-		sleep 2
-	done
-}
-
-cavemem_install_xenova() {
-	local version
-	version=$(json_field "$XENOVA_DIR/package.json" version)
-	npm i -g "@xenova/transformers${version:+@$version}" --allow-scripts=sharp,protobufjs || {
-		err "npm i -g @xenova/transformers failed"
-		return 1
-	}
-}
-
-cavemem_reinstall() {
-	local version
-	version=$(json_field "$CAVEMEM_DIR/package.json" version)
-	npm i -g --ignore-scripts "cavemem${version:+@$version}" || {
-		err "npm i -g cavemem failed"
-		return 1
-	}
-	cavemem_patch_rank || true
-}
-
-# workaround: JuliusBrussee/cavemem#62
-cavemem_patch_rank() {
-	local file
-	for file in "$CAVEMEM_DIR"/dist/*.js; do
-		grep -qsF 'Math.min(...bm25s)' "$file" || continue
-		"$FNM_DEFAULT_BIN/node" -e '
-			const fs = require("fs")
-			const file = process.argv[1]
-			let text = fs.readFileSync(file, "utf8")
-			for (const name of ["bm25s", "cosines"]) {
-				const from = "[Math.min(..." + name + "), Math.max(..." + name + ")]"
-				if (text.split(from).length !== 2) process.exit(1)
-				text = text.replace(from, "[" + name + ".reduce((a, b) => Math.min(a, b), Infinity), " + name + ".reduce((a, b) => Math.max(a, b), -Infinity)]")
-			}
-			fs.writeFileSync(file + ".tmp", text)
-			fs.renameSync(file + ".tmp", file)
-		' "$file" || {
-			err "cavemem ranker patch failed in $file"
-			return 1
-		}
-	done
-}
-
-cavemem_install() {
-	if ! command -v npm >/dev/null 2>&1; then
-		err "npm not in PATH — set up fnm default node first ('fnm install --lts && fnm default <ver>')"
-		return 1
-	fi
-	p "installing cavemem + @xenova/transformers via npm…"
-	cavemem_reinstall && cavemem_install_xenova || return 1
-	cavemem_pin_bsql || {
-		err "npm i --no-save $BSQL_PIN failed"
-		return 1
-	}
-}
-
-step_cavemem() {
-	local -x PATH="$FNM_DEFAULT_BIN:$PATH"
-	local problems msg pid
-	if [[ ! -x "$CAVEMEM_HEALTH" ]]; then
-		err "$CAVEMEM_HEALTH missing — run 'chezmoi apply ~/.bin'"
-		return 1
-	fi
-	if problems=$("$CAVEMEM_HEALTH"); then
-		ok "cavemem $(cavemem --version 2>/dev/null) healthy: hook, better-sqlite3, embedder, worker"
-		return 0
-	fi
-	if ((CHECK_ONLY)); then
-		while read -r _ msg; do
-			warn "$msg — run '--only cavemem'"
-		done <<<"$problems"
-		return 1
-	fi
-	pid=$(cavemem_worker_pid)
-	if cavemem_has missing "$problems" || cavemem_has start "$problems"; then
-		cavemem_install || return 1
-	else
-		if cavemem_has bsql "$problems"; then
-			p "pinning $BSQL_PIN under cavemem…"
-			cavemem_pin_bsql || {
-				err "npm i --no-save $BSQL_PIN failed"
-				return 1
-			}
-		fi
-		if cavemem_has hook "$("$CAVEMEM_HEALTH")"; then
-			p "reinstalling cavemem…"
-			cavemem_reinstall || return 1
-			cavemem_pin_bsql || {
-				err "npm i --no-save $BSQL_PIN failed"
-				return 1
-			}
-		fi
-		if cavemem_has rank "$problems"; then
-			p "patching the cavemem search ranker…"
-			cavemem_patch_rank || return 1
-		fi
-		if cavemem_has embedder "$problems"; then
-			p "reinstalling @xenova/transformers with the sharp build…"
-			cavemem_install_xenova || return 1
-		fi
-	fi
-	if [[ -n "$pid" ]]; then
-		p "restarting the cavemem worker…"
-		cavemem restart >/dev/null || warn "cavemem restart failed"
-	fi
-	cavemem_wait_worker
-	if ! problems=$("$CAVEMEM_HEALTH"); then
-		while read -r _ msg; do
-			err "$msg"
-		done <<<"$problems"
-		return 1
-	fi
-	ok "cavemem repaired: hook, better-sqlite3, embedder, worker"
 }
 
 step_mcp() {
@@ -309,7 +152,7 @@ main() {
 	printf "%s\n\n" "${RST}"
 
 	local rc=0
-	for step in cavemem mcp plugins verify; do
+	for step in mcp plugins verify; do
 		if skipped "$step"; then
 			printf '%sbootstrap ·%s skip %s\n' "$DIM" "$RST" "$step"
 			continue

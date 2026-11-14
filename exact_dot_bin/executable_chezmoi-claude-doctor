@@ -55,7 +55,6 @@ type State = {
   pubSource: string;
   privSource: string;
   shapeExts: string;
-  cavemem: string;
   codexReleases: string;
   piReleases: string;
   additionsFile: string;
@@ -82,7 +81,6 @@ const S: State = {
   pubSource: PUB,
   privSource: env("PRIV_SOURCE") || `${HOME}/.dotfiles`,
   shapeExts: env("SHAPE_EXTS") || "md|toml|yaml|yml|kdl|ini",
-  cavemem: env("CAVEMEM_HEALTH") || `${HOME}/.bin/cavemem-health.sh`,
   codexReleases: env("CODEX_RELEASES") || `${HOME}/.codex/packages/app-server-daemon/releases`,
   piReleases: env("PI_RELEASES") || `${HOME}/.pi/agent/install/releases`,
   additionsFile: env("ADDITIONS_FILE") || `${PUB}/docs/agent-additions.txt`,
@@ -800,31 +798,6 @@ function checkPluginSrcDrift(): number {
   return found;
 }
 
-function checkCavemem(): number {
-  if (!executable(S.cavemem)) {
-    log(`  WARN: ${S.cavemem} missing - run chezmoi apply ~/.bin`);
-    return 1;
-  }
-  const health = sh([S.cavemem], { pass: true });
-  const out = chomp(health.out);
-  if (health.code === 0) {
-    log("  clean");
-    return 0;
-  }
-  if (out.startsWith("missing ")) {
-    log("  skip (cavemem binary missing)");
-    return 0;
-  }
-  for (const line of out.split("\n")) {
-    const msg = line
-      .replace(/^[ \t\n]+/, "")
-      .replace(/^[^ \t\n]*[ \t\n]*/, "")
-      .replace(/[ \t\n]+$/, "");
-    log(`  WARN: ${msg} - run chezmoi-claude-bootstrap.sh --only cavemem`);
-  }
-  return 1;
-}
-
 function checkSafeguard(): number {
   let rc = 0;
   for (const file of [`${S.privSource}/dot_claude/.settings.managed.json`, `${S.claudeDir}/settings.json`]) {
@@ -1374,13 +1347,12 @@ function runChecks(): number {
   }
   log(`Total issues: ${total}`);
   const warns = [
-    ["[warn 1/7] first-party plugin drift (installed sha vs claude-code-plugins origin/main)", checkPluginSrcDrift],
-    ["[warn 2/7] cavemem health (hook, better-sqlite3, embedder, worker)", checkCavemem],
-    ["[warn 3/7] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)", checkSafeguard],
-    ["[warn 4/7] rig version gate (validate, type check and tests after a Claude Code update)", checkRigGate],
-    ["[warn 5/7] AI release stores (Codex daemon and Pi keep at most two releases)", checkAiReleases],
-    ["[warn 6/7] dangling links (~/.bin and ~/.claude/skills)", checkLinks],
-    ["[warn 7/7] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)", checkAdditions],
+    ["[warn 1/6] first-party plugin drift (installed sha vs claude-code-plugins origin/main)", checkPluginSrcDrift],
+    ["[warn 2/6] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)", checkSafeguard],
+    ["[warn 3/6] rig version gate (validate, type check and tests after a Claude Code update)", checkRigGate],
+    ["[warn 4/6] AI release stores (Codex daemon and Pi keep at most two releases)", checkAiReleases],
+    ["[warn 5/6] dangling links (~/.bin and ~/.claude/skills)", checkLinks],
+    ["[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)", checkAdditions],
   ] as const;
   for (const [head, check] of warns) {
     log(head);

@@ -262,9 +262,9 @@ Expected: No file directly in `~/.claude/markers` older than one day. The rig de
 
 ### M9
 
-`~/.bin/cavemem-health.sh`; read `lastError` in `~/.cavemem/worker.state.json`
+Retired 2026-11-14: cavemem is removed. Its data stays in `~/.cavemem`; nothing reads it.
 
-Expected: Exit 0 (M1 also runs it). `lastError` is null. MCP connects (M3)
+Expected: nothing to check
 
 ### M10
 

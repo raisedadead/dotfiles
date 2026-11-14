@@ -135,7 +135,6 @@ esac`,
   json(join(claude, "settings.json"), SETTINGS);
   put(join(claude, "agents", "a.md"), "a\n");
   json(join(home, ".claude.json"), RUNTIME, 0o600);
-  put(join(home, ".bin", "cavemem-health.sh"), "#!/bin/sh\nexit 0\n", 0o755);
   managed(join(claude, "settings.json"), join(claude, "agents", "a.md"));
 });
 
@@ -157,27 +156,24 @@ const CLEAN = `[1/5] chezmoi status (managed-file modifications)
   clean
 
 Total issues: 0
-[warn 1/7] first-party plugin drift (installed sha vs claude-code-plugins origin/main)
+[warn 1/6] first-party plugin drift (installed sha vs claude-code-plugins origin/main)
   skip (installed_plugins.json missing)
 
-[warn 2/7] cavemem health (hook, better-sqlite3, embedder, worker)
+[warn 2/6] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)
   clean
 
-[warn 3/7] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)
-  clean
-
-[warn 4/7] rig version gate (validate, type check and tests after a Claude Code update)
+[warn 3/6] rig version gate (validate, type check and tests after a Claude Code update)
   skip (no host types; Claude Code writes them when it loads the rig)
 
-[warn 5/7] AI release stores (Codex daemon and Pi keep at most two releases)
+[warn 4/6] AI release stores (Codex daemon and Pi keep at most two releases)
   skip (~/.codex/packages/app-server-daemon/releases missing)
   skip (~/.pi/agent/install/releases missing)
   clean
 
-[warn 6/7] dangling links (~/.bin and ~/.claude/skills)
+[warn 5/6] dangling links (~/.bin and ~/.claude/skills)
   clean
 
-[warn 7/7] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)
+[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)
   clean
 
 `;
@@ -398,7 +394,7 @@ test("plugin drift warns only when origin/main changes the plugin after the inst
   const c3 = git(own, "rev-parse", "HEAD");
   const installed = (sha: string) =>
     json(join(claude, "plugins", "installed_plugins.json"), { plugins: { "whetstone@raisedadead-plugins": [{ gitCommitSha: sha }], "x@other": [{}] } });
-  const drift = () => section(run([], { env }).out, "[warn 1/7]").split("\n").slice(1);
+  const drift = () => section(run([], { env }).out, "[warn 1/6]").split("\n").slice(1);
 
   git(own, "update-ref", "refs/remotes/origin/main", c1);
   installed(c1);
@@ -419,28 +415,10 @@ test("plugin drift warns only when origin/main changes the plugin after the inst
   expect(drift()).toEqual([`  note: ${own} has no origin/main — fetch it to compare the installs`]);
 });
 
-test("cavemem health warns on a missing or failing probe", () => {
-  const health = join(home, ".bin", "cavemem-health.sh");
-  rmSync(health);
-  expect(section(run().out, "[warn 2/7]")).toEndWith(`\n  WARN: ${health} missing - run chezmoi apply ~/.bin`);
-  put(health, "#!/bin/sh\nprintf 'hook   bad hook  \\nabi node mismatch\\n'\nexit 1\n", 0o755);
-  expect(section(run().out, "[warn 2/7]").split("\n").slice(1)).toEqual([
-    "  WARN: bad hook - run chezmoi-claude-bootstrap.sh --only cavemem",
-    "  WARN: node mismatch - run chezmoi-claude-bootstrap.sh --only cavemem",
-  ]);
-  put(health, "#!/bin/sh\necho 'missing cavemem'\nexit 1\n", 0o755);
-  expect(section(run().out, "[warn 2/7]")).toEndWith("\n  skip (cavemem binary missing)");
-  const other = join(base, "health.sh");
-  put(other, "#!/bin/sh\nexit 0\n", 0o755);
-  const r = run([], { env: { CAVEMEM_HEALTH: other } });
-  expect(section(r.out, "[warn 2/7]")).toEndWith("\n  clean");
-  expect(r.code).toBe(0);
-});
-
 test("the safeguard toggle warns unless both settings files hold false", () => {
   json(join(claude, "settings.json"), { ...SETTINGS, switchModelsOnFlag: true });
   put(join(home, ".bin", "claude-flag-audit.sh"), "#!/bin/sh\necho 'total 3 flag(s) last 7d 3'\n", 0o755);
-  expect(section(run().out, "[warn 3/7]").split("\n").slice(1)).toEqual([
+  expect(section(run().out, "[warn 2/6]").split("\n").slice(1)).toEqual([
     "  WARN: switchModelsOnFlag != false in ~/.claude/settings.json (got: true) — safeguard flag will silently switch model; re-flip via /config",
     "  note: 3 safeguard flag(s) in last 7 days — claude-flag-audit.sh 7",
   ]);
@@ -448,7 +426,7 @@ test("the safeguard toggle warns unless both settings files hold false", () => {
   rmSync(join(claude, "settings.json"));
   rmSync(join(home, ".bin", "claude-flag-audit.sh"));
   const r = run();
-  expect(section(r.out, "[warn 3/7]").split("\n").slice(1)).toEqual([
+  expect(section(r.out, "[warn 2/6]").split("\n").slice(1)).toEqual([
     "  WARN: switchModelsOnFlag != false in ~/.dotfiles/dot_claude/.settings.managed.json (got: null) — safeguard flag will silently switch model; re-flip via /config",
     "  skip (~/.claude/settings.json missing)",
   ]);
@@ -462,7 +440,7 @@ test("the rig gate re-tests the committed rig only on a new Claude Code version"
   stub("claude", 'case "$1" in --version) echo "9.9.2 (Claude Code)" ;; *) echo "claude $*" ;; esac');
   stub("bun", 'printf \'%s %s\\n\' "$PWD" "$*" >> "$DOCTOR_CTL/bun-calls"; echo "bun $*"; exit "$(cat "$DOCTOR_CTL/bun-rc" 2>/dev/null || echo 0)"');
   stub("bunx", "exit 0");
-  const gate = () => section(run().out, "[warn 4/7]").split("\n").slice(1);
+  const gate = () => section(run().out, "[warn 3/6]").split("\n").slice(1);
 
   put(types, "// Written by Claude Code 9.9.1.\nexport {};\n");
   put(verified, "9.9.1\n");
@@ -492,20 +470,20 @@ test("the rig gate re-tests the committed rig only on a new Claude Code version"
 test("release stores warn above two releases", () => {
   for (const name of ["r1", "r2", "r3"]) mkdirSync(join(home, ".codex", "packages", "app-server-daemon", "releases", name), { recursive: true });
   for (const name of ["r1", "r2"]) mkdirSync(join(home, ".pi", "agent", "install", "releases", name), { recursive: true });
-  const lines = section(run().out, "[warn 5/7]").split("\n").slice(1);
+  const lines = section(run().out, "[warn 4/6]").split("\n").slice(1);
   expect(lines.length).toBe(1);
   expect(lines[0]).toMatch(/^ {2}WARN: ~\/\.codex\/packages\/app-server-daemon\/releases holds 3 releases \(\S+\); keep only the newest two$/);
   const pi = join(base, "pi");
   mkdirSync(join(pi, "a"), { recursive: true });
   const r = run([], { env: { CODEX_RELEASES: join(base, "none"), PI_RELEASES: pi } });
-  expect(section(r.out, "[warn 5/7]").split("\n").slice(1)).toEqual([`  skip (${base}/none missing)`, "  clean"]);
+  expect(section(r.out, "[warn 4/6]").split("\n").slice(1)).toEqual([`  skip (${base}/none missing)`, "  clean"]);
 });
 
 test("a link to a missing file warns", () => {
   link("/bin/sh", join(home, ".bin", "ok"));
   link(join(home, "missing"), join(home, ".bin", "gone"));
   const r = run();
-  expect(section(r.out, "[warn 6/7]").split("\n").slice(1)).toEqual([
+  expect(section(r.out, "[warn 5/6]").split("\n").slice(1)).toEqual([
     `  WARN: ~/.bin/gone points to a missing ${home}/missing; reinstall the target or run its setup command`,
   ]);
   expect(r.code).toBe(0);
@@ -515,7 +493,7 @@ test("a skill link to a missing skill warns", () => {
   mkdirSync(join(home, ".agents", "skills", "ok"), { recursive: true });
   link("../../.agents/skills/ok", join(claude, "skills", "ok"));
   link("../../.agents/skills/gone", join(claude, "skills", "gone"));
-  expect(section(run().out, "[warn 6/7]").split("\n").slice(1)).toEqual([
+  expect(section(run().out, "[warn 5/6]").split("\n").slice(1)).toEqual([
     "  WARN: ~/.claude/skills/gone points to a missing ../../.agents/skills/gone; reinstall the target or run its setup command",
   ]);
 });
@@ -546,8 +524,8 @@ test("agent additions warn until they are removed or approved", () => {
   mkdirSync(join(home, ".pi", "agent", "extensions"), { recursive: true });
   mkdirSync(join(home, ".codex", "rules"), { recursive: true });
   managed(join(claude, "settings.json"), join(claude, "agents", "a.md"), join(claude, "CLAUDE.md"), join(claude, "rules", "sub"), rig, join(rig, "hooks"), join(rig, "hooks", "hooks.json"));
-  const head = "[warn 7/7] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)";
-  expect(section(run().out, "[warn 7/7]")).toBe(`${head}\n  clean`);
+  const head = "[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)";
+  expect(section(run().out, "[warn 6/6]")).toBe(`${head}\n  clean`);
 
   json(join(claude, "settings.json"), {
     switchModelsOnFlag: false,
@@ -629,19 +607,19 @@ test("agent additions warn until they are removed or approved", () => {
     "codex-instructions AGENTS.md",
     "codex-instructions AGENTS.override.md",
   ];
-  const lines = section(r.out, "[warn 7/7]").split("\n").slice(1);
+  const lines = section(r.out, "[warn 6/6]").split("\n").slice(1);
   expect(lines).toEqual([...items].sort().map(item => `  WARN: agent addition: ${item} - remove it, or add this item to docs/agent-additions.txt`));
   expect(r.out).not.toContain("\u001b");
 
   put(additions, `${items.join("\n")}\n`);
-  expect(section(run().out, "[warn 7/7]")).toBe(`${head}\n  clean`);
+  expect(section(run().out, "[warn 6/6]")).toBe(`${head}\n  clean`);
 
   put(join(claude, "settings.json"), "not json");
-  expect(section(run().out, "[warn 7/7]")).toContain(
+  expect(section(run().out, "[warn 6/6]")).toContain(
     "\n  WARN: agent addition: unreadable .claude/settings.json - remove it, or add this item to docs/agent-additions.txt",
   );
   put(join(ctl, "managed"), "");
-  expect(section(run().out, "[warn 7/7]")).toBe(`${head}\n  WARN: agent addition: check skipped (chezmoi managed list empty)`);
+  expect(section(run().out, "[warn 6/6]")).toBe(`${head}\n  WARN: agent addition: check skipped (chezmoi managed list empty)`);
 });
 
 test("--rewake in a background session exits 0 and leaves the marker", () => {
@@ -654,21 +632,21 @@ test("--rewake in a background session exits 0 and leaves the marker", () => {
 
 test("--rewake with issues wakes the model and records the warnings", () => {
   put(join(claude, "notes.md"));
-  rmSync(join(home, ".bin", "cavemem-health.sh"));
+  link(join(home, "missing"), join(home, ".bin", "gone"));
   const r = run(["--rewake"], { cwd: src });
   expect(r.code).toBe(2);
   expect(r.out).toBe("");
   expect(r.err).toStartWith("chezmoi-claude-doctor: issues found. Run ~/.bin/chezmoi-claude-doctor");
   expect(r.err).toContain(`\n[3/5] shape (unmanaged top-level *.{md|toml|yaml|yml|kdl|ini})\n  ORPHAN: ${claude}/notes.md\n`);
-  expect(r.err).toEndWith("[warn 7/7] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)\n  clean\n");
-  expect(readFileSync(marker(), "utf8")).toBe(`${home}/.bin/cavemem-health.sh missing - run chezmoi apply ~/.bin\n`);
+  expect(r.err).toEndWith("[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)\n  clean\n");
+  expect(readFileSync(marker(), "utf8")).toBe(`~/.bin/gone points to a missing ${home}/missing; reinstall the target or run its setup command\n`);
 });
 
 test("--rewake with warnings only stays silent and records them", () => {
-  rmSync(join(home, ".bin", "cavemem-health.sh"));
+  link(join(home, "missing"), join(home, ".bin", "gone"));
   const r = run(["--rewake"], { cwd: src });
   expect(r).toEqual({ code: 0, out: "", err: "" });
-  expect(readFileSync(marker(), "utf8")).toBe(`${home}/.bin/cavemem-health.sh missing - run chezmoi apply ~/.bin\n`);
+  expect(readFileSync(marker(), "utf8")).toBe(`~/.bin/gone points to a missing ${home}/missing; reinstall the target or run its setup command\n`);
 });
 
 test("--rewake on a clean machine removes the marker", () => {
