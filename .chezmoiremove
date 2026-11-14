@@ -10,3 +10,8 @@
 .pi/agent/extensions/guard/git-identity.ts
 .claude/agents/notebook.md
 .claude/workflows/lens-review.js
+.claude/agents/commiter.md
+.claude/agents/evidence.md
+.claude/agents/judge.md
+.claude/agents/signoff.md
+.claude/agents/worker.md
