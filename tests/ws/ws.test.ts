@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -91,14 +91,14 @@ test("outside a repo, ws uses ~/.scratchpad and says why", () => {
   expect(r.out).toContain("not in a git repo");
 });
 
-test("START.md links INDEX.md and dossier/LATER.md only when they exist", () => {
-  put(join(repo, ".scratchpad", "INDEX.md"), "# index\n");
+test("START.md links OPEN-WORK.md and LATER.md only when they exist", () => {
+  put(join(repo, ".scratchpad", "OPEN-WORK.md"), "# Open work\n");
   run(repo);
-  expect(start(repo)).toContain("[INDEX.md](INDEX.md)");
-  expect(start(repo)).not.toContain("LATER.md");
-  put(join(repo, ".scratchpad", "dossier", "LATER.md"), "# later\n");
+  expect(start(repo)).toContain("[OPEN-WORK.md](OPEN-WORK.md)");
+  expect(start(repo)).not.toContain("[LATER.md]");
+  put(join(repo, ".scratchpad", "LATER.md"), "# Later\n");
   run(repo);
-  expect(start(repo)).toContain("[dossier/LATER.md](dossier/LATER.md)");
+  expect(start(repo)).toContain("[LATER.md](LATER.md)");
 });
 
 test("START.md lists each open handoff", () => {
@@ -108,110 +108,12 @@ test("START.md lists each open handoff", () => {
   expect(r.out).toContain("handoff/2026-11-08-jev.md");
 });
 
-test("START.md shows only the open rows of OPEN-WORK.md", () => {
-  const rows = [
-    "| id | item | state | owner | home | source |",
-    "|----|------|-------|-------|------|--------|",
-    "| O1 | Fix `a | b` parsing | open | agent | here | x |",
-    "| O2 | Shipped thing | done | agent | here | x |",
-    "| O3 | Dropped thing | dropped | operator | here | x |",
-    "| O4 | Moved thing | moved | agent | there | x |",
-    "| O5 | Half thing | partial | agent | here | x |",
-    "| O6 | Odd ` tick | done | agent | here | x |",
-  ];
-  put(join(repo, ".scratchpad", "OPEN-WORK.md"), `# Open work\n\n${rows.join("\n")}\n`);
+test("START.md and the summary leave the rows to ds, and print no row count", () => {
+  put(join(repo, ".scratchpad", "OPEN-WORK.md"), "# Open work\n\n## Rows\n\n- O1 next A Fix the parser\n");
   const r = run(repo);
-  const text = start(repo);
-  expect(text).toContain("O1");
-  expect(text).toContain("Fix `a | b` parsing");
-  expect(text).toContain("O5");
-  for (const closed of ["O2", "O3", "O4", "O6"]) expect(text).not.toContain(closed);
-  expect(r.out).toContain("open work rows: 2");
-});
-
-const register = (ids: [string, string][], head = "| id | item | state | owner | home | source |") =>
-  [head, "|----|------|-------|-------|------|--------|", ...ids.map(([id, state]) => `| ${id} | Item \`a | b\` ${id} | ${state} | agent | here | x |`)].join("\n");
-
-test("ws moves closed rows word for word to _archive/OPEN-WORK-done.md and keeps the rest", () => {
-  const pad = join(repo, ".scratchpad");
-  const table = register([["O1", "open"], ["O2", "done"], ["O3", "dropped"], ["O4", "deferred — until x"], ["O5", "moved"]]);
-  const lines = table.split("\n");
-  put(join(pad, "OPEN-WORK.md"), `# Open work\n\nRules stay.\n\n${table}\n\n| a | b |\n|---|---|\n| done | done |\n`);
-  const r = run(repo);
-  expect(r.code).toBe(0);
-  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toBe(
-    `# Open work\n\nRules stay.\n\n${[lines[0], lines[1], lines[2], lines[5]].join("\n")}\n\n| a | b |\n|---|---|\n| done | done |\n`,
-  );
-  const done = readFileSync(join(pad, "_archive", "OPEN-WORK-done.md"), "utf8");
-  for (const moved of [lines[3], lines[4], lines[6]]) expect(done).toContain(`${moved}\n`);
-  expect(done).toContain(`${lines[0]}\n${lines[1]}\n`);
-  expect(r.out).toContain("closed rows moved: 3");
-});
-
-test("a later move appends rows under the same header, and a new header starts a new table", () => {
-  const pad = join(repo, ".scratchpad");
-  put(join(pad, "OPEN-WORK.md"), `${register([["O1", "done"]])}\n`);
-  run(repo);
-  put(join(pad, "OPEN-WORK.md"), `${register([["O2", "done"]])}\n`);
-  run(repo);
-  const other = "| ID | Item | State | Owner | Home | Source |";
-  put(join(pad, "OPEN-WORK.md"), `${register([["O3", "done"]], other)}\n`);
-  run(repo);
-  const done = readFileSync(join(pad, "_archive", "OPEN-WORK-done.md"), "utf8");
-  expect(done.split("| id | item |").length).toBe(2);
-  expect(done.split(other).length).toBe(2);
-  expect(done.indexOf("O1")).toBeLessThan(done.indexOf("O2"));
-  expect(done.indexOf("O2")).toBeLessThan(done.indexOf(other));
-});
-
-test("an archive that ends without a newline or under a note still gets whole rows that count", () => {
-  const pad = join(repo, ".scratchpad");
-  put(join(pad, "_archive", "OPEN-WORK-done.md"), `${register([["O1", "done"]])}`);
-  put(join(pad, "OPEN-WORK.md"), `${register([["O9", "done"]])}\n`);
-  run(repo);
-  const done = join(pad, "_archive", "OPEN-WORK-done.md");
-  put(done, `${readFileSync(done, "utf8")}\nA note.\n`);
-  put(join(pad, "OPEN-WORK.md"), `${register([["O3", "open"], ["O10", "done"]])}\n`);
-  expect(run(repo).out).toContain("next id: O11");
-  expect(readFileSync(done, "utf8")).not.toContain("||");
-});
-
-test("a row that does not split into the header's cells stays in the register", () => {
-  const pad = join(repo, ".scratchpad");
-  const odd = "| O1 | rename a | done | open | agent | here | x |";
-  put(join(pad, "OPEN-WORK.md"), `${register([])}\n${odd}\n`);
-  run(repo);
-  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toContain(odd);
-});
-
-test("a row already in the archive is not added again, and rows in a fenced example stay", () => {
-  const pad = join(repo, ".scratchpad");
-  const table = register([["O1", "done"]]);
-  put(join(pad, "_archive", "OPEN-WORK-done.md"), `${table}\n`);
-  put(join(pad, "OPEN-WORK.md"), `\`\`\`\n${register([["O2", "done"]])}\n\`\`\`\n\n${table}\n`);
-  run(repo);
-  const done = readFileSync(join(pad, "_archive", "OPEN-WORK-done.md"), "utf8");
-  expect(done.split("| O1 |").length).toBe(2);
-  expect(done).not.toContain("| O2 |");
-  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toContain("| O2 |");
-});
-
-test("a held lock leaves closed rows in place and ws still succeeds", () => {
-  const pad = join(repo, ".scratchpad");
-  put(join(pad, "OPEN-WORK.md"), `${register([["O1", "done"]])}\n`);
-  put(join(pad, ".ws-tidy.lock"), String(process.pid));
-  expect(run(repo).code).toBe(0);
-  expect(readFileSync(join(pad, "OPEN-WORK.md"), "utf8")).toContain("| O1 |");
-  expect(existsSync(join(pad, "_archive", "OPEN-WORK-done.md"))).toBe(false);
-});
-
-test("the next id counts the archive, so a moved id is never used again", () => {
-  const pad = join(repo, ".scratchpad");
-  put(join(pad, "OPEN-WORK.md"), `${register([["O7", "open"], ["O12", "done"]])}\n`);
-  const r = run(repo);
-  expect(r.out).toContain("next id: O13");
-  expect(start(repo)).toContain("Next id: `O13`");
-  expect(run(repo, "brief").out).toContain("Next id: `O13`");
+  expect(r.out).not.toContain("open work rows");
+  expect(start(repo)).not.toContain("Fix the parser");
+  expect(start(repo)).toContain("`ds triage`");
 });
 
 test("a tmp folder is idle when its newest file is 14 or more days old", () => {
@@ -230,13 +132,13 @@ test("a tmp folder is idle when its newest file is 14 or more days old", () => {
 });
 
 test("START.md flags a top-level name outside the layout", () => {
-  for (const name of ["INDEX.md", "OPEN-WORK.md", "handoff/x.md", "tmp/a/x.md", "research/a.md", "plans/a.md", "_archive/a.md", "dossier/a.md", ".cache/a"]) {
+  for (const name of ["OPEN-WORK.md", "LATER.md", "OPEN-WORK.pre-migrate.md", "INDEX.pre-migrate.md", "handoff/x.md", "tmp/a/x.md", "research/a.md", "plans/a.md", "_archive/a.md", "dossier/a.md", ".cache/a"]) {
     put(join(repo, ".scratchpad", name), "");
   }
   put(join(repo, ".scratchpad", "HANDOFF-old.md"), "");
   const r = run(repo);
   expect(start(repo)).toContain("HANDOFF-old.md");
-  for (const allowed of ["research", "plans", ".cache"]) expect(start(repo)).not.toContain(`\`${allowed}\``);
+  for (const allowed of ["research", "plans", ".cache", "OPEN-WORK.pre-migrate.md", "INDEX.pre-migrate.md"]) expect(start(repo)).not.toContain(`\`${allowed}\``);
   expect(r.out).toContain("HANDOFF-old.md");
 });
 
@@ -320,13 +222,20 @@ const section = (out: string, name: string) => {
   return next < 0 ? rest : rest.slice(0, next);
 };
 
-test("ws brief prints six sections, each with None when empty, and writes no file", () => {
+const fakeDs = (script: string) => {
+  put(join(home, ".bin", "ds"), `#!/bin/sh\n${script}\n`);
+  chmodSync(join(home, ".bin", "ds"), 0o755);
+};
+
+test("ws brief prints three sections and writes no file", () => {
   rmSync(join(repo, ".scratchpad"), { recursive: true, force: true });
+  fakeDs('[ "$1" = triage ] && echo "Nothing is hanging and no dossier is live."');
   const r = run(repo, "brief");
   expect(r.code).toBe(0);
   const headings = r.out.split("\n").filter(line => line.startsWith("## "));
-  expect(headings).toEqual(["## Handoffs", "## Due", "## Agent work", "## Operator work", "## Live dossiers", "## Git"]);
-  for (const name of ["Handoffs", "Due", "Agent work", "Operator work", "Live dossiers"]) expect(section(r.out, name)).toContain("- None.");
+  expect(headings).toEqual(["## Handoffs", "## Open work", "## Git"]);
+  expect(section(r.out, "Handoffs")).toContain("- None.");
+  expect(section(r.out, "Open work")).toContain("Nothing is hanging and no dossier is live.");
   expect(existsSync(join(repo, ".scratchpad"))).toBe(false);
 });
 
@@ -336,51 +245,19 @@ test("ws brief lists each handoff by its full path", () => {
   expect(section(r.out, "Handoffs")).toContain(join(repo, ".scratchpad", "handoff", "2026-11-10-a.md"));
 });
 
-test("ws brief shows dated items that are due today or earlier, and hides later ones", () => {
-  const pad = join(repo, ".scratchpad");
-  put(join(pad, "dossier", "LATER.md"), "# Carried work\n- w/T1 · Past check · due 2020-01-01\n- w/T2 · Future check · due 2999-01-01\n");
-  const rows = [
-    "| id | item | state | owner | home | source |",
-    "|----|------|-------|-------|------|--------|",
-    "| O1 | Wait for it | deferred — until 2020-02-02 | agent | here | x |",
-    "| O2 | Not yet | deferred — until 2999-02-02 | agent | here | x |",
-    "| O3 | Closed and old | done | agent | due 2020-03-03 | x |",
-  ];
-  put(join(pad, "OPEN-WORK.md"), `${rows.join("\n")}\n`);
-  const due = section(run(repo, "brief").out, "Due");
-  expect(due).toContain("Past check");
-  expect(due).toContain("O1 (agent, deferred");
-  for (const hidden of ["Future check", "O2", "O3"]) expect(due).not.toContain(hidden);
+test("ws brief prints what ds triage prints, run in the session folder", () => {
+  fakeDs('[ "$1" = triage ] && printf "Waits on the operator:\\n- O7 Pick a name (OPEN-WORK.md; waits on the operator)\\nfrom %s\\n" "$PWD"');
+  const open = section(run(join(repo, "src"), "brief").out, "Open work");
+  expect(open).toContain("- O7 Pick a name (OPEN-WORK.md; waits on the operator)");
+  expect(open).toContain(`from ${join(repo, "src")}`);
 });
 
-test("ws brief splits open rows by owner", () => {
-  const rows = [
-    "| id | item | state | owner | home | source |",
-    "|----|------|-------|-------|------|--------|",
-    "| O1 | Agent thing | open | agent | here | x |",
-    "| O2 | Operator thing | open | operator | here | x |",
-    "| O3 | Shipped | done | agent | here | x |",
-  ];
-  put(join(repo, ".scratchpad", "OPEN-WORK.md"), `${rows.join("\n")}\n`);
-  const r = run(repo, "brief");
-  expect(section(r.out, "Agent work")).toContain("O1 (open): Agent thing");
-  expect(section(r.out, "Agent work")).not.toContain("O2");
-  expect(section(r.out, "Operator work")).toContain("O2 (open): Operator thing");
-  expect(r.out).not.toContain("O3");
-});
-
-test("ws brief lists only live dossiers from INDEX.md", () => {
-  const rows = [
-    "| date | slug | state | T | B | mtime | §Z |",
-    "|------|------|-------|---|---|-------|-----|",
-    "| 2026-11-10 | now | live | 1/4 | 0 | x | — |",
-    "| 2026-11-09 | old | done | 4/4 | 0 | x | complete |",
-  ];
-  put(join(repo, ".scratchpad", "INDEX.md"), `# index\n\n${rows.join("\n")}\n`);
-  const live = section(run(repo, "brief").out, "Live dossiers");
-  expect(live).toContain("dossier/2026-11-10-now/DOSSIER.md");
-  expect(live).toContain("1/4");
-  expect(live).not.toContain("2026-11-09-old");
+test("ws brief says when ds triage did not run, and still exits 0", () => {
+  const missing = run(repo, "brief");
+  expect(missing.code).toBe(0);
+  expect(section(missing.out, "Open work")).toContain("`ds triage` did not run:");
+  fakeDs('echo "ds: no register" >&2; exit 2');
+  expect(section(run(repo, "brief").out, "Open work")).toContain("`ds triage` did not run: ds: no register");
 });
 
 test("ws brief shows uncommitted and unpushed state for the repo and each submodule", () => {

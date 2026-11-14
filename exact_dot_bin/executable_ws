@@ -5,16 +5,13 @@ import { join } from "node:path";
 
 const IDLE_DAYS = 14;
 const DAY = 86_400_000;
-const LAYOUT = new Set(["START.md", "INDEX.md", "OPEN-WORK.md", "dossier", "handoff", "tmp", "research", "plans", "_archive"]);
-const CLOSED = new Set(["done", "dropped", "moved"]);
+const LAYOUT = new Set(["START.md", "OPEN-WORK.md", "LATER.md", "dossier", "handoff", "tmp", "research", "plans", "_archive"]);
+const BACKUP = /\.pre-migrate\.md$/;
 const SHOWN = 3;
 const STALE_LOCK_MS = 60_000;
-const DONE = join("_archive", "OPEN-WORK-done.md");
 
 type Workspace = { root: string; dir: string; note?: string };
-type Row = { id: string; state: string; item: string; owner: string };
-type TableRow = { at: number; line: string; head: string; whole: boolean; named: Record<string, string> };
-type Found = { handoffs: string[]; rows: Row[]; idle: Idle[]; loose: string[]; next?: string; moved: number };
+type Found = { handoffs: string[]; idle: Idle[]; loose: string[] };
 type Idle = { name: string; days: number };
 
 function git(cwd: string, ...args: string[]): { code: number; out: string } {
@@ -53,116 +50,6 @@ function entries(dir: string): string[] {
   }
 }
 
-function cells(line: string, width = 0): string[] {
-  const aware = split(line, true);
-  return width && aware.length !== width ? split(line, false) : aware;
-}
-
-function split(line: string, backticks: boolean): string[] {
-  const out: string[] = [];
-  let cell = "";
-  let code = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === "\\" && line[i + 1] === "|") {
-      cell += "|";
-      i++;
-    } else if (ch === "`" && backticks) {
-      code = !code;
-      cell += ch;
-    } else if (ch === "|" && !code) {
-      out.push(cell.trim());
-      cell = "";
-    } else {
-      cell += ch;
-    }
-  }
-  out.push(cell.trim());
-  return out.slice(1, -1);
-}
-
-function tableRows(text: string): TableRow[] {
-  const rows: TableRow[] = [];
-  let columns: string[] | undefined;
-  let head = "";
-  let fenced = false;
-  text.split("\n").forEach((line, at) => {
-    if (line.trimStart().startsWith("```")) fenced = !fenced;
-    if (fenced || !line.startsWith("|")) {
-      columns = undefined;
-      return;
-    }
-    const row = cells(line, columns?.length);
-    if (!columns) {
-      columns = row.map(c => c.toLowerCase());
-      head = line;
-      return;
-    }
-    if (row.every(c => /^:?-+:?$/.test(c))) {
-      head += `\n${line}`;
-      return;
-    }
-    const whole = row.length === columns.length;
-    rows.push({ at, line, head, whole, named: Object.fromEntries(columns.map((name, i) => [name, row[i] ?? ""])) });
-  });
-  return rows;
-}
-
-function isClosed(row: TableRow): boolean {
-  return "state" in row.named && CLOSED.has(row.named.state.toLowerCase());
-}
-
-function openTableRows(text: string): Record<string, string>[] {
-  return tableRows(text)
-    .filter(row => "state" in row.named && !isClosed(row))
-    .map(row => row.named);
-}
-
-function nextId(dir: string): string | undefined {
-  const counts = new Map<string, { rows: number; top: number }>();
-  for (const name of ["OPEN-WORK.md", DONE]) {
-    for (const row of tableRows(read(join(dir, name)))) {
-      const id = /^([A-Z]+)(\d+)$/.exec(row.named.id ?? "");
-      if (!id) continue;
-      const seen = counts.get(id[1]) ?? { rows: 0, top: 0 };
-      counts.set(id[1], { rows: seen.rows + 1, top: Math.max(seen.top, Number(id[2])) });
-    }
-  }
-  const [prefix, seen] = [...counts].sort((a, b) => b[1].rows - a[1].rows)[0] ?? [];
-  return prefix && seen ? `${prefix}${seen.top + 1}` : undefined;
-}
-
-function archiveClosed(dir: string): number {
-  const work = join(dir, "OPEN-WORK.md");
-  const text = read(work);
-  const closed = tableRows(text).filter(row => row.whole && isClosed(row));
-  if (!closed.length) return 0;
-  const target = join(dir, DONE);
-  const before = read(target);
-  const kept = new Set(before.split("\n"));
-  const tableEnds = (before.trimEnd().split("\n").at(-1) ?? "").startsWith("|");
-  let head = tableEnds ? tableRows(before).at(-1)?.head : undefined;
-  let add = before ? (before.endsWith("\n") ? "" : "\n") : "# Closed open work\n\nRows that `ws` moved out of `OPEN-WORK.md`, word for word.\n";
-  for (const row of closed) {
-    if (kept.has(row.line)) continue;
-    if (row.head !== head) add += `\n${row.head}\n`;
-    head = row.head;
-    add += `${row.line}\n`;
-  }
-  mkdirSync(join(dir, "_archive"), { recursive: true });
-  appendFileSync(target, add);
-  if (read(work) !== text) return 0;
-  const gone = new Set(closed.map(row => row.at));
-  const fresh = join(dir, `.OPEN-WORK.md.${process.pid}`);
-  writeFileSync(fresh, text.split("\n").filter((_, at) => !gone.has(at)).join("\n"));
-  renameSync(fresh, work);
-  return closed.length;
-}
-
-function openRows(text: string): Row[] {
-  return openTableRows(text).map(row => ({ id: row.id ?? "", state: row.state.toLowerCase(), item: row.item ?? "", owner: row.owner ?? "" }));
-}
-
 function newestFile(path: string): number {
   const stat = lstatSync(path);
   if (!stat.isDirectory()) return stat.mtimeMs;
@@ -183,15 +70,24 @@ function idle(dir: string, now = Date.now()): Idle[] {
 }
 
 function loose(dir: string): string[] {
-  return entries(dir).filter(name => !name.startsWith(".") && !LAYOUT.has(name));
+  return entries(dir).filter(name => !name.startsWith(".") && !LAYOUT.has(name) && !BACKUP.test(name));
+}
+
+function triage(cwd: string): string[] {
+  let proc: { exitCode: number | null; stdout: Buffer; stderr: Buffer };
+  try {
+    proc = Bun.spawnSync([join(home(), ".bin", "ds"), "triage"], { cwd, stdout: "pipe", stderr: "pipe" });
+  } catch (error) {
+    return [`- \`ds triage\` did not run: ${(error as Error).message}`];
+  }
+  const out = proc.stdout.toString().trim();
+  if (proc.exitCode === 0) return out ? out.split("\n") : ["- None."];
+  const cause = proc.stderr.toString().trim().split("\n")[0] || `exit ${proc.exitCode}`;
+  return [`- \`ds triage\` did not run: ${cause}`];
 }
 
 function handoffs(dir: string): string[] {
   return entries(join(dir, "handoff")).filter(name => name.endsWith(".md"));
-}
-
-function clip(text: string, max = 160): string {
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
 function names(list: string[]): string {
@@ -212,7 +108,7 @@ function render(ws: Workspace, found: Found): string {
     "",
     "## Read next",
     "",
-    ...list([...link("INDEX.md", "live dossiers"), ...link("dossier/LATER.md", "carried work"), ...link("OPEN-WORK.md", "open work register")], "- Nothing yet."),
+    ...list([...link("OPEN-WORK.md", "open work register"), ...link("LATER.md", "deferred rows, rebuilt by `ds`")], "- Nothing yet."),
     "",
     "## Handoffs",
     "",
@@ -222,8 +118,7 @@ function render(ws: Workspace, found: Found): string {
     "",
     "## Open work",
     "",
-    ...list(found.rows.map(row => `- ${row.id} (${row.state}): ${clip(row.item)}`), "- None."),
-    ...(found.next ? ["", `Next id: \`${found.next}\`. Closed rows move to \`${DONE}\`.`] : []),
+    "`ds triage` lists what waits, what is due and the live dossiers; the Rig pane's Work view shows the same. `ds add` writes a new row and takes the next ID.",
     "",
     "## Idle tmp folders",
     "",
@@ -246,9 +141,6 @@ function summary(ws: Workspace, found: Found): string[] {
     `ws: ${join(ws.dir, "START.md")}`,
     ...(ws.note ? [`ws: ${ws.note}`] : []),
     ...(found.handoffs.length ? [`handoffs: ${found.handoffs.length} — ${names(found.handoffs.map(name => `handoff/${name}`))}`] : []),
-    ...(found.rows.length ? [`open work rows: ${found.rows.length} (OPEN-WORK.md)`] : []),
-    ...(found.moved ? [`closed rows moved: ${found.moved} (${DONE})`] : []),
-    ...(found.next ? [`next id: ${found.next}`] : []),
     ...(found.idle.length ? [`idle tmp folders: ${found.idle.length} — run \`ws tidy\` to archive them`] : []),
     ...(found.loose.length ? [`names outside the layout: ${found.loose.length} — ${names(found.loose)}`] : []),
   ];
@@ -257,54 +149,17 @@ function summary(ws: Workspace, found: Found): string[] {
 function build(cwd: string): string[] {
   const ws = locate(cwd);
   mkdirSync(ws.dir, { recursive: true });
-  const held = lock(ws.dir);
-  let moved = 0;
-  try {
-    if (held) moved = archiveClosed(ws.dir);
-  } finally {
-    if (held) rmSync(held, { force: true });
-  }
-  const found: Found = {
-    handoffs: handoffs(ws.dir),
-    rows: openRows(read(join(ws.dir, "OPEN-WORK.md"))),
-    idle: idle(ws.dir),
-    loose: loose(ws.dir),
-    next: nextId(ws.dir),
-    moved,
-  };
+  const found: Found = { handoffs: handoffs(ws.dir), idle: idle(ws.dir), loose: loose(ws.dir) };
   const fresh = join(ws.dir, `.START.md.${process.pid}`);
   writeFileSync(fresh, render(ws, found));
   renameSync(fresh, join(ws.dir, "START.md"));
   return summary(ws, found);
 }
 
-const DATED = /\b(?:due|until):? (\d{4}-\d{2}-\d{2})\b/i;
-
 function read(path: string): string {
   return existsSync(path) ? readFileSync(path, "utf8") : "";
 }
 
-function isDue(text: string, today: string): boolean {
-  const date = DATED.exec(text)?.[1];
-  return date !== undefined && date <= today;
-}
-
-function due(dir: string, today: string): string[] {
-  const later = read(join(dir, "dossier", "LATER.md"))
-    .split("\n")
-    .filter(line => isDue(line, today))
-    .map(line => `- \`dossier/LATER.md\`: ${line.replace(/^-\s*/, "")}`);
-  const rows = openTableRows(read(join(dir, "OPEN-WORK.md")))
-    .filter(({ source, ...rest }) => isDue(Object.values(rest).join(" "), today))
-    .map(row => `- \`OPEN-WORK.md\`: ${row.id} (${row.owner || "agent"}, ${row.state}): ${row.item}`);
-  return [...later, ...rows];
-}
-
-function liveDossiers(dir: string): string[] {
-  return openTableRows(read(join(dir, "INDEX.md")))
-    .filter(row => row.state.toLowerCase() === "live")
-    .map(row => `- \`${join(dir, "dossier", `${row.date}-${row.slug}`, "DOSSIER.md")}\` (${row.t ?? "?"})`);
-}
 
 function gitState(cwd: string): string[] {
   const top = git(cwd, "rev-parse", "--show-toplevel");
@@ -321,24 +176,17 @@ function gitState(cwd: string): string[] {
   });
 }
 
-function brief(cwd: string, today = new Date().toLocaleDateString("en-CA")): string {
+function brief(cwd: string): string {
   const ws = locate(cwd);
-  const rows = openRows(read(join(ws.dir, "OPEN-WORK.md"))).map(row => ({ ...row, owner: row.owner.toLowerCase() }));
-  const next = nextId(ws.dir);
-  const line = (row: Row) => `- ${row.id} (${row.state}): ${row.item}`;
   const block = (name: string, items: string[]) => [`## ${name}`, "", ...(items.length ? items : ["- None."]), ""];
   return [
     "# Workspace brief",
     "",
     `Project: \`${ws.root}\``,
     ...(ws.note ? [`Note: ${ws.note}.`] : []),
-    ...(next ? [`Next id: \`${next}\``] : []),
     "",
     ...block("Handoffs", handoffs(ws.dir).map(name => `- \`${join(ws.dir, "handoff", name)}\``)),
-    ...block("Due", due(ws.dir, today)),
-    ...block("Agent work", rows.filter(row => !row.owner || row.owner === "agent").map(line)),
-    ...block("Operator work", rows.filter(row => row.owner && row.owner !== "agent").map(line)),
-    ...block("Live dossiers", liveDossiers(ws.dir)),
+    ...block("Open work", triage(cwd)),
     ...block("Git", gitState(cwd)),
   ].join("\n");
 }
