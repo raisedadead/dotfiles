@@ -191,7 +191,7 @@ To add a rig: run `dotfiles-privatize.sh <dir>`, add the rig's entries to [.chez
 
 ### Second review
 
-Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second review. The question file [second-review.json](../dot_agents/jev/second-review.json) deploys to `~/.agents/jev/second-review.json`. It holds the pinned Jev model, the path of the sops key file, the time limit, the bands, the three topics (guard or permission rule, secret handling, deploy or release) and the `enforce` flag. Both rigs read it.
+The Pi rig asks Jev, the TypeSafe classifier, whether a change needs a second review. The Claude rig no longer asks Jev (removed 2026-11-14 in the rig simplification); the text below describes Pi, and Claude-only details are kept for the record. The question file [second-review.json](../dot_agents/jev/second-review.json) deploys to `~/.agents/jev/second-review.json`. It holds the pinned Jev model, the path of the sops key file, the time limit, the bands, the three topics (guard or permission rule, secret handling, deploy or release) and the `enforce` flag. Both rigs read it.
 
 - Each rig sends the changed paths to Jev at the end of a turn, with one question for each topic and path. Jev gets no file content. The highest answer for a path decides. A change to the question file counts as a guard change.
 - At or above `bands.block`, two reviews must cover the path. The Claude rig blocks Stop; the Pi rig continues the turn. From `bands.note` up to the block line, the rig tells the model which file can need care.
@@ -202,7 +202,7 @@ Both rigs ask Jev, the TypeSafe classifier, whether a change needs a second revi
 - The key is in the sops file `~/.config/jev/key.sops.json`, so no 1Password prompt comes. The operator creates that file; it is not in the repository. Without it, Jev is off. The Claude rig reads the path from the question file. Pi reads the key through the `typesafe` command in `~/.pi/agent/auth.json`, which the operator sets to the same file. `auth.json` stays unmanaged.
 - Both rigs append each decision to `~/.local/state/jev/decisions.jsonl`, mode 600, in a folder of mode 700. The log holds no key and no file content. A failed write, or a link or a special file at that path, drops the line.
 
-Code: `src/jev.ts` and `src/second.ts` in the [Claude rig mod](../dot_claude/mods/rig/), and `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
+Code: `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../dot_pi/). Check: [J1](MAINTENANCE.md#j1-second-review).
 
 ### Rig metrics
 
