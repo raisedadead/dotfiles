@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.322",
+  "startedAt": "2026-11-12T16:11:29.683Z",
+  "durationSeconds": 122,
+  "costUsd": 0.9904556,
+  "partial": false,
+  "suite": {
+    "root": "/Users/mrugesh/.dotfiles/tests/signoff-eval",
+    "ablation": "none",
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      {
+        "name": "signoff-eval",
+        "version": "1.0.0",
+        "path": "/Users/mrugesh/.dotfiles/tests/signoff-eval"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "check-passes-today",
+      "dir": "evals/check-passes-today",
+      "source": "prose",
+      "promptMarkdown": "Set up a small repository in the current folder, then ask the `signoff` agent to check a design.\n\n1. Write these three files exactly, relative to the current folder.\n\n`src/total.ts`:\n\n```ts\nexport function total(items: number[]): number {\n  let sum = 0\n  for (let i = 1; i < items.length; i++) sum += items[i]\n  return sum\n}\n```\n\n`tests/total.test.ts`:\n\n```ts\nimport { expect, test } from 'bun:test'\nimport { total } from '../src/total'\n\ntest('an empty list totals zero', () => expect(total([])).toBe(0))\n```\n\n`design.md`:\n\n```markdown\n# Design: total counts every item\n\nGoal (operator, verbatim): \"total counts every item of the list\"\n\nCurrent behaviour: src/total.ts:3 starts the loop at index 1, so the first item is never added; total([2, 3]) returns 3.\n\nInvariants:\n- I1: total([0, 3]) returns 3. Check: a new test `counts the first item` in tests/total.test.ts with `expect(total([0, 3])).toBe(3)`, run with `bun test tests/total.test.ts`.\n- I2 (kept behaviour, control): total([]) returns 0. Check: the existing test `an empty list totals zero` (tests/total.test.ts:4). It passes today and must still pass.\n\nChange: src/total.ts:3 starts the loop at index 0.\n\nHost facts: none. The change calls no host API, CLI or tool.\n\nFiles: src/total.ts, tests/total.test.ts.\n```\n\n2. Run `pwd`. Spawn the agent type `signoff-eval:signoff` once, in the foreground, with this mission, where `<cwd>` is the `pwd` output:\n\n```\nDesign file: <cwd>/design.md\nRepository: <cwd>\nNotes path: <cwd>/.scratchpad/signoff-notes.md\n```\n\n3. Reply with the agent's last line verbatim and nothing else.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 12,
+      "graders": [
+        {
+          "name": "spawned-signoff",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Agent",
+            "input_match": "signoff-eval:signoff"
+          }
+        },
+        {
+          "name": "asks-for-changes",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^SIGNOFF: CHANGES\\s*$",
+            "flags": "",
+            "match": "contains"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2867526,
+            "judgeCostUsd": 0,
+            "durationSeconds": 32,
+            "startedAt": "2026-11-12T16:11:29.710Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-z16B8X/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "spawned-signoff",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Agent called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "asks-for-changes",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^SIGNOFF: CHANGES\\s*$",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.23270320000000003,
+            "judgeCostUsd": 0,
+            "durationSeconds": 30,
+            "startedAt": "2026-11-12T16:12:01.365Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-iDzyiI/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "spawned-signoff",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Agent called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "asks-for-changes",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^SIGNOFF: CHANGES\\s*$",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    },
+    {
+      "name": "sound-design",
+      "dir": "evals/sound-design",
+      "source": "prose",
+      "promptMarkdown": "Set up a small repository in the current folder, then ask the `signoff` agent to check a design.\n\n1. Write these three files exactly, relative to the current folder.\n\n`src/total.ts`:\n\n```ts\nexport function total(items: number[]): number {\n  let sum = 0\n  for (let i = 1; i < items.length; i++) sum += items[i]\n  return sum\n}\n```\n\n`tests/total.test.ts`:\n\n```ts\nimport { expect, test } from 'bun:test'\nimport { total } from '../src/total'\n\ntest('an empty list totals zero', () => expect(total([])).toBe(0))\n```\n\n`design.md`:\n\n```markdown\n# Design: total counts every item\n\nGoal (operator, verbatim): \"total counts every item of the list\"\n\nCurrent behaviour: src/total.ts:3 starts the loop at index 1, so the first item is never added; total([2, 3]) returns 3.\n\nInvariants:\n- I1: total([2, 3]) returns 5. Check: a new test `counts the first item` in tests/total.test.ts with `expect(total([2, 3])).toBe(5)`, run with `bun test tests/total.test.ts`. It fails today, because total([2, 3]) returns 3.\n- I2 (kept behaviour, control): total([]) returns 0. Check: the existing test `an empty list totals zero` (tests/total.test.ts:4). It passes today and must still pass.\n\nChange: src/total.ts:3 starts the loop at index 0.\n\nHost facts: none. The change calls no host API, CLI or tool.\n\nFiles: src/total.ts, tests/total.test.ts.\n```\n\n2. Run `pwd`. Spawn the agent type `signoff-eval:signoff` once, in the foreground, with this mission, where `<cwd>` is the `pwd` output:\n\n```\nDesign file: <cwd>/design.md\nRepository: <cwd>\nNotes path: <cwd>/.scratchpad/signoff-notes.md\n```\n\n3. Reply with the agent's last line verbatim and nothing else.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 12,
+      "graders": [
+        {
+          "name": "spawned-signoff",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Agent",
+            "input_match": "signoff-eval:signoff"
+          }
+        },
+        {
+          "name": "passes",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^SIGNOFF: PASS\\s*$",
+            "flags": "",
+            "match": "contains"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.23972659999999998,
+            "judgeCostUsd": 0,
+            "durationSeconds": 31,
+            "startedAt": "2026-11-12T16:12:31.377Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-XoIIrR/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "spawned-signoff",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Agent called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "passes",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^SIGNOFF: PASS\\s*$",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2312732,
+            "judgeCostUsd": 0,
+            "durationSeconds": 29,
+            "startedAt": "2026-11-12T16:13:02.427Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-XbWxeP/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "spawned-signoff",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Agent called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "passes",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^SIGNOFF: PASS\\s*$",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 2,
+    "casesPassed": 2,
+    "overallScore": 1,
+    "overallPassRate": 1
+  }
+}

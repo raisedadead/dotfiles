@@ -1,5 +1,0 @@
-{
-  "name": "signoff-eval",
-  "version": "1.0.0",
-  "description": "Eval suite for the signoff agent: a sound design must pass, a design with a pinned wrong value must not."
-}

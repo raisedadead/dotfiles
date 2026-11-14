@@ -17,7 +17,6 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Workspace command `ws`                         | W1 below                                                                |
 | Jev question file or second-review gate        | J1 below                                                                |
 | Rig metrics `rig-metrics`                      | G1 below                                                                |
-| `signoff` agent prompt                         | G2 below                                                                |
 | Pane monitor skill `cmd-monitor-pane`          | `bun test ./tests/monitor-pane` (about 1 minute), then R1               |
 | `install.sh`, `.chezmoiignore`, or an external | X1 below                                                                |
 
@@ -206,12 +205,6 @@ Expected: All three runs pass; report the counts. `chezmoi status` prints nothin
 `cd ~/.dotfiles && bun test ./tests/rig-metrics`; `rig-metrics triggers >/dev/null`
 
 Expected: All tests pass; report the count. `rig-metrics triggers` exits 0. See [ARCHI.md](ARCHI.md#rig-metrics)
-
-### G2: Signoff agent
-
-`cd ~/.dotfiles/tests/signoff-eval && rm -rf agents && mkdir agents && cp ../../dot_claude/agents/signoff.md ../../dot_claude/agents/evidence.md agents/ && claude plugin eval . --no-publish --runs 2 --ablation none --trust-plugin --allow-tools Bash Write Read Agent`
-
-Expected: Exit 0. In every run, the driver spawns `signoff-eval:evidence`, and the reply of case `sound-design` is `SIGNOFF: PASS` and the reply of case `check-passes-today` is `SIGNOFF: CHANGES`. The reply of case `unprobed-call` holds `block: PROBE line for $.ui.status`, and the reply of case `ran-check-passes` holds `block: a check that fails today for I1`; both end with `SIGNOFF: CHANGES`. The first two designs differ only in the first invariant: in `check-passes-today`, its check passes on the current code. The suite shows that the agent returns `SIGNOFF: CHANGES` for a design whose only difference is such a check, not why. The graders read only the driver's spawn and last line; to confirm that the evidence agent spawned `signoff-eval:signoff`, add `--keep-temp` and read `out/trace.jsonl`. The suite has no dossier case, so it does not cover the `ds design-check` step. Needs the private `dot_claude` submodule; without it, `cp` fails. The plugin loader does not follow a symlinked agent file, so the check copies the agent; `agents/` and `evals/results/` are gitignored. Keep `--no-publish`: without it, the report goes to claude.ai. Eight runs cost about $1.30; the evidence agent runs on Haiku, the signoff agent on Fable and the driver on the default model.
 
 ## Claude Code
 
