@@ -872,59 +872,6 @@ function utcSeconds(text: string): number | undefined {
   return Date.UTC(year, month - 1, day, hour, minute) / 1000 + second;
 }
 
-function userAgentIssues(agentsDir: string, logDir: string, cap: number): string[] {
-  const agents = names(agentsDir)
-    .filter(name => name.endsWith(".md"))
-    .map(name => name.slice(0, -3))
-    .sort();
-  const window = 30 * 86400;
-  const now = Date.now() / 1000;
-  const issues: string[] = [];
-  if (agents.length > cap) issues.push(`${agents.length} user agents exceed the cap of ${cap}`);
-  const spawns = new Map<Json, number>();
-  for (const file of names(logDir).filter(name => name.endsWith(".jsonl") && !name.startsWith("."))) {
-    const text = read(`${logDir}/${file}`);
-    if (text === undefined) continue;
-    for (const line of text.split("\n")) {
-      let entry: Json;
-      try {
-        entry = JSON.parse(line) as Json;
-      } catch {
-        continue;
-      }
-      if (!isObject(entry)) continue;
-      const ts = Object.hasOwn(entry, "ts") ? entry.ts : "";
-      const at = typeof ts === "string" ? utcSeconds(ts) : undefined;
-      if (at === undefined) continue;
-      if (now - at <= window) {
-        const key = Object.hasOwn(entry, "agent_type") ? entry.agent_type : "";
-        spawns.set(key, (spawns.get(key) ?? 0) + 1);
-      }
-    }
-  }
-  for (const name of agents) {
-    const mtime = stat(`${agentsDir}/${name}.md`)?.mtimeMs;
-    if (mtime !== undefined && now - mtime / 1000 < window) continue;
-    if (!spawns.get(name)) issues.push(`agent '${name}' has 0 spawns in 30d - retire it or fix its trigger`);
-  }
-  return issues;
-}
-
-function checkUserAgents(): number {
-  const agentsDir = `${S.privSource}/dot_claude/agents`;
-  if (!isDir(agentsDir)) {
-    log("  clean (no user agents)");
-    return 0;
-  }
-  const issues = userAgentIssues(agentsDir, `${S.claudeDir}/markers/subagent-spawns`, 4).filter(Boolean);
-  if (issues.length) {
-    for (const line of issues) log(`  WARN: ${line}`);
-    return issues.length;
-  }
-  log("  clean");
-  return 0;
-}
-
 function rigGateRun(out: string): boolean {
   let work: string;
   let fd: number;
@@ -1427,14 +1374,13 @@ function runChecks(): number {
   }
   log(`Total issues: ${total}`);
   const warns = [
-    ["[warn 1/8] first-party plugin drift (installed sha vs claude-code-plugins origin/main)", checkPluginSrcDrift],
-    ["[warn 2/8] cavemem health (hook, better-sqlite3, embedder, worker)", checkCavemem],
-    ["[warn 3/8] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)", checkSafeguard],
-    ["[warn 4/8] user agents (cap of 4, 0-spawn-in-30d staleness via markers/subagent-spawns/)", checkUserAgents],
-    ["[warn 5/8] rig version gate (validate, type check and tests after a Claude Code update)", checkRigGate],
-    ["[warn 6/8] AI release stores (Codex daemon and Pi keep at most two releases)", checkAiReleases],
-    ["[warn 7/8] dangling links (~/.bin and ~/.claude/skills)", checkLinks],
-    ["[warn 8/8] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)", checkAdditions],
+    ["[warn 1/7] first-party plugin drift (installed sha vs claude-code-plugins origin/main)", checkPluginSrcDrift],
+    ["[warn 2/7] cavemem health (hook, better-sqlite3, embedder, worker)", checkCavemem],
+    ["[warn 3/7] safeguard toggle (switchModelsOnFlag=false in source + live settings.json)", checkSafeguard],
+    ["[warn 4/7] rig version gate (validate, type check and tests after a Claude Code update)", checkRigGate],
+    ["[warn 5/7] AI release stores (Codex daemon and Pi keep at most two releases)", checkAiReleases],
+    ["[warn 6/7] dangling links (~/.bin and ~/.claude/skills)", checkLinks],
+    ["[warn 7/7] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)", checkAdditions],
   ] as const;
   for (const [head, check] of warns) {
     log(head);
