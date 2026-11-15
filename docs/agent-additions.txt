@@ -1,5 +1,5 @@
 claude-marketplace claude-plugins-official
-claude-plugin-hook dossier@raisedadead-plugins ./register.tsx
+claude-plugin-hook dossier@raisedadead-plugins ./register.ts
 claude-plugin-hook whetstone@raisedadead-plugins ./register.ts
 claude-plugin-hook worktrunk@worktrunk ./register.tsx
 claude-plugin-hook worktrunk@worktrunk Notification
@@ -15,6 +15,7 @@ claude-plugin-mcp cloudflare@cloudflare cloudflare
 claude-project-mcp cloudflare-builds
 claude-project-mcp cloudflare-docs
 claude-project-mcp cloudflare-observability
+claude-project-mcp grafana
 claude-project-mcp sentry
 codex-marketplace openai-bundled
 codex-marketplace openai-primary-runtime
