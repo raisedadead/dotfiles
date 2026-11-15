@@ -132,7 +132,7 @@ test("a tmp folder is idle when its newest file is 14 or more days old", () => {
 });
 
 test("START.md flags a top-level name outside the layout", () => {
-  for (const name of ["OPEN-WORK.md", "LATER.md", "OPEN-WORK.pre-migrate.md", "INDEX.pre-migrate.md", "handoff/x.md", "tmp/a/x.md", "research/a.md", "plans/a.md", "_archive/a.md", "dossier/a.md", ".cache/a"]) {
+  for (const name of ["OPEN-WORK.md", "LATER.md", "LINKED", "OPEN-WORK.pre-migrate.md", "INDEX.pre-migrate.md", "handoff/x.md", "tmp/a/x.md", "research/a.md", "plans/a.md", "_archive/a.md", "dossier/a.md", ".cache/a"]) {
     put(join(repo, ".scratchpad", name), "");
   }
   put(join(repo, ".scratchpad", "HANDOFF-old.md"), "");

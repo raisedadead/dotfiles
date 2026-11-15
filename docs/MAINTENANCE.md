@@ -14,7 +14,7 @@ Diagnose only. Do not apply, repair, update, or commit during a check. Run each 
 | Claude plugin                                  | M1 to M3                                                                |
 | Shell, terminal, editor, or desktop            | Applicable terminal probes below and the component's own checks         |
 | Rex config, helpers, or app settings           | R1 below                                                                |
-| Workspace command `ws`                         | W1 below                                                                |
+| Workspace command `ws` (Pi rig only)           | W1 below                                                                |
 | Jev question file or second-review gate        | J1 below                                                                |
 | Rig metrics `rig-metrics`                      | G1 below                                                                |
 | Pane monitor skill `cmd-monitor-pane`          | `bun test ./tests/monitor-pane` (about 1 minute), then R1               |
@@ -190,7 +190,7 @@ R1 also covers `run_onchange_after_rex-defaults.sh.tmpl`, `run_onchange_before_r
 
 `cd ~/.dotfiles && bun test tests/ws`
 
-Expected: All tests pass. Report the count. A change to the session-start summary also runs M4 and P1
+Expected: All tests pass. Report the count. A change to the Pi session-start summary also runs P1. The Claude Code status note is rig code: run M4
 
 ## Second review
 

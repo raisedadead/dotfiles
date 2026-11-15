@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 const IDLE_DAYS = 14;
 const DAY = 86_400_000;
-const LAYOUT = new Set(["START.md", "OPEN-WORK.md", "LATER.md", "dossier", "handoff", "tmp", "research", "plans", "_archive"]);
+const LAYOUT = new Set(["START.md", "OPEN-WORK.md", "LATER.md", "LINKED", "dossier", "handoff", "tmp", "research", "plans", "_archive"]);
 const BACKUP = /\.pre-migrate\.md$/;
 const SHOWN = 3;
 const STALE_LOCK_MS = 60_000;

@@ -244,7 +244,7 @@ Pi loads every skill under `~/.agents/skills/`. When two skills have the same na
 
 ### Workspace
 
-Both agents share one workspace in each project: `<repo>/.scratchpad/` of the main checkout when Git ignores it, else `~/.scratchpad/`. A linked worktree uses the workspace of its main checkout. A submodule is its own project. An agent starts at the `START.md` path that `ws` prints.
+Both agents share one workspace in each project: `<repo>/.scratchpad/` of the main checkout when Git ignores it, else `~/.scratchpad/`. A linked worktree uses the workspace of its main checkout. A submodule is its own project. The Pi agent starts at the `START.md` path that `ws` prints. The Claude Code rig reads the workspace itself.
 
 | Name           | Holds                                                 | Owner                           |
 | -------------- | ----------------------------------------------------- | ------------------------------- |
@@ -252,15 +252,16 @@ Both agents share one workspace in each project: `<repo>/.scratchpad/` of the ma
 | `LATER.md`     | A view of the later rows                              | `ds triage`                     |
 | `dossier/`     | Dossiers and their archive                            | dossier plugin                  |
 | `OPEN-WORK.md` | The open work register                                | both agents                     |
+| `LINKED`       | Paths of related projects, one on each line           | the operator                    |
 | `handoff/`     | `<date>-<slug>.md` handoffs                           | both agents                     |
 | `tmp/`         | `<date>-<slug>/` scratch output and notes files       | both agents                     |
 | `research/`    | Research reports                                      | both agents                     |
 | `plans/`       | Claude Code plans, always in the project folder       | Claude Code                     |
 | `_archive/`    | Moved files, closed rows and `MOVED-<date>.txt` logs  | `ws` and both agents            |
 
-[ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 8 lines. It does not write `OPEN-WORK.md`, `LATER.md` or `dossier/`; `ds` owns the rows. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, logs each move, and deletes nothing. When the archive already has a name, it leaves that folder and exits 1. `ws brief` writes no file. It prints the handoffs, what `~/.bin/ds triage` prints in the session folder (the rows that wait, the due rows, the stale and out-of-shape rows, and the live dossiers), and the uncommitted and unpushed work of the repo and each submodule. `/cmd-continue` reads it. The agent that picks up a handoff moves it to `_archive/handoff/` after its items are rows. A name outside the layout, except a hidden name and a `*.pre-migrate.md` backup of `ds migrate`, shows in `START.md` as loose.
+[ws](../exact_dot_bin/executable_ws) writes `START.md` and prints a summary of at most 8 lines. It does not write `OPEN-WORK.md`, `LATER.md` or `dossier/`; `ds` owns the rows. `ws tidy` moves each `tmp/` folder whose newest file is 14 or more days old to `_archive/tmp/`, logs each move, and deletes nothing. When the archive already has a name, it leaves that folder and exits 1. `ws brief` writes no file. It prints the handoffs, what `~/.bin/ds triage` prints in the session folder (the rows that wait, the due rows, the stale and out-of-shape rows, and the live dossiers), and the uncommitted and unpushed work of the repo and each submodule. The agent that picks up a handoff moves it to `_archive/handoff/` after its items are rows. A name outside the layout, except a hidden name and a `*.pre-migrate.md` backup of `ds migrate`, shows in `START.md` as loose.
 
-At session start, both rigs run `ws` and give its summary to the model: the Claude Code rig on each `SessionStart`, and the Pi `workspace` extension on the first run after each session start except `/reload`. When `ws` fails or takes more than 2 seconds, the session starts without the summary.
+At session start, the Claude Code rig builds a status note from the workspace files and Git, and gives it to the model at `startup` and `clear`. The note lists the handoffs, the lines in progress, the lines that wait on the operator, the paused lines and the unpushed work, with one line for each project in `LINKED`. The rig runs neither `ws` nor `ds` for it. `ws` serves the Pi rig only: the Pi `workspace` extension runs `ws` on the first run after each session start except `/reload`, and gives its summary to the model. When the note or `ws` takes more than 2 seconds, the session starts with what is ready.
 
 ## Claude Code
 
