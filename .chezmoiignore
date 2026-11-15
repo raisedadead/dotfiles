@@ -52,6 +52,9 @@ Library
 .bin/rex
 .bin/rex-open
 {{- end }}
+{{- if ne .chezmoi.hostname "mrugesh-mbp" }}
+.claude/rules/36-host-tools.md
+{{- end }}
 {{- if and (ne .chezmoi.os "darwin") (not (stat (joinPath .chezmoi.homeDir ".config/chezmoi/age-identity.txt"))) }}
 .config/1Password/ssh/agent.toml
 .config/gh/hosts.yml

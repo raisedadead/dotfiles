@@ -9,6 +9,7 @@
 .agents/skills/rex
 .pi/agent/extensions/guard/git-identity.ts
 .claude/agents/notebook.md
+.claude/rules/90-plugins.md
 .claude/workflows/lens-review.js
 .claude/workflows/cavemem-repair.js
 .claude/agents/commiter.md
