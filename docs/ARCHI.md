@@ -249,8 +249,8 @@ Both agents share one workspace in each project: `<repo>/.scratchpad/` of the ma
 | Name           | Holds                                                 | Owner                           |
 | -------------- | ----------------------------------------------------- | ------------------------------- |
 | `START.md`     | Links, open handoffs, open work, idle and loose names | `ws` rebuilds it; no hand edits |
-| `INDEX.md`     | Live dossiers                                         | dossier plugin                  |
-| `dossier/`     | Dossiers, their archive and `LATER.md`                | dossier plugin                  |
+| `LATER.md`     | A view of the later rows                              | `ds triage`                     |
+| `dossier/`     | Dossiers and their archive                            | dossier plugin                  |
 | `OPEN-WORK.md` | The open work register                                | both agents                     |
 | `handoff/`     | `<date>-<slug>.md` handoffs                           | both agents                     |
 | `tmp/`         | `<date>-<slug>/` scratch output and notes files       | both agents                     |

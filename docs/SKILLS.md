@@ -74,7 +74,7 @@ Authentication, input from a user, a webhook, or a new dependency.
 
 Several manual steps: credentials, a third-party dashboard, or a cutover.
 
-1. `whetstone:wizard` drives.
+1. Walk the operator through the steps in the reply, one step at a time. No skill does this today.
 
 ## Signals that the pick is wrong
 
