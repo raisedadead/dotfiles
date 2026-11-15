@@ -202,9 +202,9 @@ Expected: All three runs pass; report the counts. `chezmoi status` prints nothin
 
 ### G1: Rig metrics
 
-`cd ~/.dotfiles && bun test ./tests/rig-metrics`; `rig-metrics triggers >/dev/null`
+`cd ~/.dotfiles && bun test ./tests/rig-metrics`; `rig-metrics 7 >/dev/null`
 
-Expected: All tests pass; report the count. `rig-metrics triggers` exits 0. See [ARCHI.md](ARCHI.md#rig-metrics)
+Expected: All tests pass; report the count. `rig-metrics 7` exits 0. See [ARCHI.md](ARCHI.md#rig-metrics)
 
 ## Claude Code
 

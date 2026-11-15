@@ -212,11 +212,12 @@ Code: `agent/extensions/lib/jev.ts` and `agent/extensions/gates.ts` in [Pi](../d
 
 ### Rig metrics
 
-[rig-metrics](../exact_dot_bin/executable_rig-metrics) reads the Claude Code transcripts, `~/.local/state/jev/route.jsonl` and `git log`, and prints JSON. It writes nothing.
+[rig-metrics](../exact_dot_bin/executable_rig-metrics) reads the Claude Code transcripts under `~/.claude/projects` and prints JSON. It writes nothing.
 
-- `rig-metrics [--until YYYY-MM-DD] [days]`: cost, review and rework rates, and the 14-day baseline that ends on the fixed date `BASELINE_UNTIL`.
-- `rig-metrics triggers`: one row for each tuned threshold, with its figure, sample size and status (`hold`, `fire` or `too few`). The thresholds are in the `THRESHOLDS` table of the script.
-- `rig-metrics ab --from YYYY-MM-DD`: the effort A/B arms, one arm for each session effort.
+`rig-metrics [--until YYYY-MM-DD] [days]` prints two numbers for each ISO week of the window (30 days when `days` is not given), and a total:
+
+- `correctionsPer100`: the operator's corrections for each 100 operator messages. An operator message is a `user` row from a person in a main session. A correction is an operator message of fewer than 260 characters that starts with a correction word, such as `No`, `Stop`, `Wait`, `Wrong`, `I do not` or `Why did you`. The `CORRECTION` pattern in the script is the full list. Probe sessions (a project or working folder under `/tmp`, or with `probe` or `rigfx` in its name) do not count.
+- `refusalsPer100`: the rig's refusals for each 100 tool results, in main sessions and subagents. A refusal is a failed tool result that a hook, a guard or the permission layer wrote. The errors of the harness itself, such as `String to replace not found`, do not count.
 
 Check: [G1](MAINTENANCE.md#g1-rig-metrics).
 
