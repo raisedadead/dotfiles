@@ -62,3 +62,4 @@ docs/plans
 .env
 *.asc
 .cocoindex_code/
+.playwright-cli/
