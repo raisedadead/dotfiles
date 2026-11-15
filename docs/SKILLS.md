@@ -6,13 +6,24 @@ A task has one driver. Every other skill is a reference. A driver runs the loop.
 
 Follow the order. A design skill that you read after the code exists can only criticise the code. It cannot shape the design.
 
+## Plan, pick up and hand over work
+
+These skills need no plugin. Each one reads and writes plain files in the project's `.scratchpad/`.
+
+1. `cmd-status` reports where the work stands. It changes nothing.
+1. `cmd-continue` picks up the newest handoff or the next open-work line, and does it.
+1. `cmd-plan` drives a plan and its check in a repo with no `.scratchpad/dossier/`. In a repo that has that folder, `dossier:plan` drives the plan instead.
+1. `cmd-handoff` writes a handoff file for another session, harness or person.
+1. `cmd-recall` finds what was done or decided before.
+1. `cmd-secrets` holds the steps for a 1Password item. Read it before the first `op` or `op-keys` call.
+
 ## Change behaviour
 
 A feature, a bug fix, or any change to what the code does.
 
 1. `whetstone:tdd-cycle` drives. In a live dossier, `dossier:build` drives instead.
 1. Read `test-driven-development` when you must decide what to test.
-1. One `reviewer` before the push, then `ds record review`. `/code-review` runs only when the operator asks for it.
+1. One `reviewer` before the push. The rig records its verdict when it ends. `/code-review` runs only when the operator asks for it.
 
 ## Change a public interface
 
