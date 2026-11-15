@@ -54,7 +54,7 @@ Follow the order. A design skill that you read after the code exists can only cr
 
 ## Check a claim or write a report
 
-- `whetstone:verify-claims` checks sourced claims.
+- `whetstone:research-report` runs the `verify-claims` workflow to check sourced claims.
 - `dossier:verify` checks a version or other fact that can be stale.
 - `whetstone:research-report` and `whetstone:html-report` write a report.
 - `whetstone:skill-smith` lints a `SKILL.md`.

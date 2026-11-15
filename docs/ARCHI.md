@@ -138,7 +138,6 @@ Claude Code is the only agent rig. It owns its kernel and its runtime. `dot_agen
 | [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                 | Rig mod: hooks, gates, guard, write approval, checks, open items, statusline |
 | [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)      | Kernel and path-scoped instructions                                          |
 | [agents](../dot_claude/agents/), [skills](../dot_claude/skills/)                    | Delegation contracts and reusable work                                       |
-| [dot_cavemem/settings.json](../dot_cavemem/settings.json)                           | Memory configuration. The database stays unmanaged                           |
 | [rtk config.toml](../Library/private_Application%20Support/private_rtk/config.toml) | RTK filters and hook exclusions; `git` is excluded                           |
 
 Probe the source and the runtime for model names, plugin revisions, tool inventories and rule thresholds. A configured key shows intent. The handler and its probe show behavior.

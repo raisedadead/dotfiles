@@ -260,10 +260,10 @@ Expected: Exit 0 and `CLAIMS: CLEAN`.
 
 In a throwaway super and sub repository pair with both hooks on `core.hooksPath`, run in the sub: `commit`, `commit --amend`, `commit --amend --date=2001-02-03`.
 
-Expected: The super tip reads `chore(sub): bump to <sha>`. After each amend, the super has one bump commit with the new sha.
+Expected: The super tip reads `chore(sub): bump to <sha>`. After each amend, the super has one bump commit with the new sha, the super author and the super date.
 
 ### M16
 
 Feed `.githooks/pre-push` a stdin ref line whose sha records a pushed submodule commit. Then feed one whose gitlink is on no submodule remote.
 
-Expected: Exit 0, then exit 1.
+Expected: Exit 0, then exit 1 with the submodule, the gitlink and the push command.
