@@ -9,7 +9,7 @@ import {
   promptLine,
   repeatKey,
   splitComplete,
-} from "../../dot_claude/skills/cmd-monitor-pane/scripts/executable_watch-pane.ts";
+} from "../../dot_claude/skills/cmd-watch-pane/scripts/executable_watch-pane.ts";
 
 test("cleanLine drops colour, title and cursor sequences", () => {
   expect(cleanLine("\x1b[31mfatal:\x1b[0m [web1]")).toBe("fatal: [web1]");

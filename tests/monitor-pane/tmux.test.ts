@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
-const SCRIPT = resolve(import.meta.dir, "../../dot_claude/skills/cmd-monitor-pane/scripts/executable_watch-pane.ts");
+const SCRIPT = resolve(import.meta.dir, "../../dot_claude/skills/cmd-watch-pane/scripts/executable_watch-pane.ts");
 const SOCKET = `mon-test-${process.pid}`;
 const HEADER = /^(?:error|end|match|prompt|lost)(?:,(?:error|end|match|prompt|lost))* · /;
 const state = mkdtempSync(`${tmpdir()}/watch-pane-test-`);
