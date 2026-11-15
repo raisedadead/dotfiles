@@ -152,7 +152,7 @@ const CLEAN = `[1/5] chezmoi status (managed-file modifications)
 [4/5] mcp drift (settings.json vs ~/.claude.json user-level)
   clean
 
-[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name, skill layers)
+[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name)
   clean
 
 Total issues: 0
@@ -473,11 +473,11 @@ test("a link to a missing file warns", () => {
 });
 
 test("a skill link to a missing skill warns", () => {
-  mkdirSync(join(home, ".agents", "skills", "ok"), { recursive: true });
-  link("../../.agents/skills/ok", join(claude, "skills", "ok"));
-  link("../../.agents/skills/gone", join(claude, "skills", "gone"));
+  mkdirSync(join(home, "skills", "ok"), { recursive: true });
+  link("../../skills/ok", join(claude, "skills", "ok"));
+  link("../../skills/gone", join(claude, "skills", "gone"));
   expect(section(run().out, "[warn 5/6]").split("\n").slice(1)).toEqual([
-    "  WARN: ~/.claude/skills/gone points to a missing ../../.agents/skills/gone; reinstall the target or run its setup command",
+    "  WARN: ~/.claude/skills/gone points to a missing ../../skills/gone; reinstall the target or run its setup command",
   ]);
 });
 

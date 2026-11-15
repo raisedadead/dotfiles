@@ -1284,7 +1284,7 @@ function runChecks(): number {
     ["[2/5] coverage (unmanaged files inside managed dirs)", checkCoverage],
     [`[3/5] shape (unmanaged top-level *.{${S.shapeExts}})`, checkShape],
     ["[4/5] mcp drift (settings.json vs ~/.claude.json user-level)", checkMcp],
-    ["[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name, skill layers)", checkLint],
+    ["[5/5] lint (enabledPlugins/mcpServers shape, CC version, skill name)", checkLint],
   ] as const;
   let total = 0;
   for (const [head, check] of issues) {

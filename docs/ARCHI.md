@@ -153,7 +153,7 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 
 ### Skills
 
-A first-party skill is a folder in `dot_claude/skills/<name>/`. A plugin skill comes with its plugin. There are no third-party skills. To add one, run `npx skills add <repo> --skill <name> -g -a claude-code --copy`.
+A first-party skill is a folder in `dot_claude/skills/<name>/`. A plugin skill comes with its plugin. There are no third-party skills.
 
 First-party skills have two prefixes. `cmd-` means the operator usually starts the skill. `rig-` means the model loads the skill on its own. [RIG.md](../dot_claude/RIG.md) lists them, and [SKILLS.md](SKILLS.md) holds the order in which skills compose.
 
