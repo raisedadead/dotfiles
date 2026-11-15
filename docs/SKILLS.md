@@ -1,95 +1,74 @@
 # Skill composition
 
-The kernel holds the precedence rules. This document holds the order. The UI workflow uses shared skill names for Pi and Claude Code. Other sections use Claude Code skill names.
+This document gives the order in which skills compose. The kernel holds the precedence rules.
 
-A task has one driver. Every other skill is a reference. A driver runs the loop. A reference gives a rubric that you read and apply. Do not use two drivers on one task. Two drivers give two reports and no decision.
+A task has one driver. Every other skill is a reference: it gives a rubric that you read and apply. Do not use two drivers on one task.
 
-Follow the order. A design skill that you read after the code exists can only criticise the code. It cannot shape the design.
+Follow the order. A design skill that you read after the code exists can only criticise the code.
 
-## Plan, pick up and hand over work
+## Prefixes
 
-These skills need no plugin. Each one reads and writes plain files in the project's `.scratchpad/`.
+`cmd-` means the operator usually starts the skill. `rig-` means the model loads the skill on its own. Neither prefix changes who can run it.
 
-1. `cmd-status` reports where the work stands. It changes nothing.
-1. `cmd-continue` picks up the newest handoff or the next open-work line, and does it.
-1. `cmd-plan` drives a plan and its check in a repo with no `.scratchpad/dossier/`. In a repo that has that folder, `dossier:plan` drives the plan instead.
-1. `cmd-handoff` writes a handoff file for another session, harness or person.
-1. `cmd-recall` finds what was done or decided before.
-1. `cmd-secrets` holds the steps for a 1Password item. Read it before the first `op` or `op-keys` call.
+## First-party skills
+
+- `cmd-status` reports where the work stands. It changes nothing.
+- `cmd-continue` picks up the newest handoff or the next open-work line.
+- `cmd-handoff` writes a handoff file for another session or person.
+- `cmd-recall` finds what was done or decided before.
+- `cmd-wrist-tap` halts the work after a deviation and forces a root-cause check.
+- `cmd-refresh-plugins` updates the installed plugins.
+- `cmd-watch-pane` watches a tmux or Rex pane.
+- `cmd-audit-kernel` audits the kernel, the rules and the skill descriptions.
+- `cmd-audit-scratchpad` proposes a cleanup of `.scratchpad/`.
+- `cmd-add-skill` installs a third-party skill.
+- `cmd-ghsa` drafts a freeCodeCamp security advisory.
+- `rig-plan` writes a plan and gets it checked. In a repo with `.scratchpad/dossier/`, `dossier:plan` drives the plan.
+- `rig-secrets` holds the steps for a 1Password item. Read it before the first `op` call.
+- `rig-chezmoi` changes or repairs a chezmoi-managed file.
+- `rig-docs` writes a manual in ASD-STE100.
 
 ## Change behaviour
 
-A feature, a bug fix, or any change to what the code does.
+1. `whetstone:tdd-cycle` drives. In a live dossier, `dossier:build` drives.
+1. Run one `reviewer` before the push. Run `/code-review` when the operator asks.
 
-1. `whetstone:tdd-cycle` drives. In a live dossier, `dossier:build` drives instead.
-1. Read `test-driven-development` when you must decide what to test.
-1. One `reviewer` before the push. The rig records its verdict when it ends. `/code-review` runs only when the operator asks for it.
+## Change a design
 
-## Change a public interface
-
-A REST or GraphQL endpoint, an exported type, a module boundary, or a config schema.
-
-1. `api-and-interface-design` first, before a test exists.
-1. `whetstone:codebase-design` when the change moves a module boundary or its depth.
+1. `whetstone:codebase-design` when the change moves a module boundary.
 1. `whetstone:doubt-pass` when the decision is costly to reverse.
-1. Then "Change behaviour" above.
-
-## Answer a design question
-
-A state model, a UI flow, or a project term that is not clear yet.
-
-1. `whetstone:prototype` builds a throwaway version before the real one.
+1. `whetstone:grill` when a request has several readings.
+1. `whetstone:prototype` builds a throwaway version to answer a design question.
 1. `whetstone:domain-modeling` owns the project terms, `GLOSSARY.md` and the ADRs.
 
 ## Reduce complexity
 
-The code is correct, and it is harder to read than it must be.
-
-1. `code-simplification` names the defect and its signal.
 1. `/simplify` applies the fix.
 1. `whetstone:tiger-style` checks the column budget last.
 
-Do not start here for a defect. A defect goes to "Find a defect".
-
 ## Find a defect
 
-A bug report, a wrong result, or a performance regression.
-
 1. `whetstone:diagnose` drives.
-1. `performance-optimization` holds the rubric for a slow path.
-1. `cloudflare:web-perf` covers Core Web Vitals in a browser alone.
-1. `dossier:backprop` after the fix, when a new invariant prevents the recurrence.
+1. `cloudflare:web-perf` covers Core Web Vitals.
+1. `dossier:backprop` follows the fix, when a new check prevents the recurrence.
 
-For a visual layout defect whose cause is known, use the UI workflow below.
+## Check a claim or write a report
 
-## Build or polish a screen
-
-1. Resolve the scope before selecting a skill. Identify the page shell (navigation, main area and table of contents), the content container (titles, cards, code and tables), and the prose. Record the requested outcome, project tokens and accepted design constraints.
-1. Select one driver. `better-layout` drives a new screen, a redesign, or a change to shared widths or breakpoints. A focused skill drives an isolated concern: `better-typography`, `better-colors`, `better-accessibility`, `better-ui`, or `better-writing`. A typography request alone keeps the accepted layout. For an unexplained rendering or interaction failure, diagnosis drives first: `diagnosing-bugs` in Pi or `whetstone:diagnose` in Claude Code. Use UI skills as references until the cause is known.
-1. Read the applicable references before code. Use this design order: layout, writing, typography, color, then UI polish. Apply `better-accessibility` throughout. Load only the references the scope needs; they do not become additional drivers.
-1. Set the layout before type: how the rails and main area share space, how the content container grows, and when columns collapse. Prose measure is separate from content width. A character-count guide checks paragraphs only, not cards, code, tables or the page. An accepted project decision, such as a prose measure, takes precedence over a numeric guide, but you still fix an accessibility failure. Ask the operator before a conflict changes the scope or design.
-1. Use the project's tokens and components. Check every consumer of a shared change. If a focused task needs a layout change, resolve that scope before you edit the shared layout.
-1. Verify in the browser. For layout work, inspect the full screen at the narrowest, typical desktop and widest supported widths: proportions, use of space, wrapping, content fit, overflow, keyboard and zoom. For an isolated change, inspect the affected components, states, themes and accessibility checks. Compare with the accepted reference or before state. Numeric checks support visual acceptance and do not replace it. Report unverified coverage.
-1. Use `better-interface` for a new screen, a redesign, or an explicit whole-interface review, at most once at the end. Load `better-layout` before `better-interface`, also for a review; both rigs refuse `better-interface` until `better-layout` has loaded in the session. Other tasks use focused acceptance, which does not approve the whole interface.
-
-The operator runs `/interface-review`; the model cannot invoke it.
+- `whetstone:verify-claims` checks sourced claims.
+- `dossier:verify` checks a version or other fact that can be stale.
+- `whetstone:research-report` and `whetstone:html-report` write a report.
+- `whetstone:skill-smith` lints a `SKILL.md`.
 
 ## Harden a boundary
 
-Authentication, input from a user, a webhook, or a new dependency.
+Use `security-review` for authentication, user input, a webhook or a new dependency.
 
-1. `security-review`, a Claude Code built-in, reads the change on the branch.
-1. `ghsa-draft` drafts a freeCodeCamp advisory alone.
+## Other plugin skills
 
-## Guide the operator
+- `worktrunk:*` covers the `wt` command.
+- `cloudflare:*` covers Cloudflare products.
+- `dossier:close` and `dossier:ship` end a dossier.
 
-Several manual steps: credentials, a third-party dashboard, or a cutover.
+UI work has no driver skill.
 
-1. Walk the operator through the steps in the reply, one step at a time. No skill does this today.
-
-## Signals that the pick is wrong
-
-- Two skills give the same report. One of them is not a driver.
-- A skill fires because its description matched, and its rubric does not apply to the task.
-
-Do the work when no recipe applies.
+If no recipe applies, do the work.

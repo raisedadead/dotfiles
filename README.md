@@ -13,9 +13,9 @@
 | Terminal   | [Ghostty](https://ghostty.org), [tmux](https://github.com/tmux/tmux), [zsh](https://www.zsh.org)                                     |
 | Editor     | [Neovim](https://neovim.io) with [LazyVim](https://www.lazyvim.org), [Zed](https://zed.dev)                                          |
 | Desktop    | [AeroSpace](https://github.com/nikitabobko/AeroSpace), [SketchyBar](https://felixkratz.github.io/SketchyBar)                         |
-| Agents     | [Claude Code](https://claude.com/claude-code), [Pi](https://github.com/earendil-works/pi)                                            |
+| Agent      | [Claude Code](https://claude.com/claude-code)                                                                                        |
 
-This public repository holds the shared configuration. The two agent rigs and the other private directories are submodules of a private repository. Each directory has its own branch. Read [Agent rigs](docs/ARCHI.md#agent-rigs) for the map.
+This public repository holds the shared configuration. The agent rig and the other private directories are submodules of a private repository. Each directory has its own branch. Read [Claude Code](docs/ARCHI.md#claude-code) for the map.
 
 ## Documents
 
@@ -24,10 +24,10 @@ This public repository holds the shared configuration. The two agent rigs and th
 | Install, edit, capture, or recover files | [Install and daily use](docs/README.md)   |
 | Understand ownership and load order      | [How this setup works](docs/ARCHI.md)     |
 | Validate a change or diagnose a problem  | [Maintenance checks](docs/MAINTENANCE.md) |
-| Work on this repository with an agent    | [Project instructions](AGENTS.md)         |
+| Work on this repository with an agent    | [Project instructions](CLAUDE.md)         |
 
 ## License
 
 ISC © 2017 Mrugesh Mohapatra
 
-Some rig text is adapted from MIT-licensed sources. Read [Credits](docs/CREDITS.md).
+Some rig text is adapted from an MIT-licensed source. Read [Credits](docs/CREDITS.md).
