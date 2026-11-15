@@ -47,7 +47,7 @@ Stage a shell startup change with an isolated destination and state file before 
 
 ### Private submodules
 
-`dot_claude/` and `dot_agents/` are git submodules of `raisedadead/dotfiles-private`. Each has its own branch and its own history. Do not change `dot_claude/` without an explicit request.
+`dot_claude/` and `dot_pi/` are git submodules of `raisedadead/dotfiles-private`. Each has its own branch and its own history. Do not change `dot_claude/` without an explicit request.
 
 - A commit inside a submodule runs `.githooks/post-commit`. The hook commits the gitlink bump in `~/.dotfiles` as `chore(<dir>): bump to <sha>`.
 - The hook makes no commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink.
@@ -130,7 +130,7 @@ Set AeroSpace `outer.bottom` to the bar height plus its bottom inset plus the wi
 
 ## Claude Code
 
-Claude Code is the only agent rig. It owns its kernel and its runtime. `dot_agents/` (target `~/.agents/`) is the shared skill layer. The operator owns releases and infrastructure changes.
+Claude Code is the only agent rig. It owns its kernel and its runtime. The operator owns releases and infrastructure changes.
 
 | Source                                                                              | Owns                                                                         |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -153,21 +153,11 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 
 ### Skills
 
-| Kind     | Home                                             | Reaches                                                                                         |
-| -------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Personal | `dot_claude/skills/<name>/`                      | Claude Code alone                                                                               |
-| Common   | `dot_agents/skills/<name>/`                      | A `symlink_<name>` entry in `dot_claude/skills/` with the content `../../.agents/skills/<name>` |
-| App      | The app setup command, such as `rex skill setup` | An unmanaged copy under `~/.agents/skills/`, linked from `~/.claude/skills/`                    |
-| Plugin   | Its plugin                                       | Never linked                                                                                    |
+A first-party skill is a folder in `dot_claude/skills/<name>/`. A plugin skill comes with its plugin. There are no third-party skills. To add one, run `npx skills add <repo> --skill <name> -g -a claude-code --copy`.
 
-First-party skills have two prefixes. `cmd-` means the operator usually starts the skill. `rig-` means the model loads the skill on its own.
+First-party skills have two prefixes. `cmd-` means the operator usually starts the skill. `rig-` means the model loads the skill on its own. [RIG.md](../dot_claude/RIG.md) lists them, and [SKILLS.md](SKILLS.md) holds the order in which skills compose.
 
-- Personal: `cmd-status`, `cmd-continue`, `cmd-handoff`, `cmd-recall`, `cmd-wrist-tap`, `cmd-refresh-plugins`, `cmd-watch-pane`, `cmd-audit-kernel`, `cmd-audit-scratchpad`, `rig-plan`, `rig-secrets`, `rig-chezmoi`, `rig-docs`.
-- Common: `cmd-add-skill`, `cmd-ghsa`.
-
-There are no third-party skills. `docs/skills.tsv` is empty. [SKILLS.md](SKILLS.md) holds the order in which skills compose.
-
-Frontmatter: `disallowed-tools` removes a tool. `allowed-tools` is advisory and does not (anthropics/claude-code#37683). Keep the trigger phrases disjoint across skills. Write a path with forward slashes. The `whetstone` plugin `skill-smith` lints the rest. Doctor lint 5e checks the skill links and the source entries.
+Frontmatter: `disallowed-tools` removes a tool. `allowed-tools` is advisory and does not (anthropics/claude-code#37683). Keep the trigger phrases disjoint across skills. Write a path with forward slashes. The `whetstone` plugin `skill-smith` lints the rest.
 
 ### Project instructions
 

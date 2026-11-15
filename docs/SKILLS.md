@@ -21,7 +21,6 @@ Follow the order. A design skill that you read after the code exists can only cr
 - `cmd-watch-pane` watches a tmux or Rex pane.
 - `cmd-audit-kernel` audits the kernel, the rules and the skill descriptions.
 - `cmd-audit-scratchpad` proposes a cleanup of `.scratchpad/`.
-- `cmd-add-skill` installs a third-party skill.
 - `cmd-ghsa` drafts a freeCodeCamp security advisory.
 - `rig-plan` writes a plan and gets it checked. In a repo with `.scratchpad/dossier/`, `dossier:plan` drives the plan.
 - `rig-secrets` holds the steps for a 1Password item. Read it before the first `op` call.

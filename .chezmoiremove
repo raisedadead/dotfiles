@@ -13,11 +13,10 @@
 .claude/skills/ghsa-draft
 .claude/skills/rex-handoff
 .claude/skills/cmd-agents-md
-.agents/skills/cmd-skill-add
-.agents/skills/ghsa-draft
+.claude/skills/cmd-add-skill
+.agents
 .claude/skills/cmd-refresh-plugins/scripts/refresh_plugins.sh
 .config/tmux/scripts/switcher.sh
-.agents/skills/rex
 .pi/agent/extensions/guard/git-identity.ts
 .claude/agents/notebook.md
 .claude/rules/90-plugins.md

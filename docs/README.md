@@ -4,7 +4,7 @@ This document covers the install steps and the daily chezmoi commands.
 
 The **source** is the configuration in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To **capture** a change is to copy it from the target into the source. chezmoi captures a change only when you run a capture command.
 
-The private sources `dot_claude/` and `dot_agents/` deploy to `~/.claude` and `~/.agents`.
+The private source `dot_claude/` deploys to `~/.claude`.
 
 ## Install or recover a machine
 

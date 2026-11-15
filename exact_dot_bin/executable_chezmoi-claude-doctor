@@ -37,9 +37,6 @@ const HELP = [
   "#                           5b. mcpServers entries must declare `type` (stdio/http/sse).",
   "#                           5c. log `claude --version` informationally (no pin — operator policy 2026-05-15).",
   "#                           5d. SKILL.md frontmatter `name:` must match parent directory.",
-  "#                           5e. skill layers: ~/.claude/skills links resolve into ../../.agents/skills/<name>,",
-  "#                               symlink_<name> source entries match a dot_agents/skills/<name>, and no",
-  "#                               common skill is also a CLI-installed copy (skills lock).",
   "#",
   "# Usage:",
   "#   chezmoi-claude-doctor           # report + non-zero exit on drift",
@@ -674,64 +671,15 @@ function checkLint(): number {
     if (version) log(`  INFO: claude --version=${version} (informational)`);
   }
 
-  for (const root of [`${S.privSource}/dot_claude/skills`, `${S.privSource}/dot_agents/skills`]) {
-    if (!isDir(root)) continue;
-    for (const dir of children(root)) {
-      if (!kind(dir)?.isDirectory()) continue;
-      const skill = `${dir}/SKILL.md`;
-      if (!readable(skill)) continue;
-      const name = frontmatterName(read(skill) ?? "");
-      const base = dir.slice(dir.lastIndexOf("/") + 1);
-      if (name && name !== base) {
-        log(`  LINT: skill frontmatter name='${name}' != dir='${base}' (${skill})`);
-        found++;
-      }
-    }
-  }
-
-  const common = `${S.privSource}/dot_agents/skills`;
-  const state = env("XDG_STATE_HOME");
-  const lock = state ? `${state}/skills/.skill-lock.json` : `${S.home}/.agents/.skill-lock.json`;
-  for (const path of children(`${S.claudeDir}/skills`)) {
-    if (!isLink(path)) continue;
-    const name = path.slice(path.lastIndexOf("/") + 1);
-    const target = readlink(path);
-    if (!existsSync(path)) {
-      log(`  LINT: skill link ${path} is dangling`);
+  for (const dir of children(`${S.privSource}/dot_claude/skills`)) {
+    if (!kind(dir)?.isDirectory()) continue;
+    const skill = `${dir}/SKILL.md`;
+    if (!readable(skill)) continue;
+    const name = frontmatterName(read(skill) ?? "");
+    const base = dir.slice(dir.lastIndexOf("/") + 1);
+    if (name && name !== base) {
+      log(`  LINT: skill frontmatter name='${name}' != dir='${base}' (${skill})`);
       found++;
-    } else if (target !== `../../.agents/skills/${name}`) {
-      log(`  LINT: skill link ${path} targets '${target}', not '../../.agents/skills/${name}'`);
-      found++;
-    }
-  }
-  for (const entry of children(`${S.privSource}/dot_claude/skills`)) {
-    const file = entry.slice(entry.lastIndexOf("/") + 1);
-    if (!kind(entry)?.isFile() || !file.startsWith("symlink_")) continue;
-    const name = file.slice("symlink_".length);
-    const target = chomp(read(entry) ?? "");
-    if (target !== `../../.agents/skills/${name}`) {
-      log(`  LINT: ${entry} holds '${target}', not '../../.agents/skills/${name}'`);
-      found++;
-    }
-    if (!readable(`${common}/${name}/SKILL.md`)) {
-      log(`  LINT: ${entry} has no ${common}/${name}/SKILL.md`);
-      found++;
-    }
-  }
-  if (isDir(common) && readable(lock)) {
-    let skills: Json = null;
-    try {
-      skills = get(readJson(lock)[0] ?? null, "skills");
-    } catch {
-      skills = null;
-    }
-    for (const dir of children(common)) {
-      if (!kind(dir)?.isDirectory()) continue;
-      const name = dir.slice(dir.lastIndexOf("/") + 1);
-      if (isObject(skills) && Object.hasOwn(skills, name)) {
-        log(`  LINT: common skill '${name}' is also a CLI-installed copy (${lock})`);
-        found++;
-      }
     }
   }
 
@@ -1113,7 +1061,7 @@ function listClaudeAdditions(): string {
       for (const key of keys(alt(get(root, "mcpServers"), root))) emit(`claude-plugin-mcp ${plugin} ${interp(key)}`);
     });
   }
-  out += listUnmanagedChildren("claude-skills", `${S.claudeDir}/skills`, `${S.pubSource}/docs/skills.tsv`);
+  out += listUnmanagedChildren("claude-skills", `${S.claudeDir}/skills`);
   for (const name of ["agents", "rules", "commands", "hooks", "output-styles", "workflows", "mods"]) {
     out += listUnmanagedChildren(`claude-${name}`, `${S.claudeDir}/${name}`);
   }
@@ -1301,7 +1249,6 @@ function checkAdditions(): boolean {
   const text = [
     listClaudeAdditions(),
     listChangedInstructions(),
-    listUnmanagedChildren("shared-skills", `${S.home}/.agents/skills`, `${S.pubSource}/docs/skills.tsv`),
     listPiAdditions(),
     listCodexAdditions(),
   ].join("");

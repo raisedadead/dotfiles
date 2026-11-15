@@ -337,7 +337,7 @@ test("mcp drift skips a source without mcpServers", () => {
   expect(r.code).toBe(0);
 });
 
-test("lint flags settings shape, skill names and skill layers", () => {
+test("lint flags settings shape and skill names", () => {
   const settings = {
     ...SETTINGS,
     enabledPlugins: { "ok@m": true, "arr@m": ["x"] },
@@ -349,31 +349,14 @@ test("lint flags settings shape, skill names and skill layers", () => {
   stub("claude", 'echo "9.9.2 (Claude Code)"');
   put(join(sub, "skills", "foo", "SKILL.md"), "---\nname: \"bar\"\n---\n");
   put(join(sub, "skills", "same", "SKILL.md"), "---\nname: 'same'\n---\n");
-  put(join(src, "dot_agents", "skills", "lone", "SKILL.md"), "---\nname: other\n---\n");
-  link("../../.agents/skills/dang", join(claude, "skills", "dang"));
-  link("/tmp", join(claude, "skills", "odd"));
-  put(join(sub, "skills", "symlink_x"), "../../.agents/skills/x\n");
-  put(join(sub, "skills", "symlink_lone"), "../../.agents/skills/wrong\n");
-  put(join(src, "dot_agents", "skills", "common", "SKILL.md"), "---\nname: common\n---\n");
-  json(join(base, "state", "skills", ".skill-lock.json"), { skills: { common: {} } });
-  const r = run([], { env: { XDG_STATE_HOME: join(base, "state") } });
-  const lines = section(r.out, "[5/5]").split("\n").slice(1);
-  const lock = join(base, "state", "skills", ".skill-lock.json");
-  expect(lines.slice(0, 4)).toEqual([
+  const r = run();
+  expect(section(r.out, "[5/5]").split("\n").slice(1)).toEqual([
     "  LINT: enabledPlugins[arr@m] is not boolean (CC 2.1.x silently disables array form)",
     "  LINT: mcpServers[notype] missing 'type' field (stdio/http/sse)",
     "  INFO: claude --version=9.9.2 (informational)",
     `  LINT: skill frontmatter name='bar' != dir='foo' (${sub}/skills/foo/SKILL.md)`,
   ]);
-  expect(lines).toContain(`  LINT: skill frontmatter name='other' != dir='lone' (${src}/dot_agents/skills/lone/SKILL.md)`);
-  expect(lines).toContain(`  LINT: skill link ${claude}/skills/dang is dangling`);
-  expect(lines).toContain(`  LINT: skill link ${claude}/skills/odd targets '/tmp', not '../../.agents/skills/odd'`);
-  expect(lines).toContain(`  LINT: ${sub}/skills/symlink_x has no ${src}/dot_agents/skills/x/SKILL.md`);
-  expect(lines).toContain(`  LINT: ${sub}/skills/symlink_lone holds '../../.agents/skills/wrong', not '../../.agents/skills/lone'`);
-  expect(lines).toContain(`  LINT: common skill 'common' is also a CLI-installed copy (${lock})`);
-  expect(lines).not.toContain("  clean");
-  expect(lines.length).toBe(10);
-  expect(r.out).toContain("Total issues: 9\n");
+  expect(r.out).toContain("Total issues: 3\n");
   expect(r.code).toBe(1);
 });
 
@@ -520,7 +503,6 @@ test("agent additions warn until they are removed or approved", () => {
   put(additions);
   mkdirSync(join(claude, "rules", "sub"), { recursive: true });
   mkdirSync(join(claude, "skills"), { recursive: true });
-  mkdirSync(join(home, ".agents", "skills"), { recursive: true });
   mkdirSync(join(home, ".pi", "agent", "extensions"), { recursive: true });
   mkdirSync(join(home, ".codex", "rules"), { recursive: true });
   managed(join(claude, "settings.json"), join(claude, "agents", "a.md"), join(claude, "CLAUDE.md"), join(claude, "rules", "sub"), rig, join(rig, "hooks"), join(rig, "hooks", "hooks.json"));
@@ -546,8 +528,7 @@ test("agent additions warn until they are removed or approved", () => {
   put(join(home, "plugin", ".claude-plugin", "plugin.json"), '{"mcpServers":{"evil-manifest":{}}}');
   put(join(home, "plugin", ".mcp.json"), '{"mcpServers":{"evil-file":{}}}');
   json(join(claude, "plugins", "installed_plugins.json"), { plugins: { "evil@m": [{ installPath: join(home, "none") }, { installPath: join(home, "plugin") }] } });
-  link("../../.agents/skills/evil", join(claude, "skills", "evil"));
-  mkdirSync(join(home, ".agents", "skills", "evil"));
+  mkdirSync(join(claude, "skills", "evil"));
   put(join(claude, "evil.py"), "#!/bin/sh\n");
   link("/tmp/x", join(claude, "evil-link.sh"));
   put(join(claude, "CLAUDE.md"), "kernel\ninjected\n");
@@ -590,7 +571,6 @@ test("agent additions warn until they are removed or approved", () => {
     "instructions .claude/CLAUDE.md",
     "instructions .claude/mods/rig/hooks/hooks.json",
     "instructions .pi/agent/SYSTEM.md",
-    "shared-skills evil",
     "pi-extensions evil.ts",
     "pi-packages npm:evil",
     "pi-extensions /tmp/evil.ts",
