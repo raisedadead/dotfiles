@@ -33,13 +33,3 @@ codex-plugin spreadsheets@openai-primary-runtime
 codex-plugin template-creator@openai-primary-runtime
 codex-plugin unified-computer-use@openai-bundled
 codex-plugin visualize@openai-bundled
-codex-skills MATT-LICENSE.txt
-codex-skills code-review
-codex-skills codebase-design
-codex-skills diagnosing-bugs
-codex-skills domain-modeling
-codex-skills handoff
-codex-skills research
-codex-skills resolving-merge-conflicts
-codex-skills tdd
-codex-skills writing-for-agents
