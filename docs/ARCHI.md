@@ -182,7 +182,9 @@ At `startup` and `clear`, the rig builds a status note from the workspace files 
 
 ### Worktrees and RTK
 
-A session starts in the main checkout and works in `wt` worktrees by full path. After `EnterWorktree`, Claude Code refuses an edit to the main checkout. Branch form: `<type>/cc-<first 6 of session ID>-<topic>`.
+A session starts in the main checkout and works in `wt` worktrees by full path. `worktree.bgIsolation` is `none`, and a background session does the same. After `EnterWorktree`, Claude Code refuses an edit to the main checkout. Branch form: `<type>/cc-<first 6 of session ID>-<topic>`.
+
+A job goes back to the main checkout as a branch. From there it goes to a pull request, or to the default branch and a push. `dot_claude/RIG.md`, "Land a job", holds the steps.
 
 `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. The guard asks before a worktree removal through `wt` or `git` (`mods/rig/src/mutations.ts`). The `worktree_remove` tool asks only when `force` or `force_delete` would drop uncommitted files or unmerged commits.
 
