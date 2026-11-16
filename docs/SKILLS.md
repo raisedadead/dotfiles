@@ -19,7 +19,6 @@ Follow the order. A design skill that you read after the code exists can only cr
 - `cmd-wrist-tap` halts the work after a deviation and forces a root-cause check.
 - `cmd-refresh-plugins` updates the installed plugins.
 - `cmd-watch-pane` watches a tmux or Rex pane.
-- `cmd-audit-kernel` audits the kernel, the rules and the skill descriptions.
 - `cmd-audit-scratchpad` proposes a cleanup of `.scratchpad/`.
 - `cmd-ghsa` drafts a freeCodeCamp security advisory.
 - `rig-plan` writes a plan and gets it checked. In a repo with `.scratchpad/dossier/`, `dossier:plan` drives the plan.

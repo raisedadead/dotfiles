@@ -27,3 +27,7 @@
 .claude/agents/judge.md
 .claude/agents/signoff.md
 .claude/agents/worker.md
+.claude/agents/builder.md
+.claude/agents/committer.md
+.claude/agents/team-lead.md
+.claude/skills/cmd-audit-kernel
