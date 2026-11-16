@@ -59,6 +59,12 @@ compdef '_files -W ~/DEV -/' ca
 #-----------------------------
 can_haz doctl && alias dovms="doctl compute droplet list --format \"ID,Name,PublicIPv4\""
 
+
+#-----------------------------
+# Zed
+#-----------------------------
+can_haz zed && alias z="zed"
+
 #-----------------------------
 # Neovim
 #-----------------------------

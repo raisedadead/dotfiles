@@ -7,10 +7,22 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "base_keymap": "VSCode",
+  "ui_font_family": "IBM Plex Sans",
+  "agent_ui_font_size": 15.0,
+  "agent_ui_font_family": "IBM Plex Sans",
+  "restore_on_startup": "launchpad",
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "reveal_if_open": true,
+  "redact_private_values": true,
+  "on_last_window_closed": "quit_app",
+  "when_closing_with_no_tabs": "platform_default",
   "disable_ai": true,
   "icon_theme": {
     "mode": "system",
-    "light": "Zed (Default)",
+    "light": "Catppuccin Latte",
     "dark": "Catppuccin Mocha"
   },
   "agent_servers": {
@@ -32,7 +44,7 @@
     "wakatime": true,
     "zig": true,
   },
-  "ui_font_size": 16,
+  "ui_font_size": 15.0,
   "buffer_font_family": "Berkeley Mono",
   "buffer_font_fallbacks": ["Symbols Nerd Font"],
   "buffer_font_features": {
@@ -52,5 +64,9 @@
     "diagnostics": false,
     "metrics": false,
   },
-  "theme": "Catppuccin Mocha",
+  "theme": {
+    "mode": "system",
+    "light": "Catppuccin Latte",
+    "dark": "Catppuccin Mocha"
+  },
 }
