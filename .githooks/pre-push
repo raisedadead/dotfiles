@@ -1,5 +1,7 @@
 #!/bin/bash
 set -euo pipefail
+local_env=$(git rev-parse --local-env-vars)
+sub() { (unset $local_env; git -C "$@"); }
 
 zero=0000000000000000000000000000000000000000
 missing=""
@@ -17,12 +19,12 @@ while read -r _ local_sha _ remote_sha; do
 		while read -r _ path; do
 			[ -n "$path" ] || continue
 			gitlink=$(git rev-parse -q --verify "$commit:$path" 2>/dev/null) || continue
-			top=$(git -C "$path" rev-parse --show-toplevel 2>/dev/null) || top=""
-			if [ "$top" != "$PWD/$path" ] || ! git -C "$path" cat-file -e "$gitlink^{commit}" 2>/dev/null; then
+			top=$(sub "$path" rev-parse --show-toplevel 2>/dev/null) || top=""
+			if [ "$top" != "$PWD/$path" ] || ! sub "$path" cat-file -e "$gitlink^{commit}" 2>/dev/null; then
 				unchecked="$unchecked$path $gitlink"$'\n'
 				continue
 			fi
-			git -C "$path" branch -r --contains "$gitlink" 2>/dev/null | grep -q . && continue
+			sub "$path" branch -r --contains "$gitlink" 2>/dev/null | grep -q . && continue
 			missing="$missing$path $gitlink"$'\n'
 		done < <(git config --file <(printf '%s\n' "$modules") --get-regexp '^submodule\..*\.path$' || true)
 	done < <(git rev-list "${range[@]}")
