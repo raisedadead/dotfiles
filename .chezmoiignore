@@ -36,6 +36,7 @@ install.sh
 .claude/skills/**/*.original.md
 .claude/skills/synced
 .claude/output-styles/*.original.md
+.claude/fixtures
 docs
 tests
 {{- if ne .chezmoi.os "darwin" }}
