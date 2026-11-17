@@ -188,7 +188,7 @@ A job goes back to the main checkout as a branch. A pull-request branch is pushe
 
 `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. The guard asks before a worktree removal through `wt` or `git` (`mods/rig/src/mutations.ts`). The `worktree_remove` tool asks only when `force` or `force_delete` would drop uncommitted files or unmerged commits.
 
-Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk proxy`. `git` is excluded from the rewrite, because the worktree check refuses a rewritten git command (rtk-ai/rtk#3864).
+Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk bypass`. `git` is excluded from the rewrite, because the worktree check refuses a rewritten git command (rtk-ai/rtk#3864).
 
 After `EnterWorktree`, the same check refuses a typed `!` command `git -C ~/<path>` (anthropics/claude-code#88550). Use an absolute path or `"$HOME/<path>"`. When Remote Control is connected, start the session with `--debug-file <path>` to read the refusal reason.
 
