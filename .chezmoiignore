@@ -55,7 +55,6 @@ Library
 {{- end }}
 {{- if not (stat (joinPath .chezmoi.sourceDir "dot_claude/CLAUDE.md")) }}
 .bin/pi
-.cavemem
 .claude
 .claude.json
 {{- end }}
