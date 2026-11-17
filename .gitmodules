@@ -2,7 +2,3 @@
 	path = dot_claude
 	url = git@github.com:raisedadead/dotfiles-private.git
 	branch = dot_claude
-[submodule "dot_pi"]
-	path = dot_pi
-	url = git@github.com:raisedadead/dotfiles-private.git
-	branch = dot_pi

@@ -14,10 +14,8 @@
 .claude/skills/rex-handoff
 .claude/skills/cmd-agents-md
 .claude/skills/cmd-add-skill
-.agents
 .claude/skills/cmd-refresh-plugins/scripts/refresh_plugins.sh
 .config/tmux/scripts/switcher.sh
-.pi/agent/extensions/guard/git-identity.ts
 .claude/agents/notebook.md
 .claude/rules/90-plugins.md
 .claude/workflows/lens-review.js

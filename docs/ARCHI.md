@@ -47,7 +47,7 @@ Stage a shell startup change with an isolated destination and state file before 
 
 ### Private submodules
 
-`dot_claude/` and `dot_pi/` are git submodules of `raisedadead/dotfiles-private`. Each has its own branch and its own history. Do not change `dot_claude/` without an explicit request.
+`dot_claude/` is a git submodule of `raisedadead/dotfiles-private`. It has its own branch and its own history. Do not change `dot_claude/` without an explicit request.
 
 - A commit inside a submodule runs `.githooks/post-commit`. The hook commits the gitlink bump in `~/.dotfiles` as `chore(<dir>): bump to <sha>`.
 - The hook makes no commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink.

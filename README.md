@@ -15,7 +15,7 @@
 | Desktop    | [AeroSpace](https://github.com/nikitabobko/AeroSpace), [SketchyBar](https://felixkratz.github.io/SketchyBar)                         |
 | Agent      | [Claude Code](https://claude.com/claude-code)                                                                                        |
 
-This public repository holds the shared configuration. The agent rig and the other private directories are submodules of a private repository. Each directory has its own branch. Read [Claude Code](docs/ARCHI.md#claude-code) for the map.
+This public repository holds the shared configuration. The agent rig, `dot_claude/`, is a submodule of a private repository. It has its own branch. Read [Claude Code](docs/ARCHI.md#claude-code) for the map.
 
 ## Documents
 

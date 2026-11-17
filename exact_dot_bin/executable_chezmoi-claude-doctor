@@ -930,18 +930,7 @@ function slurp(path: string): Json {
   return readJson(path)[0] ?? null;
 }
 
-function manifestNames(path: string): Set<string> {
-  const text = read(path);
-  if (text === undefined) return new Set();
-  return new Set(
-    text
-      .split("\n")
-      .slice(0, text.endsWith("\n") ? -1 : undefined)
-      .map(line => (line.includes("\t") ? line.split("\t")[1] : line)),
-  );
-}
-
-function listUnmanagedChildren(kindName: string, dir: string, manifest = ""): string {
+function listUnmanagedChildren(kindName: string, dir: string): string {
   if (!isDir(dir)) return "";
   let out = "";
   for (const path of children(dir)) {
@@ -958,7 +947,6 @@ function listUnmanagedChildren(kindName: string, dir: string, manifest = ""): st
       }
       continue;
     }
-    if (manifest && readable(manifest) && manifestNames(manifest).has(name)) continue;
     out += `${kindName} ${name}\n`;
   }
   return out;
@@ -1092,77 +1080,19 @@ function findFiles(dir: string, test: (path: string, depth: number) => boolean, 
 
 function listChangedInstructions(): string {
   const sourceClaude = `${S.privSource}/dot_claude`;
-  const sourcePi = `${S.privSource}/dot_pi/agent`;
-  const piHome = `${S.home}/.pi/agent`;
   let out = "";
-  for (const [src, target] of [
-    [`${sourceClaude}/CLAUDE.md`, `${S.claudeDir}/CLAUDE.md`],
-    [`${sourcePi}/AGENTS.md`, `${piHome}/AGENTS.md`],
-    [`${sourcePi}/AGENTS.override.md`, `${piHome}/AGENTS.override.md`],
-    [`${sourcePi}/APPEND_SYSTEM.md`, `${piHome}/APPEND_SYSTEM.md`],
-    [`${sourcePi}/CLAUDE.md`, `${piHome}/CLAUDE.md`],
-    [`${sourcePi}/SYSTEM.md`, `${piHome}/SYSTEM.md`],
-  ]) {
-    if (!existsSync(target)) continue;
-    if (existsSync(src) && same(src, target)) continue;
-    out += `instructions ${relHome(target)}\n`;
-  }
+  const kernel = `${S.claudeDir}/CLAUDE.md`;
+  if (existsSync(kernel) && !(existsSync(`${sourceClaude}/CLAUDE.md`) && same(`${sourceClaude}/CLAUDE.md`, kernel))) out += `instructions ${relHome(kernel)}\n`;
   const sources = [
-    ...[`${sourceClaude}/rules`, `${sourceClaude}/agents`, `${sourcePi}/rules`, `${sourcePi}/agents`].flatMap(dir =>
+    ...[`${sourceClaude}/rules`, `${sourceClaude}/agents`].flatMap(dir =>
       findFiles(dir, path => (kind(path)?.isFile() ?? false) && path.endsWith(".md")),
     ),
     ...findFiles(`${sourceClaude}/mods`, (path, depth) => depth === 3 && path.endsWith("/hooks/hooks.json"), 3),
   ];
   for (const src of sources) {
-    const target = src.startsWith(`${sourceClaude}/`)
-      ? `${S.claudeDir}/${src.slice(sourceClaude.length + 1)}`
-      : `${piHome}/${src.slice(sourcePi.length + 1)}`;
+    const target = `${S.claudeDir}/${src.slice(sourceClaude.length + 1)}`;
     if (!existsSync(target)) continue;
     if (!same(src, target)) out += `instructions ${relHome(target)}\n`;
-  }
-  return out;
-}
-
-function piManaged(path: string): string {
-  const text = read(path);
-  if (text === undefined) return "";
-  const picked: string[] = [];
-  let inside = false;
-  for (const line of lines(text)) {
-    if (!inside) {
-      if (/^managed='\{/.test(line)) {
-        inside = true;
-        picked.push(line);
-      }
-      continue;
-    }
-    picked.push(line);
-    if (/^\}'/.test(line)) inside = false;
-  }
-  return chomp(picked.map(line => line.replace(/^managed='/, "").replace(/^\}'/, "}")).join("\n"));
-}
-
-function listPiAdditions(): string {
-  const sourcePi = `${S.privSource}/dot_pi`;
-  const piHome = `${S.home}/.pi/agent`;
-  let out = listUnmanagedChildren("pi-skills", `${piHome}/skills`, `${sourcePi}/skills.tsv`);
-  for (const name of ["extensions", "agents", "rules"]) out += listUnmanagedChildren(`pi-${name}`, `${piHome}/${name}`);
-  const managed = piManaged(`${sourcePi}/agent/modify_settings.json`) || "{}";
-  out += jqItems(`${piHome}/settings.json`, (live, emit) => {
-    const source = JSON.parse(managed) as Json;
-    for (const key of ["packages", "extensions", "skills"]) {
-      const mapped = values(alt(get(live, key), [])).map(item => (isObject(item) ? get(item, "source") : item));
-      for (const item of minus(mapped, alt(get(source, key), []))) emit(`pi-${key} ${interp(item)}`);
-    }
-  });
-  const template = read(`${sourcePi}/agent/mcp.json.tmpl`);
-  const servers = jqItems(`${piHome}/mcp.json`, (root, emit) => {
-    for (const key of keys(alt(get(root, "mcpServers"), {}))) emit(key);
-  });
-  for (const name of readLines(servers)) {
-    const pattern = new RegExp(`"${escape(name)}"[ \\t\\r\\f\\v]*:[ \\t\\r\\f\\v]*\\{`);
-    if (template !== undefined && template.split("\n").some(line => pattern.test(line))) continue;
-    out += `pi-mcp ${name}\n`;
   }
   return out;
 }
@@ -1249,7 +1179,6 @@ function checkAdditions(): boolean {
   const text = [
     listClaudeAdditions(),
     listChangedInstructions(),
-    listPiAdditions(),
     listCodexAdditions(),
   ].join("");
   const approvedText = read(S.additionsFile);
@@ -1299,7 +1228,7 @@ function runChecks(): number {
     ["[warn 3/6] rig version gate (validate, type check and tests after a Claude Code update)", checkRigGate],
     ["[warn 4/6] AI release stores (Codex daemon and Pi keep at most two releases)", checkAiReleases],
     ["[warn 5/6] dangling links (~/.bin and ~/.claude/skills)", checkLinks],
-    ["[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)", checkAdditions],
+    ["[warn 6/6] agent additions (Claude and Codex items outside the source and docs/agent-additions.txt)", checkAdditions],
   ] as const;
   for (const [head, check] of warns) {
     log(head);

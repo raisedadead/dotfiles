@@ -11,20 +11,9 @@ install.sh
 .config/zsh/.zcompdump*
 .config/zsh/.zsh_sessions
 .bin/test_*.py
+.bin/ws
+.pi
 .claude.*-*
-.pi.*-*
-.pi/*
-!.pi/RIG.md
-!.pi/agent
-.pi/agent/*
-!.pi/agent/AGENTS.md
-!.pi/agent/APPEND_SYSTEM.md
-!.pi/agent/settings.json
-!.pi/agent/mcp.json
-!.pi/agent/rules
-!.pi/agent/agents
-!.pi/agent/extensions
-!.pi/agent/themes
 .claude/mods/*/src
 .claude/mods/*/tests
 .claude/mods/*/dist
@@ -65,10 +54,8 @@ Library
 .wakatime.cfg
 {{- end }}
 {{- if not (stat (joinPath .chezmoi.sourceDir "dot_claude/CLAUDE.md")) }}
-.agents
 .bin/pi
 .cavemem
 .claude
 .claude.json
-.pi
 {{- end }}

@@ -173,7 +173,7 @@ Total issues: 0
 [warn 5/6] dangling links (~/.bin and ~/.claude/skills)
   clean
 
-[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)
+[warn 6/6] agent additions (Claude and Codex items outside the source and docs/agent-additions.txt)
   clean
 
 `;
@@ -498,15 +498,13 @@ test("agent additions warn until they are removed or approved", () => {
   put(join(claude, "CLAUDE.md"), "kernel\n");
   put(join(sub, "mods", "rig", "hooks", "hooks.json"), "{}");
   put(join(rig, "hooks", "hooks.json"), "{}");
-  put(join(src, "dot_pi", "agent", "mcp.json.tmpl"), '{"mcpServers":{"good":{"command":"x"}}}');
   json(join(home, ".claude.json"), { mcpServers: source.mcpServers, projects: {} }, 0o600);
   put(additions);
   mkdirSync(join(claude, "rules", "sub"), { recursive: true });
   mkdirSync(join(claude, "skills"), { recursive: true });
-  mkdirSync(join(home, ".pi", "agent", "extensions"), { recursive: true });
   mkdirSync(join(home, ".codex", "rules"), { recursive: true });
   managed(join(claude, "settings.json"), join(claude, "agents", "a.md"), join(claude, "CLAUDE.md"), join(claude, "rules", "sub"), rig, join(rig, "hooks"), join(rig, "hooks", "hooks.json"));
-  const head = "[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)";
+  const head = "[warn 6/6] agent additions (Claude and Codex items outside the source and docs/agent-additions.txt)";
   expect(section(run().out, "[warn 6/6]")).toBe(`${head}\n  clean`);
 
   json(join(claude, "settings.json"), {
@@ -534,10 +532,6 @@ test("agent additions warn until they are removed or approved", () => {
   put(join(claude, "CLAUDE.md"), "kernel\ninjected\n");
   put(join(claude, "rules", "sub", "evil.md"));
   put(join(rig, "hooks", "hooks.json"), '{"modules":["evil"]}');
-  put(join(home, ".pi", "agent", "extensions", "evil.ts"));
-  put(join(home, ".pi", "agent", "SYSTEM.md"));
-  put(join(home, ".pi", "agent", "settings.json"), '{"packages":["npm:evil"],"extensions":["/tmp/evil.ts"],"skills":["/tmp/evilskill"]}');
-  put(join(home, ".pi", "agent", "mcp.json"), '{"mcpServers":{"good":{},"command":{}}}');
   put(
     join(home, ".codex", "config.toml"),
     "notify = [\n  '/bin/evil',\n  \"arg\",\n]\n[marketplaces.evil]\n[mcp_servers.\"evil.dot\"] # note\n  [mcp_servers.evil_indent]\n[[hooks.Stop]]\n[plugins.'lit@other']\n[agents.evil]\n",
@@ -570,12 +564,6 @@ test("agent additions warn until they are removed or approved", () => {
     "claude-script evil-link.sh",
     "instructions .claude/CLAUDE.md",
     "instructions .claude/mods/rig/hooks/hooks.json",
-    "instructions .pi/agent/SYSTEM.md",
-    "pi-extensions evil.ts",
-    "pi-packages npm:evil",
-    "pi-extensions /tmp/evil.ts",
-    "pi-skills /tmp/evilskill",
-    "pi-mcp command",
     'codex-notify "/bin/evil", "arg"',
     "codex-marketplace evil",
     "codex-mcp evil.dot",
@@ -618,7 +606,7 @@ test("--rewake with issues wakes the model and records the warnings", () => {
   expect(r.out).toBe("");
   expect(r.err).toStartWith("chezmoi-claude-doctor: issues found. Run ~/.bin/chezmoi-claude-doctor");
   expect(r.err).toContain(`\n[3/5] shape (unmanaged top-level *.{md|toml|yaml|yml|kdl|ini})\n  ORPHAN: ${claude}/notes.md\n`);
-  expect(r.err).toEndWith("[warn 6/6] agent additions (Claude, Pi and Codex items outside the source and docs/agent-additions.txt)\n  clean\n");
+  expect(r.err).toEndWith("[warn 6/6] agent additions (Claude and Codex items outside the source and docs/agent-additions.txt)\n  clean\n");
   expect(readFileSync(marker(), "utf8")).toBe(`~/.bin/gone points to a missing ${home}/missing; reinstall the target or run its setup command\n`);
 });
 
