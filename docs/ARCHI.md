@@ -146,8 +146,8 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 
 ### Rig behavior
 
-- `dotfile_apply` applies named targets. It opens a dialog with the diff only when a changed file is a rig gate or hook, a secret or encrypted file, a git, shell, ssh or `wt` file, a file in `~/.bin`, or a run script. The operator's answer is the approval. `chezmoi apply <target>` run alone opens the dialog for every target.
-- `ship` pushes a branch and opens its PR after one dialog. A PR has a title only.
+- `dotfile_apply` applies named targets. It asks in the permission prompt only when a changed file is a rig gate or hook, a secret or encrypted file, a git, shell, ssh or `wt` file, a file in `~/.bin`, or a run script. The prompt shows the first lines of the diff. For a long diff, it names the file that holds the full diff. It shows no diff of a secret file, or of a private or encrypted target. The operator's answer is the approval. `chezmoi apply <target>` run alone asks for every target.
+- `ship` pushes a branch and opens its PR after one ask. A PR has a title only.
 - The rig rescans unpushed commits at each main-session turn, after `git` or `gh` runs, and when a helper ends.
 - A role helper gets its allowed shell commands at SubagentStart.
 
