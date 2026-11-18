@@ -124,6 +124,7 @@ esac`,
 
   const origin = join(base, "sub-origin");
   put(join(origin, "mods", "rig", "build.ts"), "x\n");
+  json(join(origin, ".settings.managed.json"), SETTINGS);
   git(base, "init", "-q", origin);
   git(origin, "add", ".");
   git(origin, "commit", "-q", "-m", "sub");
@@ -421,7 +422,7 @@ test("the rig gate re-tests the committed rig only on a new Claude Code version"
   const verified = join(claude, "markers", "rig-verified-version");
   const log = join(claude, "markers", "rig-gate.log");
   stub("claude", 'case "$1" in --version) echo "9.9.2 (Claude Code)" ;; *) echo "claude $*" ;; esac');
-  stub("bun", 'printf \'%s %s\\n\' "$PWD" "$*" >> "$DOCTOR_CTL/bun-calls"; echo "bun $*"; exit "$(cat "$DOCTOR_CTL/bun-rc" 2>/dev/null || echo 0)"');
+  stub("bun", 'printf \'%s %s\\n\' "$PWD" "$*" >> "$DOCTOR_CTL/bun-calls"; ls -A "$PWD/../.." > "$DOCTOR_CTL/gate-root"; echo "bun $*"; exit "$(cat "$DOCTOR_CTL/bun-rc" 2>/dev/null || echo 0)"');
   stub("bunx", "exit 0");
   const gate = () => section(run().out, "[warn 3/6]").split("\n").slice(1);
 
@@ -439,6 +440,7 @@ test("the rig gate re-tests the committed rig only on a new Claude Code version"
   expect(readFileSync(verified, "utf8")).toBe("9.9.1\n");
   expect(readFileSync(join(ctl, "bun-calls"), "utf8")).toMatch(/\/mods\/rig build\.ts\n$/);
   expect(readFileSync(log, "utf8")).toBe("bun build.ts\n");
+  expect(readFileSync(join(ctl, "gate-root"), "utf8").split("\n").filter(Boolean)).toEqual([".settings.managed.json", "mods"]);
 
   put(join(ctl, "bun-rc"), "0\n");
   expect(gate()).toEqual(["  clean (9.9.2 verified now)"]);
