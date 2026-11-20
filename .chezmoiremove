@@ -29,3 +29,7 @@
 .claude/agents/committer.md
 .claude/agents/team-lead.md
 .claude/skills/cmd-audit-kernel
+.claude/agents/gatherer.md
+.claude/agents/plan-checker.md
+.claude/agents/reviewer.md
+.claude/agents/security-reviewer.md

@@ -29,7 +29,7 @@ Follow the order. A design skill that you read after the code exists can only cr
 ## Change behaviour
 
 1. `whetstone:tdd-cycle` drives. In a live dossier, `dossier:build` drives.
-1. Run one `reviewer` before the push. Run `/code-review` when the operator asks.
+1. Run one `whetstone:reviewer` before the push. Run `/code-review` when the operator asks.
 
 ## Change a design
 
