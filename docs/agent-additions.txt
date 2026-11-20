@@ -15,6 +15,8 @@ claude-plugin-mcp cloudflare@cloudflare cloudflare
 claude-project-mcp cloudflare-builds
 claude-project-mcp cloudflare-docs
 claude-project-mcp cloudflare-observability
+claude-project-mcp emdash-docs
+claude-project-mcp emdash-site
 claude-project-mcp grafana
 claude-project-mcp sentry
 codex-marketplace openai-bundled
