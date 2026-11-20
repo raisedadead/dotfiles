@@ -33,3 +33,4 @@
 .claude/agents/plan-checker.md
 .claude/agents/reviewer.md
 .claude/agents/security-reviewer.md
+.claude/statusline
