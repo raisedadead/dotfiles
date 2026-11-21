@@ -149,7 +149,7 @@ Expected: All tests pass.
 nvim --headless '+checkhealth' +qa
 ```
 
-Expected: No provider or tool failure. Each lazy-lock entry matches the installed plugin head.
+Expected: No failure in an enabled editor integration. Health can report missing tools for disabled Snacks modules and unused providers. Each `nvim-pack-lock.json` revision matches the corresponding installed package.
 
 ### T12
 

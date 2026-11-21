@@ -1,0 +1,37 @@
+{
+  "plugins": {
+    "catppuccin": {
+      "rev": "edefef779ab08ce1a4a404713e3012b0d202bd35",
+      "src": "https://github.com/catppuccin/nvim"
+    },
+    "chezmoi.nvim": {
+      "rev": "4167bbec76f693f481a5243f1be521ff0ccf1a6d",
+      "src": "https://github.com/xvzc/chezmoi.nvim"
+    },
+    "conform.nvim": {
+      "rev": "016802de402556da54c36bd7359b441266b01cdd",
+      "src": "https://github.com/stevearc/conform.nvim"
+    },
+    "mini.clue": {
+      "rev": "7e27c1661b3d562e780ab06c996a3934034f5859",
+      "src": "https://github.com/nvim-mini/mini.clue"
+    },
+    "mini.surround": {
+      "rev": "72feeaa0f984646efde875cc775a97b6f8a8be9b",
+      "src": "https://github.com/nvim-mini/mini.surround"
+    },
+    "plenary.nvim": {
+      "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
+      "src": "https://github.com/nvim-lua/plenary.nvim"
+    },
+    "smart-splits.nvim": {
+      "rev": "ac11b8ed1efe7cca7bb3eae9c588163c926c6894",
+      "src": "https://github.com/mrjones2014/smart-splits.nvim",
+      "version": "'v2.1.1-final'"
+    },
+    "snacks.nvim": {
+      "rev": "882c996cf28183f4d63640de0b4c02ec886d01f2",
+      "src": "https://github.com/folke/snacks.nvim"
+    }
+  }
+}

@@ -2,6 +2,12 @@
 .config/tuios
 .config/nvim/lua/plugins/tuios-nvim-navigator.lua
 .config/nvim/README.md
+.config/nvim/lazyvim.json
+.config/nvim/lazy-lock.json
+.config/nvim/lua/config/lazy.lua
+.config/nvim/lua/plugins/chezmoi.lua
+.config/nvim/lua/plugins/colorscheme.lua
+.config/nvim/lua/plugins/smart-splits.lua
 .claude/skills/rex
 .claude/skills/cmd-monitor-pane
 .claude/skills/cmd-kernel-audit

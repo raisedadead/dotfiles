@@ -66,7 +66,7 @@ To add a private directory, run `dotfiles-privatize.sh <dir> [--push]`. It creat
 | Terminal    | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites           |
 | Multiplexer | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration |
 | Shell       | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                             |
-| Editor      | [Neovim](../dot_config/nvim/)                                                         | LazyVim defaults plus local overrides                           |
+| Editor      | [Neovim](../dot_config/nvim/)                                                         | Local Lua config and explicit packages                          |
 | Editor, GUI | [Zed](../dot_config/zed/keymap.json)                                                  | Vim mode; `jj`, `jk`, `kj` and `kk` leave insert mode           |
 
 A root tmux binding takes its key before zsh or Neovim. Before you assign a key, check `ghostty +list-keybinds`, `tmux list-keys -T root` and `bindkey`.
@@ -105,7 +105,11 @@ Keep the Ghostty shell-integration feature `path` enabled. Mouse drag selects in
 
 ### Neovim
 
-[lua/config](../dot_config/nvim/lua/config/) holds LazyVim deltas. [lua/plugins](../dot_config/nvim/lua/plugins/) holds plugin overrides. [lazyvim.json](../dot_config/nvim/lazyvim.json) selects the extras. Use `catppuccin-mocha`. Plugin update checks are off. Run `:Lazy update`, then `chezmoi re-add ~/.config/nvim/lazy-lock.json`.
+Neovim 0.12+ loads [lua/config](../dot_config/nvim/lua/config/) directly. `vim.pack` installs the revisions in [nvim-pack-lock.json](../dot_config/nvim/nvim-pack-lock.json). Updates are manual: run `:lua vim.pack.update()`, review the updates, `:write` to accept, then `chezmoi re-add ~/.config/nvim/nvim-pack-lock.json`.
+
+- Space is leader. Pause after pressing it for MiniClue hints. `Space Space` finds project files, `Space /` greps, and `Space e` toggles the tree. The tree stays closed at startup and closes when you open a file.
+- `Space c f` opens a chezmoi source file without applying it on save. `gsa`, `gsd` and `gsr` keep the existing MiniSurround bindings. Catppuccin Mocha uses Ghostty's background.
+- [formatting.lua](../dot_config/nvim/lua/config/formatting.lua) selects external formatters. Install the ones you use on `PATH`; existing Mason-installed binaries are usable without the Mason plugin. The config doesn't install or enable language servers.
 
 ### Rex
 
