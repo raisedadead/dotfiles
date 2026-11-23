@@ -221,7 +221,7 @@ Expected: Configured servers connect. No scope conflict.
 ### M4
 
 ```sh
-cd ~/.dotfiles/dot_claude/mods/rig && bun build.ts && claude plugin test dist
+cd ~/.dotfiles/dot_claude/mods/rig && bun build.ts && claude plugin test dist && claude plugin validate dist
 ```
 
 After a change to the parity corpus, the rig shell reader or `shfmt`, run:
@@ -230,7 +230,7 @@ After a change to the parity corpus, the rig shell reader or `shfmt`, run:
 cd ~/.dotfiles/dot_claude/mods/rig && bun record-shfmt.ts && git status --porcelain -- 'tests/shfmt-corpus-trees*'
 ```
 
-Expected: Exit 0. All tests pass. `record-shfmt: <N> trees in <P> passes`, then no `git status` output. If `git status` prints a line, run M4 again. Commit the new trees only when the suite passes.
+Expected: Exit 0. All tests pass, then `Validation passed`. `record-shfmt: <N> trees in <P> passes`, then no `git status` output. If `git status` prints a line, run M4 again. Commit the new trees only when the suite passes.
 
 ### M6
 
@@ -239,6 +239,15 @@ rtk hook check 'ls -la'; rtk hook check 'git status'
 ```
 
 Expected: `rtk ls -la`, then `No rewrite for: git status`.
+
+The hook `~/.claude/hooks/rtk-rewrite` writes nothing in the permission mode `auto`:
+
+```sh
+printf '%s' '{"permission_mode":"auto","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"}}' | ~/.claude/hooks/rtk-rewrite; echo "exit=$?"
+printf '%s' '{"permission_mode":"default","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"}}' | ~/.claude/hooks/rtk-rewrite
+```
+
+Expected: `exit=0` alone, then one line of JSON that holds `"command":"rtk ls -la"`.
 
 ### M7
 

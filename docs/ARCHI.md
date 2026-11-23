@@ -138,7 +138,7 @@ Claude Code is the only agent rig. It owns its kernel and its runtime. The opera
 
 | Source                                                                              | Owns                                                                         |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [dot_claude/.settings.managed.json](../dot_claude/.settings.managed.json)           | Hook wiring, plugins, MCP declarations, statuslines, settings                |
+| [dot_claude/.settings.managed.json](../dot_claude/.settings.managed.json)           | Hook wiring, plugins, MCP declarations, settings                             |
 | [mods/rig](../dot_claude/mods/rig/), [RIG.md](../dot_claude/RIG.md)                 | Rig mod: hooks, gates, guard, write approval, checks, open items, statusline |
 | [dot_claude/CLAUDE.md](../dot_claude/CLAUDE.md), [rules](../dot_claude/rules/)      | Kernel and path-scoped instructions                                          |
 | [skills](../dot_claude/skills/)                                                     | Reusable work; the helper agents ship in the whetstone plugin                |
@@ -159,7 +159,7 @@ Probe the source and the runtime for model names, plugin revisions, tool invento
 
 A first-party skill is a folder in `dot_claude/skills/<name>/`. A plugin skill comes with its plugin. There are no third-party skills.
 
-First-party skills have two prefixes. `cmd-` means the operator usually starts the skill. `rig-` means the model loads the skill on its own. [RIG.md](../dot_claude/RIG.md) lists them, and [SKILLS.md](SKILLS.md) holds the order in which skills compose.
+First-party skills have two prefixes. `cmd-` means the operator usually starts the skill. `rig-` means the model loads the skill on its own. [SKILLS.md](SKILLS.md) lists them and holds the order in which skills compose.
 
 Frontmatter: `disallowed-tools` removes a tool. `allowed-tools` is advisory and does not (anthropics/claude-code#37683). Keep the trigger phrases disjoint across skills. Write a path with forward slashes. The `whetstone` plugin `skill-smith` lints the rest.
 
@@ -192,7 +192,7 @@ A job goes back to the main checkout as a branch. A pull-request branch is pushe
 
 `dot_config/worktrunk/private_config.toml` sets `[merge] remove = false` and excludes `.scratchpad/` from `wt step copy-ignored`. The guard asks before a worktree removal through `wt` or `git` (`mods/rig/src/mutations.ts`). The `worktree_remove` tool asks only when `force` or `force_delete` would drop uncommitted files or unmerged commits.
 
-Native `rtk hook claude` is the only RTK command writer. Keep argv in `rtk bypass`. `git` is excluded from the rewrite, because the worktree check refuses a rewritten git command (rtk-ai/rtk#3864).
+`~/.claude/hooks/rtk-rewrite` is the only RTK command writer. It runs `rtk hook claude`. In the permission mode `auto` it writes nothing, because auto mode can deny a call that a hook rewrote. Keep argv in `rtk bypass`. `git` is excluded from the rewrite, because the worktree check refuses a rewritten git command (rtk-ai/rtk#3864).
 
 After `EnterWorktree`, the same check refuses a typed `!` command `git -C ~/<path>` (anthropics/claude-code#88550). Use an absolute path or `"$HOME/<path>"`. When Remote Control is connected, start the session with `--debug-file <path>` to read the refusal reason.
 
@@ -200,7 +200,7 @@ After `EnterWorktree`, the same check refuses a typed `!` command `git -C ~/<pat
 
 - First-party plugin source is `~/DEV/rd/claude-code-plugins`. Resolve a deployed file from `installPath` in `~/.claude/plugins/installed_plugins.json`.
 - A plugin hook runs outside the rig mod. Disable the plugin in `enabledPlugins` to stop it. Read the manifest and the hook registrations before you enable a plugin.
-- The rig (gate and validator reminders) and the dossier plugin (the wave contract line) add hidden context to a prompt. They do not coordinate and have no cap.
+- The dossier plugin adds its triage note to the context at session start. The rig adds no hidden context to a prompt: its notice queue has a cap of 1,000 characters and nothing fills it.
 - The worktrunk plugin `PermissionRequest` hook approves `EnterWorktree` outside the rig guard. This is an accepted gap.
 - `settings.json.mcpServers` is canonical. [modify_private_dot_claude.json](../modify_private_dot_claude.json) merges that key into `~/.claude.json` and keeps the other state. Probe drift with `chezmoi-claude-doctor` check 4. Do not use `chezmoi diff ~/.claude.json`. Probe connectivity with `claude mcp list`.
 - Cavemem is removed. Its data stays in `~/.cavemem` until the operator chooses a replacement.
