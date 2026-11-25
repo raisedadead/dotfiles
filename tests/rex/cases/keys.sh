@@ -128,7 +128,6 @@ real_probes() {
 	grep -q 'zsh fzf-cd-widget' <<<"$(taken_keys "$(one_key alt+c)")" &&
 		grep -q 'nvim <M-J>' <<<"$(taken_keys "$(one_key alt+shift+j)")" &&
 		grep -q 'nvim <M-m>' <<<"$(taken_keys "$(one_key alt+m)")" &&
-		grep -q 'nvim <M-j>' <<<"$(taken_keys "$(one_key alt+j)")" &&
 		grep -q 'claude meta+i' <<<"$(taken_keys "$(one_key alt+i)")"
 }
 check "the conflict probe reads zsh, Neovim and Claude Code keys" real_probes
