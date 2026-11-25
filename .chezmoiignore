@@ -29,7 +29,7 @@ install.sh
 .claude/fixtures
 docs
 tests
-{{- if or (ne .chezmoi.os "darwin") (not (stat (joinPath .chezmoi.sourceDir "dot_omp/agent/.config.managed.yml"))) }}
+{{- if or (ne .chezmoi.os "darwin") (not (stat (joinPath .chezmoi.sourceDir "dot_omp/private_agent/.config.managed.yml"))) }}
 .omp
 {{- end }}
 {{- if ne .chezmoi.os "darwin" }}

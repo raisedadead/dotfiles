@@ -216,7 +216,7 @@ Probe sessions do not count. Check: [G1](MAINTENANCE.md#g1-rig-metrics).
 
 ## Oh My Pi
 
-Homebrew owns the `omp` binary. The private `dot_omp/agent/.config.managed.yml` owns only the Catppuccin themes, compact transparent status line, and Vim input. `dot_omp/agent/modify_private_config.yml` merges those keys into the default profile's `~/.omp/agent/config.yml` on macOS. It leaves the existing file byte-for-byte unchanged when its settings already match.
+Homebrew owns the `omp` binary. The private `dot_omp/private_agent/.config.managed.yml` owns only the Catppuccin themes, compact transparent status line, and Vim input. `dot_omp/private_agent/modify_private_config.yml` merges those keys into the default profile's `~/.omp/agent/config.yml` on macOS. It leaves the existing file byte-for-byte unchanged when its settings already match.
 
 The source does not own model routing, credentials, first-run or consent state, sessions, or installed plugins. It does not change OMP's discovery, tools, or approval defaults. Neither `.omp` nor `agent` is an exact directory. See [daily use](README.md#oh-my-pi) for the capture loop.
 

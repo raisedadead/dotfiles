@@ -71,7 +71,7 @@ git -C ~/.dotfiles/dot_claude commit -m "feat(claude): ..."
 
 ## Oh My Pi
 
-The macOS Brewfile installs `omp`. On a fresh machine it uses its normal defaults except for the preferences in `dot_omp/agent/.config.managed.yml`. chezmoi merges those keys into `~/.omp/agent/config.yml` and leaves other settings in place.
+The macOS Brewfile installs `omp`. On a fresh machine it uses its normal defaults except for the preferences in `dot_omp/private_agent/.config.managed.yml`. chezmoi merges those keys into `~/.omp/agent/config.yml` and leaves other settings in place.
 
 To keep a preference changed in `/settings`, copy just that key and value into `.config.managed.yml`. `chezmoi re-add` skips the modify template; don't capture the entire live file. Edit the manifest, commit in `dot_omp/`, and apply the named target:
 
