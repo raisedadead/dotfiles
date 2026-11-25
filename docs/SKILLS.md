@@ -26,6 +26,10 @@ Follow the order. A design skill that you read after the code exists can only cr
 - `rig-chezmoi` changes or repairs a chezmoi-managed file.
 - `rig-docs` writes a manual in ASD-STE100.
 
+## Vendor skills
+
+- `rex` teaches the `rex` CLI. It is the stub that `rex skill setup` writes, and it has no prefix. Do not edit it: `rex skill status` reports a changed byte as `outdated`.
+
 ## Change behaviour
 
 1. `whetstone:tdd-cycle` drives. In a live dossier, `dossier:build` drives.

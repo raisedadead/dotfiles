@@ -8,7 +8,6 @@
 .config/nvim/lua/plugins/chezmoi.lua
 .config/nvim/lua/plugins/colorscheme.lua
 .config/nvim/lua/plugins/smart-splits.lua
-.claude/skills/rex
 .claude/skills/cmd-monitor-pane
 .claude/skills/cmd-kernel-audit
 .claude/skills/cmd-scratchpad-audit
