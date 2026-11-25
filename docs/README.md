@@ -29,7 +29,7 @@ To use this repository in a Codespace, select it as the dotfiles repository. On 
 
 ### Rex
 
-1. Install `Rex Beta.app` in `/Applications`. The `rex` command is the link `~/.bin/rex` into this app.
+1. Install `Rex.app` in `/Applications`. The `rex` command is the link `~/.bin/rex` into this app.
 1. Run `chezmoi apply`. Restart the Rex server once, with no work running.
 1. Run the [Rex checks](MAINTENANCE.md#rex).
 
