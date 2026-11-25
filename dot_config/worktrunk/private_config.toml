@@ -9,3 +9,6 @@ remove = false
 
 [step.copy-ignored]
 exclude = [".scratchpad/"]
+
+[projects."github.com/raisedadead/dotfiles-private"]
+worktree-path = "~/.dotfiles.{{ repo }}.{{ branch | sanitize }}"
