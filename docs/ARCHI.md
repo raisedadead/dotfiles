@@ -182,7 +182,7 @@ Each project has one workspace: `<repo>/.scratchpad/` of the main checkout when 
 | `dossier/`     | Dossiers and their archive, owned by the dossier plugin |
 | `_archive/`    | Moved files and closed rows                             |
 
-At `startup` and `clear`, the rig builds a status note from the workspace files and Git. The note lists the handoffs, the lines in progress, the lines that wait on the operator, the paused lines and the unpushed work. It adds one line for each project in `LINKED`. If the note takes more than 2 seconds, the session starts with what is ready.
+At `startup` and `clear`, the rig builds a status note from the workspace files and Git. With the dossier plugin, it takes the waiting and paused lines from `ds triage --json`, and a line whose `after O<N>` rows are not done goes on its own line. The note lists the handoffs, the lines in progress, the lines that wait on the operator, the paused lines and the unpushed work. It adds one line for each project in `LINKED`. If the note takes more than 2 seconds, the session starts with what is ready.
 
 ### Worktrees and RTK
 
