@@ -276,8 +276,20 @@ async function quietly(argv: string[]) {
   }
 }
 
+async function ownSession(): Promise<string> {
+  if (env.REX_SESSION) return env.REX_SESSION;
+  const r = await capture(rex("whoami", "--json"));
+  try {
+    const id = r.code === 0 ? JSON.parse(r.out).session_id : undefined;
+    return typeof id === "string" ? id : "";
+  } catch {
+    return "";
+  }
+}
+
 async function outer(cmd: string[]): Promise<never> {
-  const session = env.REX_SESSION as string;
+  const session = await ownSession();
+  if (!session) process.exit(69);
   const res = tempFile(env.TMPDIR || "/tmp");
   process.on("exit", () => rmSync(res, { force: true }));
   for (const [name, code] of Object.entries(SIGNALS)) process.on(name, () => process.exit(code));
@@ -307,7 +319,7 @@ async function outer(cmd: string[]): Promise<never> {
 }
 
 async function main(): Promise<never> {
-  if (env.TERM_PROGRAM !== "rex" || !env.REX_SESSION || env.TMUX) {
+  if (env.TERM_PROGRAM !== "rex" || !env.REX_BLOCK || env.TMUX) {
     say("rex-handoff: not in Rex, so nothing ran\n", 2);
     process.exit(69);
   }

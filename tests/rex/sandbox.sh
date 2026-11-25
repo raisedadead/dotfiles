@@ -84,8 +84,6 @@ printf '%s\n' "\$1" >> $SB/t/agent.args
 sleep 5
 EOF
 chmod +x "$SB/fake-agent"
-printf '#!/bin/sh\npwd >> %s/t/pi.runs\nsleep 5\n' "$SB" >"$SB/fake-pi"
-chmod +x "$SB/fake-pi"
 printf '#!/bin/sh\npwd >> %s/t/editor.runs\nsleep 5\n' "$SB" >"$SB/fake-editor"
 chmod +x "$SB/fake-editor"
 
@@ -97,7 +95,7 @@ export SANDBOX_CALLER_ONLY=1
 env -i USER="$USER" LOGNAME="$USER" HOME="$HOME" SHELL=/opt/homebrew/bin/zsh \
 	PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin TMPDIR="${TMPDIR:-/tmp/}" \
 	${SSH_AUTH_SOCK:+SSH_AUTH_SOCK="$SSH_AUTH_SOCK"} REX_SERVER="$SOCK" \
-	REX_TEST_AGENT="$SB/fake-agent" REX_TEST_PI="$SB/fake-pi" XDG_STATE_HOME="$SB/state-home" \
+	REX_TEST_AGENT="$SB/fake-agent" XDG_STATE_HOME="$SB/state-home" \
 	REX_AGENT_DIR="$SB/state-home/rex/agents" REX_TEST_EDITOR="$SB/fake-editor" \
 	"$REXBIN" server run --listen "$SOCK" --state-dir "$SB/state" \
 	--config "$SB/cfg/init.lua" --restore=false >"$SB/server.log" 2>&1 &
@@ -212,7 +210,7 @@ steps="$d1 $d2 $p2 $d3 $(placement)"
 check "drawer opens, hides, shows" test "$steps" = "created hidden detached shown placed"
 
 rex_rows() {
-	strict TERM_PROGRAM=rex REX_SESSION="$S" TMUX= \
+	strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= \
 		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null | grep -c '^rex '
 }
 check "keys lists the Rex bindings inside Rex" test "$(rex_rows)" -gt 40
@@ -220,7 +218,7 @@ check "keys lists the Rex bindings inside Rex" test "$(rex_rows)" -gt 40
 printf '#!/bin/sh\necho "$@" > %s/t/editor.args\nsleep 5\n' "$SB" >"$SB/editor"
 chmod +x "$SB/editor"
 open_in() {
-	strict REX_SESSION="$S" TMUX= TERM_PROGRAM="$1" EDITOR="$SB/editor" \
+	strict REX_BLOCK="$plain" TMUX= TERM_PROGRAM="$1" EDITOR="$SB/editor" \
 		"$SB/cfg/bin/rex-open" "$SB/t/notes.md:12"
 }
 open_in rex
@@ -296,7 +294,7 @@ check "rex.zsh skips a full-screen program" test "$(status_of)" = "- - -"
 
 WATCH="$DOTCLAUDE/skills/cmd-watch-pane/scripts/executable_watch-pane.ts"
 in_sb() {
-	env REX_GUARD_STRICT=1 REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_SESSION="$S" TMUX= \
+	env REX_GUARD_STRICT=1 REX_SERVER="$SOCK" TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= \
 		TMPDIR="$SB/t" bun --no-env-file --config=/dev/null "$WATCH" "$@"
 }
 mon=$(split bash -c 'echo ready; read -r _; echo "build: FAIL 2 tests"; read -r _; exit 3')
@@ -335,7 +333,7 @@ window_of() {
 		'.windows[] | select([.layers[].blocks[].block_id] | index($b)) | .window_id'
 }
 handoff() {
-	strict TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$plain" TMUX= \
+	strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= \
 		"$SB/cfg/bin/rex-handoff" -- sh -c "echo ran > '$SB/t/handed'; exit 4"
 }
 float_id() { blocks "$S" | awk '$1 == "handoff" { print $3 }'; }
@@ -395,9 +393,6 @@ runs_before=$(wc -l <"$SB/t/agent.cwds")
 more_runs() { (($(wc -l <"$SB/t/agent.cwds") > runs_before)); }
 R "do" -s "$S" -b "$plain" agent_here >/dev/null
 check "agent_here starts the agent in a new pane" until5 more_runs
-R "do" -s "$S" -b "$plain" agent_here_pi >/dev/null
-check "agent_here_pi starts Pi in the pane's directory" \
-	until5 file_has "$SB/t/pi.runs" "$(tail -1 "$SB/t/agent.cwds")"
 
 R "do" -s "$S" -b "$linky" ask_pane >/dev/null
 check "ask_pane opens popup:ask" has_label "$S" popup:ask
@@ -444,21 +439,13 @@ recorded() {
 }
 check "the SessionStart hook records the pane's Claude session" recorded
 pidle=$(prompt_pane)
-pquote=$(prompt_pane)
-pctl=$(prompt_pane)
 pi_record "$pidle" "$SB/t/pi a.jsonl"
-pi_record "$pquote" "$SB/t/pi'b.jsonl"
-pi_record "$pctl" "$SB/t/x"$'\x15'"touch $SB/t/ctl; #.jsonl"
 sleep 1
 resumed=$(R "do" -s "$S" --json agents_resume | jq -c '.resumed | sort')
-check "agents_resume resumes only a shell at its prompt with a valid session" \
-	test "$resumed" = "$(jq -cn --arg a "$idle" --arg b "$pidle" --arg c "$pquote" '[$a, $b, $c] | sort')"
+check "agents_resume resumes only a shell at its prompt with a valid Claude session" \
+	test "$resumed" = "$(jq -cn --arg a "$idle" '[$a]')"
 check "agents_resume types claude --resume" until5 file_has "$SB/t/resumed" "claude --resume $U1"
-check "agents_resume types pi --session with the session file" \
-	until5 grep -qxF "pi --session $SB/t/pi a.jsonl" "$SB/t/resumed"
-check "agents_resume quotes a session file that holds a quote" \
-	until5 grep -qxF "pi --session $SB/t/pi'b.jsonl" "$SB/t/resumed"
-check "agents_resume types no session file that holds a control character" test ! -e "$SB/t/ctl"
+check "agents_resume types nothing for a Pi record" not grep -q '^pi ' "$SB/t/resumed"
 check "agents_resume types nothing into a script that reads a line" test ! -e "$SB/t/read"
 check "agents_resume removes the record it used" test ! -e "$(rec "$idle")"
 check "agents_resume resumes a session once" \

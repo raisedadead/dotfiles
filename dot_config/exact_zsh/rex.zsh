@@ -1,4 +1,4 @@
-[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]] || return 0
+[[ $TERM_PROGRAM == rex && -n $REX_BLOCK && -z $TMUX ]] || return 0
 zmodload zsh/datetime zsh/parameter
 autoload -Uz add-zsh-hook
 

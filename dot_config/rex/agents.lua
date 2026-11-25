@@ -115,11 +115,6 @@ rex.action{
   run = function(ctx) return agent_here(ctx, lib.AGENT) end,
 }
 
-rex.action{
-  name = "agent_here_pi", title = "Agent Here (Pi)", category = "Agents",
-  run = function(ctx) return agent_here(ctx, lib.PI) end,
-}
-
 local STATE = (os.getenv("REX_AGENT_DIR")
   or (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/rex/agents")
   .. "/"
@@ -137,10 +132,6 @@ local function record(bid)
   if not ok or type(r) ~= "table" or r.block ~= bid then return nil end
   if r.agent == "claude" and type(r.session_id) == "string" and r.session_id:match(UUID) then
     return "claude --resume " .. r.session_id, path
-  end
-  local file = r.session_file
-  if r.agent == "pi" and type(file) == "string" and file:match("^/.+%.jsonl$") and not file:find("%c") then
-    return "pi --session '" .. (file:gsub("'", "'\\''")) .. "'", path
   end
   return nil
 end

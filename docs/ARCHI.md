@@ -115,7 +115,7 @@ Neovim 0.12+ loads [lua/config](../dot_config/nvim/lua/config/) directly. `vim.p
 
 [dot_config/rex](../dot_config/rex/) holds the Rex terminal config. [init.lua](../dot_config/rex/init.lua) loads `lib.lua`, then one Lua module for each feature. [bin](../dot_config/rex/bin/) holds the helper scripts. `rex-open FILE[:LINE[:COL]]` opens the editor in a new tab of the current session. Outside Rex it runs the editor in place.
 
-Rex and Ghostty with tmux are both daily terminals. Each Rex path in a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_SESSION && -z $TMUX ]]`. Outside the gate, zsh, `keys` and `mdr` behave as before.
+Rex and Ghostty with tmux are both daily terminals. Each Rex path in a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_BLOCK && -z $TMUX ]]`. Outside the gate, zsh, `keys` and `mdr` behave as before.
 
 - zsh reports a command that runs `REX_STATUS_MIN` seconds or more (default 15) as an OSC 7501 record. [rex.zsh](../dot_config/exact_zsh/rex.zsh) holds the skip lists: `REX_STATUS_SKIP`, `REX_STATUS_PAGER`, `REX_STATUS_REPL` and `REX_STATUS_AGENTS`.
 - **Agent Here** starts Claude Code in a new pane. The managed hooks give it the text of `rex __internal session-start` and keep a restore record in `~/.local/state/rex/agents`.

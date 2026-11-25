@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2154
 keys_json=$(R keymap --json)
 
 mkdir -p "$SB/zdot" "$SB/xdg" "$SB/xdg-state" "$SB/xdg-cache"
@@ -155,16 +156,12 @@ runs_action() {
 	jq -e --arg k "$1" --arg a "$2" \
 		'.bindings[] | select(.keys == [$k] and .action == $a)' <<<"$keys_json" >/dev/null
 }
-check "ctrl+enter runs ctrl_enter" runs_action ctrl+enter ctrl_enter
-ctrl_enter_writes() {
-	local f="$SB/t/ctrl-enter-$1" b
-	b=$(split bash -c "stty raw -echo; exec -a $1 dd bs=1 count=1 of='$f' 2>/dev/null")
-	sleep 0.3
-	R "do" -s "$S" -b "$b" ctrl_enter >/dev/null 2>&1 || true
-	until5 test -s "$f" && [[ "$(od -An -tx1 "$f" | tr -d ' \n')" == "$2" ]]
+user_binds() {
+	jq -e --arg k "$1" '.bindings[] | select(.keys == [$k] and ((.source // "") | test("\\.lua:")))' \
+		<<<"$keys_json" >/dev/null
 }
-check "ctrl_enter writes a line feed where Claude Code runs" ctrl_enter_writes claude 0a
-check "ctrl_enter writes a carriage return elsewhere" ctrl_enter_writes dd 0d
+check "the user-bind probe sees a user bind" user_binds shift+cmd+e
+check "ctrl+enter goes to the program" not user_binds ctrl+enter
 check "ctrl+shift+k scrolls a page up" runs_action ctrl+shift+k client.scroll.page_up
 check "ctrl+shift+j scrolls a page down" runs_action ctrl+shift+j client.scroll.page_down
 check "cmd+pageup scrolls a page up" runs_action cmd+pageup client.scroll.page_up
@@ -222,7 +219,7 @@ esac
 EOF
 chmod +x "$SB/stub/rex"
 sheet() {
-	strict TERM_PROGRAM=rex REX_SESSION="$S" TMUX= PATH="$SB/stub:$PATH" \
+	strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= PATH="$SB/stub:$PATH" \
 		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null
 }
 rows=$(sheet)

@@ -235,7 +235,7 @@ def from_nvim() -> list[tuple[str, str, str, str]]:
 
 def in_rex() -> bool:
     env = os.environ
-    return (env.get("TERM_PROGRAM") == "rex" and bool(env.get("REX_SESSION"))
+    return (env.get("TERM_PROGRAM") == "rex" and bool(env.get("REX_BLOCK"))
             and not env.get("TMUX"))
 
 

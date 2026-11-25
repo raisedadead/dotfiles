@@ -37,9 +37,12 @@ elif [[ -n "$line" ]]; then
 fi
 cmd+=("$file")
 
-if [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]]; then
+R() { rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false "$@"; }
+if [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_BLOCK:-}" && -z "${TMUX:-}" ]] &&
+	session=${REX_SESSION:-$(R whoami --json 2>/dev/null | jq -r '.session_id // empty')} &&
+	[[ -n "$session" ]]; then
 	exec rex ${REX_SERVER:+-S "$REX_SERVER"} --autostart=false \
-		run -s "$REX_SESSION" -c "$PWD" \
+		run -s "$session" -c "$PWD" \
 		--label "edit:$(basename -- "$file")" -- "${cmd[@]}" >/dev/null
 fi
 exec "${cmd[@]}"

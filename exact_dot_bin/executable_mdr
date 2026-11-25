@@ -169,7 +169,7 @@ edit_file() {
     tmux new-window -c "$PWD" -- "${cmd[@]}" "$file"
     return 0
   fi
-  if [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_SESSION:-}" && -z "${TMUX:-}" ]] \
+  if [[ "${TERM_PROGRAM:-}" == rex && -n "${REX_BLOCK:-}" && -z "${TMUX:-}" ]] \
     && [[ -x "$HOME/.config/rex/bin/rex-open" ]]; then
     "$HOME/.config/rex/bin/rex-open" "$file" && return 0
   fi

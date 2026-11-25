@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2154
 
 REX_ZSH="$REPO/dot_config/exact_zsh/rex.zsh"
 printf '[alias]\n\tlg = log --oneline\n\tup = pull --rebase\n' >"$SB/t/gitconfig"
@@ -23,7 +24,7 @@ decode_report() {
 report_for() {
 	local out
 	# shellcheck disable=SC2016
-	out=$(env TERM_PROGRAM=rex REX_SESSION="$S" TMUX= GIT_CONFIG_GLOBAL="$SB/t/gitconfig" \
+	out=$(env TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= GIT_CONFIG_GLOBAL="$SB/t/gitconfig" \
 		zsh -f -c 'source "$1"; REX_STATUS_MIN=1
 			_rex_cmd=$4 _rex_t0=$(( EPOCHREALTIME - $3 ))
 			(exit $2); _rex_precmd' zsh "$REX_ZSH" "$1" "$2" "$3")

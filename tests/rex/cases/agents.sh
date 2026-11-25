@@ -213,3 +213,13 @@ R "do" -s "$S" agents_resume >/dev/null
 until5 not has_label "$S" popup:urls || true
 check "agents_resume gives a reaped float's focus to the tab's first pane" \
 	test "$(focus_in "$float_win")" = "$(first_tiled "$float_win")"
+
+R focus -s "$S" "$plain" >/dev/null
+strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= "$SB/cfg/bin/rex-popup" - "$linky" - -- true
+focus_is() { [[ "$(focused)" == "$1" ]]; }
+check "rex-popup finds its session from REX_BLOCK and gives focus back" until5 focus_is "$linky"
+
+own_list=$(in_sb --list 2>&1)
+check "watch-pane --list finds its session from REX_BLOCK" \
+	grep -q "^$linky" <<<"$own_list"
+check "watch-pane --list leaves out another session" not grep -q "^$s3_first" <<<"$own_list"

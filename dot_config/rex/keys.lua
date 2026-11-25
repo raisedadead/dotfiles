@@ -49,19 +49,10 @@ rex.action{
   run = function(ctx) return write_key(ctx, "\r") end,
 }
 
-rex.action{
-  name = "ctrl_enter", title = "Ctrl+Enter: new line in Claude Code, Enter elsewhere", category = "Panes",
-  run = function(ctx)
-    local f = ctx.block_id and lib.fg(ctx.session_id, ctx.block_id)
-    return write_key(ctx, f and lib.runs(f, { claude = true }) and "\n" or "\r")
-  end,
-}
-
 local bind = rex.bind
 local function prefix(key, action, args) bind("ctrl+space>" .. key, action, args) end
 
 bind("shift+cmd+e", "popup_urls")
-bind("ctrl+enter", "ctrl_enter")
 bind("ctrl+shift+k", "client.scroll.page_up")
 bind("ctrl+shift+j", "client.scroll.page_down")
 bind("cmd+pageup", "client.scroll.page_up")

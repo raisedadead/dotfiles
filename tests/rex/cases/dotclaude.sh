@@ -178,10 +178,11 @@ start_says() {
 gated_start() {
 	[[ -z "$(start_says TERM_PROGRAM=tmux TMUX=/tmp/x,1,0 REX_SESSION=x REX_BLOCK="$plain")" ]] &&
 		[[ -z "$(start_says TERM_PROGRAM=ghostty REX_SESSION=x REX_BLOCK="$plain")" ]] &&
-		grep -q REX-STUB <<<"$(start_says TERM_PROGRAM=rex REX_SESSION=x REX_BLOCK="$plain")"
+		[[ -z "$(start_says TERM_PROGRAM=rex REX_SESSION=x REX_BLOCK=)" ]] &&
+		grep -q REX-STUB <<<"$(start_says TERM_PROGRAM=rex REX_SESSION= REX_BLOCK="$plain")"
 }
 check "the Rex session-start hook speaks only in a Rex pane outside tmux" gated_start
 no_naming() {
-	grep -qx 'REX-STUB __internal session-start --agent claude --feature-session-naming=false' <<<"$(start_says TERM_PROGRAM=rex REX_SESSION=x REX_BLOCK="$plain")"
+	grep -qx 'REX-STUB __internal session-start --agent claude --feature-session-naming=false' <<<"$(start_says TERM_PROGRAM=rex REX_BLOCK="$plain")"
 }
 check "the Rex session-start hook does not tell Claude to rename the session" no_naming

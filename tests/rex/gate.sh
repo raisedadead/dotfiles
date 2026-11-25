@@ -14,9 +14,10 @@ bad() {
 check() { if "${@:2}"; then ok "$1"; else bad "$1"; fi; }
 not() { ! "$@"; }
 
-GHOSTTY=(TERM_PROGRAM=ghostty REX_SESSION= TMUX=)
-TMUX_IN_REX=(TERM_PROGRAM=rex REX_SESSION=session:x TMUX=/tmp/tmux-0/default)
-REX=(TERM_PROGRAM=rex REX_SESSION=session:x TMUX=)
+GHOSTTY=(TERM_PROGRAM=ghostty REX_SESSION= REX_BLOCK= TMUX=)
+TMUX_IN_REX=(TERM_PROGRAM=rex REX_SESSION= REX_BLOCK=block:x TMUX=/tmp/tmux-0/default)
+REX=(TERM_PROGRAM=rex REX_SESSION= REX_BLOCK=block:x TMUX=)
+NO_BLOCK=(TERM_PROGRAM=rex REX_SESSION=session:x REX_BLOCK= TMUX=)
 
 zshrc="$REPO/dot_config/exact_zsh/dot_zshrc"
 gate_line=$(grep -F 'rex.zsh' "$zshrc")
@@ -29,6 +30,7 @@ check "rex.zsh parses" zsh -n "$REPO/dot_config/exact_zsh/rex.zsh"
 check "rex.zsh loads in Rex" rex_zsh_loads "${REX[@]}"
 check "rex.zsh stays out of Ghostty" not rex_zsh_loads "${GHOSTTY[@]}"
 check "rex.zsh stays out of tmux in Rex" not rex_zsh_loads "${TMUX_IN_REX[@]}"
+check "rex.zsh stays out without REX_BLOCK" not rex_zsh_loads "${NO_BLOCK[@]}"
 rex_zsh_hooks() {
 	env "$@" zsh -f -c \
 		"source '$REPO/dot_config/exact_zsh/rex.zsh'; (( \$+functions[_rex_precmd] ))"
@@ -55,6 +57,7 @@ rex_rows() {
 check "keys lists Rex rows in Rex" test "$(rex_rows "${REX[@]}")" -gt 0
 check "keys lists no Rex rows in Ghostty" test "$(rex_rows "${GHOSTTY[@]}")" = 0
 check "keys lists no Rex rows in tmux in Rex" test "$(rex_rows "${TMUX_IN_REX[@]}")" = 0
+check "keys lists no Rex rows without REX_BLOCK" test "$(rex_rows "${NO_BLOCK[@]}")" = 0
 
 touch "$SB/notes.md"
 edit_hit() {
@@ -66,6 +69,7 @@ edit_hit() {
 check "mdr edit opens rex-open in Rex" test "$(edit_hit "${REX[@]}")" = rex-open
 check "mdr edit runs the editor in Ghostty" test "$(edit_hit "${GHOSTTY[@]}")" = editor
 check "mdr edit opens a tmux window in tmux" test "$(edit_hit "${TMUX_IN_REX[@]}")" = tmux
+check "mdr edit runs the editor without REX_BLOCK" test "$(edit_hit "${NO_BLOCK[@]}")" = editor
 visual_hit() {
 	rm -f "$SB/hit"
 	(cd "$SB" && env VISUAL="$SB/editor -w" \
@@ -90,7 +94,7 @@ quiet_handoff() { [[ -z "$(handoff_out "$@")" && ! -e "$SB/handed" ]]; }
 check "rex-handoff does nothing in Ghostty" quiet_handoff "${GHOSTTY[@]}"
 check "rex-handoff does nothing in tmux in Rex" quiet_handoff "${TMUX_IN_REX[@]}"
 inner_out() {
-	env "$@" REX_BLOCK= "$HANDOFF" --inner -- sh -c "touch '$SB/handed'" 2>/dev/null
+	env "$@" "$HANDOFF" --inner -- sh -c "touch '$SB/handed'" 2>/dev/null
 }
 quiet_inner() { [[ -z "$(inner_out "$@" </dev/null)" && ! -e "$SB/handed" ]]; }
 check "rex-handoff --inner does nothing outside a Rex pane" quiet_inner "${GHOSTTY[@]}"
@@ -105,6 +109,8 @@ check "rex-handoff exits 69 in Ghostty" \
 	test "$(handoff_exit "${GHOSTTY[@]}" "$HANDOFF" -- true)" = 69
 check "rex-handoff exits 69 in tmux in Rex" \
 	test "$(handoff_exit "${TMUX_IN_REX[@]}" "$HANDOFF" -- true)" = 69
+check "rex-handoff says that nothing ran without REX_BLOCK" \
+	test "$(env "${NO_BLOCK[@]}" "$HANDOFF" -- true 2>&1)" = "rex-handoff: not in Rex, so nothing ran"
 check "rex-handoff --inner without a terminal exits 130" \
 	test "$(handoff_exit "${REX[@]}" "$HANDOFF" --inner r 1 -- true </dev/null)" = 130
 check "rex-handoff says that nothing ran outside Rex, with no usage error" \
@@ -140,6 +146,21 @@ record_in() {
 no_record() { [[ -z "$(record_in "$@")" && ! -e "$SB/state" ]]; }
 check "the session recorder writes nothing in Ghostty" no_record "${GHOSTTY[@]}"
 check "the session recorder writes nothing in tmux in Rex" no_record "${TMUX_IN_REX[@]}"
+records() { [[ -n "$(record_in "$@")" || -e "$SB/state" ]]; }
+check "the session recorder writes in Rex with REX_BLOCK alone" records "${REX[@]}"
+rm -rf "$SB/state"
+no_block_record() {
+	[[ -z "$(env CLAUDE_CODE_ENTRYPOINT=cli "${NO_BLOCK[@]}" XDG_STATE_HOME="$SB/state" \
+		bash "$recorder" claude <<<'{"session_id":"x"}')" && ! -e "$SB/state" ]]
+}
+check "the session recorder writes nothing without REX_BLOCK" no_block_record
+open_hit() {
+	rm -f "$SB/hit"
+	(cd "$SB" && env "$@" PATH="$SB/path:$PATH" EDITOR="$SB/editor" \
+		bash "$REPO/dot_config/rex/bin/executable_rex-open" notes.md) >/dev/null 2>&1 || true
+	cut -d' ' -f1 "$SB/hit" 2>/dev/null
+}
+check "rex-open runs the editor in place without REX_BLOCK" test "$(open_hit "${NO_BLOCK[@]}")" = editor
 check "the session recorder writes nothing for a print-mode Claude" \
 	no_record "${REX[@]}" CLAUDE_CODE_ENTRYPOINT=sdk-cli
 
