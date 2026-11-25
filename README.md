@@ -13,9 +13,9 @@
 | Terminal   | [Ghostty](https://ghostty.org), [tmux](https://github.com/tmux/tmux), [zsh](https://www.zsh.org)                                     |
 | Editor     | [Neovim](https://neovim.io) with [a small Lua config](dot_config/nvim/), [Zed](https://zed.dev)                                    |
 | Desktop    | [AeroSpace](https://github.com/nikitabobko/AeroSpace), [SketchyBar](https://felixkratz.github.io/SketchyBar)                         |
-| Agent      | [Claude Code](https://claude.com/claude-code)                                                                                        |
+| Agent      | [Claude Code](https://claude.com/claude-code), [Oh My Pi](https://omp.sh/)                                                               |
 
-This public repository holds the shared configuration. The agent rig, `dot_claude/`, is a submodule of a private repository. It has its own branch. Read [Claude Code](docs/ARCHI.md#claude-code) for the map.
+This public repository holds the shared configuration. `dot_claude/` and `dot_omp/` are submodules of the private repository, each on its own branch. Claude Code has the [agent rig](docs/ARCHI.md#claude-code); [Oh My Pi](docs/ARCHI.md#oh-my-pi) tracks only selected preferences.
 
 ## Documents
 

@@ -47,7 +47,7 @@ Stage a shell startup change with an isolated destination and state file before 
 
 ### Private submodules
 
-`dot_claude/` is a git submodule of `raisedadead/dotfiles-private`. It has its own branch and its own history. Do not change `dot_claude/` without an explicit request.
+`dot_claude/` and `dot_omp/` are git submodules of `raisedadead/dotfiles-private`, on separate branches named for their source directories. Do not change `dot_claude/` without an explicit request.
 
 - A commit inside a submodule runs `.githooks/post-commit`. The hook commits the gitlink bump in `~/.dotfiles` as `chore(<dir>): bump to <sha>`.
 - The hook makes no commit when there is no superproject, when the parent is mid-merge or mid-rebase, or when `HEAD` already records the gitlink.
@@ -213,6 +213,12 @@ After `EnterWorktree`, the same check refuses a typed `!` command `git -C ~/<pat
 - `refusalsPer100`: rig refusals for each 100 tool results. A refusal is a failed tool result that a hook, the guard or the permission layer wrote.
 
 Probe sessions do not count. Check: [G1](MAINTENANCE.md#g1-rig-metrics).
+
+## Oh My Pi
+
+Homebrew owns the `omp` binary. The private `dot_omp/agent/.config.managed.yml` owns only the Catppuccin themes, compact transparent status line, and Vim input. `dot_omp/agent/modify_private_config.yml` merges those keys into the default profile's `~/.omp/agent/config.yml` on macOS. It leaves the existing file byte-for-byte unchanged when its settings already match.
+
+The source does not own model routing, credentials, first-run or consent state, sessions, or installed plugins. It does not change OMP's discovery, tools, or approval defaults. Neither `.omp` nor `agent` is an exact directory. See [daily use](README.md#oh-my-pi) for the capture loop.
 
 ## Operator tools
 

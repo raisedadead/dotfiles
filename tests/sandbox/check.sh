@@ -59,6 +59,7 @@ check "no terraform secret" absent "$HOME/.terraform.d"
 check "no 1Password config" absent "$HOME/.config/1Password"
 check "no claude config" absent "$HOME/.claude"
 check "no claude.json" absent "$HOME/.claude.json"
+check "no omp config" absent "$HOME/.omp"
 check "git identity is set" set_key user.email
 check "commits are not signed" unset_key commit.gpgsign
 check "tags are not signed" unset_key tag.gpgsign

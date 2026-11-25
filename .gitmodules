@@ -2,3 +2,8 @@
 	path = dot_claude
 	url = git@github.com:raisedadead/dotfiles-private.git
 	branch = dot_claude
+
+[submodule "dot_omp"]
+	path = dot_omp
+	url = git@github.com:raisedadead/dotfiles-private.git
+	branch = dot_omp

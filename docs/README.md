@@ -4,7 +4,7 @@ This document covers the install steps and the daily chezmoi commands.
 
 The **source** is the configuration in `~/.dotfiles`. A **target** is the installed file under `$HOME`. To **capture** a change is to copy it from the target into the source. chezmoi captures a change only when you run a capture command.
 
-The private source `dot_claude/` deploys to `~/.claude`.
+The private sources `dot_claude/` and `dot_omp/` deploy to `~/.claude` and `~/.omp`, respectively.
 
 ## Install or recover a machine
 
@@ -68,6 +68,18 @@ git -C ~/.dotfiles/dot_claude commit -m "feat(claude): ..."
 ```
 
 `settings.json` is a modify script, and `re-add` skips it. Edit the managed keys in `dot_claude/.settings.managed.json`. To remove a key, add its path to the removed list in `dot_claude/modify_settings.json`. Then run `chezmoi apply ~/.claude/settings.json`.
+
+## Oh My Pi
+
+The macOS Brewfile installs `omp`. It uses its normal defaults except for the preferences in `dot_omp/agent/.config.managed.yml`. chezmoi merges those keys into `~/.omp/agent/config.yml` and leaves other settings in place.
+
+To keep a preference changed in `/settings`, copy just that key and value into `.config.managed.yml`. `chezmoi re-add` skips the modify template; don't capture the entire live file. Edit the manifest, commit in `dot_omp/`, and apply the named target:
+
+```sh
+home apply ~/.omp/agent/config.yml
+```
+
+Omit credentials, setup and consent flags, model routing, and other machine-local settings. Sign in separately on each machine.
 
 ## Restore a target from source
 

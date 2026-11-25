@@ -13,6 +13,7 @@ Diagnose only. Do not apply, repair, update or commit during a check. Report eac
 | Claude rig mod or hook rules                   | M1, M4, S1, S2                                                          |
 | Claude validator or formatter registry         | M4                                                                      |
 | Claude plugin                                  | M1 to M3                                                                |
+| Oh My Pi config                                | S2 and O1                                                               |
 | Shell, terminal, editor, or desktop            | T1 to T13 that apply                                                    |
 | Rex config, helpers, or app settings           | R1                                                                      |
 | Rig metrics `rig-metrics`                      | G1                                                                      |
@@ -46,6 +47,17 @@ Expected: No leading `+` or `-`. `core.hooksPath` of each submodule is `.githook
 ```
 
 Expected: Exit 0.
+
+### O1: Oh My Pi preferences
+
+On macOS with the private `dot_omp` submodule initialized:
+
+```sh
+chezmoi status ~/.omp/agent/config.yml
+omp config path
+```
+
+Expected: No target drift. OMP's default profile settings directory is `~/.omp/agent`. When changing the merge template, preview a fresh and an existing target in a disposable destination: the fresh config contains only managed keys, and the existing config retains unrelated keys, including siblings of managed keys.
 
 ### X1: Linux sandbox
 
