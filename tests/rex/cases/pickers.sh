@@ -98,8 +98,8 @@ check "reader_edit labels the editor pane" has_label "$K" edit:a.md
 
 kr=$(R "do" -s "$S" --json rows_key)
 check "rows_key titles each binding with its action" \
-	jq -e '.rows | any(.title == "Close Pane" and (.subtitle | test("x")))' <<<"$kr"
-ki=$(jq -r '[.rows[] | select(.title == "Close Pane") | .id][0]' <<<"$kr")
+	jq -e '.rows | any(.title == "Git Side Pane" and .subtitle == "alt+g")' <<<"$kr"
+ki=$(jq -r '[.rows[] | select(.title == "Git Side Pane") | .id][0]' <<<"$kr")
 check "pick_key runs the picked binding through the app" \
 	said "$S" "no client is targeted" pick_key "id=$ki"
 check "pick_key with no app says why" said "$S" 'no answer to "Find a Key": no_client' pick_key

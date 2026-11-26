@@ -25,7 +25,7 @@ cc_src norex && cc_render norex
 check "the apply check passes when the rex CLI is absent" cc_run norex none
 cc_src changed && cc_render changed
 mv "$CC/changed/run.sh" "$CC/changed/before.sh"
-echo '-- x' >>"$CC/changed/src/dot_config/rex/popups.lua"
+echo '-- x' >>"$CC/changed/src/dot_config/rex/keys.lua"
 cc_render changed
 check "a changed module changes the apply check" \
 	not cmp -s "$CC/changed/before.sh" "$CC/changed/run.sh"

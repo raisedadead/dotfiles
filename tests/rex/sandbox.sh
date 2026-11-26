@@ -186,13 +186,12 @@ check "the password prompt got no input" untyped "$SB/t/secret"
 
 keymap=$(R keymap)
 bound() { grep -qE "^$1 +$2( |$)" <<<"$keymap"; }
-check "ctrl+space h focuses left" bound "ctrl\+space h" "pane\.focus\.left"
-check "ctrl+space - splits down" bound "ctrl\+space -" "pane\.split\.down"
-check "ctrl+space o opens the session picker" bound "ctrl\+space o" "session\.switch"
-check "ctrl+space 1 goes to tab 1" bound "ctrl\+space 1" "client\.tab\.goto"
-check "ctrl+space x closes the pane" bound "ctrl\+space x" close_pane
-check "ctrl+space shift+r enters resize" bound "ctrl\+space shift\+r" "client\.mode\.enter"
-check "resize mode h resizes left" bound "resize/h" "pane\.resize"
+check "alt+h focuses left" bound "alt\+h" "pane\.focus\.left"
+check "alt+shift+h resizes" bound "alt\+shift\+h" "pane\.resize"
+check "alt+o opens the switcher" bound "alt\+o" pick_switch
+check "alt+g toggles the git side pane" bound "alt\+g" side_git
+check "alt+s toggles the scratch drawer" bound "alt\+s" drawer_scratch
+check "alt+shift+/ opens the key picker" bound "alt\+shift\+/" pick_key
 
 gone() { ! grep -q "$1" <<<"$(blocks "$S")"; }
 
@@ -219,12 +218,6 @@ p2=$(placement)
 d3=$(drawer)
 steps="$d1 $d2 $p2 $d3 $(placement)"
 check "drawer opens, hides, shows" test "$steps" = "created hidden detached shown placed"
-
-rex_rows() {
-	strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= \
-		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null | grep -c '^rex '
-}
-check "keys lists the Rex bindings inside Rex" test "$(rex_rows)" -gt 40
 
 printf '#!/bin/sh\necho "$@" > %s/t/editor.args\nsleep 5\n' "$SB" >"$SB/editor"
 chmod +x "$SB/editor"
@@ -257,24 +250,6 @@ same_ws() {
 }
 check "workspace_open creates once, then finds the session" same_ws
 git -C "$SB/proj" init -q
-pick_rows() { strict "$SB/cfg/bin/rex-pick-workspace" --list "" "$SB/proj"; }
-rows=$(pick_rows)
-check "the picker lists the sessions" grep -q $'^session\tt2\t' <<<"$rows"
-proj=$(cd "$SB/proj" && pwd -P)
-check "the picker lists the worktrees" grep -q $'^worktree\t.*\t'"$proj"'$' <<<"$rows"
-shows() {
-	local id rc=1
-	id=$(R "do" -s "$S" --json "$1" 2>/dev/null | jq -r '.block_id // empty')
-	[[ -n "$id" ]] || return 1
-	for _ in $(seq 50); do
-		grep -qF "$3" <<<"$(R capture -s "$S" -b "$id" 2>/dev/null)" && rc=0 && break
-		sleep 0.1
-	done
-	R block close -s "$S" "$id" >/dev/null 2>&1
-	return "$rc"
-}
-check "the workspace picker runs fzf with the server's PATH" \
-	shows popup_workspace popup:workspace 'workspace ❯'
 
 zp=$(split zsh -f -i)
 sleep 0.5
@@ -426,7 +401,8 @@ check "the rex guard refused no call" test ! -e "$SB/refused"
 R server stop >/dev/null 2>&1 || true
 offline() {
 	local out
-	out=$(strict "$SB/cfg/bin/rex-urls" --list "$S" "$plain" 2>&1) && return 1
+	out=$(strict TERM_PROGRAM=rex REX_SESSION="$S" REX_BLOCK="$plain" TMUX= EDITOR=true \
+		"$SB/cfg/bin/rex-open" "$SB/t/notes.md" 2>&1) && return 1
 	grep -qF "no Rex server is running at $SB/server.sock" <<<"$out"
 }
 check "a helper fails on the stopped sandbox server" offline

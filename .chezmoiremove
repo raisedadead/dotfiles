@@ -41,3 +41,9 @@
 .claude/agents/reviewer.md
 .claude/agents/security-reviewer.md
 .claude/statusline
+.config/rex/drawer.lua
+.config/rex/popups.lua
+.config/rex/bin/rex-fzf
+.config/rex/bin/rex-pick-workspace
+.config/rex/bin/rex-reader
+.config/rex/bin/rex-urls

@@ -1,5 +1,4 @@
 require("lib")
-require("popups")
 require("side")
 require("workspace")
 require("pickers")

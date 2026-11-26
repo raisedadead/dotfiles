@@ -185,7 +185,7 @@ Expected: The median matches the same-machine baseline.
 rex config check ~/.dotfiles/dot_config/rex/init.lua --json
 tests/rex/sandbox.sh
 tests/rex/gate.sh
-shellcheck dot_config/rex/bin/executable_rex-{agent-record,ask,fzf,open,popup,reader,urls} tests/rex/*.sh tests/rex/cases/*.sh
+shellcheck dot_config/rex/bin/executable_rex-{agent-record,ask,open,popup} tests/rex/*.sh tests/rex/cases/*.sh
 ```
 
 In a worktree with no `dot_claude` submodule, run `sandbox.sh` with `SANDBOX_DOT_CLAUDE=~/.dotfiles/dot_claude`.

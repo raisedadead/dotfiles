@@ -41,8 +41,6 @@ end
 local STATE = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state"))
   .. "/rex/"
 local MAP = STATE .. "workspaces.json"
-local POPUP = "popup:workspace"
-local MODE = "workspace"
 local MAX_LABEL = 128
 
 local function realdir(path)
@@ -154,85 +152,5 @@ rex.action{
     return { paths = load_map(labels) }
   end,
 }
-
-local function pick_file(sid)
-  return STATE .. "pick-" .. (sid or ""):gsub("^session:", "")
-end
-
-rex.action{
-  name = "popup_workspace", title = "Workspaces", category = "Popups",
-  run = function(ctx)
-    local keyed = ctx.origin == "key" or ctx.origin == "palette"
-    local cwd = focused_cwd(ctx)
-    local out = ""
-    if keyed then
-      out = pick_file(ctx.session_id)
-      rex.exec({ "mkdir", "-p", STATE })
-      os.remove(out)
-    end
-    local b, err, how = lib.popup(ctx, {
-      label = POPUP, bounds = { 0.2, 0.15, 0.6, 0.7 }, cwd = cwd,
-      cmd = {
-        lib.BIN .. "rex-pick-workspace", ctx.client_id or "", cwd or "",
-        ctx.session_id or "", out,
-      },
-    })
-    if not b then error(err, 0) end
-    if keyed then
-      rex.client.queue("client.mode.exit_all")
-      if how ~= "closed" then rex.client.queue("client.mode.enter", { name = MODE }) end
-    end
-    return { block_id = b }
-  end,
-}
-
-local function alive(sid, bid)
-  local b = lib.find_label(sid, POPUP)
-  return b ~= nil and b.block_id == bid
-end
-
-local function wait_pick(sid, bid, tries, take)
-  local file = pick_file(sid)
-  for _ = 1, tries do
-    local f = take and io.open(file)
-    if f then
-      local id = f:read("*l")
-      f:close()
-      if id and id ~= "" then
-        os.remove(file)
-        return "picked", id
-      end
-    end
-    if not alive(sid, bid) then return "closed" end
-    rex.exec({ "sleep", "0.1" })
-  end
-  return "busy"
-end
-
-local function forward(name, title, key, bytes, tries)
-  rex.action{
-    name = name, title = title, category = "Popups",
-    run = function(ctx)
-      local b = lib.find_label(ctx.session_id, POPUP)
-      if not (b and b.block_id == ctx.block_id) then
-        if ctx.origin ~= "key" then error("focus the workspace picker first", 0) end
-        if not b then rex.client.queue("client.mode.exit") end
-        rex.client.queue("pane.send_key", { key = key })
-        return { state = b and "elsewhere" or "gone" }
-      end
-      local _, err = lib.unchecked_write(ctx.session_id, b.block_id, bytes)
-      if err then error(err, 0) end
-      local state, id = wait_pick(ctx.session_id, b.block_id, tries, key == "enter")
-      if state ~= "busy" then rex.client.queue("client.mode.exit") end
-      if id then rex.client.queue("session.select", { session_id = id }) end
-      return { state = state, session_id = id }
-    end,
-  }
-end
-
-forward("workspace_accept", "Workspaces: Accept", "enter", "\r", 30)
-forward("workspace_cancel", "Workspaces: Cancel", "escape", "\27", 10)
-rex.bind(MODE .. "/enter", "workspace_accept")
-rex.bind(MODE .. "/escape", "workspace_cancel")
 
 return { open = open }

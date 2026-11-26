@@ -117,11 +117,11 @@ Neovim 0.12+ loads [lua/config](../dot_config/nvim/lua/config/) directly. `vim.p
 
 [dot_config/rex](../dot_config/rex/) holds the Rex terminal config. [init.lua](../dot_config/rex/init.lua) loads `lib.lua`, then one Lua module for each feature. [bin](../dot_config/rex/bin/) holds the helper scripts. `rex-open FILE[:LINE[:COL]]` opens the editor in a new tab of the current session. Outside Rex it runs the editor in place.
 
-Rex and Ghostty with tmux are both daily terminals. Each Rex path in a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_BLOCK && -z $TMUX ]]`. Outside the gate, zsh, `keys` and `mdr` behave as before.
+Rex and Ghostty with tmux are both daily terminals. Each Rex path in a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_BLOCK && -z $TMUX ]]`. Outside the gate, zsh and `mdr` behave as before.
 
 Rex features use the Rex SDK: `rex.action`, `rex.ui.pick`, `rex.ui.input`, `rex.exec` and the session and block API. A Rex file calls no tmux script and no shared picker script, and no tmux or Ghostty file calls Rex. The two sides can have different features. The switcher bookmarks file, `$XDG_STATE_HOME/switcher/bookmarks`, is shared data; each side reads and writes it with its own code.
 
-- The Alt layer in [keys.lua](../dot_config/rex/keys.lua) has 21 keys: `Alt+H/J/K/L` move focus, `Alt+Shift+H/J/K/L` resize, `Alt+Tab` and `Alt+Shift+Tab` change the session, `Alt+[` and `Alt+]` go back and forward, `` Alt+` `` and `` Alt+Shift+` `` change the tab, `Alt+O` switcher, `Alt+G` git side pane, `Alt+R` reader, `Alt+S` scratch drawer, `Alt+E` links, `Alt+A` next waiting agent, `Alt+?` key list. The `ctrl+space` keys stay until the press test.
+- The Alt layer in [keys.lua](../dot_config/rex/keys.lua) has 21 keys: `Alt+H/J/K/L` move focus, `Alt+Shift+H/J/K/L` resize, `Alt+Tab` and `Alt+Shift+Tab` change the session, `Alt+[` and `Alt+]` go back and forward, `` Alt+` `` and `` Alt+Shift+` `` change the tab, `Alt+O` switcher, `Alt+G` git side pane, `Alt+R` reader, `Alt+S` scratch drawer, `Alt+E` links, `Alt+A` next waiting agent, `Alt+?` key list. Rex has no leader key. Use the command palette for the actions with no key, such as Agent Here, Ask About This Pane and Close Pane. `keys` does not list Rex keys; use `Alt+?`.
 
 - [side.lua](../dot_config/rex/side.lua) holds the side panes and the scratch drawer. A side pane opens right of the main pane at 0.6 and has one toggle: open, hide, show again or focus. A hidden side pane keeps running. The next `Alt+G` or `Alt+R` in the session closes a hidden side pane whose tab is gone or whose main pane is in another repository.
 

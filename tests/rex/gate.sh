@@ -54,10 +54,8 @@ rex_rows() {
 		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null |
 		grep -c '^rex ' || true
 }
-check "keys lists Rex rows in Rex" test "$(rex_rows "${REX[@]}")" -gt 0
+check "keys lists no Rex rows in Rex" test "$(rex_rows "${REX[@]}")" = 0
 check "keys lists no Rex rows in Ghostty" test "$(rex_rows "${GHOSTTY[@]}")" = 0
-check "keys lists no Rex rows in tmux in Rex" test "$(rex_rows "${TMUX_IN_REX[@]}")" = 0
-check "keys lists no Rex rows without REX_BLOCK" test "$(rex_rows "${NO_BLOCK[@]}")" = 0
 
 touch "$SB/notes.md"
 edit_hit() {
@@ -85,7 +83,6 @@ on_bun() {
 	[[ "$(head -1 "$REPO/dot_config/rex/bin/executable_$1")" == '#!/usr/bin/env -S bun --no-env-file --config=/dev/null' ]]
 }
 check "rex-handoff runs on bun" on_bun rex-handoff
-check "rex-pick-workspace runs on bun" on_bun rex-pick-workspace
 
 handoff_out() {
 	env "$@" "$HANDOFF" -- sh -c "touch '$SB/handed'" 2>/dev/null
@@ -130,11 +127,8 @@ unpinned() {
 		grep -vF '...(process.env.REX_SERVER ? ["-S", process.env.REX_SERVER] : [])'
 }
 check "each helper gives REX_SERVER to rex as -S" not unpinned
-bare_fzf() {
-	grep -nE '(^|[[:space:]|(;&])fzf[[:space:]]' "$REPO"/dot_config/rex/bin/executable_* |
-		grep -v executable_rex-fzf
-}
-check "each Rex picker runs fzf through rex-fzf" not bare_fzf
+fzf_calls() { grep -nE '(^|[[:space:]|(;&"])fzf([[:space:]"]|$)' "$REPO"/dot_config/rex/bin/executable_* "$REPO"/dot_config/rex/*.lua; }
+check "no Rex file runs fzf" not fzf_calls
 check "rex-open is on PATH as ~/.bin/rex-open" \
 	test "$(cat "$REPO/exact_dot_bin/symlink_rex-open")" = ../.config/rex/bin/rex-open
 

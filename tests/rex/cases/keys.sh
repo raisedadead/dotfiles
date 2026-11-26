@@ -116,8 +116,6 @@ for b in data["bindings"]:
     if b.get("mode") or b.get("action") in scratch:
         continue
     first = rex_key(b["keys"][0])
-    if first == "ctrl+space" and len(b["keys"]) > 1:
-        continue
     if len(b["keys"]) == 1 and set(used.get(first, ["-"])) <= ALLOWED:
         continue
     if first in used or len(b["keys"]) > 1:
@@ -145,7 +143,6 @@ sends() {
 		'.bindings[] | select(.keys == ($k | split(">")) and .action == "pane.send_key"
 		and .args.key == $s)' <<<"$keys_json" >/dev/null
 }
-check "ctrl+space ctrl+space sends ctrl+space" sends "ctrl+space>ctrl+space" ctrl+space
 for k in w e a s; do
 	check "ctrl+shift+$k sends ctrl+alt+$k" sends "ctrl+shift+$k" "ctrl+alt+$k"
 done
@@ -166,13 +163,12 @@ user_binds() {
 	jq -e --arg k "$1" '.bindings[] | select(.keys == [$k] and ((.source // "") | test("\\.lua:")))' \
 		<<<"$keys_json" >/dev/null
 }
-check "the user-bind probe sees a user bind" user_binds shift+cmd+e
+check "the user-bind probe sees a user bind" user_binds alt+o
 check "ctrl+enter goes to the program" not user_binds ctrl+enter
-check "ctrl+shift+k scrolls a page up" runs_action ctrl+shift+k client.scroll.page_up
-check "ctrl+shift+j scrolls a page down" runs_action ctrl+shift+j client.scroll.page_down
-check "cmd+pageup scrolls a page up" runs_action cmd+pageup client.scroll.page_up
-check "cmd+pagedown scrolls a page down" runs_action cmd+pagedown client.scroll.page_down
-check "shift+cmd+e opens the URL popup" runs_action shift+cmd+e popup_urls
+no_leader() { ! jq -e '.bindings[] | select(.keys[0] == "ctrl+space")' <<<"$keys_json" >/dev/null; }
+check "no Rex key starts with ctrl+space" no_leader
+check "the config binds no key in a mode" \
+	not jq -e '.bindings[] | select(.mode and ((.source // "") | test("\\.lua:")))' <<<"$keys_json"
 entered=$(split bash -c "IFS= read -r l; echo \"got:\$l\" > '$SB/t/entered'; exec sleep 300")
 sleep 0.3
 R send -s "$S" -b "$entered" hi >/dev/null
@@ -180,35 +176,8 @@ R "do" -s "$S" -b "$entered" enter_key >/dev/null 2>&1 || true
 check "enter_key ends the typed line with a carriage return" \
 	until5 file_has "$SB/t/entered" '^got:hi$'
 
-mkdir -p "$SB/stub"
-cat >"$SB/stub/rex" <<EOF
-#!/bin/sh
-case "\$*" in
-*"client ls --json"*)
-	echo '{"clients":[{"client_id":"client:app","info":{"kind":"app"}}]}' ;;
-*"-C client:app actions --json"*)
-	echo '{"actions":[{"name":"client.tab.goto","title":"Go to Tab"}]}' ;;
-*) exec "$(command -v rex)" "\$@" ;;
-esac
-EOF
-chmod +x "$SB/stub/rex"
 sheet() {
-	strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= PATH="$SB/stub:$PATH" \
+	strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= \
 		python3 "$REPO/exact_dot_bin/executable_keys" --plain 2>/dev/null
 }
-rows=$(sheet)
-row_has() { grep -qE "^rex +$1 +$2\$" <<<"$rows"; }
-check "the keys sheet lists Rex rows first in Rex" test "$(head -1 <<<"$rows" | cut -c1-4)" = "rex "
-check "the keys sheet shows the Lua action title" row_has "root +ctrl\+space > x" "Close Pane"
-check "the keys sheet shows the app's title and args" row_has "root +ctrl\+space > 3" \
-	"Go to Tab \(3\)"
-check "the keys sheet shows readable args" row_has "root +ctrl\+space > shift\+r" \
-	"client\.mode\.enter \(resize\)"
-check "the keys sheet lists how to leave resize mode" row_has "resize +esc" "client\.mode\.exit"
-desc_col() {
-	grep -E "^rex +root +$1 " <<<"$rows" | head -1 | awk -v d="$2" '{ print index($0, d) }'
-}
-check "the keys sheet aligns the passthrough row" test \
-	"$(desc_col 'ctrl\+space > ctrl\+space' 'pane.send_key')" = \
-	"$(desc_col 'ctrl\+space > x' 'Close Pane')"
-check "the keys sheet has no probe or test rows" not grep -qiE '^rex .*(probe|test:)' <<<"$rows"
+check "the keys sheet lists no Rex rows, also in Rex" not grep -q '^rex ' <<<"$(sheet)"

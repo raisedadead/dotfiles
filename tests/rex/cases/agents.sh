@@ -143,7 +143,7 @@ kind_of() {
 		'[.windows[].layers[] | select([.blocks[].block_id] | index($b)) | .kind][0] // "-"'
 }
 here_json() { R "do" -s "$S" -b "$1" --json agent_here | jq -r .block_id; }
-over=$(R "do" -s "$S" -b "$plain" --json popup_keys | jq -r .block_id)
+over=$(R "do" -s "$S" -b "$plain" --json t_popup label=popup:keys seconds=60 | jq -r .block_id)
 from_pop=$(here_json "$over")
 check "agent_here in a popup splits the pane under it" test "$(kind_of "$from_pop")" = tiled
 check "agent_here in a popup closes the popup" until5 no_label "$S" popup:keys
@@ -170,8 +170,8 @@ orphan=$(restored popup:lazygit)
 lost=$(restored handoff)
 editor=$(restored editor)
 until5 at_prompt "$orphan" && until5 at_prompt "$lost" && until5 at_prompt "$editor" || true
-live=$(R "do" -s "$S" -b "$plain" --json popup_keys | jq -r .block_id)
-until5 screen_has "$live" 'Keybindings' || true
+live=$(R "do" -s "$S" -b "$plain" --json t_popup label=popup:keys seconds=60 | jq -r .block_id)
+until5 screen_has "$live" 'Rex test popup' || true
 after=$(R "do" -s "$S" --json agents_resume)
 reaped() { no_label "$S" popup:lazygit && no_label "$S" handoff; }
 check "agents_resume closes a restored popup and hand-off" until5 reaped
@@ -189,10 +189,10 @@ R block close -s "$S" "$editor" >/dev/null 2>&1 || true
 stale=$(restored popup:keys)
 until5 at_prompt "$stale" || true
 R focus -s "$S" "$stale" >/dev/null
-fresh=$(R "do" -s "$S" -b "$stale" --json popup_keys | jq -r '.block_id // empty')
+fresh=$(R "do" -s "$S" -b "$stale" --json t_popup label=popup:keys seconds=60 | jq -r '.block_id // empty')
 renewed() {
 	[[ -n "$fresh" && "$fresh" != "$stale" ]] && ! grep -qF "$stale" <<<"$(blocks "$S")" &&
-		screen_has "$fresh" 'Keybindings'
+		screen_has "$fresh" 'Rex test popup'
 }
 check "the popup key on a restored popup opens a fresh popup" until5 renewed
 R block close -s "$S" "$fresh" >/dev/null 2>&1 || true
