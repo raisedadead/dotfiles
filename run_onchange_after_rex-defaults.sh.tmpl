@@ -32,7 +32,7 @@ hex=$(jq -cj --slurpfile app "$tmp/app.json" \
 }
 
 w Workspace.animationStyle -string snappy
-w Workspace.appIconVisibility -string dockAndMenuBar
+w Workspace.appIconVisibility -string menuBarOnly
 w Workspace.appearance -string dark
 w Workspace.darkThemeID -string "{{ (index ($themes | fromJson) 0).id }}"
 w Workspace.lightThemeID -string merino-light
@@ -52,7 +52,7 @@ w Workspace.terminalFontPointSize -float 14
 w Workspace.terminalFontSmoothing -bool true
 w Workspace.terminalImproveTextContrast -bool true
 w Workspace.terminalOptionKeyBehavior -string left
-w Workspace.terminalUseThemePalette -bool false
+w Workspace.terminalUseThemePalette -bool true
 w Workspace.usesPaneGlass -bool true
 w Workspace.usesStandardInactiveWindowPaneStyles -bool true
 w rex.agents.names-sessions -bool true
