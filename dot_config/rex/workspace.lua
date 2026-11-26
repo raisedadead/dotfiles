@@ -234,3 +234,5 @@ forward("workspace_accept", "Workspaces: Accept", "enter", "\r", 30)
 forward("workspace_cancel", "Workspaces: Cancel", "escape", "\27", 10)
 rex.bind(MODE .. "/enter", "workspace_accept")
 rex.bind(MODE .. "/escape", "workspace_cancel")
+
+return { open = open }

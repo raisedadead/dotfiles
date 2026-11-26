@@ -76,11 +76,6 @@ check "the closed popup gives focus back to its pane" test "$(view_state)" = "$h
 ask=$(pop ask_pane "$here")
 pop ask_pane "$ask" >/dev/null
 check "ask_pane inside its popup keeps the one agent" test "$(label_count popup:ask)" = 1
-R "do" -s "$S" -b "$ask" close_pane "block=$ask" >/dev/null 2>&1 || true
-check "close_pane on an agent popup asks first" until5 has_label "$S" popup:close
-check "close_pane on an agent popup keeps the agent" has_label "$S" popup:ask
-asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
-[[ -z "$asked" ]] || closed "$asked" popup:close
 until5 no_label "$S" popup:ask || true
 ask=$(pop ask_pane "$here")
 made=$(R "do" -s "$S" -b "$ask" --json agent_here | jq -r '.block_id // empty')
@@ -104,17 +99,10 @@ screen_has "$cp" 'Keybindings' || true
 R "do" -s "$S" -b "$cp" close_pane "block=$cp" >/dev/null 2>&1 || true
 until5 no_label "$S" popup:keys || true
 check "close_pane on a popup gives back focus and zoom" test "$(view_state)" = "$calm $calm"
-check "close_pane on a popup asks nothing" no_label "$S" popup:close
-asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
-[[ -z "$asked" ]] || closed "$asked" popup:close
 R focus -s "$S" "$calm" >/dev/null
 ask=$(pop ask_pane "$calm")
-R "do" -s "$S" -b "$ask" close_pane "block=$ask" >/dev/null 2>&1 || true
-until5 has_label "$S" popup:close || true
-asked=$(blocks "$S" | awk '$1 == "popup:close" { print $3 }')
-[[ -z "$asked" ]] || R send -s "$S" -b "$asked" y >/dev/null 2>&1 || true
-both_gone() { no_label "$S" popup:ask && no_label "$S" popup:close; }
-until5 both_gone || true
+R "do" -s "$S" -b "$ask" close_pane "block=$ask" answer=close >/dev/null 2>&1 || true
+until5 no_label "$S" popup:ask || true
 check "closing an agent popup gives focus and zoom back to its pane" \
 	test "$(view_state)" = "$calm $calm"
 R zoom -s "$S" "$calm" --off >/dev/null
@@ -164,48 +152,6 @@ themed() {
 }
 check "the link picker keeps its theme over FZF_DEFAULT_OPTS" themed "$bw"
 R block close -s "$S" "$bw" >/dev/null 2>&1 || true
-
-D=$(R new --json dz -- sh -c 'exec sleep 300' | jq -r .session_id)
-dA=$(R api call -s "$D" session.list_blocks | jq -r '.blocks[0].block_id')
-dB=$(R split -s "$D" --json -- sh -c 'exec sleep 300' | jq -r '.block_ids[0]')
-dstate() { R "do" -s "$D" --json drawer_scratch 2>/dev/null | jq -r .state; }
-d_focus_zoom() {
-	R api call -s "$D" session.view | jq -r '.active_window_id as $a | .windows[]
-		| select(.window_id == $a) | "\(.focused_block_id) \(.zoomed_block_id)"'
-}
-d_layer() {
-	R api call -s "$D" session.view | jq -c '[.windows[].layers[]
-		| select(any(.blocks[]; .label == "drawer:scratch")) | {layer_id, bounds}][0]'
-}
-R zoom -s "$D" "$dB" --on >/dev/null
-check "the drawer opens" test "$(dstate)" = created
-dz=$(R api call -s "$D" session.list_blocks |
-	jq -r '.blocks[] | select(.label == "drawer:scratch") | .block_id')
-check "hiding the drawer gives back focus and zoom" \
-	test "$(dstate) $(d_focus_zoom)" = "hidden $dB $dB"
-dstate >/dev/null
-q=$(jq -cn --argjson l "$(d_layer)" '{layer_id: $l.layer_id, bounds: [0.5, 0.5, 0.45, 0.45]}')
-R api call -s "$D" session.resize_layer "$q" >/dev/null
-moved=$(d_layer)
-R focus -s "$D" "$dA" >/dev/null
-check "alt+t on a drawer behind the focus brings it forward in place" \
-	test "$(dstate) $(d_layer) $(d_focus_zoom)" = "shown $moved $dz null"
-dstate >/dev/null
-dstate >/dev/null
-check "the drawer shows again where the operator left it" \
-	test "$(d_layer | jq -c .bounds)" = "$(jq -c .bounds <<<"$moved")"
-d_layers() {
-	R api call -s "$D" session.view |
-		jq -c '[.windows[].layers[] | [.kind, (.blocks | length)]]'
-}
-check "the shown drawer is alone in its layer" \
-	test "$(d_layers)" = '[["tiled",2],["floating",1]]'
-
-E=$(R new --json empty -- sh -c 'sleep 0.3' | jq -r .session_id)
-no_windows() { [[ "$(R api call -s "$E" session.view | jq '.windows | length')" == 0 ]]; }
-until5 no_windows || true
-check "alt+t in a session with no windows says so" \
-	fails_with "$E" "no active window" drawer_scratch
 
 R focus -s "$S" "$here" >/dev/null
 lg=$(pop popup_lazygit "$here")

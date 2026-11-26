@@ -5,6 +5,21 @@ M.SHELL = M.TERMINAL .. ".shell"
 M.AGENTS = { claude = true, codex = true, pi = true, opencode = true }
 M.AGENT = os.getenv("REX_TEST_AGENT") or "claude"
 M.EDITOR = os.getenv("REX_TEST_EDITOR") or "nvim"
+M.OPEN = os.getenv("REX_TEST_OPEN") or "/usr/bin/open"
+M.COPY = os.getenv("REX_TEST_COPY") or "/usr/bin/pbcopy"
+M.PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+function M.run(argv, cwd)
+  return rex.exec(argv, { env = { PATH = M.PATH }, cwd = cwd })
+end
+
+function M.ask(spec)
+  local answer, why, detail = rex.ui.pick(spec)
+  if answer ~= nil then return answer end
+  if why == "cancelled" then return nil end
+  error(string.format("no answer to %q: %s%s", spec.title or "", tostring(why),
+    detail and (": " .. tostring(detail)) or ""), 0)
+end
 
 local here = debug and debug.getinfo and debug.getinfo(1, "S").source or ""
 M.DIR = here:match("^@?(/.*)/[^/]*$") or (os.getenv("HOME") .. "/.config/rex")
@@ -24,7 +39,7 @@ function M.where(sid, window_id)
     if w.window_id == wid then
       local here = {
         window_id = w.window_id, focused = w.focused_block_id,
-        zoomed = w.zoomed_block_id, labels = {}, floating = {},
+        zoomed = w.zoomed_block_id, labels = {}, floating = {}, layers = w.layers or {},
       }
       for _, l in ipairs(w.layers or {}) do
         for _, b in ipairs(l.blocks or {}) do

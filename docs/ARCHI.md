@@ -119,11 +119,24 @@ Neovim 0.12+ loads [lua/config](../dot_config/nvim/lua/config/) directly. `vim.p
 
 Rex and Ghostty with tmux are both daily terminals. Each Rex path in a shared file is behind one gate: `[[ $TERM_PROGRAM == rex && -n $REX_BLOCK && -z $TMUX ]]`. Outside the gate, zsh, `keys` and `mdr` behave as before.
 
+Rex features use the Rex SDK: `rex.action`, `rex.ui.pick`, `rex.ui.input`, `rex.exec` and the session and block API. A Rex file calls no tmux script and no shared picker script, and no tmux or Ghostty file calls Rex. The two sides can have different features. The switcher bookmarks file, `$XDG_STATE_HOME/switcher/bookmarks`, is shared data; each side reads and writes it with its own code.
+
+- The Alt layer in [keys.lua](../dot_config/rex/keys.lua) has 21 keys: `Alt+H/J/K/L` move focus, `Alt+Shift+H/J/K/L` resize, `Alt+Tab` and `Alt+Shift+Tab` change the session, `Alt+[` and `Alt+]` go back and forward, `` Alt+` `` and `` Alt+Shift+` `` change the tab, `Alt+O` switcher, `Alt+G` git side pane, `Alt+R` reader, `Alt+S` scratch drawer, `Alt+E` links, `Alt+A` next waiting agent, `Alt+?` key list. The `ctrl+space` keys stay until the press test.
+
+- [side.lua](../dot_config/rex/side.lua) holds the side panes and the scratch drawer. A side pane opens right of the main pane at 0.6 and has one toggle: open, hide, show again or focus. A hidden side pane keeps running. The next `Alt+G` or `Alt+R` in the session closes a hidden side pane whose tab is gone or whose main pane is in another repository.
+
+- [pickers.lua](../dot_config/rex/pickers.lua) holds the pickers on `rex.ui.pick`: switcher, reader, links and keys. Each `rex.exec` adds `/opt/homebrew/bin` to `PATH`, because the Rex server has the launchd `PATH`.
+
 - zsh reports a command that runs `REX_STATUS_MIN` seconds or more (default 15) as an OSC 7501 record. [rex.zsh](../dot_config/exact_zsh/rex.zsh) holds the skip lists: `REX_STATUS_SKIP`, `REX_STATUS_PAGER`, `REX_STATUS_REPL` and `REX_STATUS_AGENTS`.
+
 - **Agent Here** starts Claude Code in a new pane. The managed hooks give it the text of `rex __internal session-start` and keep a restore record in `~/.local/state/rex/agents`.
+
 - [run_onchange_before_rex-config-check.sh.tmpl](../run_onchange_before_rex-config-check.sh.tmpl) runs `rex config check` when a module changes and stops the apply on an error. Reload: [README.md](README.md#rex).
+
 - [run_onchange_after_rex-defaults.sh.tmpl](../run_onchange_after_rex-defaults.sh.tmpl) writes the Rex app settings with `defaults write com.superlogical.rex`. The source owns each key that it writes. It merges [custom-themes.json](../dot_config/rex/themes/custom-themes.json) into `Workspace.customThemes` by id and never deletes a theme. The same script installs the `xterm-rex` terminfo entry with `rex terminfo setup --entry-only`.
+
 - The rig guard refuses input to a block on the live Rex server. An agent types only on a `-S` sandbox server under `/tmp`. `REX_SERVER` that does not answer makes `rex` use the live server. An explicit `-S` fails instead.
+
 - The `rex-handoff` command opens a float where the operator approves a command. It then runs the command in an interactive `zsh`. `REX_HANDOFF` makes the zsh setup skip plugin install and completion rebuild.
 
 Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server. [testkit.lua](../tests/rex/testkit.lua) adds the test actions to its copy of the config. [rex-guard.sh](../tests/rex/rex-guard.sh) refuses another server. Set `REX_GUARD_STRICT=1` to also refuse a call without `-S`. Put the checks for one feature in `tests/rex/cases/<feature>.sh`.

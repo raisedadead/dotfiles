@@ -29,10 +29,11 @@ rex.action{
 
 rex.action{
   name = "t_popup", title = "Test: popup", category = "Test",
-  run = function(ctx)
+  args = { label = "string?", seconds = "string?" },
+  run = function(ctx, args)
     local b, err = lib.popup(ctx, {
-      label = "t_popup", bounds = { 0.3, 0.35, 0.4, 0.2 },
-      cmd = { "sh", "-c", "echo 'Rex test popup'; sleep 2" },
+      label = args.label or "t_popup", bounds = { 0.3, 0.35, 0.4, 0.2 },
+      cmd = { "sh", "-c", "echo 'Rex test popup'; sleep " .. (args.seconds or "2") },
     })
     if not b then error(err, 0) end
     return { block_id = b }

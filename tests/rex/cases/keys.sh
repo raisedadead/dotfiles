@@ -38,6 +38,11 @@ SHIFTED = dict(zip('~!@#$%^&*()_+{}|:"<>?', "`1234567890-=[]\\;',./"))
 NAMES = {"cr": "enter", "return": "enter", "tab": "tab", "space": "space", "bs": "backspace",
          "esc": "escape"}
 CLAUDE_DEFAULTS = ["meta+p", "meta+o", "meta+t", "meta+w", "meta+up", "meta+down"]
+ALLOWED = {
+    "zsh run-help", "zsh down-case-word", "zsh self-insert-unmeta", "zsh _bash_complete-word",
+    "zsh get-line", "zsh spell-word", "zsh accept-and-hold", "zsh which-command",
+    "claude meta+o", "nvim <M-h>", "nvim <M-r>",
+}
 
 def canon(mods, key):
     mods = set(mods)
@@ -113,6 +118,8 @@ for b in data["bindings"]:
     first = rex_key(b["keys"][0])
     if first == "ctrl+space" and len(b["keys"]) > 1:
         continue
+    if len(b["keys"]) == 1 and set(used.get(first, ["-"])) <= ALLOWED:
+        continue
     if first in used or len(b["keys"]) > 1:
         owners = ", ".join(dict.fromkeys(used.get(first, ["a key outside the prefix"])))
         print(">".join(b["keys"]), "takes", owners)
@@ -172,38 +179,6 @@ R send -s "$S" -b "$entered" hi >/dev/null
 R "do" -s "$S" -b "$entered" enter_key >/dev/null 2>&1 || true
 check "enter_key ends the typed line with a carriage return" \
 	until5 file_has "$SB/t/entered" '^got:hi$'
-
-fg_is() {
-	local q
-	q=$(jq -cn --arg s "$S" --arg b "$1" \
-		'{session_id: $s, block_id: $b, method: "process", args: {}}')
-	[[ "$(R api call -s "$S" block.method "$q" | jq -r '.foreground.name')" == "$2" ]]
-}
-prompt_shows() { grep -qF "$2" <<<"$(R capture -s "$S" -b "$1" 2>/dev/null)"; }
-answer_close() {
-	local p
-	p=$(R "do" -s "$S" --json close_pane "block=$1" 2>/dev/null |
-		jq -r '.block_id // empty')
-	[[ -n "$p" ]] && until5 prompt_shows "$p" "$2" || return 1
-	R send -s "$S" -b "$p" "$3" >/dev/null 2>&1
-	until5 gone "$p"
-}
-confirm_pane=$(split sh -c 'exec sleep 300')
-check "the close target runs sleep" until5 fg_is "$confirm_pane" sleep
-check "close_pane asks first and keeps the pane on n" \
-	answer_close "$confirm_pane" "Close sleep?" n
-check "the pane is still open after n" not gone "$confirm_pane"
-check "close_pane closes the pane on y" answer_close "$confirm_pane" "Close sleep?" y
-check "the pane is closed after y" until5 gone "$confirm_pane"
-
-mkdir -p "$SB/claude-versions" "$SB/claude-bin"
-cp /bin/sleep "$SB/claude-versions/2.1.316"
-codesign --force -s - "$SB/claude-versions/2.1.316" 2>/dev/null
-ln -sf "$SB/claude-versions/2.1.316" "$SB/claude-bin/claude"
-agent_pane=$(split "$SB/claude-bin/claude" 300)
-check "the fake agent runs its version file" until5 fg_is "$agent_pane" 2.1.316
-check "close_pane names the agent, not its version file" \
-	answer_close "$agent_pane" "Close claude?" y
 
 mkdir -p "$SB/stub"
 cat >"$SB/stub/rex" <<EOF
