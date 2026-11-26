@@ -21,6 +21,8 @@
 .claude/skills/cmd-add-skill
 .claude/skills/cmd-refresh-plugins/scripts/refresh_plugins.sh
 .config/tmux/scripts/switcher.sh
+.config/tmux/scripts/cycle-session.sh
+.config/tmux/scripts/session-menu.sh
 .claude/agents/notebook.md
 .claude/rules/90-plugins.md
 .claude/workflows/lens-review.js

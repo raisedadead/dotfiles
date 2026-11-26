@@ -137,11 +137,11 @@ Expected: No new diagnostic.
 tmux list-clients -F '#{client_termname}: #{client_termfeatures}'; tmux show -g extended-keys
 ```
 
-Expected: Client features and Alt+Shift routing agree with [ARCHI.md](ARCHI.md#terminal-stack).
+Expected: Client features agree with [ARCHI.md](ARCHI.md#terminal-stack).
 
 ### T9
 
-Press `M-H/J/K/L` across shell panes and Neovim splits. Press Ctrl+Shift+W/E/A/S in shell and editor.
+Press `C-Space` then `h/j/k/l` across panes. Press Ctrl+Shift+W/E/A/S in shell and editor.
 
 Expected: The correct consumer gets each key. Shell Ctrl+Shift+W deletes to line start.
 

@@ -60,20 +60,22 @@ To add a private directory, run `dotfiles-privatize.sh <dir> [--push]`. It creat
 
 ## Terminal stack
 
-| Layer       | Source                                                                                | Owns                                                            |
-| ----------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Desktop     | [AeroSpace](../dot_config/aerospace/aerospace.toml)                                   | Desktop shortcuts, read before the terminal                     |
-| Terminal    | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites           |
-| Multiplexer | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, root `M-` bindings, editor arbitration |
-| Shell       | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                             |
-| Editor      | [Neovim](../dot_config/nvim/)                                                         | Local Lua config and explicit packages                          |
-| Editor, GUI | [Zed](../dot_config/zed/keymap.json)                                                  | Vim mode; `jj`, `jk`, `kj` and `kk` leave insert mode           |
+| Layer       | Source                                                                                | Owns                                                  |
+| ----------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Desktop     | [AeroSpace](../dot_config/aerospace/aerospace.toml)                                   | Desktop shortcuts, read before the terminal           |
+| Terminal    | [Ghostty](../dot_config/ghostty/config.ghostty)                                       | Rendering, native selection, scrollback, key rewrites |
+| Multiplexer | [tmux](../dot_config/tmux/tmux.conf), [keybindings](../dot_config/tmux/keybinds.conf) | Sessions, panes, popups, `C-Space` prefix bindings    |
+| Shell       | [zsh](../dot_config/exact_zsh/dot_zshrc)                                              | Emacs editing, completions, history                   |
+| Editor      | [Neovim](../dot_config/nvim/)                                                         | Local Lua config and explicit packages                |
+| Editor, GUI | [Zed](../dot_config/zed/keymap.json)                                                  | Vim mode; `jj`, `jk`, `kj` and `kk` leave insert mode |
 
-A root tmux binding takes its key before zsh or Neovim. Before you assign a key, check `ghostty +list-keybinds`, `tmux list-keys -T root` and `bindkey`.
+tmux keeps the vanilla 3.8 keys and has no root binding, so every Alt key reaches zsh and Neovim. Its additions sit behind the `C-Space` prefix: `h/j/k/l` select a pane, `Tab` opens a floating shell in the pane's folder, `o` the switcher, `g` lazygit, `r` the reader, `e` the URL picker and `A` the actions menu (park, unpark, break, sync panes, reload). Before you assign a key, check `ghostty +list-keybinds`, `tmux list-keys -T prefix` and `bindkey`.
 
-`smart-splits.nvim` sets `@pane-is-vim`. tmux uses it to forward `M-H/J/K/L` to Neovim or to select a pane. The same flag routes the Ghostty Ctrl+Shift+W/E/A/S rewrites: Neovim receives plain Ctrl+W/E/A/S, other panes receive `M-C-w/e/a/s`.
+Ghostty rewrites Ctrl+Shift+W/E/A/S to ESC and the control byte. The pane receives `M-C-w/e/a/s`: zsh binds them, and Neovim maps them back to Ctrl+W/E/A/S ([keymaps.lua](../dot_config/nvim/lua/config/keymaps.lua)).
 
-tmux adds client `extkeys` when Ghostty answers XTVERSION. Without that answer, for example over SSH or in nested tmux, the client stays in legacy mode. keybinds.conf keeps legacy and `M-S-` bindings, so each key works in both modes. Check the client features, not only `extended-keys`.
+tmux adds client `extkeys` when Ghostty answers XTVERSION. Without that answer, for example over SSH or in nested tmux, the client stays in legacy mode. Check the client features, not only `extended-keys`.
+
+The tmux + Ghostty side and the Rex side share no code: no tmux or Ghostty file calls Rex, and no Rex file calls a tmux script. A similar feature has its own implementation on each side.
 
 Keep the Ghostty shell-integration feature `path` enabled. Mouse drag selects in tmux. Shift+drag selects in the terminal.
 

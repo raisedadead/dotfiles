@@ -83,12 +83,6 @@ keybind = ctrl+shift+e=text:\x1b\x05
 keybind = ctrl+shift+a=text:\x1b\x01
 keybind = ctrl+shift+s=text:\x1b\x13
 
-# Scrollback
-keybind = ctrl+shift+j=scroll_page_lines:5
-keybind = ctrl+shift+k=scroll_page_lines:-5
-keybind = ctrl+shift+h=scroll_to_top
-keybind = ctrl+shift+l=scroll_to_bottom
-
 # Background toggle (opaque for screen recording)
 keybind = cmd+shift+b=toggle_background_opacity
 
