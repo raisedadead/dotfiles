@@ -24,11 +24,6 @@
       "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
-    "smart-splits.nvim": {
-      "rev": "ac11b8ed1efe7cca7bb3eae9c588163c926c6894",
-      "src": "https://github.com/mrjones2014/smart-splits.nvim",
-      "version": "'v2.1.1-final'"
-    },
     "snacks.nvim": {
       "rev": "882c996cf28183f4d63640de0b4c02ec886d01f2",
       "src": "https://github.com/folke/snacks.nvim"

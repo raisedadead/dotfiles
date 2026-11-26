@@ -126,7 +126,7 @@ taken=$(taken_keys "$keys_json")
 one_key() { printf '{"bindings":[{"keys":["%s"]}]}' "$1"; }
 real_probes() {
 	grep -q 'zsh fzf-cd-widget' <<<"$(taken_keys "$(one_key alt+c)")" &&
-		grep -q 'nvim <M-J>' <<<"$(taken_keys "$(one_key alt+shift+j)")" &&
+		grep -q 'nvim <M-C-W>' <<<"$(taken_keys "$(one_key ctrl+alt+w)")" &&
 		grep -q 'nvim <M-m>' <<<"$(taken_keys "$(one_key alt+m)")" &&
 		grep -q 'claude meta+i' <<<"$(taken_keys "$(one_key alt+i)")"
 }

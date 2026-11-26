@@ -17,12 +17,6 @@ for _, key in ipairs({ "w", "e", "a", "s" }) do
   )
 end
 
-local splits = require("smart-splits")
-map("n", "<A-H>", splits.move_cursor_left, { desc = "Move to left pane" })
-map("n", "<A-J>", splits.move_cursor_down, { desc = "Move to lower pane" })
-map("n", "<A-K>", splits.move_cursor_up, { desc = "Move to upper pane" })
-map("n", "<A-L>", splits.move_cursor_right, { desc = "Move to right pane" })
-
 local function project_dir()
   return vim.fs.root(0, ".git") or vim.fs.root(vim.fn.getcwd(), ".git") or vim.fn.getcwd()
 end

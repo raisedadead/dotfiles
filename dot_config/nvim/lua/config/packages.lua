@@ -1,8 +1,6 @@
 vim.pack.add({
   { src = "https://github.com/catppuccin/nvim", name = "catppuccin" },
   "https://github.com/folke/snacks.nvim",
-  -- v3 splits out the tmux backend that owns @pane-is-vim.
-  { src = "https://github.com/mrjones2014/smart-splits.nvim", version = "v2.1.1-final" },
   "https://github.com/nvim-lua/plenary.nvim",
   "https://github.com/nvim-mini/mini.clue",
   "https://github.com/nvim-mini/mini.surround",
@@ -28,7 +26,6 @@ require("snacks").setup({
   },
 })
 
-require("smart-splits").setup()
 require("chezmoi").setup({
   edit = { watch = false, force = false },
   events = {
