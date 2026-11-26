@@ -76,55 +76,10 @@ visual_hit() {
 }
 check "mdr visual runs VISUAL without its wait flag" test "$(visual_hit)" = "editor $SB/notes.md"
 
-mkdir -p "$SB/bin"
-HANDOFF="$SB/bin/rex-handoff"
-install -m 755 "$REPO/dot_config/rex/bin/executable_rex-handoff" "$HANDOFF"
-on_bun() {
-	[[ "$(head -1 "$REPO/dot_config/rex/bin/executable_$1")" == '#!/usr/bin/env -S bun --no-env-file --config=/dev/null' ]]
-}
-check "rex-handoff runs on bun" on_bun rex-handoff
-
-handoff_out() {
-	env "$@" "$HANDOFF" -- sh -c "touch '$SB/handed'" 2>/dev/null
-}
-quiet_handoff() { [[ -z "$(handoff_out "$@")" && ! -e "$SB/handed" ]]; }
-check "rex-handoff does nothing in Ghostty" quiet_handoff "${GHOSTTY[@]}"
-check "rex-handoff does nothing in tmux in Rex" quiet_handoff "${TMUX_IN_REX[@]}"
-inner_out() {
-	env "$@" "$HANDOFF" --inner -- sh -c "touch '$SB/handed'" 2>/dev/null
-}
-quiet_inner() { [[ -z "$(inner_out "$@" </dev/null)" && ! -e "$SB/handed" ]]; }
-check "rex-handoff --inner does nothing outside a Rex pane" quiet_inner "${GHOSTTY[@]}"
-check "rex-handoff --inner does nothing in tmux in Rex" quiet_inner "${TMUX_IN_REX[@]}"
-check "rex-handoff --inner runs nothing without a terminal" quiet_inner "${REX[@]}"
-handoff_exit() {
-	local code=0
-	env "$@" >/dev/null 2>&1 || code=$?
-	echo "$code"
-}
-check "rex-handoff exits 69 in Ghostty" \
-	test "$(handoff_exit "${GHOSTTY[@]}" "$HANDOFF" -- true)" = 69
-check "rex-handoff exits 69 in tmux in Rex" \
-	test "$(handoff_exit "${TMUX_IN_REX[@]}" "$HANDOFF" -- true)" = 69
-check "rex-handoff says that nothing ran without REX_BLOCK" \
-	test "$(env "${NO_BLOCK[@]}" "$HANDOFF" -- true 2>&1)" = "rex-handoff: not in Rex, so nothing ran"
-check "rex-handoff --inner without a terminal exits 130" \
-	test "$(handoff_exit "${REX[@]}" "$HANDOFF" --inner r 1 -- true </dev/null)" = 130
-check "rex-handoff says that nothing ran outside Rex, with no usage error" \
-	test "$(env "${GHOSTTY[@]}" "$HANDOFF" 2>&1)" = "rex-handoff: not in Rex, so nothing ran"
-handoff_usage() {
-	local out rc=0
-	out=$(env "${REX[@]}" "$HANDOFF" "$@" 2>&1 >/dev/null </dev/null) || rc=$?
-	[[ "$rc" == 64 && "$out" == "usage: rex-handoff -- COMMAND..." ]]
-}
-check "rex-handoff in Rex with no arguments prints its usage and exits 64" handoff_usage
-check "rex-handoff in Rex with no command prints its usage and exits 64" handoff_usage --
-
 unpinned() {
 	# shellcheck disable=SC2016
 	grep -n -e '--autostart=false' "$REPO"/dot_config/rex/bin/executable_* \
-		"$REPO"/dot_config/rex/*.lua | grep -vF '${REX_SERVER:+-S "$REX_SERVER"}' |
-		grep -vF '...(process.env.REX_SERVER ? ["-S", process.env.REX_SERVER] : [])'
+		"$REPO"/dot_config/rex/*.lua | grep -vF '${REX_SERVER:+-S "$REX_SERVER"}'
 }
 check "each helper gives REX_SERVER to rex as -S" not unpinned
 fzf_calls() { grep -nE '(^|[[:space:]|(;&"])fzf([[:space:]"]|$)' "$REPO"/dot_config/rex/bin/executable_* "$REPO"/dot_config/rex/*.lua; }

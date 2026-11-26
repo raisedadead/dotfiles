@@ -167,17 +167,14 @@ at_prompt() {
 	[[ "$(R api call -s "$S" block.method "$q" | jq -r .canonical)" == false ]]
 }
 orphan=$(restored popup:lazygit)
-lost=$(restored handoff)
 editor=$(restored editor)
-until5 at_prompt "$orphan" && until5 at_prompt "$lost" && until5 at_prompt "$editor" || true
+until5 at_prompt "$orphan" && until5 at_prompt "$editor" || true
 live=$(R "do" -s "$S" -b "$plain" --json t_popup label=popup:keys seconds=60 | jq -r .block_id)
 until5 screen_has "$live" 'Rex test popup' || true
 after=$(R "do" -s "$S" --json agents_resume)
-reaped() { no_label "$S" popup:lazygit && no_label "$S" handoff; }
-check "agents_resume closes a restored popup and hand-off" until5 reaped
+check "agents_resume closes a restored popup" until5 no_label "$S" popup:lazygit
 check "agents_resume reports the closed floats" \
-	test "$(jq -c '.closed | sort' <<<"$after")" = "$(jq -cn --arg a "$orphan" --arg b "$lost" \
-		'[$a, $b] | sort')"
+	test "$(jq -c .closed <<<"$after")" = "[\"$orphan\"]"
 check "agents_resume keeps a live popup" has_label "$S" popup:keys
 check "agents_resume starts the editor again in a restored editor pane" \
 	until5 file_has "$SB/t/editor.runs" .

@@ -22,11 +22,22 @@ io.stdout:write(table.concat(out, "\n") .. "\n")
 EOF
 mkdir -p "$SB/zhome/.local/share/zsh" "$SB/zhome/.cache/fsh"
 : >"$SB/zhome/.cache/fsh/secondary_theme.zsh"
+zplug="$SB/zhome/.local/share/zsh/plugins"
 if [[ -d "$HOME/.local/share/zsh/plugins" ]]; then
-	cp -R "$HOME/.local/share/zsh/plugins" "$SB/zhome/.local/share/zsh/plugins"
+	cp -R "$HOME/.local/share/zsh/plugins" "$zplug"
 fi
-HOME="$SB/zhome" REX_HANDOFF=1 ZDOTDIR="$SB/zdot" zsh -i -c 'bindkey -M emacs' \
-	>"$SB/t/zsh-keys" 2>/dev/null || true
+lock="$REPO/dot_config/exact_zsh/plugins.lock"
+pnpm_rev=$(awk '$1 ~ /\/pnpm-shell-completion$/ { print $2 }' "$lock")
+plug_dir() { test -d "$zplug"; }
+plug_stamp() { cmp -s "$zplug/.plugins.lock" "$lock"; }
+pnpm_stamp() { test "$(cat "$zplug/.pnpm-helper-revision" 2>/dev/null)" = "$pnpm_rev"; }
+check "the zsh plugins folder exists" plug_dir
+check "the zsh plugin stamp matches the branch lock" plug_stamp
+check "the pnpm helper stamp matches the branch lock" pnpm_stamp
+if plug_dir && plug_stamp && pnpm_stamp; then
+	HOME="$SB/zhome" ZDOTDIR="$SB/zdot" zsh -i -c 'bindkey -M emacs' \
+		>"$SB/t/zsh-keys" 2>/dev/null || true
+fi
 XDG_CONFIG_HOME="$SB/xdg" XDG_STATE_HOME="$SB/xdg-state" XDG_CACHE_HOME="$SB/xdg-cache" \
 	nvim --headless -c "lua vim.defer_fn(function() dofile('$SB/nvim-keys.lua'); \
 	vim.cmd('qa!') end, 3000)" >"$SB/t/nvim-keys" 2>&1 || true

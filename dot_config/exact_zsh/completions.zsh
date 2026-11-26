@@ -1,10 +1,6 @@
 _mrgsh_completion_init() {
   emulate -L zsh
   autoload -Uz compinit
-  if [[ -n $REX_HANDOFF && $1 != rebuild ]]; then
-    compinit -C -d ~/.zcompdump
-    return
-  fi
   zmodload zsh/stat || return
   local directory signature=$ZSH_VERSION state=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/completion-state
   local -A metadata

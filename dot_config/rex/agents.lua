@@ -7,7 +7,7 @@ local function best_record(sid, b)
   local best, agent
   for _, r in ipairs(ps and ps.records or {}) do
     local rank = RANK[r.state]
-    if rank and r.app ~= "handoff" then
+    if rank then
       if agent == nil then agent = lib.agent_in(lib.fg(sid, b.block_id) or {}) ~= nil end
       if not agent then rank = nil end
     end
@@ -163,7 +163,7 @@ rex.action{
       for _, b in ipairs(bl and bl.blocks or {}) do
         local bid, label = b.block_id, b.label or ""
         local resume, path = record(bid)
-        local float = label:match("^popup:") or label == "handoff"
+        local float = label:match("^popup:")
         if float then
           if restored(sid, bid) and at_prompt(sid, bid) then
             if reap(sid, bid) then

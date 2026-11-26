@@ -137,8 +137,6 @@ Rex features use the Rex SDK: `rex.action`, `rex.ui.pick`, `rex.ui.input`, `rex.
 
 - The rig guard refuses input to a block on the live Rex server. An agent types only on a `-S` sandbox server under `/tmp`. `REX_SERVER` that does not answer makes `rex` use the live server. An explicit `-S` fails instead.
 
-- The `rex-handoff` command opens a float where the operator approves a command. It then runs the command in an interactive `zsh`. `REX_HANDOFF` makes the zsh setup skip plugin install and completion rebuild.
-
 Check a change with `rex config check`, [tests/rex/sandbox.sh](../tests/rex/sandbox.sh) and [tests/rex/gate.sh](../tests/rex/gate.sh). The sandbox test starts its own server. [testkit.lua](../tests/rex/testkit.lua) adds the test actions to its copy of the config. [rex-guard.sh](../tests/rex/rex-guard.sh) refuses another server. Set `REX_GUARD_STRICT=1` to also refuse a call without `-S`. Put the checks for one feature in `tests/rex/cases/<feature>.sh`.
 
 ## Desktop

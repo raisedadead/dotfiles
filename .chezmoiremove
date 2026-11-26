@@ -47,3 +47,5 @@
 .config/rex/bin/rex-pick-workspace
 .config/rex/bin/rex-reader
 .config/rex/bin/rex-urls
+.config/rex/handoff.lua
+.config/rex/bin/rex-handoff
