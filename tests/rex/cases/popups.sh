@@ -1,5 +1,7 @@
 # shellcheck shell=bash disable=SC2154
 urls_of() { strict "$SB/cfg/bin/rex-urls" --list "$S" "$1" | tr '\n' ' '; }
+links() { strict "$SB/cfg/bin/rex-urls" --list "$S" "$linky" | sort | tr '\n' ' '; }
+check "rex-urls lists each link once" test "$(links)" = "http://x.test/b https://example.com/a "
 
 long="https://example.com/oauth/authorize?client_id=$(printf 'a%.0s' $(seq 90))&state=xyz"
 wrapped=$(split sh -c "echo 'long $long'; exec sleep 300")

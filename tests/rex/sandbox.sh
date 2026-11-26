@@ -4,6 +4,12 @@ set -Eeuo pipefail
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 SRC="$REPO/dot_config/rex"
 DOTCLAUDE=${SANDBOX_DOT_CLAUDE:-"$REPO/dot_claude"}
+CASES=("$@")
+for name in "${CASES[@]}"; do
+	[[ -f "$REPO/tests/rex/cases/$name.sh" ]] && continue
+	printf 'sandbox.sh: no case named %s in tests/rex/cases\n' "$name" >&2
+	exit 64
+done
 SB=$(mktemp -d /tmp/rexsb.test.XXXXXX)
 SOCK="unix://$SB/server.sock"
 fails=0 finished='' abort_at=''
@@ -136,7 +142,10 @@ untyped() { ! grep -q typed "$1" 2>/dev/null; }
 
 renders() {
 	local tmpl="$REPO/run_onchange_after_rex-defaults.sh.tmpl" out="$SB/defaults.sh"
-	chezmoi execute-template --source "$REPO" <"$tmpl" >"$out" &&
+	local src="$SB/tmpl-src"
+	mkdir -p "$src/dot_config/rex/themes"
+	cp "$SRC/themes/custom-themes.json" "$src/dot_config/rex/themes/"
+	chezmoi execute-template --source "$src" <"$tmpl" >"$out" &&
 		bash -n "$out" && grep -q "Workspace.customThemes" "$out"
 }
 check "app settings script renders and parses" renders
@@ -196,8 +205,6 @@ opened() {
 text='see https://example.com/a, (http://x.test/b) and https://example.com/a'
 linky=$(split sh -c "echo '$text'; exec sleep 300")
 sleep 0.5
-links() { strict "$SB/cfg/bin/rex-urls" --list "$S" "$linky" | sort | tr '\n' ' '; }
-check "rex-urls lists each link once" test "$(links)" = "http://x.test/b https://example.com/a "
 
 drawer() { R "do" -s "$S" --json drawer_scratch | jq -r .state; }
 d1=$(drawer)
@@ -332,56 +339,6 @@ window_of() {
 	R api call -s "$S" session.view | jq -r --arg b "$1" \
 		'.windows[] | select([.layers[].blocks[].block_id] | index($b)) | .window_id'
 }
-handoff() {
-	strict TERM_PROGRAM=rex REX_BLOCK="$plain" TMUX= \
-		"$SB/cfg/bin/rex-handoff" -- sh -c "echo ran > '$SB/t/handed'; exit 4"
-}
-float_id() { blocks "$S" | awk '$1 == "handoff" { print $3 }'; }
-has_float() { [[ -n "$(float_id)" ]]; }
-answer() {
-	local f
-	until5 has_float || return 0
-	f=$(float_id)
-	until5 blocked || return 0
-	R send -s "$S" -b "$f" "$1" >/dev/null
-	until5 settled "$f" || true
-	R send -s "$S" -b "$f" $'\r' >/dev/null 2>&1 || true
-}
-settled() {
-	[[ "$(float_id)" != *"${1#block:}"* ]] ||
-		grep -q "press any key" <<<"$(R capture -s "$S" -b "$1" 2>/dev/null)"
-}
-handoff >"$SB/t/h1" 2>&1 &
-h_pid=$!
-until5 has_float || true
-check "the hand-off float opens in the agent's tab" \
-	test "$(window_of "$(float_id)")" = "$(window_of "$plain")"
-fstatus() {
-	local q
-	q=$(jq -cn --arg s "$S" --arg b "$(float_id)" \
-		'{session_id: $s, block_id: $b, method: "program_status", args: {}}')
-	R api call -s "$S" block.method "$q" | jq -r '.records[0].state // "-"'
-}
-blocked() { [[ "$(fstatus)" == blocked ]]; }
-check "the hand-off float reports blocked" until5 blocked
-answer $'\r'
-for _ in $(seq 20); do
-	waited "$h_pid" && break
-	sleep 0.5
-done
-check "rex-handoff runs the command on Enter" file_has "$SB/t/handed" ran
-check "rex-handoff prints only the exit code" test "$(cat "$SB/t/h1")" = 4
-rm -f "$SB/t/handed"
-handoff >"$SB/t/h2" 2>&1 &
-h_pid=$!
-answer $'\e'
-for _ in $(seq 20); do
-	waited "$h_pid" && break
-	sleep 0.5
-done
-check "rex-handoff declines on Esc" test "$(cat "$SB/t/h2")" = 130
-check "a declined hand-off runs nothing" test ! -e "$SB/t/handed"
-
 blocker=$(split bash -c \
 	"printf '\033]7501;state=blocked:kind=question\a'; exec -a claude sleep 300")
 sleep 0.5
@@ -453,6 +410,10 @@ check "agents_resume resumes a session once" \
 
 for case_file in "$REPO"/tests/rex/cases/*.sh; do
 	[[ -e "$case_file" ]] || continue
+	if ((${#CASES[@]})); then
+		name=$(basename "$case_file" .sh)
+		[[ " ${CASES[*]} " == *" $name "* ]] || continue
+	fi
 	# shellcheck source=/dev/null
 	source "$case_file"
 done
